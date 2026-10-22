@@ -3426,3 +3426,8 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 
 /* v0.981 : plus de coche verte sur un talent acquis, dans l'arbre. */
 .arbre-noeud.acquis .arbre-rond::after,.arbre-noeud.bonus.acquis .arbre-rond::after{content:none}
+
+/* v0.983 : les phrases du journal de combat, dans l'éditeur de talent. */
+#talent-journal{display:grid;gap:8px}
+#talent-journal .journal-champ{display:grid;gap:4px}
+#talent-journal textarea::placeholder{color:var(--muted)}

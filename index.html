@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.982') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.983') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -137,8 +137,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 .sheet.a-logo .sheet-head h1{flex:0 1 auto;min-width:0;line-height:39px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}/* La fiche prend la hauteur de ce qu'elle montre — talents et équipement dépliés compris — et le journal, calé dessous, prend tout le reste. */#sheet{min-height:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line}/* La flèche en vol : un trait sombre à pointe claire, tourné vers sa cible. *//* Le souffle d'un tir : une rafale claire et étirée, deux filets d'air par-dessus. *//* Les coups, lisibles et toujours les mêmes : au contact, un trait de balayage fend l'air sur la cible, puis un choc — un anneau qui s'élargit ; à distance, un projectile file en ligne droite du tireur à la cible, puis le même choc. Blanc cerné de sombre : visible sur toute carte. Chaque geste dure le même temps, au même rythme. */.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}.vfx svg{display:block;width:100%;height:100%;overflow:visible}.vfx-piege svg{filter:drop-shadow(0 0 6px #ff8a2acc)}.vfx-piege .souffle{fill:#ff7a1f;fill-opacity:.6;stroke:#ffc35a;stroke-width:4}.vfx-piege .coeur{fill:#fff4cf}
 .vfx-choc .onde{fill:none;stroke:#fff6dc;stroke-width:7}.vfx-choc svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 5px #ffc85acc)}.vfx-etincelles .gerbe{stroke:#fff6dc;stroke-width:4.5;stroke-linecap:round}.vfx-etincelles svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 4px #ffc85acc)}.vfx-fleche{transform:none}.vfx-fleche .hampe-ombre{stroke:#000a;stroke-width:5;fill:none}.vfx-fleche .hampe{stroke:#f1e4c8;stroke-width:2.6;fill:none}.vfx-fleche .plume{fill:#b8452e;stroke:#0009;stroke-width:1}.vfx-fleche .pointe{fill:#e9eef2;stroke:#000b;stroke-width:1.2}.vfx-fleche svg{filter:drop-shadow(0 0 3px #fff8)}/* Le balayage d'un coup au contact : un arc d'air, clair au bord, qui tourne autour de l'attaquant. *//* La parole : le socle de qui parle, puis ses mots. */.j-chat{display:flex;align-items:flex-start;gap:8px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);border-radius:7px;padding:4px 8px;margin:2px 0}.j-avatar{flex:none;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#d9cfbd;color:#2a2118;display:grid;place-items:center;font:700 12px 'Killam',Georgia,serif}.j-avatar img{width:100%;height:100%;object-fit:cover;display:block}.j-avatar.mj{background:var(--accent);color:#fff}.j-corps{min-width:0}.j-texte{white-space:pre-wrap;overflow-wrap:anywhere}.journal-vider{margin-left:auto;font:600 11px system-ui;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}.journal-vider:hover{color:var(--ink);border-color:var(--ink)}.journal-session+.journal-vider{margin-left:6px}.journal-title:has(.journal-session:not([hidden])){flex-wrap:wrap;white-space:nowrap;row-gap:6px}.journal-title .journal-vider{white-space:nowrap;flex:none}.journal-title .journal-session{letter-spacing:.5px}.journal-chat{display:flex;gap:6px;margin-top:8px;flex:none}.journal-chat input{flex:1;min-width:0;font:14px system-ui;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}.journal-chat button{flex:none;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--accent);cursor:pointer;font-size:14px}/* Un cartouche léger, de la couleur de l'action : bleu pour un coup, violet pour un talent, une analyse ou un orbe, vert pour un soin, rouge pour une perte, ambre pour un état, or pour une révélation, brun pour la carte. */.j-entry.ton{--ton:#3f7bc0;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);background:color-mix(in srgb,var(--ton) 7%,transparent);border-radius:7px;padding:3px 8px;margin:2px 0}.j-entry.ton-attaque{--ton:#3f7bc0}.j-entry.ton-talent{--ton:#8a63c9}.j-entry.ton-competence{--ton:#2f7d45}.j-entry.ton-soin{--ton:#2f8a63}.j-entry.ton-degats{--ton:#b8483a}.j-entry.ton-etat{--ton:#a2691f}.j-entry.ton-reveal{--ton:#9d7b1e}.j-entry.ton-carte{--ton:#8a6d3b}.ton-butin{--ton:#a8832c}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:var(--ink)}.j-num.j-perte{color:#b4553a}.j-num.j-tresor{color:#9d7b1e}.j-num.j-pv{color:#3d7f4b}.j-num.j-ok{color:#2e8b3e}.j-num.j-ko{color:#b8402d}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-de.barre{opacity:.35;filter:grayscale(1);box-shadow:none}.j-de.relance{margin-left:8px}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
 /* Le socle qui arrive du réseau glisse jusqu'à sa place. */.token.glisse{transition:left .18s linear,top .18s linear}/* v0.951 : le pointeur du Bond Féroce, vert où il retombe, rouge barré où il ne peut pas. */.bond-visee{position:absolute;z-index:7;transform:translate(-50%,-50%);border-radius:50%;border:3px dashed #2e9b5f;background:rgba(46,155,95,.25);pointer-events:none;display:grid;place-items:center;font:bold 28px system-ui;color:#c0392b}.bond-visee.non{border-color:#c0392b;background:rgba(192,57,43,.22)}.bond-visee[hidden]{display:none}/* L'orbe en vol : une bille lumineuse de la couleur de ses dés. */.orbe-vol{position:absolute;will-change:transform,opacity;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}/* L'orbe de feu : un cœur blanc, une écorce d'ambre et une flamme qui bat autour. Seuls
-   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.982"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
-<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.982</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
+   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.983"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
+<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.983</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles, états et analyses remis à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><div class="hp-buttons" id="hp-buttons"></div><button type="button" id="sortir-combat" class="sortir-combat" hidden></button></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎</button><button class="icon-btn toggle-portees" id="fouilles-vue">🔍</button><button class="icon-btn toggle-portees" id="distances-vue">📏</button><button class="icon-btn toggle-portees" id="coffres-bulles" hidden>🧰</button><button class="icon-btn toggle-portees" id="redim-panneaux" type="button" title="Redimensionner les panneaux" aria-label="Redimensionner les panneaux" aria-pressed="false">⇔</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset" title="Ajuster la carte au cadre">Ajuster</button><button id="zoom-centre" title="Centrer sur le token sélectionné" aria-label="Centrer sur le token sélectionné">Centrer</button><button id="zoom-zone" title="Cadrer la zone du token sélectionné" aria-label="Cadrer la zone du token sélectionné">Zone</button></div></div><div class="mapbar-h2" hidden><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><svg id="map-coffres" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker><marker id="shot-mvt" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#cf9152"/></marker></defs><path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div><div id="barre-mouvement" hidden aria-hidden="true"></div></div></section>
@@ -146,8 +146,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><span class="avatar sheet-logo" id="sheet-logo" hidden></span><h1 id="name"></h1><span class="sheet-class" id="kind"></span><button type="button" class="sheet-class" id="pnj-camp" hidden></button></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="comp-ronds" id="skills" hidden></div><details class="bloc-replie" id="bloc-talents" open><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div><div class="divider" hidden></div></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat<button type="button" id="journal-session" class="journal-vider journal-session" hidden title="Nouvelle session : le journal repart de zéro, ici et chez les joueurs, et rien d’avant ne revient au chargement">Nouvelle session</button><button type="button" id="journal-vider" class="journal-vider" hidden title="Vider le journal, ici et chez les joueurs de la table">Vider</button></h2><ol class="journal" id="journal" aria-live="polite"></ol><form id="journal-chat" class="journal-chat" autocomplete="off"><input id="journal-texte" maxlength="300" placeholder="Dire quelque chose…" aria-label="Écrire au journal"><button type="submit" title="Envoyer">➤</button></form></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.982"></script>
-<script src="./combat.js?v=0.982"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.983"></script>
+<script src="./combat.js?v=0.983"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -321,7 +321,7 @@ function contagions(){const size=mapSize();if(!size.width)return;const murs=wall
   let cibles=vue?adv:adv.filter(o=>inContact(c,o,size,tokenOf(c),tokenOf(o)));
   if(!vue&&!tous)cibles=cibles.sort((x,y)=>Math.hypot(x.x-c.x,x.y-c.y)-Math.hypot(y.x-c.x,y.y-c.y)).slice(0,1);
   const touches=[];cibles.forEach(o=>{if(infligeEtat(o,e)===true){touches.push(nomNum(o));floatNumber(o,'✦ '+e,'perte')}});
-  if(touches.length)log(nomNum(c)+' · Contagion : '+e+' sur '+touches.join(', ')+'.',{ton:'talent'})})}
+  if(touches.length)log(nomNum(c)+' · Contagion : '+phraseJournal(t.talent,'contagion','touche',{etat:e,cibles:touches.join(', ')}),{ton:'talent'})})}
 /* Le feu brûle au passage du tour, une fois par combattant qui le porte. */
 function burnAll(){const brules=actors.filter(o=>alive(o)&&hasState(o,'Feu'));
  brules.forEach(o=>{const crans=compteEtat(o,'Feu');
@@ -1265,7 +1265,11 @@ function log(text,meta){const j=$('journal');separateurTour(j);
  if(fondu&&fondu.reste===null){li.style.display='none';li.classList.add('j-fondu')}else if(fondu)text=fondu.reste;
  const infos=infosJournal(text),tete=infos.shift()||'';
  const m=meta&&meta.ton==='talent'&&typeof logoTalent==='function'?/^(.*?) · ([^:]+?) : ([\s\S]*)$/.exec(tete):null,t=m?talentDuNom(m[2]):null,im=t?logoTalent(t,'journal'):null;
- if(im){decorate(li,m[1]+' · ');im.title=m[2];li.append(im);bulleTalentJournal(im,t&&t.id);decorate(li,' : '+m[3])}
+ if(im){decorate(li,m[1]+' · ');im.title=m[2];li.append(im);bulleTalentJournal(im,t&&t.id);
+  // v0.983 : une phrase à codes, écrite par le MJ, se lit comme dans les bulles : icônes, couleurs, calculs.
+  if(/[{\[]/.test(m[3])&&typeof texteEnrichi==='function'){decorate(li,' : ');li.append(texteEnrichi(document.createElement('span'),m[3],null,actors.find(o=>o&&nomNum(o)===m[1])||null))}
+  else decorate(li,' : '+m[3])}
+ else if(meta&&meta.ton==='talent'&&/[{\[]/.test(tete)&&typeof texteEnrichi==='function')li.append(texteEnrichi(document.createElement('span'),tete,null,null));
  else decorate(li,tete);
  infos.forEach(x=>{li.append(document.createElement('br'));decorate(li,x)});
  if(meta&&meta.dice){const d=document.createElement('span');d.className='j-dice';d.textContent=' 🎲';li.append(d)}
@@ -1980,7 +1984,7 @@ function quitteInsaisissable(a,avant){const c=talentsCodes(a),poison=c.find(x=>x
   if(b>0){const {blinde}=encaisse(e,b,a);mot+=blinde?' Blindage':' −'+b}
   let k=0;if(e.hp>0)for(let i=0;i<n;i++)if(infligeEtat(e,'Poison')===true)k++;if(k){mot+=' · Poison'+(k>1?' '+k:'');if(!b)floatNumber(e,'✦ Poison'+(k>1?' '+k:''),'perte')}
   if(e.hp===0)mot+=' 💀';return mot});
- log(nomNum(a)+' · Insaisissable : '+dits.join(', ')+'.',{ton:'talent'})}
+ log(nomNum(a)+' · Insaisissable : '+phraseJournal(talentDe(a,'insaisissable'),'insaisissable','quitte',{details:dits.join(', ')}),{ton:'talent'})}
 /* Tirer ou lancer un sort au contact d'un adversaire : chacun de ceux qui touchent le
    tireur en profite pour frapper — sauf ceux que le tir vient de tuer ou d'entraver, car
    les dégâts du tir tombent d'abord. Insaisissable n'y fait rien : ce n'est pas un
@@ -2127,8 +2131,8 @@ function frappeOmbrelame(a,p,frappes){const degats=degatsOmbrelame(a,p),etats=et
  const fatale=talentsCodes(a).find(t=>t.code.cle==='lameventfatale');
  if(fatale&&tues&&enCombat()&&a.coupureFatale!==round){a.coupureFatale=round;
   a.mvtBonus=Math.min(9,(Math.trunc(Number(a.mvtBonus))||0)+1);floatNumber(a,'+1 PM','gain');if(voletOuvert(fatale,'pa'))gagnePA(a);
-  apres+=' Coupure fatale : '+nomNum(a)+' gagne '+(voletOuvert(fatale,'pa')?'1 PA et 1 PM':'1 PM')+'.'}
- return 'Coupure : '+nomNum(a)+' touche '+dits.join(', ')+'.'+apres}
+  apres+=' Coupure fatale : '+phraseJournal(fatale.talent,'lameventfatale',voletOuvert(fatale,'pa')?'papm':'pm',{lanceur:nomNum(a)})}
+ return 'Coupure : '+phraseJournal(talentDe(a,'lamevent'),'lamevent','touche',{lanceur:nomNum(a),details:dits.join(', ')})+apres}
 /* Orbes mystiques — « durant votre activation, vous lancez X orbes qui infligent Y
    dégâts ». Gratuits : ni Action ni Mouvement n'y passent, seul le compte du tour, remis
    à zéro avec les activations. L'orbe part sur la cible désignée si elle est en vue, sinon
@@ -2205,7 +2209,7 @@ function eruption(a,b,e){const cibles=camaradesAuContact(b);if(!cibles.length)re
  const dits=cibles.map(o=>{let d=nomNum(o);if(total)d+=' '+subitDegatsEtat(o,e,total).dit;
   const issue=infligeEtat(o,e);if(issue===true){d+=' + '+e;if(!total)floatNumber(o,'✦ '+e,'perte')}else if(issue==='onde')d+=' (Onde consumée)';
   return d+(o.hp===0?' 💀':'')});
- log(nomNum(a)+' · Éruption : '+nomNum(b)+' éclate'+(j?' ('+ditLesJets('noir',j)+(total>j.total?' × 2':'')+')':'')+' — '+dits.join(', ')+'.',{ton:'talent',dice:!!j})}
+ log(nomNum(a)+' · Éruption : '+phraseJournal(talentDe(a,'eruption'),'eruption','eclate',{mort:nomNum(b),jets:j?' ('+ditLesJets('noir',j)+(total>j.total?' × 2':'')+')':'',details:dits.join(', ')}),{ton:'talent',dice:!!j})}
 /* Qui vient de tomber : relevé à chaque rendu, chez le MJ (ou seul à la table). Un mort qui
    porte l'état d'une Éruption adverse éclate — une fois ; le contrecoup peut en faire tomber
    d'autres, qui éclatent à leur tour au rendu suivant. Les morts déjà là au chargement ne comptent pas. */
@@ -2230,12 +2234,12 @@ function implosion(a){const c=talentsCodes(a);if(!porteEffet(c,'implosion'))retu
   if(porteEffet(c,'implosionmouvement')){const m0=pointsUses(a,'mouvement');rendPoint(a,'mouvement');if(pointsUses(a,'mouvement')<m0){gains.push('1 point de Mouvement');flotte.push('+1 Mouvement')}}
   if(porteEffet(c,'implosionorbe')&&orbesLances(a)>0){a.orbes=orbesLances(a)-1;gains.push('1 orbe');flotte.push('+1 Orbe')}
   if(!gains.length)return;
-  floatNumber(a,flotte.join(' '),'gain');log(nomNum(a)+' · Implosion : le critique rend '+gains.join(', ')+'.',{ton:'talent'});render();scheduleSave()},0)}
+  floatNumber(a,flotte.join(' '),'gain');log(nomNum(a)+' · Implosion : '+phraseJournal(talentDe(a,'implosion'),'implosion','rend',{gains:gains.join(', ')}),{ton:'talent'});render();scheduleSave()},0)}
 /* Un critique d'orbe : avec ses améliorations, il rend un orbe, ou tous ceux du tour. */
 function orbesDuCritique(a){const c=talentsCodes(a),tous=porteEffet(c,'orbescrittous'),un=porteEffet(c,'orbescritun');
  if((!tous&&!un)||!orbesLances(a))return;
  setTimeout(()=>{const n=orbesLances(a);if(!n)return;a.orbes=tous?0:n-1;const dit=tous?'tous ses orbes':'un orbe';
-  floatNumber(a,tous?'Orbes rendus':'+1 Orbe','gain');log(nomNum(a)+' · Critique : '+nomNum(a)+' récupère '+dit+'.',{ton:'talent'});render();scheduleSave()},0)}
+  floatNumber(a,tous?'Orbes rendus':'+1 Orbe','gain');log(nomNum(a)+' · Critique : '+phraseJournal(talentDe(a,tous?'orbescrittous':'orbescritun'),tous?'orbescrittous':'orbescritun','recupere',{lanceur:nomNum(a)}),{ton:'talent'});render();scheduleSave()},0)}
 /* Déluge : tous les orbes qu'il reste ce tour partent ensemble sur un même adversaire — celui que
    vise le porteur, sinon le premier en vue. C'est une action, quand les orbes un à un sont gratuits. */
 function deluge(a,p,talent){const codes=talentsCodes(a),orbesT=codes.find(x=>x.code.cle==='orbes');
@@ -2266,7 +2270,7 @@ function siphon(a,crans){const c=talentsCodes(a),t=c.find(x=>x.code.cle==='sipho
  const rendus=avant-a.orbes,dit=[];if(rendus){floatNumber(a,'+'+rendus+' Orbe'+(rendus>1?'s':''),'gain');dit.push(rendus+' orbe'+(rendus>1?'s':''))}
  if(soin&&a.hp<a.max){const jets=Array.from({length:Math.max(1,Math.trunc(soin.params&&soin.params.des)||1)},()=>d6()),gagne=applyHeal(a,jets.reduce((s,v)=>s+v,0));
   if(gagne){rollOnBoard(jets.map(v=>[v,4]),a,a);floatNumber(a,'+'+gagne,'gain');dit.push('+'+gagne+' PV')}}
- if(dit.length)log(nomNum(a)+' · '+(t.talent.name||'Siphon')+' : '+dit.join(', ')+'.',{ton:'soin'})}
+ if(dit.length)log(nomNum(a)+' · '+(t.talent.name||'Siphon')+' : '+phraseJournal(t.talent,'siphon','rend',{details:dit.join(', ')}),{ton:'soin'})}
 function rebondsDe(a){const c=talentsCodes(a);if(!porteEffet(c,'ricochet'))return 0;
  return 1+c.filter(x=>x.code.cle==='ricochetplus').reduce((s,x)=>s+Math.max(1,Math.trunc(x.params&&x.params.fois)||1),0)}
 function proiesRicochet(a,b,deja,k){const size=mapSize(),murs=walls();
@@ -2293,7 +2297,7 @@ function orbe(a,p,talent,opts={}){const allie=opts.cible!==undefined?null:allieP
   const duree=volOrbe(a,b,des.couleur,feu);
   if(typeof diffuserEffet==='function')diffuserEffet('orbe',a,b,des.couleur+'|'+feu);
   const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');
-   log(nomNum(a)+' · Ignition : '+nomNum(b)+' est chargé — sa prochaine attaque au contact inflige '+feu+'.',{ton:'talent'});
+   log(nomNum(a)+' · Ignition : '+phraseJournal(talentDe(a,'ignition'),'ignition','charge',{cible:nomNum(b),etat:feu}),{ton:'talent'});
    render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   if(duree>0)setTimeout(poser,duree);else poser();
   return ''}
@@ -2454,6 +2458,91 @@ function logoDuCoup(a){
  // v0.867 : une Invention frappe : c'est elle, en pièce, qui paraît au journal — pas le logo du talent.
  if(activeAttack(a).invention){const o=(a.weapons||[]).map(id=>items().find(x=>x&&x.id===id)).find(w=>w&&w.invention);if(o)return 'objet:'+o.id}
  const arme=(activeAttack(a).logos||[])[0]||'';const t=talentDuCoup;if(!t)return arme;return (typeof logoRemplace==='function'&&logoRemplace(a,t))||t.logo||arme}
+/* v0.983 — Les phrases que les talents écrivent au journal de combat. Chaque mécanique déclare les siennes : une clé, son nom
+   dans l'éditeur, son texte d'origine. Le MJ réécrit chacune dans l'éditeur du talent (talent.journal) ; une phrase laissée vide
+   garde son texte d'origine. Les variables entre accolades, {cible}, {n}…, prennent leur valeur ; les autres codes, {PA},
+   {Au sol}, {3×Niveau}…, se lisent au journal comme dans les bulles. */
+const JOURNAL_TALENTS={
+ acharnement:[['debout','Reste debout','reste debout à 1 PV.']],
+ adrenaline:[['prise','Adrénaline','+1 point de Mouvement, +{armure} Armure.']],
+ agrippe:[['agrippe','Agrippe','{lanceur} agrippe {cible} : Au sol.']],
+ ancresol:[['recule','Ne recule pas','ne recule pas.'],['debout','Reste debout','reste debout.']],
+ ascension:[['saute','Saut','saute sur {metres} m.']],
+ attaqueetat:[['relance','Relance : déjà l’état','{lanceur} a déjà {etat} et gagne {n} PA.'],['tombee','Pas d’état : la cible est tombée','la cible est tombée, pas de {etat}.'],['tient','Pas d’état : la cible tient','la cible tient encore, pas de {etat}.'],['gagnetuee','Cible tuée, état gagné','la cible est tuée, {lanceur} gagne {etat}.'],['gagnesurvit','Cible debout, état gagné','la cible n’est pas tuée, {lanceur} gagne {etat}.'],['gagne','Automatique, état gagné','{lanceur} gagne {etat}.'],['ondetuee','Cible tuée, l’Onde absorbe','la cible est tuée, l’Onde absorbe {etat}.'],['ondesurvit','Cible debout, l’Onde absorbe','la cible n’est pas tuée, l’Onde absorbe {etat}.'],['onde','Automatique, l’Onde absorbe','l’Onde absorbe {etat}.'],['dejatuee','Cible tuée, état déjà porté','la cible est tuée, {etat} déjà porté.'],['dejasurvit','Cible debout, état déjà porté','la cible n’est pas tuée, {etat} déjà porté.'],['deja','Automatique, état déjà porté','{etat} déjà porté.'],['autoonde','Automatique, palier 2 : Onde','{lanceur} gagne Onde.']],
+ avaler:[['avale','Avale','{lanceur} avale à moitié {cible} : Au sol, Corruption +2.']],
+ bondferoce:[['bondit','Bond','bondit de {metres} m.'],['surplace','Bond sur place','bondit.']],
+ bondissement:[['rejoint','Rejoint l’adversaire','{lanceur} rejoint {cible} au contact, sans dépenser de Mouvement.'],['dejala','Déjà au contact','{lanceur} est déjà au contact de {cible}.']],
+ bouffeevapeur:[['brulant','Brûlant','{details}.'],['personne','Brûlant, personne au contact','aucun adversaire au contact.'],['fumeevide','Fumée, personne caché','un nuage de fumée.'],['fumee','Fumée, un caché','un nuage de fumée ; {cibles} est caché.'],['fumees','Fumée, plusieurs cachés','un nuage de fumée ; {cibles} sont cachés.']],
+ boutoir:[['personne','Personne repoussé','personne n’est repoussé.'],['repousse','Un adversaire repoussé','{cibles} repoussé hors de la zone de contact.'],['repousses','Plusieurs repoussés','{cibles} repoussés hors de la zone de contact.'],['loin','Un repoussé loin','{cibles} repoussé à deux fois la zone de contact.'],['loins','Plusieurs repoussés loin','{cibles} repoussés à deux fois la zone de contact.']],
+ charge:[['charge','Charge','charge {cible} sur {metres} m.'],['chargeelan','Charge avec élan','charge {cible} sur {metres} m, +{elan} aux dégâts.'],['contact','Déjà au contact','déjà au contact de {cible}.'],['contactelan','Déjà au contact, avec élan','déjà au contact de {cible}, +{elan} aux dégâts.'],['regain','Regain : 1 PM','{lanceur} gagne 1 point de Mouvement.'],['repousse','Cible repoussée','{cible} est repoussé hors de la zone de contact.'],['repoussedist','Cible repoussée de la distance','{cible} est repoussé de {metres} m.']],
+ chargesanglier:[['charge','Charge','{lanceur} charge {cible} : Au sol.']],
+ clemolette:[['pleine','Cellule déjà pleine','la Cellule est déjà pleine.'],['sanscellule','Aucune Cellule','aucune Cellule à recharger.'],['repare','Invention réparée','{objet} réparés.']],
+ contagion:[['touche','Adversaires touchés','{etat} sur {cibles}.']],
+ coursemortelle:[['tient','Cible debout','la cible tient encore.'],['seul','Aucun autre adversaire','la cible est tuée, aucun autre adversaire en vue.'],['rejoint','Rejoint l’adversaire','{lanceur} rejoint {cible} au contact, sans dépenser de Mouvement.'],['dejala','Déjà au contact','{lanceur} est déjà au contact de {cible}.']],
+ deguisement:[['pris','Déguisement pris',''],['leve','Apparence reprise','{lanceur} reprend son apparence.']],
+ devoreur:[['devore','Cadavre dévoré','dévore {cible}, +{soin} PV ({de1} + {de2}), +1 dé rouge à sa prochaine Attaque.']],
+ eclatvivant:[['allume','Lumière allumée','une lumière vive l’entoure.'],['eteint','Lumière éteinte','sa lumière s’éteint.']],
+ enduranceinattendue:[['moitie','Dégâts divisés','{degats} dégâts au lieu de {avant}.']],
+ enlacer:[['enlace','Enlace','{lanceur} enlace {cible} : il ne peut plus s’éloigner, Nécrose +1.']],
+ enracinee:[['enracine','S’enracine','{lanceur} s’enracine : les ronces envahissent la salle.']],
+ eruption:[['eclate','Le mort éclate','{mort} éclate{jets} — {details}.']],
+ experiencesinterdites:[['serum','Sérum préparé','prépare un Sérum instable.']],
+ formegeant:[['prise','Forme prise','taille G, +3 m, +1 dé rouge au contact.']],
+ gageur:[['coup','Le coup','{cible} −{degats}{mort}{gage}{apparence}.'],['gage','Gage prélevé',', gage prélevé'],['apparence','Apparence copiée',', apparence copiée']],
+ gantelets:[['fabrique','Fabriqués et équipés','fabrique et équipe {objets}.'],['incident','Incident','Incident, {lanceur} subit Foudre et {objets} sont hors service.']],
+ grenier:[['phase2','Phase 2','{lanceur} passe en phase 2.']],
+ hurlement:[['personne','Personne à portée','aucun adversaire à portée.'],['resiste','Un adversaire résiste','{cible} résiste'],['recule','Un adversaire recule','{cible} recule'],['reculeaffaibli','Recule et Affaibli','{cible} recule + Affaibli'],['bilan','Ligne complète','{details}.']],
+ ignition:[['charge','Allié chargé','{cible} est chargé — sa prochaine attaque au contact inflige {etat}.']],
+ illusionniste:[['combat','En combat','devient Invisible, ses PA et PM restants sont perdus.'],['exploration','Hors combat','devient Invisible.']],
+ implosion:[['rend','Points rendus','le critique rend {gains}.']],
+ impulsion:[['un','Un gagnant','{gagnants} gagne 1 PA.'],['plusieurs','Plusieurs gagnants','{gagnants} gagnent 1 PA.']],
+ ingenieux:[['pret','Prêt','+1 dé noir à la prochaine Attaque ou au prochain test.']],
+ insaisisombre:[['gagne','États gagnés','{etats}.']],
+ insaisissable:[['quitte','Adversaires quittés','{details}.']],
+ intervention:[['rejoint','Rejoint l’allié','rejoint {cible}.']],
+ invocation:[['invoque','Invocation','{lanceur} invoque {cible}.']],
+ lameempoisonnee:[['propage','Poison propagé','{details}.']],
+ lamevent:[['touche','Adversaires touchés','{lanceur} touche {details}.']],
+ lameventfatale:[['pm','Gain : 1 PM','{lanceur} gagne 1 PM.'],['papm','Gain : 1 PA et 1 PM','{lanceur} gagne 1 PA et 1 PM.']],
+ larcin:[['vole','Objet dérobé','test de Ruse ({des}), {reussites} — {lanceur} dérobe {butin} à {cible}.'],['rien','Rien à dérober','test de Ruse ({des}), {reussites} — rien à dérober à {cible}.']],
+ maitrisetellurique:[['prete','Prête','+1 dé Mystique à la prochaine Attaque ou au prochain orbe.']],
+ malefice:[['maudit','Adversaire maudit','{cible} est maudit, {lanceur} −{degats}{mort}.']],
+ mimetisme:[['copie','Apparence copiée','copie l’apparence de {cible}.']],
+ morsure:[['soin','Soin','{lanceur} +{soin} PV.']],
+ murelem:[['pose','Mur dressé','{n} orbes{details}.'],['traverse','Un adversaire traverse le mur','{details}.']],
+ orbescrittous:[['recupere','Orbes récupérés','{lanceur} récupère tous ses orbes.']],
+ orbescritun:[['recupere','Orbe récupéré','{lanceur} récupère un orbe.']],
+ orbestatique:[['pose','Orbe posé','{lanceur} pose un {talent} de {etat}.'],['remplace','Orbe posé, l’ancien se dissipe','{lanceur} pose un {talent} de {etat}, et le précédent se dissipe.']],
+ orbestatiquelance:[['un','L’orbe lance un orbe','{orbe} lance un orbe.'],['plusieurs','L’orbe lance plusieurs orbes','{orbe} lance {n} orbes.']],
+ orbestatiquerampant:[['rampe','L’orbe rampe','{orbe} de {lanceur} rampe vers {cible}.'],['doublon','Doublon laissé','{orbe} laisse un doublon à sa place d’avant.']],
+ passagetellurique:[['rate','Test raté','réapparaît au contact de {cible} ; {reussites} sur 2, pas de soin.'],['soin','Test réussi, soin','{reussites}, réapparaît au contact de {cible}, +{soin} PV (1d6 : {de} + Vie {vie}).']],
+ peaucristal:[['armure','Armure gagnée','+{armure} Armure.'],['aveugle','Armure, et l’auteur aveuglé','+{armure} Armure, {cible} Aveugle.']],
+ pique:[['fond','Fond sur le soigneur','{lanceur} fond sur {cible}, qui vient de soigner.']],
+ poussee:[['personne','Personne repoussé','personne n’est repoussé.'],['repousse','Un adversaire repoussé','{cibles} repoussé hors de la zone de contact.'],['repousses','Plusieurs repoussés','{cibles} repoussés hors de la zone de contact.'],['loin','Un repoussé loin','{cibles} repoussé à deux fois la zone de contact.'],['loins','Plusieurs repoussés loin','{cibles} repoussés à deux fois la zone de contact.']],
+ predateurombres:[['bonus','Dégâts en plus','+{total} ({details}).']],
+ provocation:[['avance','Le provoqué s’avance','{lanceur} provoque {cible} : {cible} s’avance jusqu’à lui.'],['contact','Le provoqué est déjà au contact','{lanceur} provoque {cible} : {cible} est déjà au contact.'],['sol','Le provoqué tombe','{cible} est au sol.']],
+ racinedevie:[['tient','Refuse de tomber','La Graine pulse : {cible} refuse de tomber.']],
+ rancune:[['un','Première rancune','+{n} dégât contre {cible}.'],['plusieurs','Rancune cumulée','+{n} dégâts contre {cible}.']],
+ rebond:[['tuee','Cible tuée','la cible est tuée, {lanceur} gagne 1 point de Mouvement.'],['tient','Cible debout','la cible tient encore.']],
+ remodelage:[['forme','Forme prise','forme {forme}.']],
+ reprimande:[['frappe','Riposte','{details}.']],
+ revanche:[['rejoint','Rejoint l’adversaire','{lanceur} rejoint {cible} au contact, sans dépenser de Mouvement.'],['dejala','Déjà au contact','{lanceur} est déjà au contact de {cible}.']],
+ sangfeerique:[['ignore','État ignoré','ignore {etat}.']],
+ secondsouffle:[['soin','Soin','+{soin} PV (1d6 : {de}).']],
+ semis:[['phase2','Phase 2','{lanceur} passe en phase 2.'],['seme','Sème une créature','{lanceur} sème : {n} {nom} sort du roncier.'],['semeplus','Sème plusieurs créatures','{lanceur} sème : {n} {nom}s sortent du roncier.']],
+ siphon:[['rend','Orbes et soin rendus','{details}.']],
+ souffledrakeide:[['touche','Combattants touchés','{details}.'],['personne','Personne dans le souffle','personne dans le souffle.']],
+ toucheatout:[['choix','Compétence choisie','+1 en {competence}.']],
+ traction:[['rejoint','Rejoint l’adversaire','{lanceur} rejoint {cible} au contact, sans dépenser de Mouvement.'],['dejala','Déjà au contact','{lanceur} est déjà au contact de {cible}.']],
+ traitfielon:[['touche','Combattants touchés','{details}.']],
+ transe:[['soin','Soin au repos court','+{soin} PV (1d6 : {de}).']],
+ traque:[['retourne','Se retourne contre sa cible','{lanceur} se retourne contre {cible}.']],
+ voldraconique:[['vole','Vol','vole sur {metres} m.'],['voleetat','Vol, état posé','vole sur {metres} m ; {etat} : {cibles}.'],['surplace','Vol sur place','vole.'],['surplaceetat','Vol sur place, état posé','vole ; {etat} : {cibles}.']]};
+// Le talent d'une mécanique que porte un combattant, pour ses phrases.
+const talentDe=(a,code)=>{const x=a&&typeof talentsCodes==='function'?talentsCodes(a).find(y=>y.code.cle===code):null;return x?x.talent:null};
+function phraseJournal(t,code,cle,vars){const e=(JOURNAL_TALENTS[code]||[]).find(x=>x[0]===cle);
+ const perso=t&&t.journal&&typeof t.journal[cle]==='string'?t.journal[cle].trim():'';
+ return (perso||(e?e[2]:'')).replace(/\{(\w+)\}/g,(m,k)=>vars&&vars[k]!==undefined&&vars[k]!==null?String(vars[k]):m)}
 function avecTalent(ctx,fn){const avant=talentEnCours;talentEnCours=ctx;try{return fn()}finally{talentEnCours=avant}}
 /* Un talent ne se joue qu'une fois par tour en combat, même gratuit ; les Orbes mystiques, autant qu'il reste
    d'orbes. Le tour qui passe, le combat qui commence ou recommence remettent la liste à zéro. */
@@ -2577,7 +2666,7 @@ function invocation(a,p,talent){const m=(typeof catalog!=='undefined'&&catalog.m
  viserCible('✦ Clique sur la carte pour poser '+m.name,(vise,q)=>{if(ctx)payeTalent(ctx);
   const c=fromMonster(m);c.x=Math.max(4,Math.min(96,q.x));c.y=Math.max(5,Math.min(95,q.y));normalizeActor(c);
   c.vu=true;c.numero=prochainNumero(c);actors.push(c);settleActor(c);
-  log(nomNum(a)+' invoque '+nomNum(c)+'.',{ton:'talent'});
+  log(phraseJournal(ctx&&ctx.talent,'invocation','invoque',{lanceur:nomNum(a),cible:nomNum(c)}),{ton:'talent'});
   render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))},'Invocation annulée.');
  return null}
 /* Mur d'élément — le porteur dépense ses orbes et pose les points du mur, un clic après l'autre ; le dernier
@@ -2653,7 +2742,7 @@ function dresseMur(a,e,pts,v,talent,ctx){if(!alive(a)||orbesLibres(a)<v.orbes)re
  // Ceux qu'il touche déjà, ou que la zone enferme, le subissent aussitôt.
  const size=mapSize(),pp=([x,y])=>[x/100*size.width,y/100*size.height],forme={pts:m.pts.map(q=>pp([q.x,q.y])),zone:m.zone};
  const dits=size.width?actors.filter(o=>o!==a&&alive(o)&&!o.horsCarte&&hostiles(o,a)&&toucheMur(forme,pp([o.x,o.y]),tokenOf(o)/2)).map(o=>frappeMur(a,m,o)).filter(Boolean):[];
- log(nomNum(a)+' · '+(talent&&talent.name||'Mur')+' : '+v.orbes+' orbes'+(dits.length?' — '+dits.join(', '):'')+'.',{ton:'talent',dice:dits.length>0&&porteEffet(talentsCodes(a),'murdegats')});
+ log(nomNum(a)+' · '+(talent&&talent.name||'Mur')+' : '+phraseJournal(talent,'murelem','pose',{n:v.orbes,details:dits.length?' — '+dits.join(', '):''}),{ton:'talent',dice:dits.length>0&&porteEffet(talentsCodes(a),'murdegats')});
  render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 // Les murs de la carte en cours, chacun avec qui l'a dressé.
 function mursEnJeu(){return actors.flatMap(c=>(Array.isArray(c&&c.mursElem)?c.mursElem:[]).filter(m=>m&&Array.isArray(m.pts)&&m.pts.length>=2
@@ -2678,7 +2767,7 @@ function passeMurs(o,chemin){noteTrajet(o,chemin);if(!enCombat()||!o||!alive(o)|
  const ch=chemin.filter(Boolean).map(q=>pp([q.x,q.y])),r=tokenOf(o)/2;
  mursEnJeu().forEach(([c,m])=>{if(!alive(o)||!hostiles(o,c))return;
   if(!franchitMur({pts:m.pts.map(q=>pp([q.x,q.y])),zone:m.zone},ch,r))return;
-  const dit=frappeMur(c,m,o);if(dit)log(nomNum(c)+' · '+nomMur(c)+' : '+dit+'.',{ton:'talent',dice:porteEffet(talentsCodes(c),'murdegats')})})}
+  const dit=frappeMur(c,m,o);if(dit)log(nomNum(c)+' · '+nomMur(c)+' : '+phraseJournal(talentDe(c,'murelem'),'murelem','traverse',{details:dit}),{ton:'talent',dice:porteEffet(talentsCodes(c),'murdegats')})})}
 // Les murs se dessinent à la couleur de leur élément ; celui qu'on pose, en pointillé, point après point.
 function dessineMursElem(){const svg=$('murs-elem');if(!svg)return;const NS='http://www.w3.org/2000/svg';
  if(murEnCours&&!placementEnCours)murEnCours=null;
@@ -2722,23 +2811,22 @@ function attaqueEtat(a,p,talent){
   relance=codes.find(t=>t.code.cle==='attaqueetatpa'&&t.params&&t.params.etat===p.etat),dejaLa=hasState(a,p.etat);
  attack({apres:({vises,partis,tues})=>{if(!partis)return;
   if(relance&&dejaLa){const n=voletOuvert(relance,'deux')?2:1;a.paBonus=Math.min(9,(Math.trunc(Number(a.paBonus))||0)+n);floatNumber(a,'+'+n+' PA','gain');
-   log(nomNum(a)+' · '+nom+' : '+nomNum(a)+' a déjà '+p.etat+' et gagne '+n+' PA.',{ton:'talent'})}
+   log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'attaqueetat','relance',{lanceur:nomNum(a),etat:p.etat,n}),{ton:'talent'})}
   const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;
-  if(!gagne&&!auto){log(nomNum(a)+' · '+nom+' : '+(survit?'la cible est tombée':'la cible tient encore')+', pas de '+p.etat+'.',{ton:'talent'});scheduleSave();return}
+  if(!gagne&&!auto){log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'attaqueetat',survit?'tombee':'tient',{etat:p.etat}),{ton:'talent'});scheduleSave();return}
   const issue=infligeEtat(a,p.etat);
   floatNumber(a,issue===true?'+'+p.etat:issue==='onde'?'Onde':p.etat,issue===true?'gain':'nul');
-  log(nomNum(a)+' · '+nom+' : '+(auto?'':(survit?'la cible n’est pas tuée':'la cible est tuée')+', ')
-   +(issue===true?nomNum(a)+' gagne '+p.etat:issue==='onde'?'l’Onde absorbe '+p.etat:p.etat+' déjà porté')+'.',{ton:'talent'});
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'attaqueetat',(issue===true?'gagne':issue==='onde'?'onde':'deja')+(auto?'':survit?'survit':'tuee'),{lanceur:nomNum(a),etat:p.etat}),{ton:'talent'});
   // Automatique, au palier 2 : Onde après l'état, pour qu'elle ne l'absorbe pas.
-  if(auto&&voletOuvert(auto,'onde')&&p.etat!=='Onde'&&infligeEtat(a,'Onde')===true){floatNumber(a,'+Onde','gain');log(nomNum(a)+' · '+nom+' : '+nomNum(a)+' gagne Onde.',{ton:'talent'})}
+  if(auto&&voletOuvert(auto,'onde')&&p.etat!=='Onde'&&infligeEtat(a,'Onde')===true){floatNumber(a,'+Onde','gain');log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'attaqueetat','autoonde',{lanceur:nomNum(a)}),{ton:'talent'})}
   scheduleSave()}});
  return null}
 /* Rebond — une attaque ; la cible tuée, un point de Mouvement en plus, ce tour. */
 function rebond(a,p,talent){const refus=refusAttaque(a);if(refus)return refus;const nom=talent&&talent.name||'Rebond';
  attack({apres:({partis,tues})=>{if(!partis)return;
   if(tues.length){a.mvtBonus=Math.min(9,(Math.trunc(Number(a.mvtBonus))||0)+1);floatNumber(a,'+1 PM','gain');
-   log(nomNum(a)+' · '+nom+' : la cible est tuée, '+nomNum(a)+' gagne 1 point de Mouvement.',{ton:'talent'})}
-  else log(nomNum(a)+' · '+nom+' : la cible tient encore.',{ton:'talent'});
+   log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'rebond','tuee',{lanceur:nomNum(a)}),{ton:'talent'})}
+  else log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'rebond','tient'),{ton:'talent'});
   render();scheduleSave()}});
  return null}
 /* Larcin — une attaque, puis un test de Ruse : ses réussites disent ce que le porteur dérobe à la
@@ -2754,26 +2842,25 @@ function larcin(a,p,talent){const refus=refusAttaque(a);if(refus)return refus;co
   let dit='';
   if(pris==='or'){const q=Math.min(orDe(b),Math.max(1,(p&&p.orQte)|0));ajouteOr(b,-q);ajouteOr(a,q);dit=q+' or'}
   else if(pris){const o=objet(pris);retirerInventaire(b,o);ajouterInventaire(a,o);dit='⟦'+o.id+'⟧'}
-  log(nomNum(a)+' · '+nom+' : test de Ruse ('+score+' dé'+(score>1?'s':'')+'), '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' — '
-   +(pris?nomNum(a)+' dérobe '+dit+' à '+nomNum(b):'rien à dérober à '+nomNum(b))+'.',{dice:true,ton:'talent'});
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'larcin',pris?'vole':'rien',{des:score+' dé'+(score>1?'s':''),reussites:jet.reussites+' réussite'+(jet.reussites>1?'s':''),lanceur:nomNum(a),butin:dit,cible:nomNum(b)}),{dice:true,ton:'talent'});
   if(pris)document.dispatchEvent(new Event('amertume-content-changed'));render();scheduleSave()}});
  return null}
 /* Revanche, Traction — un Mouvement gratuit jusqu'au contact d'un adversaire : celui qui vient de
    faire un échec, ou le tireur qui vient de blesser le porteur. Un mouvement quand même : ceux qu'il
    quitte frappent, et Ombrelame s'arme. */
 function cibleReaction(a,cle){const r=a&&a[cle];if(!r||r.tour!==round||!enCombat())return null;const b=actors.find(x=>x.id===r.de);return b&&alive(b)?b:null}
-function mouvementGratuitVers(a,b,nom){noteContactsDepart(a);const croises=new Set(contactsDe(a)),depart={x:a.x,y:a.y};
- const venu=rapprocher(a,b);if(!venu)return nom+' : '+nomNum(a)+' est déjà au contact de '+nomNum(b)+'.';
+function mouvementGratuitVers(a,b,nom,talent=null,code=''){noteContactsDepart(a);const croises=new Set(contactsDe(a)),depart={x:a.x,y:a.y};
+ const venu=rapprocher(a,b);if(!venu)return nom+' : '+(code?phraseJournal(talent,code,'dejala',{lanceur:nomNum(a),cible:nomNum(b)}):nomNum(a)+' est déjà au contact de '+nomNum(b)+'.');
  ramasseContacts(a,croises,depart,mapSize(),walls());a.lameventPret=round;const piege=piegeApresMouvement(a,depart);compteDistance(a,depart);passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);if(piege)piege();
  setTimeout(()=>{if(typeof updateRing==='function')updateRing();degatsOpportunite(a,[...croises]);render();scheduleSave()},220);
- return nom+' : '+nomNum(a)+' rejoint '+nomNum(b)+' au contact, sans dépenser de Mouvement.'}
-function revanche(a,p,talent){const b=cibleReaction(a,'revanche');if(!b)return 'Revanche : aucun adversaire n’a fait d’échec ce tour.';delete a.revanche;return mouvementGratuitVers(a,b,talent&&talent.name||'Revanche')}
+ return nom+' : '+(code?phraseJournal(talent,code,'rejoint',{lanceur:nomNum(a),cible:nomNum(b)}):nomNum(a)+' rejoint '+nomNum(b)+' au contact, sans dépenser de Mouvement.')}
+function revanche(a,p,talent){const b=cibleReaction(a,'revanche');if(!b)return 'Revanche : aucun adversaire n’a fait d’échec ce tour.';delete a.revanche;return mouvementGratuitVers(a,b,talent&&talent.name||'Revanche',talent,'revanche')}
 // v0.845 : Vengeance ouverte — le « ! » au-dessus du porteur, tant que la riposte est possible.
 function vengeanceOuverte(a){if(!a||!alive(a)||!a.vengeance)return false;const b=cibleReaction(a,'vengeance');return !!b&&contactsDe(a).includes(b)}
 function vengeance(a,p,talent){const nom=talent&&talent.name||'Vengeance',b=cibleReaction(a,'vengeance');if(!b)return nom+' : aucun adversaire au contact ne vous a blessé ce tour.';
  if(!contactsDe(a).includes(b))return nom+' : '+nomNum(b)+' n’est plus au contact.';
  const refus=refusAttaque(a);if(refus)return refus;delete a.vengeance;selected=actors.indexOf(a);attack({vises:[actors.indexOf(b)],sansAction:true});return null}
-function traction(a,p,talent){const b=cibleReaction(a,'traction');if(!b)return 'Traction : aucune attaque à distance subie ce tour.';delete a.traction;return mouvementGratuitVers(a,b,talent&&talent.name||'Traction')}
+function traction(a,p,talent){const b=cibleReaction(a,'traction');if(!b)return 'Traction : aucune attaque à distance subie ce tour.';delete a.traction;return mouvementGratuitVers(a,b,talent&&talent.name||'Traction',talent,'traction')}
 /* Bondissement — visé par une attaque à distance, le porteur rejoint le tireur d'un mouvement gratuit, s'il tient dans sa portée
    de mouvement ; à toute distance avec l'amélioration, et l'autre le fait attaquer à l'arrivée, au contact s'il le peut. */
 function cibleBondissement(a){const b=cibleReaction(a,'bondissement');if(!b)return null;if(porteEffet(talentsCodes(a),'bondissementlibre'))return b;
@@ -2781,7 +2868,7 @@ function cibleBondissement(a){const b=cibleReaction(a,'bondissement');if(!b)retu
  return reste<=distanceMouvement(a,items())+.05?b:null}
 function bondissement(a,p,talent){const nom=talent&&talent.name||'Bondissement',b=cibleBondissement(a);
  if(!b)return cibleReaction(a,'bondissement')?nom+' : le tireur est hors de portée de mouvement.':nom+' : aucune attaque à distance reçue ce tour.';
- delete a.bondissement;const dit=mouvementGratuitVers(a,b,nom);
+ delete a.bondissement;const dit=mouvementGratuitVers(a,b,nom,talent,'bondissement');
  if(porteEffet(talentsCodes(a),'bondissementfrappe'))setTimeout(()=>{if(!alive(a)||!alive(b))return;const k=attaqueContactDe(a),avant=a.activeAttack;
   if(k>=0)a.activeAttack=k;try{coupGratuit(a,b)}finally{a.activeAttack=avant}render();scheduleSave()},320);
  return dit}
@@ -2790,16 +2877,16 @@ function bondissement(a,p,talent){const nom=talent&&talent.name||'Bondissement',
    il lui inflige Coupure à l'arrivée. Ce mouvement-là n'arme pas Coupure : seule l'amélioration l'y donne. */
 function courseMortelle(a,p,talent){const refus=refusAttaque(a);if(refus)return refus;const nom=talent&&talent.name||'Course mortelle';
  attack({apres:({partis,tues})=>{if(!partis)return;
-  if(!tues.length){log(nomNum(a)+' · '+nom+' : la cible tient encore.',{ton:'talent'});render();scheduleSave();return}
+  if(!tues.length){log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'coursemortelle','tient'),{ton:'talent'});render();scheduleSave();return}
   if(!alive(a)||gelImmobile(a)||hasState(a,'Au sol')){render();scheduleSave();return}
   // Le plus proche, quoi qu'il arrive : déjà au contact, le porteur ne bouge pas.
   const cands=vusPourMouvement(a,false).filter(j=>actors[j]);
-  if(!cands.length){log(nomNum(a)+' · '+nom+' : la cible est tuée, aucun autre adversaire en vue.',{ton:'talent'});render();scheduleSave();return}
+  if(!cands.length){log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'coursemortelle','seul'),{ton:'talent'});render();scheduleSave();return}
   const part=b=>courseVers(a,b,nom);
   if(porteEffet(talentsCodes(a),'coursechoix')&&cands.length>1)choisitCourse(a,cands,part);else part(actors[cands[0]])}});
  return null}
 function courseVers(a,b,nom){if(!alive(a)||!b||!alive(b))return;const avant=a.lameventPret,croises=new Set(contactsDe(a));
- const dit=mouvementGratuitVers(a,b,nom);a.lameventPret=avant;log(dit,{ton:'talent'});
+ const dit=mouvementGratuitVers(a,b,nom,talentDe(a,'coursemortelle'),'coursemortelle');a.lameventPret=avant;log(dit,{ton:'talent'});
  const c=talentsCodes(a),t=porteEffet(c,'courseombrelame')?c.find(x=>x.code.cle==='lamevent'):null;
  if(t)setTimeout(()=>{if(!alive(a)||!alive(b))return;
   // Le nouvel adversaire d'abord, puis ceux que la course a aussi rejoints, autant qu'Ombrelame en frappe.
@@ -2831,7 +2918,7 @@ function lameEmpoisonnee(a,p,talent){const refus=refusAttaque(a);if(refus)return
   const dits=touches.map(([o])=>{let k=0,onde=false;for(let i=0;i<n;i++){const issue=infligeEtat(o,'Poison');if(issue===true)k++;else if(issue==='onde')onde=true}
    if(k)floatNumber(o,'✦ Poison'+(k>1?' '+k:''),'perte');
    return nomNum(o)+(k?' subit Poison'+(k>1?' '+k:''):onde?' : Onde consumée':' : sans effet')});
-  log(nomNum(a)+' · '+nom+' : '+dits.join(', ')+'.',{ton:'talent'});render();scheduleSave()}});
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'lameempoisonnee','propage',{details:dits.join(', ')}),{ton:'talent'});render();scheduleSave()}});
  return null}
  /* Impulsion — le porteur qui tue un adversaire gagne 1 PA : la première fois du combat ; avec l'amélioration, la première fois
    de chaque tour, les deux premières au palier 2. L'autre en donne aussi 1 à l'allié au contact le plus proche, à tous au palier 2.
@@ -2844,7 +2931,7 @@ function impulsion(a,b){if(!a||!b||a===b||!enCombat()||!actors.includes(a)||!ali
  if(al&&size.width){const murs=walls(),allies=ordreCibles(actors.map((o,j)=>[o,j]).filter(([o])=>o!==a&&alive(o)&&!o.horsCarte&&!estOrbeStatique(o)&&!hostiles(o,a)
    &&inContact(a,o,size,tokenOf(a),tokenOf(o))&&!wallsBetween(a,o,murs)),a,size);
   (voletOuvert(al,'tous')?allies:allies.slice(0,1)).forEach(([o])=>{gagnePA(o);gagnants.push(o)})}
- log(nomNum(a)+' · Impulsion : '+gagnants.map(nomNum).join(', ')+(gagnants.length>1?' gagnent':' gagne')+' 1 PA.',{ton:'talent'})}
+ log(nomNum(a)+' · Impulsion : '+phraseJournal(talentDe(a,'impulsion'),'impulsion',gagnants.length>1?'plusieurs':'un',{gagnants:gagnants.map(nomNum).join(', ')}),{ton:'talent'})}
 /* Coupure d'Adieu : chaque adversaire dont le porteur quitte la zone de contact reçoit Coupure, réglages et améliorations de son
    talent Coupure compris ; une seule fois par tour, ou à volonté au palier 2. */
 function coupureAdieu(a,avant,c){const ad=c.find(x=>x.code.cle==='insaisisadieu');if(!ad||!alive(a))return;const volonte=voletOuvert(ad,'volonte');
@@ -2861,7 +2948,7 @@ function ombreFuyante(a){if(!a||!alive(a)||!enCombat()||!actors.includes(a)||a.h
  const o=c.find(x=>x.code.cle==='insaisisombre'),size=mapSize();if(!o||!size.width)return;const murs=walls();
  if(actors.some(e=>e!==a&&alive(e)&&!e.horsCarte&&hostiles(e,a)&&(inContact(a,e,size,tokenOf(a),tokenOf(e))||inContact(e,a,size,tokenOf(e),tokenOf(a)))&&!wallsBetween(a,e,murs)))return;
  const gagnes=['Invisible',...(voletOuvert(o,'onde')?['Onde']:[])].filter(e=>!hasState(a,e)&&infligeEtat(a,e)===true);
- if(!gagnes.length)return;gagnes.forEach(e=>floatNumber(a,'✦ '+e,'gain'));log(nomNum(a)+' · Ombre fuyante : '+gagnes.join(' et ')+'.',{ton:'talent'})}
+ if(!gagnes.length)return;gagnes.forEach(e=>floatNumber(a,'✦ '+e,'gain'));log(nomNum(a)+' · Ombre fuyante : '+phraseJournal(o.talent,'insaisisombre','gagne',{etats:gagnes.join(' et ')}),{ton:'talent'})}
 function gagnePA(o){o.paBonus=Math.min(9,(Math.trunc(Number(o.paBonus))||0)+1);floatNumber(o,'+1 PA','gain')}
 /* Découpe — chaque attaque du porteur contre un adversaire, ou chaque dégât qu'il lui inflige avec l'amélioration, ajoute un
    cran contre lui ; chaque cran vaut +1 aux dégâts, +2 puis +3 avec l'autre. Les crans tiennent jusqu'au combat suivant. */
@@ -2962,7 +3049,7 @@ function provocation(a,p,talent){
  // Ses améliorations : le coup qui part ensuite, et la chute du provoqué.
  const codes=talentsCodes(a),frappe=porteEffet(codes,'provocattaque'),renverse=porteEffet(codes,'provocsol');
  const tombe=renverse&&alive(b)&&infligeEtat(b,'Au sol')===true;
- log(nomNum(a)+' provoque '+nomNum(b)+(venu?' : '+nomNum(b)+' s’avance jusqu’à lui.':' : '+nomNum(b)+' est déjà au contact.')+(tombe?' '+nomNum(b)+' est au sol.':''),{ton:'talent'});
+ log(phraseJournal(talent,'provocation',venu?'avance':'contact',{lanceur:nomNum(a),cible:nomNum(b)})+(tombe?' '+phraseJournal(talent,'provocation','sol',{cible:nomNum(b)}):''),{ton:'talent'});
  // Le provoqué n'est pas désigné pour autant : le coup le reçoit, le ciblage reste celui d'avant.
  if(venu){const piege=piegeApresMouvement(b,depart);compteDistance(b,depart);passeMurs(b,[depart,{x:b.x,y:b.y}]);afterMove(b);if(piege)piege()}
  // Sans l'amélioration d'attaque, la Provocation s'arrête là : le mouvement se solde, l'Action se dépense.
@@ -3017,9 +3104,8 @@ function poussee(a,p,talent){
   // Les plus éloignés d'abord : ils libèrent le passage à ceux de devant.
   const qui=[...new Set([...vises,...autour])].filter(j=>actors[j]&&alive(actors[j])&&hostiles(actors[j],a)).sort((i,j)=>dist(j)-dist(i));
   const pousses=qui.map(j=>[actors[j],repousser(actors[j],a,loin)]).filter(([,c])=>c);
-  if(!pousses.length){log(nomNum(a)+' · '+nom+' : personne n’est repoussé.',{ton:'talent'});scheduleSave();return}
-  log(nomNum(a)+' · '+nom+' : '+pousses.map(([b])=>nomNum(b)).join(', ')+(pousses.length>1?' repoussés':' repoussé')
-   +(loin?' à deux fois la zone de contact.':' hors de la zone de contact.'),{ton:'talent'});
+  if(!pousses.length){log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'poussee','personne'),{ton:'talent'});scheduleSave();return}
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'poussee',(loin?'loin':'repousse')+(pousses.length>1?'s':''),{cibles:pousses.map(([b])=>nomNum(b)).join(', ')}),{ton:'talent'});
   // Les dégâts d'opportunité une fois les socles arrivés.
   setTimeout(()=>{if(typeof updateRing==='function')updateRing();
    pousses.forEach(([b,croises])=>degatsOpportunite(b,croises));render();scheduleSave()},220)}});
@@ -3044,8 +3130,8 @@ function boutoir(a,p,talent){const refus=refusAttaque(a);if(refus)return refus;c
   const dist=j=>Math.hypot((actors[j].x-a.x)/100*size.width,(actors[j].y-a.y)/100*size.height);
   const qui=[...new Set([...vises,...autour])].filter(j=>actors[j]&&alive(actors[j])&&hostiles(actors[j],a)).sort((i,j)=>dist(j)-dist(i));
   const pousses=qui.map(j=>{const info={};return [actors[j],repousser(actors[j],a,loin,0,info),info]}).filter(([,x])=>x);
-  if(!pousses.length){log(nomNum(a)+' · '+nom+' : personne n’est repoussé.',{ton:'talent'});scheduleSave();return}
-  log(nomNum(a)+' · '+nom+' : '+pousses.map(([b])=>nomNum(b)).join(', ')+(pousses.length>1?' repoussés':' repoussé')+(loin?' à deux fois la zone de contact.':' hors de la zone de contact.'),{ton:'talent'});
+  if(!pousses.length){log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'boutoir','personne'),{ton:'talent'});scheduleSave();return}
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'boutoir',(loin?'loin':'repousse')+(pousses.length>1?'s':''),{cibles:pousses.map(([b])=>nomNum(b)).join(', ')}),{ton:'talent'});
   // L'impact : l'obstacle heurté rend le bonus de dégâts du porteur ; au palier 2, l'adversaire heurté le subit aussi.
   if(impact){const n=degatsDe(a);if(n>0)pousses.forEach(([b,,info])=>{if(!info.bloque||!alive(b))return;const dits=[];
    const coup=o=>{const {perdu,blinde}=encaisse(o,n,a);dits.push(nomNum(o)+(blinde?' : Blindage consommé':' −'+n)+(o.hp===0?' 💀':''));return perdu};coup(b);
@@ -3086,7 +3172,7 @@ function charge(a,p,talent){const refus=refusCharge(a);if(refus)return refus;con
     distance parcourue » ou l'Impact, venus après Repousse, repoussent donc d'eux-mêmes. */
  const loin=porteEffet(codes,'chargerepoussedist'),impact=porteEffet(codes,'chargeimpact'),repousse=loin||impact||porteEffet(codes,'chargerepousse');
  const elan=parts.length?Math.floor(m*Math.max(...parts)):0;
- log(nomNum(a)+' · '+nom+' : '+(venu?'charge '+nomNum(b)+' sur '+m+' m':'déjà au contact de '+nomNum(b))+(elan?', +'+elan+' aux dégâts':'')+'.',{ton:'talent'});
+ log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'charge',(venu?'charge':'contact')+(elan?'elan':''),{cible:nomNum(b),metres:m,elan}),{ton:'talent'});
  // La cible chargée n'est pas désignée pour autant : l'attaque la reçoit, le ciblage reste celui d'avant.
  setTimeout(()=>{if(typeof updateRing==='function')updateRing();if(venu)degatsOpportunite(a,[...croises]);
   if(!alive(a)||!alive(b)){render();scheduleSave();return}
@@ -3095,9 +3181,9 @@ function charge(a,p,talent){const refus=refusCharge(a);if(refus)return refus;con
    // Regain : la cible tuée rend 1 PM ; au palier 2, chaque Charge le rend.
    const regain=codes.find(t=>t.code.cle==='chargeregain');
    if(partis&&regain&&(voletOuvert(regain,'toujours')||(tues||[]).includes(j))){a.mvtBonus=Math.min(9,(Math.trunc(Number(a.mvtBonus))||0)+1);floatNumber(a,'+1 PM','gain');
-    log(nomNum(a)+' · '+nom+' : '+nomNum(a)+' gagne 1 point de Mouvement.',{ton:'talent'})}
+    log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'charge','regain',{lanceur:nomNum(a)}),{ton:'talent'})}
    if(partis&&repousse&&alive(b)){const info={},c=repousser(b,a,false,loin?m*tokenPx():0,info);
-    if(c)log(nomNum(a)+' · '+nom+' : '+nomNum(b)+' est repoussé'+(loin&&m>0?' de '+m+' m.':' hors de la zone de contact.'),{ton:'talent'});
+    if(c)log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'charge',loin&&m>0?'repoussedist':'repousse',{cible:nomNum(b),metres:m}),{ton:'talent'});
     // Impact : arrêtée par un mur ou un adversaire, la cible subit le double des dégâts d'opportunité du porteur.
     if(impact&&info.bloque&&alive(b)){const n=2*degatsDe(a),{perdu,blinde}=encaisse(b,n,a);
      log(nomNum(a)+' · '+nom+' : '+nomNum(b)+' heurte '+(info.bloque==='mur'?'un mur':nomNum(info.contre))+(blinde?' : Blindage consommé.':' : '+perdu+' dégât'+(perdu>1?'s':'')+'.'),{ton:'degats'})}
@@ -3127,7 +3213,7 @@ function orbeStatique(a,p,talent){const e=String(p&&p.etat||'Feu'),nom=talent&&t
   const avant=actors.filter(o=>estOrbeStatique(o)&&!o.orbeStatique.copie&&o.orbeStatique.de===a.id&&alive(o));
   avant.forEach(o=>{o.hp=0;floatNumber(o,'Dissipé','nul')});
   const o=nouvelOrbeStatique(a,e,pt.x,pt.y,false);actors.push(o);settleActor(o);
-  log(nomNum(a)+' pose un '+nom+' de '+e+(avant.length?', et le précédent se dissipe':'')+'.',{ton:'talent'});
+  log(phraseJournal(talent,'orbestatique',avant.length?'remplace':'pose',{lanceur:nomNum(a),talent:nom,etat:e}),{ton:'talent'});
   render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))},nom+' annulé.');
  vise();return null}
 /* Rampant : l'orbe avance en droite ligne vers « b », de « max » pixels au plus, jusqu'au bord de son contact ; les murs et
@@ -3162,10 +3248,10 @@ async function orbesStatiquesDuTour(){if(orbesStatiquesEnCours||view!=='mj'||!en
    const r=talentsCodes(a).find(x=>x.code.cle==='orbestatiquerampant');if(!r)continue;
    const j=procheDeLOrbe(o,false);if(j===null)continue;const b=actors[j],avant={x:o.x,y:o.y},niveau=Math.max(1,Math.trunc(Number(a.level))||1);
    brilleOrbe(o);if(!rampe(o,b,niveau*tokenPx()))continue;
-   log(nomNum(o)+' de '+nomNum(a)+' rampe vers '+nomNum(b)+'.',{ton:'talent'});
+   log(phraseJournal(r.talent,'orbestatiquerampant','rampe',{orbe:nomNum(o),lanceur:nomNum(a),cible:nomNum(b)}),{ton:'talent'});
    await pauseOrbe(1150);if(fini())return;
    if(voletOuvert(r,'doublon')){const c=nouvelOrbeStatique(a,o.orbeStatique.etat,avant.x,avant.y,true);actors.push(c);settleActor(c);
-    log(nomNum(o)+' laisse un doublon à sa place d’avant.',{ton:'talent'});montre();await pauseOrbe(600)}
+    log(phraseJournal(r.talent,'orbestatiquerampant','doublon',{orbe:nomNum(o)}),{ton:'talent'});montre();await pauseOrbe(600)}
    else montre()}
   for(const o of debout()){if(fini())return;const a=porteurDeLOrbe(o),size=mapSize(),murs=walls(),e=o.orbeStatique.etat;if(!size.width)break;
    // L'état, à tous les adversaires de sa zone de contact.
@@ -3179,7 +3265,7 @@ async function orbesStatiquesDuTour(){if(orbesStatiquesEnCours||view!=='mj'||!en
    if(!a||!lance||!orbesT||!alive(o))continue;
    const n=voletOuvert(lance,'tous')?orbesDuTour(a,codes):Math.max(1,Math.trunc(Number(lance.params&&lance.params.n))||1);
    for(let k=0;k<n;k++){if(fini()||!alive(o))break;const j=procheDeLOrbe(o,true);if(j===null)break;
-    brilleOrbe(o);if(k===0)log(nomNum(o)+' lance '+(n>1?n+' orbes':'un orbe')+'.',{ton:'talent'});
+    brilleOrbe(o);if(k===0)log(phraseJournal(lance.talent,'orbestatiquelance',n>1?'plusieurs':'un',{orbe:nomNum(o),n}),{ton:'talent'});
     orbe(a,orbesT.params,orbesT.talent,{cible:j,n:1,statique:true,depuis:o});await pauseOrbe(1100)}
    montre()}}
  finally{orbesStatiquesEnCours=false;actors.forEach(o=>{if(o&&o.debutTour)o.debutTour=0});montre()}}
@@ -3795,7 +3881,7 @@ function saveChecks(){const a=actors[selected];if(!a)return;
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30',pa:'63,143,224',pm:'207,145,82'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Élite',boss:'Boss'};
-const IMG_V='0.982';
+const IMG_V='0.983';
 function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -4649,7 +4735,7 @@ function demandeIntervention(iv,a,opts){const {g,b,x}=iv,sel=selected,rid=Date.n
   if(oui&&alive(g)&&alive(b)){noteContactsDepart(g);const avant=new Set(contactsDe(g)),depart={x:g.x,y:g.y};
    if(rapprocher(g,b)){croises=avant;ramasseContacts(g,croises,depart,mapSize(),walls());const piege=piegeApresMouvement(g,depart);passeMurs(g,[depart,{x:g.x,y:g.y}]);afterMove(g);if(piege)piege()}
    marqueTalent(g,x.talent,x.code);
-   log(nomNum(g)+' · '+(x.talent&&x.talent.name||'Intervention')+' : rejoint '+nomNum(b)+'.',{ton:'talent'});if(typeof updateRing==='function')updateRing()}
+   log(nomNum(g)+' · '+(x.talent&&x.talent.name||'Intervention')+' : '+phraseJournal(x.talent,'intervention','rejoint',{cible:nomNum(b)}),{ton:'talent'});if(typeof updateRing==='function')updateRing()}
   diffuserIntervention(rid,'fin');render();scheduleSave();
   setTimeout(()=>{if(croises){if(typeof updateRing==='function')updateRing();degatsOpportunite(g,[...croises]);render();scheduleSave()}
    selected=sel;attackSansIntervention({...opts,apresIntervention:true})},oui?260:0)};
@@ -4776,13 +4862,13 @@ function gantelets(a,p,talent){const refus=refusAttaque(a);if(refus)return refus
  while(lot().length<voulus){const x={id:'inv-'+crypto.randomUUID().slice(0,12),modele:'gantelets',logo:talent&&talent.logo||'',rang:lot().length};a.inventions=[...(a.inventions||[]),x];a.inventaire=[...(a.inventaire||[]),x.id];neufs++}
  v=lot()[0];
  if(typeof syncForges==='function')syncForges();
- if(neufs)log(nomNum(a)+' · '+nom+' : fabrique et équipe '+lot().slice(-neufs).map(x=>'⟦'+x.id+'⟧').join(' et ')+'.',{ton:'talent'});
+ if(neufs)log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'gantelets','fabrique',{objets:lot().slice(-neufs).map(x=>'⟦'+x.id+'⟧').join(' et ')}),{ton:'talent'});
  a.weapons=lot().map(x=>x.id);if(typeof syncForges==='function')syncForges();
  const k=attackChoices(a,items()).findIndex(at=>at.invention===true),avant=a.activeAttack;if(k>=0)a.activeAttack=k;
  const incident=!!(talentEnCours&&talentEnCours.plasma&&talentEnCours.plasma.incident);
  // L'Incident tombe que le coup parte ou non : le Plasma a déjà été lancé.
  const subitIncident=()=>{if(!incident)return;if(alive(a)&&infligeEtat(a,'Foudre')===true)floatNumber(a,'✦ Foudre','perte');horsService(a,v);
-  log(nomNum(a)+' · '+nom+' : Incident, '+nomNum(a)+' subit Foudre et '+lot().map(x=>'⟦'+x.id+'⟧').join(' et ')+' '+(lot().length>1||INVENTIONS_MODELES.gantelets.pluriel?'sont':'est')+' hors service.',{ton:'talent'})};
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'gantelets','incident',{lanceur:nomNum(a),objets:lot().map(x=>'⟦'+x.id+'⟧').join(' et ')}),{ton:'talent'})};
  attack({apres:({vises,partis})=>{if(!partis){a.activeAttack=avant;subitIncident();render();scheduleSave();return}
   subitIncident();render();scheduleSave()}});
  return null}
@@ -4790,9 +4876,9 @@ function cleMolette(a,p,talent){const refus=refusAttaque(a);if(refus)return refu
  const k=attaqueContactDe(a);if(k<0)return nom+' : aucune attaque au contact.';const avant=a.activeAttack;a.activeAttack=k;
  attack({apres:({partis})=>{a.activeAttack=avant;if(!partis){render();return}
   const c=talentsCodes(a),n=plasmaMax(a)?rendPlasma(a,porteEffet(c,'clemolettetout')?plasmaMax(a):1):0;
-  const dits=n?[]:[plasmaMax(a)?'la Cellule est déjà pleine':'aucune Cellule à recharger'];
-  if(porteEffet(c,'clemolettereparer')){const v=(a.inventions||[]).find(x=>x&&x.hs);if(v){(a.inventions||[]).forEach(x=>{if(x&&x.modele===v.modele)x.hs=false});const m=INVENTIONS_MODELES[v.modele];dits.push((m?m.name:'Invention')+' réparé'+(m&&m.pluriel?'s':''))}}
-  if(dits.length)log(nomNum(a)+' · '+nom+' : '+dits.join('. ')+'.',{ton:'talent'});render();scheduleSave();if(n)billesPlasma(a,n,true)}});
+  const dits=n?[]:[phraseJournal(talent,'clemolette',plasmaMax(a)?'pleine':'sanscellule')];
+  if(porteEffet(c,'clemolettereparer')){const v=(a.inventions||[]).find(x=>x&&x.hs);if(v){(a.inventions||[]).forEach(x=>{if(x&&x.modele===v.modele)x.hs=false});const m=INVENTIONS_MODELES[v.modele];dits.push(phraseJournal(talent,'clemolette','repare',{objet:m?m.name:'Invention'}))}}
+  if(dits.length)log(nomNum(a)+' · '+nom+' : '+dits.join(' '),{ton:'talent'});render();scheduleSave();if(n)billesPlasma(a,n,true)}});
  return null}
 /* v0.877 : une recharge de Plasma se voit — une petite bille bondit en arc du token jusqu'à la case vide de la Cellule, et s'y loge
    dans un éclat. Tant qu'elle vole, sa case reste vide. Chez les autres joueurs, la même bille, par « diffuserEffet ». */
@@ -4881,7 +4967,7 @@ function bondFeroce(a,p,talent){const refus=refusBond(a);if(refus)return refus;c
     for(let s=0;s<=12;s++){const t=s/12;kf.push({translate:(sx*(1-t)).toFixed(1)+'px '+(sy*(1-t)-4*h*t*(1-t)).toFixed(1)+'px',scale:(1+.4*4*t*(1-t)).toFixed(2),offset:t})}
     const z=el.style.zIndex;el.style.zIndex='6';const an=el.animate(kf,{duration:560,easing:'ease-in-out'});an.onfinish=an.oncancel=()=>{el.style.zIndex=z}}}
   const piege=piegeApresMouvement(a,depart);afterMove(a);if(piege)piege();
-  const m2=Math.round(metres(depart,a,size,px));log(nomNum(a)+' · '+nom+' : bondit'+(m2>0?' de '+m2+' m':'')+'.',{ton:'talent'});
+  const m2=Math.round(metres(depart,a,size,px));log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'bondferoce',m2>0?'bondit':'surplace',{metres:m2}),{ton:'talent'});
   render();scheduleSave();
   setTimeout(()=>{if(typeof updateRing==='function')updateRing();degatsOpportunite(a,avant);if(!alive(a)){render();scheduleSave();return}
    const l=adversairesAuContact(a),c=l.find(([,i])=>i===a.target||(a.targets||[]).includes(i))||l.sort((u,v)=>tokenDistance(a,u[0],size)-tokenDistance(a,v[0],size))[0];
@@ -4901,13 +4987,13 @@ function hurlement(a,p,talent){const refus=refusHurlement(a);if(refus)return ref
  const sav=skillNames.indexOf('Savoir'),bord=o=>tokenDistance(a,o,size)/px-(tokenOf(a)+tokenOf(o))/2/px;
  const qui=actors.filter(o=>o!==a&&alive(o)&&!o.horsCarte&&!estOrbeStatique(o)&&hostiles(o,a)&&bord(o)<=HURLEMENT_M+.01).sort((u,v)=>bord(v)-bord(u));
  floatNumber(a,nom+' !','nul');
- if(!qui.length)return nomNum(a)+' · '+nom+' : aucun adversaire à portée.';
- const dits=qui.map(o=>{const jet=skillRoll(valeurCompetence(o,sav)-1,d6);if(jet.reussites>=1)return nomNum(o)+' résiste';
+ if(!qui.length)return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'hurlement','personne');
+ const dits=qui.map(o=>{const jet=skillRoll(valeurCompetence(o,sav)-1,d6);if(jet.reussites>=1)return phraseJournal(talent,'hurlement','resiste',{cible:nomNum(o)});
   const d=tokenDistance(a,o,size),but=HURLEMENT_M*px+(tokenOf(a)+tokenOf(o))/2+2,c=repousser(o,a,false,Math.max(0,but-d));
   const pose=infligeEtat(o,'Affaibli');if(pose===true)floatNumber(o,'Affaibli','perte');
   if(c)setTimeout(()=>{degatsOpportunite(o,c);render();scheduleSave()},220);
-  return nomNum(o)+' recule'+(pose===true?' + Affaibli':'')});
- return nomNum(a)+' · '+nom+' : '+dits.join(', ')+'.'}
+  return phraseJournal(talent,'hurlement',pose===true?'reculeaffaibli':'recule',{cible:nomNum(o)})});
+ return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'hurlement','bilan',{details:dits.join(', ')})}
 /* v0.881 — Stimulant : l'allié au contact visé, sinon le plus proche, regagne 1 dé vert plus la somme des dés de Plasma ; sur un
    Incident, il perd ce total. « Vous aussi » : le porteur partage son sort ; « Onde » : l'allié soigné la reçoit ; « Recharge » :
    1 Plasma revient quand des dés de Plasma ont été lancés sans Incident. */
@@ -4940,7 +5026,7 @@ function morsure(a,p,talent){const refus=refusAttaque(a);if(refus)return refus;c
  const avant=a.activeAttack,hpAvant=b.hp,des=DICE_KEYS.map(c=>c==='red'?1:0);a.activeAttack=k;
  attack({vises:[j],desSeuls:des,sansArme:true,bonusEnPlus:Math.max(0,Math.trunc(Number(a.level))||0),etatsEnPlus:{etats:['Saignée'],touches:[]},apres:({partis})=>{a.activeAttack=avant;
   const perdu=Math.max(0,(Number(hpAvant)||0)-(Number(b.hp)||0));
-  if(partis&&perdu>0&&alive(a)){const g=applyHeal(a,perdu);if(g>0){floatNumber(a,'+'+g,'gain');log(nomNum(a)+' · '+nom+' : '+nomNum(a)+' +'+g+' PV.',{ton:'soin'})}}
+  if(partis&&perdu>0&&alive(a)){const g=applyHeal(a,perdu);if(g>0){floatNumber(a,'+'+g,'gain');log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'morsure','soin',{lanceur:nomNum(a),soin:g}),{ton:'soin'})}}
   render();scheduleSave()}});
  return null}
 /* v0.896 — Le terrain difficile : sur le chemin d'un pas, chaque mètre passé dedans compte double — sauf pour qui a les Pattes
@@ -4966,7 +5052,7 @@ function enduranceInattendue(b,damage,hpAvant){if(!b||!(damage>0)||b.enduranceAt
   if(oui){const moitie=Math.ceil(damage/2),avant=b.hp;b.hp=Math.max(b.hp,Math.max(0,(Number(hpAvant)||0)-moitie));
    if(b.hp>0&&hasState(b,'Coma'))setState(b,'Coma',false);marqueTalent(b,x.talent,x.code);
    if(b.hp>avant)floatNumber(b,'+'+(b.hp-avant),'gain');
-   log(nomNum(b)+' · '+nom+' : '+moitie+' dégâts au lieu de '+damage+'.',{ton:'talent'})}
+   log(nomNum(b)+' · '+nom+' : '+phraseJournal(x.talent,'enduranceinattendue','moitie',{degats:moitie,avant:damage}),{ton:'talent'})}
   render();scheduleSave()};
  const l=document.createElement('div');l.className='choix-intervention-boutons';
  [['Activer',true],['Laisser',false]].forEach(([txt,oui])=>{const e=document.createElement('button');e.type='button';e.className='btn-action'+(oui?' primaire':'');e.textContent=txt;e.onclick=()=>choix(oui);l.append(e)});
@@ -5004,7 +5090,7 @@ function gageur(a,p,talent){const refus=refusAttaque(a);if(refus)return refus;co
  const g={...refApparence(b),cle:cleGage(b)},l=Array.isArray(a.gages)?a.gages:[],neuf=!l.some(x=>x&&x.cle===g.cle);if(neuf)a.gages=[...l,g];
  // v0.905 : le gage emporte aussi l'apparence de la créature, pour toujours, dans la collection de déguisements.
  const ap=refApparence(b),d=Array.isArray(a.deguisements)?a.deguisements.filter(x=>x&&x.cle!==ap.cle):[],nouvelle=d.length===(a.deguisements||[]).length;a.deguisements=[...d,ap].slice(-24);
- return nomNum(a)+' · '+nom+' : '+nomNum(b)+' −'+v+(b.hp===0?' 💀':'')+(neuf?', gage prélevé':'')+(nouvelle?', apparence copiée':'')+'.'}
+ return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'gageur','coup',{cible:nomNum(b),degats:v,mort:b.hp===0?' 💀':'',gage:neuf?phraseJournal(talent,'gageur','gage'):'',apparence:nouvelle?phraseJournal(talent,'gageur','apparence'):''})}
 /* Maléfice : gratuit, une fois par tour. Le porteur subit 1 dé noir ; jusqu'à la fin du round, chaque allié qui touche
    l'adversaire maudit ajoute 1d6 aux dégâts, après le jet. */
 function maleficeSur(a,b){const m=b&&b.malefice;if(!m||typeof m!=='object'||!enCombat()||m.tour!==round)return false;
@@ -5014,14 +5100,14 @@ function malefice(a,p,talent){const nom=talent&&talent.name||'Maléfice',ctx=tal
   if(!o||!alive(o)||o.horsCarte||!hostiles(a,o)||!visiblePourTroupe(o)){log('Choisis un adversaire visible, ou Échap.',{local:true});vise();return}
   if(ctx)payeTalent(ctx);const v=d6();rollOnBoard([{dice:[[v,5]]}],a,null);encaisse(a,v,null);
   o.malefice={tour:round,par:a.id};floatNumber(o,nom,'nul');
-  log(nomNum(a)+' · '+nom+' : '+nomNum(o)+' est maudit, '+nomNum(a)+' −'+v+(a.hp===0?' 💀':'')+'.',{ton:'talent'});render();scheduleSave()},nom+' annulé.');
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'malefice','maudit',{cible:nomNum(o),lanceur:nomNum(a),degats:v,mort:a.hp===0?' 💀':''}),{ton:'talent'});render();scheduleSave()},nom+' annulé.');
  vise();return null}
 /* Mimétisme : gratuit, une fois par tour. L'apparence d'un token visible rejoint la collection de déguisements. */
 function mimetisme(a,p,talent){const nom=talent&&talent.name||'Mimétisme',ctx=talentEnCours;
  const vise=()=>viserCible('✦ '+nom+' : clique sur un token visible',o=>{
   if(!o||o===a||o.orbeStatique||o.horsCarte||!(o.hero||visiblePourTroupe(o))){log('Choisis un token visible, ou Échap.',{local:true});vise();return}
   if(ctx)payeTalent(ctx);const r=refApparence(o),l=Array.isArray(a.deguisements)?a.deguisements.filter(x=>x&&x.cle!==r.cle):[];a.deguisements=[...l,r].slice(-24);
-  floatNumber(a,nom,'nul');log(nomNum(a)+' · '+nom+' : copie l’apparence de '+nomNum(o)+'.',{ton:'talent'});render();scheduleSave()},nom+' annulé.');
+  floatNumber(a,nom,'nul');log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'mimetisme','copie',{cible:nomNum(o)}),{ton:'talent'});render();scheduleSave()},nom+' annulé.');
  vise();return null}
 /* Déguisement : une apparence de la collection, et la taille Petit ou Moyen, jusqu'au prochain repos court. Déguisé, le
    bouton du talent le lève, à tout moment et sans rien coûter. */
@@ -5029,7 +5115,7 @@ function appliqueDeguisement(a,r){if(!a)return;const avant=a.deguise?a.deguise.s
  // v0.914 : déguisé, il prend la taille de la créature imitée ; sous sa propre apparence, la sienne.
  a.deguise={...(r&&r.cle?r:{cle:'',nom:''}),socleAvant:avant};if(r&&r.cle)a.socle=socleApparence(r);else if(avant)a.socle=avant;else delete a.socle}
 function leveDeguisement(a,silence){if(!a||!a.deguise)return false;const s=a.deguise.socleAvant;if(s)a.socle=s;else delete a.socle;delete a.deguise;
- if(!silence&&typeof floatNumber==='function'){floatNumber(a,'Déguisement','nul');log(nomNum(a)+' reprend son apparence.',{ton:'talent'})}return true}
+ if(!silence&&typeof floatNumber==='function'){floatNumber(a,'Déguisement','nul');log(phraseJournal(talentDe(a,'deguisement'),'deguisement','leve',{lanceur:nomNum(a)}),{ton:'talent'})}return true}
 function deguisement(a,p,talent){const nom=talent&&talent.name||'Déguisement',ctx=talentEnCours;if(ctx)ctx.pris=true;
  document.querySelectorAll('.choix-deguisement').forEach(x=>x.remove());
  const d=document.createElement('div');d.className='choix-intervention choix-deguisement';
@@ -5046,7 +5132,7 @@ function deguisement(a,p,talent){const nom=talent&&talent.name||'Déguisement',c
  const fin=ok=>{d.remove();
   if(!ok){if(Array.isArray(a.talentsJoues)&&talent)a.talentsJoues=a.talentsJoues.filter(id=>id!==talent.id);render();return}
   if(ctx)payeTalent(ctx);appliqueDeguisement(a,liste.find(r=>r.cle===choisi));
-  floatNumber(a,nom,'nul');log(nomNum(a)+' · '+nom+'.',{ton:'talent'});render();scheduleSave()};
+  floatNumber(a,nom,'nul');{const ph=phraseJournal(talent,'deguisement','pris');log(nomNum(a)+' · '+nom+(ph?' : '+ph:'.'),{ton:'talent'})}render();scheduleSave()};
  const l=document.createElement('div');l.className='choix-intervention-boutons';
  [['Valider',true],['Annuler',false]].forEach(([txt,oui])=>{const e=document.createElement('button');e.type='button';e.className='btn-action'+(oui?' primaire':'');e.textContent=txt;e.onclick=()=>fin(oui);l.append(e)});
  d.append(l);(typeof pileFenetres==='function'?pileFenetres():document.body).append(d);
@@ -5058,7 +5144,7 @@ function deguisement(a,p,talent){const nom=talent&&talent.name||'Déguisement',c
    faute de modèle), cumulable. */
 function ajouteRancune(b,a){if(!b||!a)return;const r={...refApparence(a),cle:cleGage(a)},l=Array.isArray(b.rancunes)?b.rancunes:[],x=l.find(g=>g&&g.cle===r.cle);
  b.rancunes=x?l.map(g=>g===x?{...g,n:(Math.trunc(Number(g.n))||0)+1}:g):[...l,{...r,n:1}];
- const n=(b.rancunes.find(g=>g.cle===r.cle)||{}).n||1;floatNumber(b,'Rancune '+n,'nul');log(nomNum(b)+' · Rancune : +'+n+' dégât'+(n>1?'s':'')+' contre '+(a.name||'?')+'.',{ton:'talent'})}
+ const n=(b.rancunes.find(g=>g.cle===r.cle)||{}).n||1;floatNumber(b,'Rancune '+n,'nul');log(nomNum(b)+' · Rancune : '+phraseJournal(talentDe(b,'rancune'),'rancune',n>1?'plusieurs':'un',{n,cible:a.name||'?'}),{ton:'talent'})}
 function bonusRancune(a,b){if(!a||!b||!Array.isArray(a.rancunes)||!a.rancunes.length||!hostiles(a,b)||!porteEffet(talentsCodes(a),'rancune'))return 0;
  const x=a.rancunes.find(g=>g&&g.cle===cleGage(b));return x?Math.max(0,Math.trunc(Number(x.n))||0):0}
 /* Ancré dans le Sol (Nain) : réaction, une fois par tour. Un adversaire va le repousser : la poussée attend sa réponse ; il va
@@ -5078,11 +5164,11 @@ function fenetreAncre(b,x,activer,laisser,oui){b.ancreAttente=true;const nom=x.t
  (typeof pileFenetres==='function'?pileFenetres():document.body).append(d);
  const minu=setTimeout(()=>choix(false),10000)}
 {const r0=repousser;repousser=function(b,a,loin,de,info){const x=b&&a&&b!==a&&hostiles(a,b)?ancreDispo(b):null;if(!x)return r0(b,a,loin,de,info);
- fenetreAncre(b,x,()=>log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Ancré dans le Sol')+' : ne recule pas.',{ton:'talent'}),
+ fenetreAncre(b,x,()=>log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Ancré dans le Sol')+' : '+phraseJournal(x.talent,'ancresol','recule'),{ton:'talent'}),
   ()=>{const c=r0(b,a,loin,de,info);if(c&&c.length&&typeof degatsOpportunite==='function')setTimeout(()=>{degatsOpportunite(b,c);render();scheduleSave()},220)});
  return null}}
 {const ie=infligeEtat;infligeEtat=function(a,etat){const r=ie(a,etat);
- if(r===true&&etat==='Au sol'){const x=ancreDispo(a);if(x)fenetreAncre(a,x,()=>{setState(a,'Au sol',false);log(nomNum(a)+' · '+(x.talent&&x.talent.name||'Ancré dans le Sol')+' : reste debout.',{ton:'talent'})},null)}
+ if(r===true&&etat==='Au sol'){const x=ancreDispo(a);if(x)fenetreAncre(a,x,()=>{setState(a,'Au sol',false);log(nomNum(a)+' · '+(x.talent&&x.talent.name||'Ancré dans le Sol')+' : '+phraseJournal(x.talent,'ancresol','debout'),{ton:'talent'})},null)}
  return r}}
 /* v0.900 — Les états de PV. La Nécrose retire des PV max les PV que ses coups ont fait perdre, cumulés ; elle ne tombe qu'au
    soin, au repos. La Radiance : le surplus d'un soin radiant monte les PV max d'autant ; perdue à la Nécrose, au Poison, au
@@ -5153,7 +5239,7 @@ function refusFormeGeant(a){if(!a||!alive(a))return 'Aucun combattant actif.';if
  const t=talentEnCours&&talentEnCours.talent;return t&&a.usages&&a.usages['talent:'+t.id]?'Déjà prise : il faut un repos court.':''}
 function formeGeant(a,p,talent){const refus=refusFormeGeant(a);if(refus)return refus;const nom=talent&&talent.name||'Forme de Géant';
  if(talent&&talent.id)a.usages={...(a.usages&&typeof a.usages==='object'?a.usages:{}),['talent:'+talent.id]:'court'};
- a.formeGeant={socleAvant:a.socle||''};a.socle='large';floatNumber(a,nom,'gain');return nomNum(a)+' · '+nom+' : taille G, +3 m, +1 dé rouge au contact.'}
+ a.formeGeant={socleAvant:a.socle||''};a.socle='large';floatNumber(a,nom,'gain');return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'formegeant','prise')}
 function finFormeGeant(a){if(!a||!a.formeGeant)return;const s=a.formeGeant.socleAvant;if(s)a.socle=s;else delete a.socle;delete a.formeGeant}
 {const d0=desAttaque;desAttaque=function(a,dice){const d=d0(a,dice);if(!d||!a||!a.formeGeant||(activeAttack(a).range||'contact')!=='contact')return d;return {...d,red:(Number(d.red)||0)+1}}}
 /* v0.904 — Le Gel cumulable ne bloque plus le pas : seul un mouvement réduit à rien l'immobilise. Le Feu et le Gel s'annulent :
@@ -5183,10 +5269,10 @@ function sangDispo(b){if(!b||!alive(b)||b.ancreAttente||b.sangFeerique===numeroC
  const source=auteurCoup||(talentEnCours&&talentEnCours.a)||null,solAvant=a&&hasState(a,'Au sol'),r=ie(a,etat);
  if(r===true&&etat==='Charme'&&source&&source!==a){const l=Array.isArray(a.charmePar)?a.charmePar:[];if(!l.includes(source.id))a.charmePar=[...l,source.id]}
  if(r===true&&(etat==='Aveugle'||etat==='Sommeil'||etat==='Charme')&&enCombat()){const x=sangDispo(a);if(x){a.sangFeerique=numeroCombat;
-  fenetreAncre(a,x,()=>{setState(a,etat,false);if(etat==='Sommeil'&&!solAvant)setState(a,'Au sol',false);log(nomNum(a)+' · '+(x.talent&&x.talent.name||'Sang Féerique')+' : ignore '+etat+'.',{ton:'talent'})},()=>{delete a.sangFeerique})}}
+  fenetreAncre(a,x,()=>{setState(a,etat,false);if(etat==='Sommeil'&&!solAvant)setState(a,'Au sol',false);log(nomNum(a)+' · '+(x.talent&&x.talent.name||'Sang Féerique')+' : '+phraseJournal(x.talent,'sangfeerique','ignore',{etat}),{ton:'talent'})},()=>{delete a.sangFeerique})}}
  return r}}
 {const rc=reposCourt;reposCourt=function(a){const avant=a&&a.reposCourts;rc(a);
- if(a&&a.reposCourts!==avant&&alive(a)&&porteEffet(talentsCodes(a),'transe')){const de=d6(),g=applyHeal(a,de);floatNumber(a,'+'+g,'gain');log(nomNum(a)+' · Transe : +'+g+' PV (1d6 : '+de+').',{ton:'soin'})}}}
+ if(a&&a.reposCourts!==avant&&alive(a)&&porteEffet(talentsCodes(a),'transe')){const de=d6(),g=applyHeal(a,de);floatNumber(a,'+'+g,'gain');log(nomNum(a)+' · Transe : '+phraseJournal(talentDe(a,'transe'),'transe','soin',{soin:g,de}),{ton:'soin'})}}}
 /* v0.916 — L'Humain. Second Souffle : gratuit, une fois entre deux repos courts, 1 dé vert de PV. Débrouillard : réaction, une
    fois par tour ; sur un échec (double 1) à une attaque, Relancer ou Laisser : un des 1 se relance et le coup se rejoue avec ces
    dés. Cosmopolite : +5 % par allié d'une autre espèce sur la carte, sur l'XP des adversaires vaincus, arrondi au supérieur. */
@@ -5195,7 +5281,7 @@ function refusSecondSouffle(a){if(!a||!alive(a))return 'Aucun combattant actif.'
 function secondSouffle(a,p,talent){const refus=refusSecondSouffle(a);if(refus)return refus;const nom=talent&&talent.name||'Second Souffle';
  if(talent&&talent.id)a.usages={...(a.usages&&typeof a.usages==='object'?a.usages:{}),['talent:'+talent.id]:'court'};
  const de=d6(),g=applyHeal(a,de);floatNumber(a,'+'+g,'gain');if(typeof rollOnBoard==='function')rollOnBoard([{dice:[[de,4]]}],a,null);
- return nomNum(a)+' · '+nom+' : +'+g+' PV (1d6 : '+de+').'}
+ return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'secondsouffle','soin',{soin:g,de})}
 let desImposes=null,echecCoup=null;
 function debrouillardDispo(a){if(!a||!alive(a)||a.ancreAttente||typeof talentsCodes!=='function')return null;const x=talentsCodes(a).find(t=>t.code.cle==='debrouillard'||t.code.cle==='chanceux');
  return x&&!dejaJoue(a,x.talent,x.code)?x:null}
@@ -5233,7 +5319,7 @@ function souffleDrakeide(a,p,talent){const refus=refusSouffle(a);if(refus)return
    const pose=etat&&alive(o)?infligeEtat(o,etat):false;if(pose===true)floatNumber(o,etat,'perte');
    return nomNum(o)+(passe?' −'+v:' 0')+(pose===true?' + '+etat:'')+(o.hp===0?' 💀':'')});
   auteurCoup=null;
-  log(nomNum(a)+' · '+nom+' : '+(dits.length?dits.join(', '):'personne dans le souffle')+'.',{ton:'talent'});render();scheduleSave()},null,nom+' annulé.');
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'souffledrakeide',dits.length?'touche':'personne',{details:dits.join(', ')}),{ton:'talent'});render();scheduleSave()},null,nom+' annulé.');
  return null}
 function refusVol(a){const r=refusBond(a);if(r)return r;const t=talentEnCours&&talentEnCours.talent;
  return t&&a.usages&&a.usages['talent:'+t.id]?'Déjà pris : il faut un repos court.':''}
@@ -5253,7 +5339,7 @@ function volDraconique(a,p,talent){const refus=refusVol(a);if(refus)return refus
   const etat=etatAscendance(a),murs=walls(),tk=tokenOf(a);auteurCoup=a;
   const poses=etat?actors.filter(o=>o!==a&&alive(o)&&!o.horsCarte&&!estOrbeStatique(o)&&inContact(a,o,size,tk,tokenOf(o))&&!wallsBetween(a,o,murs)).filter(o=>{const r=infligeEtat(o,etat);if(r===true)floatNumber(o,etat,'perte');return r===true}):[];
   auteurCoup=null;const m2=Math.round(metres(depart,a,size,px));
-  log(nomNum(a)+' · '+nom+' : vole'+(m2>0?' sur '+m2+' m':'')+(poses.length?' ; '+etat+' : '+poses.map(nomNum).join(', '):'')+'.',{ton:'talent'});
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'voldraconique',(m2>0?'vole':'surplace')+(poses.length?'etat':''),{metres:m2,etat,cibles:poses.map(nomNum).join(', ')}),{ton:'talent'});
   render();scheduleSave();setTimeout(()=>{if(typeof updateRing==='function')updateRing();degatsOpportunite(a,avant);render();scheduleSave()},440)},null,nom+' annulé.');
  vise();return null}
 /* v0.922 — Le Tieffelin et l'Orc. Héritage : les coups qui posent son état le soignent (frappe), les dégâts de son état aussi.
@@ -5280,22 +5366,22 @@ function traitFielon(a,p,talent){const refus=refusSouffle(a);if(refus)return ref
   const size=mapSize(),etat=heritageEtat(a);if(ctx)payeTalent(ctx);auteurCoup=a;floatNumber(a,nom,'nul');
   const touches=[qui,...actors.filter(o=>o!==a&&o!==qui&&alive(o)&&!o.horsCarte&&!estOrbeStatique(o)&&surLeTrait(a,qui,o,size))];
   const dits=touches.map(o=>frappeEtatBleue(a,o,1,etat));auteurCoup=null;
-  log(nomNum(a)+' · '+nom+' : '+dits.join(', ')+'.',{ton:'talent'});render();scheduleSave()},null,nom+' annulé.');
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'traitfielon','touche',{details:dits.join(', ')}),{ton:'talent'});render();scheduleSave()},null,nom+' annulé.');
  vise();return null}
 {const ip=invisiblePour;invisiblePour=function(a,i){if(!ip(a,i))return false;const s=typeof selected==='number'?actors[selected]:null;
  return !(s&&s!==a&&!a.hero&&natureDe(a)==='vivant'&&alive(s)&&porteEffet(talentsCodes(s),'visionautremonde')&&hostiles(s,a))}}
 function reprimande(b,a){if(!b||!a||!alive(b)||!alive(a)||b.ancreAttente||typeof talentsCodes!=='function')return;const x=talentsCodes(b).find(t=>t.code.cle==='reprimande');
  if(!x||dejaJoue(b,x.talent,x.code))return;
- fenetreAncre(b,x,()=>{if(!alive(a))return;auteurCoup=b;const dit=frappeEtatBleue(b,a,2,heritageEtat(b));auteurCoup=null;log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Réprimande Infernale')+' : '+dit+'.',{ton:'talent'})},null)}
+ fenetreAncre(b,x,()=>{if(!alive(a))return;auteurCoup=b;const dit=frappeEtatBleue(b,a,2,heritageEtat(b));auteurCoup=null;log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Réprimande Infernale')+' : '+phraseJournal(x.talent,'reprimande','frappe',{details:dit}),{ton:'talent'})},null)}
 function refusAdrenaline(a){if(!a||!alive(a))return 'Aucun combattant actif.';return a.adrenaline===numeroCombat&&enCombat()?'Déjà prise : une fois par combat.':''}
 function adrenaline(a,p,talent){const refus=refusAdrenaline(a);if(refus)return refus;const nom=talent&&talent.name||'Poussée d’Adrénaline',n=3*Math.max(1,Math.trunc(Number(a.level))||1);
  a.adrenaline=numeroCombat;a.mvtBonus=Math.min(9,(Math.trunc(Number(a.mvtBonus))||0)+1);donneArmure(a,n);floatNumber(a,'+1 PM','gain');
- return nomNum(a)+' · '+nom+' : +1 point de Mouvement, +'+n+' Armure.'}
+ return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'adrenaline','prise',{armure:n})}
 function acharnement(b,hpAvant){if(!b||b.hp>0||!(hpAvant>0)||b.enduranceAttente||b.acharnement===numeroCombat||!enCombat()||typeof talentsCodes!=='function')return;
  const x=talentsCodes(b).find(t=>t.code.cle==='acharnement');if(!x||dejaJoue(b,x.talent,x.code))return;
  b.enduranceAttente=true;
  fenetreAncre(b,x,()=>{delete b.enduranceAttente;b.acharnement=numeroCombat;b.hp=Math.max(1,b.hp);if(hasState(b,'Coma'))setState(b,'Coma',false);
-  log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Acharnement')+' : reste debout à 1 PV.',{ton:'talent'})},()=>{delete b.enduranceAttente})}
+  log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Acharnement')+' : '+phraseJournal(x.talent,'acharnement','debout'),{ton:'talent'})},()=>{delete b.enduranceAttente})}
 {const ei=enduranceInattendue;enduranceInattendue=function(b,damage,hpAvant){ei(b,damage,hpAvant);acharnement(b,hpAvant)}}
 {const en=encaisse;encaisse=function(a,...x){const avant=a&&a.hp,r=en(a,...x);acharnement(a,avant);return r}}
 /* v0.929 — Le Charognard. Remodelage : trois formes, gardées jusqu'au prochain Remodelage (« forme ») ; Glouton passe en taille G.
@@ -5313,7 +5399,7 @@ function remodelage(a,p,talent){const refus=refusSouffle(a);if(refus)return refu
  t.append(Object.assign(document.createElement('b'),{textContent:nom}));const q=document.createElement('span');q.className='choix-debut-qui';q.textContent=nomNum(a);q.style.color=actorTint(a);t.append(' ',q);d.append(t);
  const l=document.createElement('div');l.className='choix-intervention-boutons';
  FORMES_CHAROGNE.forEach(([k,n])=>{const e=document.createElement('button');e.type='button';e.className='btn-action'+(k===formeDe(a)?'':' primaire');e.textContent=n;e.disabled=k===formeDe(a);
-  e.onclick=()=>{d.remove();if(ctx)payeTalent(ctx);poseForme(a,k);floatNumber(a,n,'gain');log(nomNum(a)+' · '+nom+' : forme '+n+'.',{ton:'talent'});render();scheduleSave()};l.append(e)});
+  e.onclick=()=>{d.remove();if(ctx)payeTalent(ctx);poseForme(a,k);floatNumber(a,n,'gain');log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'remodelage','forme',{forme:n}),{ton:'talent'});render();scheduleSave()};l.append(e)});
  const x=document.createElement('button');x.type='button';x.className='btn-action';x.textContent='Laisser';x.onclick=()=>d.remove();l.append(x);
  d.append(l);(typeof pileFenetres==='function'?pileFenetres():document.body).append(d);return null}
 // Charognard : +2 par allié ou charognard au contact, sans mur.
@@ -5328,7 +5414,7 @@ function devoreur(a,p,talent){const refus=refusSouffle(a);if(refus)return refus;
  if(!o)return nom+' : aucun cadavre organique à votre contact.';
  const v1=d6(),v2=d6(),g=applyHeal(a,v1+v2);rollOnBoard([{dice:[[v1,4],[v2,4]]}],a,null);floatNumber(a,'+'+g,'gain');a.devoreur=true;o.devore=true;
  if(view==='mj'){const j=actors.indexOf(o);setTimeout(()=>{if(actors[j]===o)removeActors([j],false)},300)}
- return nomNum(a)+' · '+nom+' : dévore '+nomNum(o)+', +'+g+' PV ('+v1+' + '+v2+'), +1 dé rouge à sa prochaine Attaque.'}
+ return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'devoreur','devore',{cible:nomNum(o),soin:g,de1:v1,de2:v2})}
 // Un cadavre dévoré chez un joueur s'en va chez le MJ.
 {const r0=render;let retire=false;render=function(...x){if(view==='mj'&&!retire){const l=actors.map((o,i)=>o&&o.devore&&!o.hero?i:-1).filter(i=>i>=0);
  if(l.length){retire=true;try{removeActors(l,false)}finally{retire=false}}}return r0(...x)}}
@@ -5349,14 +5435,14 @@ function bouffeeVapeur(a,p,talent){const refus=refusSouffle(a);if(refus)return r
   let dit='';try{dit=f()}finally{auteurCoup=null}log(nomNum(a)+' · '+nom+' ('+n+') : '+dit,{ton:'talent'});render();scheduleSave()};l.append(e)};
  choix('Brûlant',()=>{const size=mapSize(),murs=walls(),tk=tokenOf(a),rob=skillNames.indexOf('Robustesse');
   const qui=actors.filter(o=>o!==a&&alive(o)&&!o.horsCarte&&!estOrbeStatique(o)&&hostiles(a,o)&&size.width&&inContact(a,o,size,tk,tokenOf(o))&&!wallsBetween(a,o,murs));
-  if(!qui.length)return 'aucun adversaire au contact.';
-  return qui.map(o=>{const jet=skillRoll(valeurCompetence(o,rob)-1,d6);if(jet.reussites>=2)return nomNum(o)+' résiste';
+  if(!qui.length)return phraseJournal(talent,'bouffeevapeur','personne');
+  return phraseJournal(talent,'bouffeevapeur','brulant',{details:qui.map(o=>{const jet=skillRoll(valeurCompetence(o,rob)-1,d6);if(jet.reussites>=2)return nomNum(o)+' résiste';
    const v=d6();rollOnBoard([{dice:[[v,2]]}],a,o);encaisse(o,v,a);const pose=alive(o)?infligeEtat(o,'Aveugle'):false;if(pose===true)floatNumber(o,'Aveugle','perte');
-   return nomNum(o)+' −'+v+(pose===true?' + Aveugle':'')+(o.hp===0?' 💀':'')}).join(', ')+'.'});
+   return nomNum(o)+' −'+v+(pose===true?' + Aveugle':'')+(o.hp===0?' 💀':'')}).join(', ')})});
  choix('Fumée',()=>{const size=mapSize(),tk=tokenOf(a),murs=walls();
   a.fumee={x:a.x,y:a.y,taille:a.socle||'medium',fin:round+(enCombat()?1:0)};floatNumber(a,'Fumée','gain');majCaches();
   const qui=actors.filter(o=>o&&o.hero&&o.cacheFumee);
-  return 'un nuage de fumée'+(qui.length?' ; '+qui.map(nomNum).join(', ')+(qui.length>1?' sont cachés':' est caché'):'')+'.'});
+  return phraseJournal(talent,'bouffeevapeur',qui.length>1?'fumees':qui.length?'fumee':'fumeevide',{cibles:qui.map(nomNum).join(', ')})});
  const x=document.createElement('button');x.type='button';x.className='btn-action';x.textContent='Laisser';x.onclick=()=>d.remove();l.append(x);
  d.append(l);(typeof pileFenetres==='function'?pileFenetres():document.body).append(d);return null}
 // La fumée se dissipe à la fin du combat : ceux qu'elle cachait reparaissent.
@@ -5384,7 +5470,7 @@ function dessineFumees(){const vue=$('map-view');if(!vue)return;vue.querySelecto
 const SERUM_ID='objet-serum-instable';
 {const rc=reposCourt;reposCourt=function(a){const avant=a&&a.reposCourts;rc(a);
  if(!a||a.reposCourts===avant||!porteEffet(talentsCodes(a),'experiencesinterdites')||(a.inventaire||[]).includes(SERUM_ID))return;
- const o=typeof objetDe==='function'?objetDe(SERUM_ID):null;if(o&&typeof ajouterInventaire==='function'&&ajouterInventaire(a,o)){floatNumber(a,'Sérum instable','gain');log(nomNum(a)+' · Expériences Interdites : prépare un Sérum instable.',{ton:'talent'})}}}
+ const o=typeof objetDe==='function'?objetDe(SERUM_ID):null;if(o&&typeof ajouterInventaire==='function'&&ajouterInventaire(a,o)){floatNumber(a,'Sérum instable','gain');log(nomNum(a)+' · Expériences Interdites : '+phraseJournal(talentDe(a,'experiencesinterdites'),'experiencesinterdites','serum'),{ton:'talent'})}}}
 /* v0.933 — Le Tellure. Passage Tellurique : test de Mysticisme 2, réussi, au contact d'un token visible, sans opportunité, 1d6 + Vie.
    Maîtrise Tellurique : une fois par combat, +1 dé bleu à la prochaine Attaque ou au prochain orbe ; +1 dé aux tests de Mysticisme,
    toujours. Peau de Cristal : réaction après un coup qui blesse, 2 × Niveau d'Armure, Aveugle à l'attaquant au contact. Éclat
@@ -5413,15 +5499,15 @@ function passageTellurique(a,p,talent){const refus=refusBond(a);if(refus)return 
   const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(a.id)+'"]');if(el){el.classList.add('glisse');el.style.left=a.x+'%';el.style.top=a.y+'%'}
   const piege=piegeApresMouvement(a,depart);afterMove(a);if(piege)piege();
   const r=jet.reussites+' réussite'+(jet.reussites>1?'s':'');
-  if(jet.reussites<2){log(nomNum(a)+' · '+nom+' : réapparaît au contact de '+nomNum(pres)+' ; '+r+' sur 2, pas de soin.',{ton:'talent'});render();scheduleSave();return}
+  if(jet.reussites<2){log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'passagetellurique','rate',{cible:nomNum(pres),reussites:r}),{ton:'talent'});render();scheduleSave();return}
   const de=d6(),vie=Math.max(0,Math.trunc(Number(a.vie))||0),g=applyHeal(a,de+vie);floatNumber(a,'+'+g,'gain');
-  log(nomNum(a)+' · '+nom+' : '+r+', réapparaît au contact de '+nomNum(pres)+', +'+g+' PV (1d6 : '+de+' + Vie '+vie+').',{ton:'talent'});render();scheduleSave()},nom+' annulé.',()=>ote());
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'passagetellurique','soin',{cible:nomNum(pres),reussites:r,soin:g,de,vie}),{ton:'talent'});render();scheduleSave()},nom+' annulé.',()=>ote());
   ote=pointeurVisee(a,juge)};
  vise();return null}
 function refusMaitriseT(a){if(!a||!alive(a))return 'Aucun combattant actif.';if(a.maitriseTPrete)return 'Déjà prête : elle part avec la prochaine Attaque ou le prochain orbe.';
  return enCombat()&&a.maitriseT===numeroCombat?'Déjà prise : une fois par combat.':''}
 function maitriseTellurique(a,p,talent){const refus=refusMaitriseT(a);if(refus)return refus;a.maitriseT=numeroCombat;a.maitriseTPrete=true;floatNumber(a,'+1 dé Mystique','gain');
- return nomNum(a)+' · '+(talent&&talent.name||'Maîtrise Tellurique')+' : +1 dé Mystique à la prochaine Attaque ou au prochain orbe.'}
+ return nomNum(a)+' · '+(talent&&talent.name||'Maîtrise Tellurique')+' : '+phraseJournal(talent,'maitrisetellurique','prete')}
 {const d0=desAttaque;desAttaque=function(a,dice){const d=d0(a,dice);if(!d||!a||!a.maitriseTPrete)return d;return {...d,blue:(Number(d.blue)||0)+1}}}
 {const fr=frappe;frappe=function(a,...x){const r=fr(a,...x);if(a&&a.maitriseTPrete&&r)queueMicrotask(()=>{delete a.maitriseTPrete});return r}}
 {const ob=orbe;orbe=function(a,...x){if(!a||!a.maitriseTPrete)return ob(a,...x);const dO=desOrbe;desOrbe=(...y)=>{const d=dO(...y);return d?{...d,plus:(d.plus||0)+1}:d};
@@ -5429,10 +5515,10 @@ function maitriseTellurique(a,p,talent){const refus=refusMaitriseT(a);if(refus)r
 {const ei=enduranceInattendue;enduranceInattendue=function(b,damage,hpAvant){ei(b,damage,hpAvant);const de=auteurCoup;
  if(!b||!alive(b)||!(damage>0)||b.ancreAttente||b.enduranceAttente||typeof talentsCodes!=='function')return;const x=talentsCodes(b).find(t=>t.code.cle==='peaucristal');
  if(!x||dejaJoue(b,x.talent,x.code))return;
- fenetreAncre(b,x,()=>{const n=2*Math.max(1,Math.trunc(Number(b.level))||1);donneArmure(b,n);floatNumber(b,'+'+n+' Armure','gain');let dit='+'+n+' Armure';
-  if(de&&de!==b&&alive(de)&&hostiles(de,b)&&mapSize().width&&contactsDe(b).includes(de)){if(infligeEtat(de,'Aveugle')===true){floatNumber(de,'Aveugle','perte');dit+=', '+nomNum(de)+' Aveugle'}}
-  log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Peau de Cristal')+' : '+dit+'.',{ton:'talent'})},null)}}
-function eclatVivant(a,p,talent){a.eclat=!a.eclat;floatNumber(a,a.eclat?'Lumière':'Éteint','nul');return nomNum(a)+' · '+(talent&&talent.name||'Éclat Vivant')+' : '+(a.eclat?'une lumière vive l’entoure.':'sa lumière s’éteint.')}
+ fenetreAncre(b,x,()=>{const n=2*Math.max(1,Math.trunc(Number(b.level))||1);donneArmure(b,n);floatNumber(b,'+'+n+' Armure','gain');let aveugle='';
+  if(de&&de!==b&&alive(de)&&hostiles(de,b)&&mapSize().width&&contactsDe(b).includes(de)){if(infligeEtat(de,'Aveugle')===true){floatNumber(de,'Aveugle','perte');aveugle=nomNum(de)}}
+  log(nomNum(b)+' · '+(x.talent&&x.talent.name||'Peau de Cristal')+' : '+phraseJournal(x.talent,'peaucristal',aveugle?'aveugle':'armure',{armure:n,cible:aveugle}),{ton:'talent'})},null)}}
+function eclatVivant(a,p,talent){a.eclat=!a.eclat;floatNumber(a,a.eclat?'Lumière':'Éteint','nul');return nomNum(a)+' · '+(talent&&talent.name||'Éclat Vivant')+' : '+phraseJournal(talent,'eclatvivant',a.eclat?'allume':'eteint')}
 function porteeEclat(){const t=(typeof catalog!=='undefined'&&catalog.items||[]).find(o=>o&&/^torche$/i.test(String(o.name||'').trim())&&lumiereDe(o)>0);return t?lumiereDe(t):3}
 {const lp=lumierePortee;lumierePortee=function(a,...x){const p=lp(a,...x);return a&&a.eclat&&typeof talentsCodes==='function'&&porteEffet(talentsCodes(a),'eclatvivant')?Math.max(p,porteeEclat()):p}}
 /* v0.934 — L'Hephosien. Ascension : un saut jusqu'à sa distance de mouvement, que seuls les murs arrêtent, sans opportunité ;
@@ -5452,7 +5538,7 @@ function ascension(a,p,talent){const refus=refusBond(a);if(refus)return refus;co
   const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(a.id)+'"]');
   if(el){el.classList.add('glisse');el.style.left=a.x+'%';el.style.top=a.y+'%';if(el.animate)el.animate([{scale:'1'},{scale:'1.35'},{scale:'1'}],{duration:420,easing:'ease-out'})}
   const piege=piegeApresMouvement(a,depart);afterMove(a);if(piege)piege();
-  log(nomNum(a)+' · '+nom+' : saute sur '+Math.round(metres(depart,a,size,px))+' m.',{ton:'talent'});render();scheduleSave()},null,nom+' annulé.');
+  log(nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'ascension','saute',{metres:Math.round(metres(depart,a,size,px))}),{ton:'talent'});render();scheduleSave()},null,nom+' annulé.');
  vise();return null}
 const ascensionPrete=a=>!!a&&a.ascension===round&&enCombat()&&(activeAttack(a).range||'contact')==='contact';
 {const d0=desAttaque;desAttaque=function(a,dice){const d=d0(a,dice);if(!d||!ascensionPrete(a))return d;return {...d,white:(Number(d.white)||0)+1}}}
@@ -5472,7 +5558,7 @@ function choixToucheATout(a){if(!a||!a.hero||choixToucheOuvert||typeof talentsCo
  const q=document.createElement('span');q.className='choix-debut-qui';q.textContent=nomNum(a);q.style.color=actorTint(a);t.append(' ',q);d.append(t);
  const b=document.createElement('div');b.className='choix-intervention-boutons';
  skillNames.forEach((n,k)=>{const e=document.createElement('button');e.type='button';e.className='btn-action primaire';e.textContent=n;
-  e.onclick=()=>{d.remove();choixToucheOuvert=false;a.toucheATout=[...l,k];log(nomNum(a)+' · Touche-à-Tout : +1 en '+n+'.',{ton:'talent'});render();scheduleSave()};b.append(e)});
+  e.onclick=()=>{d.remove();choixToucheOuvert=false;a.toucheATout=[...l,k];log(nomNum(a)+' · Touche-à-Tout : '+phraseJournal(x&&x.talent,'toucheatout','choix',{competence:n}),{ton:'talent'});render();scheduleSave()};b.append(e)});
  d.append(b);(typeof pileFenetres==='function'?pileFenetres():document.body).append(d)}
 {const r0=render;render=function(...x){const r=r0(...x);try{const a=actors[selected];if(a&&a.hero&&typeof controlled==='function'&&controlled(selected))choixToucheATout(a)}catch(e){}return r}}
 /* v0.935 — Le Gnome. Chanceux : la fenêtre de Débrouillard, sur tout double 1. Petit et Vif : ni opportunité ni socle qui barre,
@@ -5489,13 +5575,13 @@ function illusionniste(a,p,talent){const refus=refusIllusion(a);if(refus)return 
  if(enCombat()){epuisePoints(a,'action');epuisePoints(a,'mouvement')}
  // Jouer un talent lève l'Invisibilité : elle se pose une fois le geste fini.
  setTimeout(()=>{if(alive(a)&&infligeEtat(a,'Invisible')===true)floatNumber(a,'Invisible','gain');render();scheduleSave()},0);
- return nomNum(a)+' · '+nom+' : devient Invisible'+(enCombat()?', ses PA et PM restants sont perdus':'')+'.'}
+ return nomNum(a)+' · '+nom+' : '+phraseJournal(talent,'illusionniste',enCombat()?'combat':'exploration')}
 // v0.947 : Ingénieux (Humain) — action bonus, une fois entre deux repos courts : 1 dé noir de plus à la prochaine Attaque ou au prochain test.
 function refusIngenieux(a){if(!a||!alive(a))return 'Aucun combattant actif.';if(a.ingenieuxPret)return 'Déjà prêt : il part avec la prochaine Attaque ou le prochain test.';
  const t=talentEnCours&&talentEnCours.talent;return t&&a.usages&&a.usages['talent:'+t.id]?'Déjà pris : il faut un repos court.':''}
 function ingenieux(a,p,talent){const refus=refusIngenieux(a);if(refus)return refus;
  if(talent&&talent.id)a.usages={...(a.usages&&typeof a.usages==='object'?a.usages:{}),['talent:'+talent.id]:'court'};
- a.ingenieuxPret=true;floatNumber(a,'+1 dé noir','gain');return nomNum(a)+' · '+(talent&&talent.name||'Ingénieux')+' : +1 dé noir à la prochaine Attaque ou au prochain test.'}
+ a.ingenieuxPret=true;floatNumber(a,'+1 dé noir','gain');return nomNum(a)+' · '+(talent&&talent.name||'Ingénieux')+' : '+phraseJournal(talent,'ingenieux','pret')}
 // Une Attaque : le dé noir rejoint ses dés ; tous les coups d'une même attaque le portent, puis il s'en va.
 {const d0=desAttaque;desAttaque=function(a,dice){const d=d0(a,dice);if(!d||!a||!a.ingenieuxPret)return d;return {...d,black:(Number(d.black)||0)+1}}}
 {const fr=frappe;frappe=function(a,...x){const r=fr(a,...x);if(a&&a.ingenieuxPret&&r)queueMicrotask(()=>{delete a.ingenieuxPret});return r}}
@@ -5547,13 +5633,13 @@ function etatsTalentsCoup(a,b,r){const l=[];if(!a||!b||!r||r.failed||!r.hit||ran
 function apresCoupPorte(a,b,r,lost){if(!a||!b)return;
  if(a.hero&&porteTalent(b,'traque'))b.traqueId=a.id;
  if(!r.critical||rangeOf(a)==='distance'||!alive(b))return;
- if(porteTalent(a,'agrippe'))log(nomNum(a)+' agrippe '+nomNum(b)+' : Au sol.',{ton:'talent'});
- if(porteTalent(a,'avaler'))log(nomNum(a)+' avale à moitié '+nomNum(b)+' : Au sol, Corruption +2.',{ton:'talent'});
+ if(porteTalent(a,'agrippe'))log(phraseJournal(talentDe(a,'agrippe'),'agrippe','agrippe',{lanceur:nomNum(a),cible:nomNum(b)}),{ton:'talent'});
+ if(porteTalent(a,'avaler'))log(phraseJournal(talentDe(a,'avaler'),'avaler','avale',{lanceur:nomNum(a),cible:nomNum(b)}),{ton:'talent'});
  if(porteTalent(a,'enlacer')&&!insensibleA(b,'Entravé')){setState(b,'Entravé',true);b.entravePar=a.id;b.entraveReussites=Math.max(1,Math.trunc(Number(paramsTalentDe(a,'enlacer').reussites))||2);
-  if(!insensibleA(b,'Nécrose'))appliqueNecrose(b,1);log(nomNum(a)+' enlace '+nomNum(b)+' : il ne peut plus s’éloigner, Nécrose +1.',{ton:'talent'})}}
+  if(!insensibleA(b,'Nécrose'))appliqueNecrose(b,1);log(phraseJournal(talentDe(a,'enlacer'),'enlacer','enlace',{lanceur:nomNum(a),cible:nomNum(b)}),{ton:'talent'})}}
 function degatsSubisModifies(b,n){return porteTalent(b,'inflammable')&&hasState(b,'Feu')?n*2:n}
 function plancherPV(b,n){if(!lieALaGraine(b)||!(b.hp>0))return n;const tient=(Number(b.hp)||0)+armureDe(b)-1;if(n<=tient)return n;
- log('La Graine pulse : '+nomNum(b)+' refuse de tomber.',{ton:'talent'});return Math.max(0,tient)}
+ log(phraseJournal(talentDe(b,'racinedevie'),'racinedevie','tient',{cible:nomNum(b)}),{ton:'talent'});return Math.max(0,tient)}
 {const en=encaisse;encaisse=function(a,n,de,...x){let v=n;if(a&&v>0){v=degatsSubisModifies(a,v);v=plancherPV(a,v)}
  if(a&&de&&de.hero&&v>0&&porteTalent(a,'traque'))a.traqueId=de.id;return en(a,v,de,...x)}}
 // Vulnérable au Feu : 1 dé rouge de plus quand le Feu brûle. Inflammable le remplace.
@@ -5585,11 +5671,11 @@ function seLiberer(a){if(!a)return;saveChecks();savePool();if(enCombat())depense
 {const de0=descriptionEtat;descriptionEtat=function(o,etat){if(etat==='Entravé'){const p=actors.find(x=>x.id===o.entravePar);return 'Ne peut pas quitter le contact'+(p?' de '+nomNum(p):'')+'. Se libérer : 1 PM, test de Force '+(o.entraveReussites||2)+'.'}return de0(o,etat)}}
 // À chaque dessin : les seuils (phase 2, Enracinée), les Entravés libérés par la mort du porteur, la cible imposée.
 {const r0=render;render=function(...x){try{if(enCombat())actors.forEach(o=>{if(!alive(o)||o.hero)return;
-  if((porteTalent(o,'semis')||porteTalent(o,'grenier'))&&!enPhase2(o)&&o.hp<o.max/2){o.phase2=numeroCombat;log(nomNum(o)+' passe en phase 2.',{ton:'talent'})}
-  if(porteTalent(o,'enracinee')&&o.enracinee!==numeroCombat&&o.hp<o.max/2){o.enracinee=numeroCombat;donneArmure(o,10);log(nomNum(o)+' s’enracine : les ronces envahissent la salle.',{ton:'talent'})}});
+  if((porteTalent(o,'semis')||porteTalent(o,'grenier'))&&!enPhase2(o)&&o.hp<o.max/2){o.phase2=numeroCombat;log(phraseJournal(talentDe(o,porteTalent(o,'semis')?'semis':'grenier'),porteTalent(o,'semis')?'semis':'grenier','phase2',{lanceur:nomNum(o)}),{ton:'talent'})}
+  if(porteTalent(o,'enracinee')&&o.enracinee!==numeroCombat&&o.hp<o.max/2){o.enracinee=numeroCombat;donneArmure(o,10);log(phraseJournal(talentDe(o,'enracinee'),'enracinee','enracine',{lanceur:nomNum(o)}),{ton:'talent'})}});
  actors.forEach(o=>{if(hasState(o,'Entravé')&&!actors.some(p=>p.id===o.entravePar&&alive(p))){setState(o,'Entravé',false);delete o.entravePar}});
  const m=actors[selected],i=cibleImposee(m);if(i>=0&&m.target!==i){poseCibles(m,[i]);const b=actors[i],cle=round+':'+b.id;
-  if(m.imposeDit!==cle){m.imposeDit=cle;log(porteTalent(m,'pique')&&dernierSoin&&dernierSoin.id===b.id?nomNum(m)+' fond sur '+nomNum(b)+', qui vient de soigner.':nomNum(m)+' se retourne contre '+nomNum(b)+'.',{ton:'talent'})}}}catch(e){}
+  if(m.imposeDit!==cle){m.imposeDit=cle;log(porteTalent(m,'pique')&&dernierSoin&&dernierSoin.id===b.id?phraseJournal(talentDe(m,'pique'),'pique','fond',{lanceur:nomNum(m),cible:nomNum(b)}):phraseJournal(talentDe(m,'traque'),'traque','retourne',{lanceur:nomNum(m),cible:nomNum(b)}),{ton:'talent'})}}}catch(e){}
  return r0(...x)}}
 // Les gestes des adversaires : Roses fanées, Service.
 function allieSoignable(a,p){return actors.filter(o=>o!==a&&surCarteAdv(o)&&!o.hero&&campDe(o)===campDe(a)&&o.hp<o.max&&(p.modele?o.template===p.modele:/ronceur/i.test(o.name))).sort((u,v)=>u.hp-v.hp)[0]||null}
@@ -5615,13 +5701,13 @@ function debutDuTourAdversaires(){if(!enCombat())return;
  // Semis : phase 1, tours pairs, la Graine en vie, sous le plafond.
  if(round%2===0)actors.filter(o=>surCarteAdv(o)&&porteTalent(o,'semis')&&!enPhase2(o)).forEach(o=>{const g=graineDe(o);if(!g)return;const p=paramsTalentDe(o,'semis'),m=modeleTalent(p,'ronceur');if(!m)return;
   const plafond=Math.max(1,Math.trunc(Number(p.plafond))||6),deja=actors.filter(x=>surCarteAdv(x)&&x.template===m.id).length,n=Math.min(Math.max(1,Math.trunc(Number(p.nombre))||2),plafond-deja);
-  if(n>0){invoqueAupres(g,m,n,o);log(nomNum(o)+' sème : '+n+' '+m.name+(n>1?'s':'')+' sortent du roncier.',{ton:'talent'})}});
+  if(n>0){invoqueAupres(g,m,n,o);log(phraseJournal(talentDe(o,'semis'),'semis',n>1?'semeplus':'seme',{lanceur:nomNum(o),n,nom:m.name}),{ton:'talent'})}});
  chargesDuTour()}
 function chargesDuTour(){if(!enCombat())return;const size=mapSize();
  actors.filter(o=>surCarteAdv(o)&&porteTalent(o,'chargesanglier')&&!hasState(o,'Gel')&&!hasState(o,'Au sol')).forEach(o=>{
   if(contactsDe(o).some(h=>h.hero&&alive(h)))return;
   const l=actors.filter(h=>h.hero&&surCarteAdv(h)).sort((u,v)=>tokenDistance(o,u,size)-tokenDistance(o,v,size)),h=l[0];if(!h)return;
-  const pt=placeAuContact(o,h);if(!pt)return;o.x=pt.x;o.y=pt.y;infligeEtat(h,'Au sol');log(nomNum(o)+' charge '+nomNum(h)+' : Au sol.',{ton:'talent'})})}
+  const pt=placeAuContact(o,h);if(!pt)return;o.x=pt.x;o.y=pt.y;infligeEtat(h,'Au sol');log(phraseJournal(talentDe(o,'chargesanglier'),'chargesanglier','charge',{lanceur:nomNum(o),cible:nomNum(h)}),{ton:'talent'})})}
 {const ts=tourSuivant;tourSuivant=function(...x){try{finDuTourAdversaires()}catch(e){}const r=ts(...x);try{debutDuTourAdversaires();render();scheduleSave()}catch(e){}return r}}
 {const bm=basculerMode;basculerMode=function(neuf,...x){const r=bm(neuf,...x);if(neuf==='combat')try{chargesDuTour();render();scheduleSave()}catch(e){}return r}}
 // Le Fongicide amer : lancé sur une créature Sensible au fongicide, 2 dés blancs contre sa DEF ; bu, il retire la Corruption.
@@ -5719,7 +5805,7 @@ function attack(opts={}){
  const lancer=activeAttack(a).lancer||null,lanceAuContact=!!lancer&&vises.every(j=>contactsDe(a).includes(actors[j]));
  if(lanceAuContact)porteeForcee={id:a.id,range:'contact'};
  const predateur=hasState(a,'Affaibli')||activeAttack(a).useOwnDamage===false?null:desPredateur(a);
- if(predateur)log(nomNum(a)+' · Prédateur des Ombres : +'+predateur.total+' ('+predateur.dit+').',{ton:'talent'});
+ if(predateur)log(nomNum(a)+' · Prédateur des Ombres : '+phraseJournal(talentDe(a,'predateurombres'),'predateurombres','bonus',{total:predateur.total,details:predateur.dit}),{ton:'talent'});
  // v0.865 : le Plasma s'ajoute toujours — même à une Invention qui n'ajoute pas le bonus de dégâts du porteur.
  const bonus=(hasState(a,'Affaibli')||activeAttack(a).useOwnDamage===false?0:degatsDe(a)+rageContact(a,rangeOf(a))+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0)+bonusReaction(a,ctxT&&ctxT.talent));
  // La munition du tir : chaque tir parti en consomme une ; la dernière partie, elle quitte la main.
@@ -6034,5 +6120,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();
-</script><script src="./catalog.js?v=0.982"></script><script src="./planches-calcul.js?v=0.982"></script><script src="./planches.js?v=0.982"></script><script src="./actualites.js?v=0.982"></script><script src="./editor.js?v=0.982"></script><script src="./maps.js?v=0.982"></script><script src="./domaine.js?v=0.982"></script><script src="./regles.js?v=0.982"></script><script src="./import-adversaires.js?v=0.982"></script><script src="./campagnes.js?v=0.982"></script><script src="./firebase-config.js?v=0.982"></script><script src="./shared-data.js?v=0.982"></script><script src="./shared.js?v=0.982"></script>
-<script src="./live.js?v=0.982"></script></body></html>
+</script><script src="./catalog.js?v=0.983"></script><script src="./planches-calcul.js?v=0.983"></script><script src="./planches.js?v=0.983"></script><script src="./actualites.js?v=0.983"></script><script src="./editor.js?v=0.983"></script><script src="./maps.js?v=0.983"></script><script src="./domaine.js?v=0.983"></script><script src="./regles.js?v=0.983"></script><script src="./import-adversaires.js?v=0.983"></script><script src="./campagnes.js?v=0.983"></script><script src="./firebase-config.js?v=0.983"></script><script src="./shared-data.js?v=0.983"></script><script src="./shared.js?v=0.983"></script>
+<script src="./live.js?v=0.983"></script></body></html>

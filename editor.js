@@ -595,6 +595,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
   if(t.plasma!==true)delete t.plasma;
   if(typeof t.incident!=='string'||!t.incident.trim())delete t.incident;else t.incident=t.incident.trim().slice(0,400);
+  // v0.983 : les phrases du journal, du texte court par clé.
+  if(t.journal&&typeof t.journal==='object'&&!Array.isArray(t.journal)){const j={};Object.entries(t.journal).slice(0,40).forEach(([k,v])=>{if(/^\w{1,30}$/.test(k)&&typeof v==='string'&&v.trim())j[k]=v.trim().slice(0,400)});if(Object.keys(j).length)t.journal=j;else delete t.journal}else delete t.journal;
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
      fois ; le MJ le change ensuite dans l'éditeur. */
   if(t.effet==='orbesfeu'&&!(t.params&&typeof t.params==='object'&&'quand' in t.params)&&/toujours/i.test(String(t.effects||'')))
@@ -3827,6 +3829,13 @@ function reglagesPaliers(code,d){const vals=[];if(!code)return vals;
    effets câblés : chaque volet et le palier qui l'ouvre (un clic l'y déplace), les réglages
    communs une seule fois, ceux qui changent de palier en palier, et pour finir ce que le
    moteur fera à chaque palier, en toutes lettres. */
+/* v0.983 : un champ par phrase que la mécanique choisie écrit au journal ; vide, elle garde son texte d'origine, montré en grisé. */
+function dessineJournalTalent(){const boite=$('talent-journal'),cadre=$('talent-journal-boite'),f=$('talent-form');if(!boite||!f)return;
+ const code=f.elements.effet&&f.elements.effet.value,L=typeof JOURNAL_TALENTS!=='undefined'&&JOURNAL_TALENTS[code]||[];
+ const d=talentDraft.journal??={};boite.replaceChildren();if(cadre)cadre.hidden=!L.length;
+ L.forEach(([cle,nom,defaut])=>{const l=document.createElement('label');l.className='journal-champ';l.append(nom);
+  const z=document.createElement('textarea');z.name='journal_'+cle;z.rows=2;z.maxLength=400;z.placeholder=defaut;z.value=d[cle]||'';
+  z.oninput=()=>{d[cle]=z.value};l.append(z);boite.append(l)})}
 function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)return;const f=$('talent-form').elements;
  const code=TALENTS_CODES[f.effet.value]||null,d=talentDraft,elem=!!(f.elementaire&&f.elementaire.checked);
  d.volets??={};
@@ -3887,7 +3896,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  const premiere=[...(catalog.classes||[])].map(c=>c&&c.name).filter(Boolean).sort((x,y)=>x.localeCompare(y,'fr'))[0]||'';
  const t=i===null?{name:'Nouveau talent',famille:premiere,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{},...(defauts||{})}:catalog.talents[i];
  if(i!==null&&!t)return;
- talentDraft={effet:t.effet||'',params:{...(t.params||{})},effects:t.effects||'',couts:[1,2,3].map(n=>coutPalier(t,n)),paliers:structuredClone(t.paliers||{}),volets:{...(t.volets||{})}};
+ talentDraft={effet:t.effet||'',params:{...(t.params||{})},journal:{...(t.journal||{})},effects:t.effects||'',couts:[1,2,3].map(n=>coutPalier(t,n)),paliers:structuredClone(t.paliers||{}),volets:{...(t.volets||{})}};
  // Ce que l'arbre sait d'un talent qu'on y crée : sa voie, son prérequis, sa place.
  talentDefauts=i===null?(defauts||{}):null;
  /* Les classes offertes : celles du jeu, celles déjà portées par un talent, et celles que
@@ -3938,6 +3947,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check" id="remplace-logo"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceLogo" '+(t.remplaceLogo===true?'checked':'')+'>Remplace le logo du talent</label>'
   +'<p class="muted accolades-aide">Accolades, dans le nom, les textes et le logo : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<div id="talent-exige"></div></section>'
+  // v0.983 : les phrases du journal de combat, une par ligne que la mécanique écrit.
+  +'<section class="talent-boite b-journal t-seul" id="talent-journal-boite" hidden><h2 class="sous-titre">Journal de combat</h2><div id="talent-journal"></div></section>'
   +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
   +'<label class="field-check" id="paliers-ame"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="paliersActifs" '+(t.paliersActifs===true?'checked':'')+'>Paliers</label>'
   +'<div id="talent-reglages"></div>'
@@ -4073,6 +4084,9 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(f.radiant&&f.radiant.checked&&t.effet!=='bonus')t.radiant=true;else delete t.radiant;
  if(f.incidentOn&&f.incidentOn.checked&&f.incident&&f.incident.value.trim()&&t.effet!=='bonus')t.incident=f.incident.value.trim().slice(0,400);else delete t.incident;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
+ // v0.983 : les phrases du journal réécrites par le MJ ; vides, elles s'effacent.
+ {const j={};(typeof JOURNAL_TALENTS!=='undefined'&&JOURNAL_TALENTS[t.effet]||[]).forEach(([cle])=>{const z=f['journal_'+cle],v=z&&z.value.trim();if(v)j[cle]=v.slice(0,400)});
+  if(Object.keys(j).length)t.journal=j;else delete t.journal}
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
  t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,999999):0);
@@ -7789,3 +7803,4 @@ $('image-quality').oninput=()=>{$('quality-label').textContent=$('image-quality'
 $('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||(view!=='mj'&&!job.joueur))return;$('image-accept').disabled=true;const reader=new FileReader();reader.onerror=()=>{$('image-error').textContent='Impossible de lire la copie optimisée.'};reader.onload=()=>{if(job!==imageJob)return;job.accept(reader.result);imgDialog.close();scheduleSave()};reader.readAsDataURL(job.output)};
 $('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.',{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})};
 loadSession();
+{const d=dessineReglagesTalent;dessineReglagesTalent=function(...x){const r=d.apply(this,x);dessineJournalTalent();return r}}

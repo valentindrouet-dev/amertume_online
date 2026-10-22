@@ -2459,7 +2459,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    ne tient debout ; le Repos court soigne 1d6 + Endu hors combat, une fois entre deux combats. */
 {assert.ok(page.includes("function nomNum(o){if(!o)return '';const r=o.id?nameNumbers().get(o.id):null;return String(o.name||'?')+(r?' '+r:'')}")
   &&page.includes("s.textContent=nomNum(o);s.style.color=actorTint(o);return s};")&&page.includes("const who=parNom.get(m[0]);")
-  &&page.includes("return nomNum(c)+(blinde?' Blindage':' −'+degats)+(c.hp===0?' (coma)':'')}")&&page.includes("log(nomNum(a)+' invoque '+nomNum(c)+'.',{ton:'talent'});"),'le journal écrit « Gobelin 2 »');
+  &&page.includes("return nomNum(c)+(blinde?' Blindage':' −'+degats)+(c.hp===0?' (coma)':'')}")&&page.includes("log(phraseJournal(ctx&&ctx.talent,'invocation','invoque',{lanceur:nomNum(a),cible:nomNum(c)}),{ton:'talent'});"),'le journal écrit « Gobelin 2 »');
  // nomNum en machine virtuelle : deux Gobelins révélés portent leur numéro, un nom unique n'en porte pas.
  const ctxN={actors:[{id:'h',name:'Ulfgar',hero:true},{id:'g1',name:'Gobelin',vu:true,numero:1},{id:'g2',name:'Gobelin',vu:true,numero:2},{id:'o',name:'Ogre',vu:true,numero:1}]};vm.createContext(ctxN);
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
