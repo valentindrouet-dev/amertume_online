@@ -1357,7 +1357,12 @@ function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o
 /* Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte reste
    lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas. Le calque se
    refait seul, à part de la matière : il suit le socle qu'on tient. */
-function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replaceChildren();if(!m)return;
+/* v0.974 : les fenêtres se peignent sous le brouillard, dans leur propre calque : elles ne ressortent pas de l'ombre comme
+   les portes, on ne les voit que là où la vue porte. */
+function calqueFenetres(){let f=$('map-fenetres');if(!f){const doors=$('map-doors'),fog=$('fog');if(!doors||!fog)return doors;
+  f=document.createElementNS('http://www.w3.org/2000/svg','svg');f.id='map-fenetres';f.setAttribute('viewBox','0 0 100 100');f.setAttribute('preserveAspectRatio','none');f.setAttribute('aria-hidden','true');
+  fog.before(f)}return f}
+function renderPortes(){const portes=$('map-doors'),fenetres=calqueFenetres(),m=currentMap();portes.replaceChildren();if(fenetres&&fenetres!==portes)fenetres.replaceChildren();if(!m)return;
  (m.doors||[]).forEach((d,i)=>{
   const mj=view==='mj';
   // Un passage secret clos n'existe pas pour la troupe : elle ne voit qu'un mur.
@@ -1383,7 +1388,7 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
     depensePoint(qui,'mouvement')}
    d.open=!d.open;if(d.fenetre)log((d.open?'Les volets s’ouvrent':'Les volets se ferment')+(qui?' : '+nomNum(qui)+' dépense 1 point de Mouvement.':'.'),{ton:'talent'});
    render();scheduleSave()};
-  portes.append(el)})}
+  (d.fenetre&&fenetres?fenetres:portes).append(el)})}
 /* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
    repeindre à chaque image — une toile de quatre mille pixels, floutée — faisait accrocher
    la main, et c'est la main qui prime. Au relâchement, il est prêt en quelques

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.974","d":"2026-10-22","t":"Fenêtres discrètes sous le brouillard"},
 {"v":"0.973","d":"2026-10-22","t":"Barre d'outils stable, angles nets de la Ligne de points"},
 {"v":"0.972","d":"2026-10-22","t":"Arbres de talents en groupes de niveau"},
 {"v":"0.971","d":"2026-10-22","t":"Éditeur de cartes : familles d'outils, Aimant, Ligne de points, Fenêtres"},
