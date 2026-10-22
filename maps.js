@@ -1422,7 +1422,8 @@ function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fene
    d.open=!d.open;
    render();scheduleSave()};
   manoeuvresPorte.set(d,el.onclick);
-  (d.fenetre&&fenetres?fenetres:portes).append(el)});portesBoutonsCle='';if($('map-view'))renderBoutonsPortes()}
+  // v0.996 : les portes aussi se peignent sous le brouillard, comme les fenêtres.
+  (fenetres||portes).append(el)});portesBoutonsCle='';if($('map-view'))renderBoutonsPortes()}
 /* v0.976 : sur la porte que l'aventurier du joueur touche et peut manœuvrer, un rond aux couleurs d'un Mouvement, comme le rond
    Enjamber d'un piège : un clic l'ouvre ou la ferme. Grisé en combat sans point de Mouvement. */
 let portesBoutonsCle='';
