@@ -123,6 +123,13 @@ function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(
      if(!dedans(q)){if(dansObscurite(m,q))s={x:q[0]+sg*nx*.3,y:q[1]+sg*ny*.3,rayon,fenetre:true};break}}if(s)break}
    if(s&&dedans([s.x,s.y]))s=libre(s);if(!s)s=libre({x:c.x,y:c.y,rayon,fenetre:true});if(s)l.push(s)}});
  return l}
+/* v0.984 : les sources de lumière se calculent une fois par geste, pas une fois par porte : chaque porte testée en vue les
+   redemandait, et chacune repoussait ses lumières hors des murs. Le résultat vaut jusqu'à la fin de la tâche en cours, tant
+   que les socles, les lumières et les portes n'ont pas bougé. */
+{const sl=sourcesLumiere;let memo=null;
+ const cle=()=>{const m=currentMap();return (m?m.id:'')+'|'+actors.map(a=>a?a.x+','+a.y+','+(a.hp>0?1:0)+(a.horsCarte?'h':'')+(a.eclat?'e':'')+(a.states||[]).length:'').join(';')
+  +'|'+(m&&m.lumieres||[]).map(l=>l&&l.x+','+l.y+(l.eteinte?'e':'')).join(';')+'|'+(m&&m.doors||[]).map(d=>d&&d.open?1:0).join('')};
+ sourcesLumiere=function(){const k=cle();if(memo&&memo.k===k)return memo.v;const v=sl();memo={k,v};queueMicrotask(()=>{memo=null});return v}}
 /* Les halos : un rond de clarté chaude, à peine teinté, autour de chaque source, arrêté par les murs. Une toile à part, sous le
    brouillard : là où l'on voit, le halo paraît ; ailleurs, le noir le couvre. */
 function toileHalos(){let cv=$('halos');if(!cv){cv=document.createElement('canvas');cv.id='halos';cv.setAttribute('aria-hidden','true');$('fog').before(cv)}return cv}

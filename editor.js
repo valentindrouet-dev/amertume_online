@@ -6315,7 +6315,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const remplitDetail=(aside,t)=>{arbreDetailId=t.id;aside.replaceChildren();
   // Le contenu défile dans sa boîte : la fenêtre garde sa hauteur d'un talent à l'autre.
   const panneau=document.createElement('div');panneau.className='detail-defile';aside.append(panneau);
-  corps.querySelectorAll('.arbre-plan>.arbre-noeud.choisi').forEach(x=>x.classList.remove('choisi'));{const e=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]');if(e)e.classList.add('choisi')}
+  corps.querySelectorAll(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud.choisi').forEach(x=>x.classList.remove('choisi'));{const e=corps.querySelector(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud[data-id="'+t.id+'"]');if(e)e.classList.add('choisi')}
   const tv=logoHerite(vu(t),vu);
   // En tête : le rond en grand ; à sa droite, le nom et, dessous, la description.
   const tete=document.createElement('div');tete.className='detail-tete';
@@ -6332,7 +6332,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');tete.classList.add('t-'+talentType(t)[0]);panneau.append(tete);
   // v0.906 : Gageur et Rancune — leurs créatures sous le bloc du talent, comme des bonus.
   if(a&&(t.effet==='gageur'||t.effet==='rancune')){const g=gagesEl(a,t.effet==='rancune'?'rancunes':'gages');if(g)panneau.append(g)}
-  const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
+  const el=corps.querySelector(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
      de classe, tenu d'office, ne se rend pas. */
   if(!a&&mj){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);
@@ -6427,7 +6427,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   montreDetail=t=>remplitDetail(panneau,t);
   /* v0.840 : un bonus du panneau lâché sur le grand rond d'un autre talent de l'arbre s'y copie, paliers et prix compris, à
      son premier chemin libre. */
-  if(mj){const cible=e=>{const n=e.target&&e.target.closest&&e.target.closest('.arbre-plan>.arbre-noeud[data-id]');const T=n&&talent(n.dataset.id);
+  if(mj){const cible=e=>{const n=e.target&&e.target.closest&&e.target.closest(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud[data-id]');const T=n&&talent(n.dataset.id);
     return T&&bonusTenu&&lisChemin(bonusTenu)&&lisChemin(bonusTenu).de!==T.id&&!estVide(T)?[n,T]:null};
    g.addEventListener('dragover',e=>{if(!bonusTenu)return;const r=cible(e);corps.querySelectorAll('.arbre-noeud.recoit-bonus').forEach(z=>{if(!r||z!==r[0])z.classList.remove('recoit-bonus')});
     if(r){e.preventDefault();e.stopPropagation();try{e.dataTransfer.dropEffect='copy'}catch(_){}r[0].classList.add('recoit-bonus')}},true);
@@ -6453,7 +6453,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
  corps.querySelectorAll('.arbre-col').forEach(col=>{const info=col.arbreInfo,svg=col.querySelector('.arbre-chemins');if(!info||!svg)return;
   const ns='http://www.w3.org/2000/svg',R=col.getBoundingClientRect(),{liste,mj,a}=info;
   svg.setAttribute('viewBox','0 0 '+Math.max(1,R.width)+' '+Math.max(1,R.height));svg.replaceChildren();
-  const elDe=id=>col.querySelector('.arbre-plan>.arbre-noeud[data-id="'+id+'"]');
+  const elDe=id=>col.querySelector(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud[data-id="'+id+'"]');
   // Le centre d'un bouton, et son rayon : le trait va jusqu'à son bord et s'y glisse dessous.
   /* Un bonus n'a plus de rond : son trait passe sous son icône, jusque près de son centre, pour la
      toucher quelle que soit sa forme. */
@@ -6464,7 +6464,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   const pris=(x,y)=>!!a&&a.talents.includes(x.id)&&a.talents.includes(y.id);
   // Ce que le MJ a caché : flou chez les joueurs ; chez lui, pâli, pour qu'il sache ce qu'ils ne voient pas.
   const caches=talentsCaches(liste),voitTout=view==='mj'&&!arbresVueJoueur;
-  col.querySelectorAll('.arbre-plan>.arbre-noeud').forEach(el=>{const c=caches.has(el.dataset.id);el.classList.toggle('cache-joueur',c&&!voitTout);el.classList.toggle('cache-mj',c&&voitTout)});
+  col.querySelectorAll(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud').forEach(el=>{const c=caches.has(el.dataset.id);el.classList.toggle('cache-joueur',c&&!voitTout);el.classList.toggle('cache-mj',c&&voitTout)});
   // Sous la limite, chez les joueurs : pas de trait ; celui qui y descend s'arrête à la barrière.
   const trait=(de,vers,A,B,lien)=>{const hA=A.classList.contains('hors-limite'),hB=B.classList.contains('hors-limite');if(hA||(hB&&!lien))return;
    // Une ligne qui porte un niveau ne se voit pas chez les joueurs : sa pastille et la barrière restent ; chez le MJ, pâle.
@@ -6502,7 +6502,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    col.append(b)}));
   // L'entrée de l'arbre : un trait qui part du bandeau de la colonne et descend jusqu'au talent de départ.
   const titre=col.querySelector('.arbre-titre');
-  col.querySelectorAll('.arbre-plan>.arbre-noeud.racine').forEach(el=>{const c=centre(el);if(!titre)return;
+  col.querySelectorAll(':is(.arbre-plan,.arbre-ligne-groupe)>.arbre-noeud.racine').forEach(el=>{const c=centre(el);if(!titre)return;
    const T=titre.getBoundingClientRect(),haut=T.top+T.height/2-R.top,l=document.createElementNS(ns,'line');
    l.setAttribute('x1',c.x.toFixed(1));l.setAttribute('x2',c.x.toFixed(1));l.setAttribute('y1',haut.toFixed(1));l.setAttribute('y2',(c.y-c.r).toFixed(1));
    l.setAttribute('class','entree'+(el.classList.contains('acquis')?' pris':''));svg.append(l)})})}

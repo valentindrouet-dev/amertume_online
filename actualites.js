@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.984","d":"2026-10-22","t":"Achat dans l'arbre réparé, plus de délai au lâcher d'un token"},
 {"v":"0.983","d":"2026-10-22","t":"Phrases du journal de combat réglables par talent"},
 {"v":"0.982","d":"2026-10-22","t":"Partie visible des arbres par groupes, commune à tous"},
 {"v":"0.981","d":"2026-10-22","t":"Arbre sans XP ni coche sous les ronds"},
