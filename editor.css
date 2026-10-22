@@ -2779,7 +2779,7 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 .arbres-v2 .arbre-plan>.arbre-noeud.dispo .arbre-rond{border-style:dashed;border-width:3px}
 .arbres-v2 .arbre-plan>.arbre-noeud.verrou .arbre-rond{filter:grayscale(.55);opacity:.82;border-style:dashed}
 .arbres-v2 .arbre-plan>.arbre-noeud.verrou:not(.petit) .arbre-rond::after{content:'🔒';position:absolute;top:2px;right:2px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#6f675c;color:#fff;font:12px/1 system-ui;border:2px solid var(--panel);filter:grayscale(1)}
-.arbres-v2 .arbre-plan>.arbre-noeud.choisi:not(.petit) .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px #f2c14e55}
+.arbres-v2 .arbre-plan>.arbre-noeud.choisi:not(.petit) .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px color-mix(in srgb,#c99a3c 35%,transparent)}
 /* Le nom sous le rond : centré, deux lignes au plus, sur un fond qui cache le trait qui passe dessous. */
 .arbres-v2 .arbre-plan>.arbre-noeud>.arbre-nom-v2{position:absolute;left:50%;top:calc(50% + var(--nom-y,54px));transform:translateX(-50%);width:150px;text-align:center;pointer-events:none;z-index:2;
  font:700 15px/1.15 'Killam',Georgia,serif;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -3442,3 +3442,13 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue>.arbre-place-groupe:hover{border-color:var(--accent);opacity:1}
 .arbre-col.arbre-col-groupes{min-width:500px;flex:none}
 .arbre-col-groupes .arbre-plan-groupes{max-width:none}
+/* v0.992 : dans la roue, seul le rond se prend (la boîte du nœud débordait sur ses voisins) ; un seul cercle, doublé d'or pour le
+   talent choisi. Acquis : rond et icône en couleur. Achetable : l'icône seule en couleur, le rond neutre. Fermé ou trop cher : tout en gris. */
+.arbre-roue>.arbre-noeud{pointer-events:none;padding:0;background:none;border:0}
+.arbre-roue>.arbre-noeud .arbre-rond{pointer-events:auto;box-shadow:none;border-style:solid}
+.arbre-roue>.arbre-noeud.acquis .arbre-rond{box-shadow:0 2px 6px #0003;opacity:1;filter:none}
+.arbre-roue>.arbre-noeud.dispo .arbre-rond{background:var(--panel);border-color:var(--line);filter:none;opacity:1}
+.arbre-roue>.arbre-noeud.verrou{opacity:1}
+.arbre-roue>.arbre-noeud.verrou .arbre-rond{background:var(--panel-2);border-color:var(--line);filter:grayscale(1);opacity:.55}
+.arbre-roue>.arbre-noeud .arbre-rond::after{content:none}
+.arbre-roue>.arbre-noeud.choisi .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px color-mix(in srgb,#c99a3c 35%,transparent)}
