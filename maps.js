@@ -702,7 +702,11 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
   /* Chez le MJ, un objet se voile comme un adversaire : caché par lui, pâli et cerclé de violet ;
      dans une salle que la troupe n'a pas encore vue, pâli et cerclé de tirets. */
   const t=document.createElement('button');t.className='token objet'+(!objetVu(o)?' cachemj':!vuTroupe?' veiled':'');
-  poseLogoObjet(t,o);t.style.left=o.x+'%';t.style.top=o.y+'%';
+  poseLogoObjet(t,o);
+  // v0.9993 : un Indice découvert, qui attend encore son examen, prend l'icône et la couleur de la compétence à tester.
+  if(o.indice&&objetVu(o)&&!o.examine&&o.examen&&o.examen.mode==='comp'){const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),ico=typeof logoCompetence==='function'?logoCompetence(k):null;
+   t.classList.add('indice-test');t.style.background='rgb('+SKILL_TINTS[k]+')';if(ico)t.replaceChildren(ico);else t.textContent=skillNames[k].slice(0,2)}
+  t.style.left=o.x+'%';t.style.top=o.y+'%';
   t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
   t.title=o.nom+(objetVu(o)?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);
   t.setAttribute('aria-label',t.title);
@@ -726,7 +730,7 @@ function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine)return;
   o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'});render();saveMaps();scheduleSave();return}
  const k=Math.max(0,Math.min(7,Number(x.comp)||0)),n=Math.max(1,Number(x.reussites)||1),jet=skillRoll(valeurCompetence(a,k)-1,d6);
  if(typeof rollOnBoard==='function')rollOnBoard([{dice:jet.des.slice(0,40).map(v=>[v,0])}],a,null);
- log(nomNum(a)+' · '+skillNames[k]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' sur '+n+' ⦃'+jet.des.join(',')+'⦄',{dice:true});
+ log(nomNum(a)+' - ⟬t'+k+'|'+jet.reussites+'|'+jet.des.slice(0,40).join(',')+'⟭');
  if(jet.reussites>=n){o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'})}render();saveMaps();scheduleSave()}
 function bulleObjetCarte(o){const d=document.createElement('div');d.className='bulle-objet-carte';
  const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
@@ -1288,7 +1292,8 @@ function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p
  const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,t.comp,quoi==='enjambement'):0)+(quoi!=='enjambement'&&typeof bonusBricoleur==='function'?bonusBricoleur(a):0),ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
- else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}
+ // v0.9993 : le Bouton d'Interaction n'écrit que son test : « Ulfgar - Test de Ruse : 2 Réussites ».
+ else{log(nomNum(a)+' - ⟬t'+Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0))+'|'+n+'|'+jet.des.slice(0,40).join(',')+'⟭');if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}
   // Sorti du fond, il regagne la place d'où le piège l'avait happé, ou à défaut le bord le plus proche, hors du piège.
   // Sorti, il n'est plus Au sol si c'est ce piège qui l'y avait mis.
   if(ok&&dedans){const de={x:a.x,y:a.y},q=sortieDuPiege(a,p);a.x=q.x;a.y=q.y;delete a.avantPiege;if((p.etats||[]).includes('Au sol')&&hasState(a,'Au sol'))setState(a,'Au sol',false);if(typeof settleActor==='function')settleActor(a);render();glisseAuPiege(a,de);saveMaps();scheduleSave();return}}
