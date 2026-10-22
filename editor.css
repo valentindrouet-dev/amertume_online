@@ -3452,3 +3452,5 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue>.arbre-noeud.verrou .arbre-rond{background:var(--panel-2);border-color:var(--line);filter:grayscale(1);opacity:.55}
 .arbre-roue>.arbre-noeud .arbre-rond::after{content:none}
 .arbre-roue>.arbre-noeud.choisi .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px color-mix(in srgb,#c99a3c 35%,transparent)}
+/* v0.994 : un talent qu'on ne peut pas acheter garde le pointeur ordinaire : un clic l'ouvre toujours dans le panneau. */
+#arbres .arbre-noeud.verrou,#arbres .arbre-noeud.verrou .arbre-rond{cursor:pointer}
