@@ -695,16 +695,16 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
    coupent jamais la vue. */
 function renderObjets(){const vue=$('map-view'),m=currentMap();
  vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m||enCombat())return;
- (m.objets||[]).forEach((o,i)=>{if(o.pris||(!o.visible&&view!=='mj'))return;
+ (m.objets||[]).forEach((o,i)=>{if(o.pris||(!objetVu(o)&&view!=='mj'))return;
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
   const vuTroupe=seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'});
   if(oeilJoueur()&&!vuTroupe)return;
   /* Chez le MJ, un objet se voile comme un adversaire : caché par lui, pâli et cerclé de violet ;
      dans une salle que la troupe n'a pas encore vue, pâli et cerclé de tirets. */
-  const t=document.createElement('button');t.className='token objet'+(!o.visible?' cachemj':!vuTroupe?' veiled':'');
+  const t=document.createElement('button');t.className='token objet'+(!objetVu(o)?' cachemj':!vuTroupe?' veiled':'');
   poseLogoObjet(t,o);t.style.left=o.x+'%';t.style.top=o.y+'%';
   t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
-  t.title=o.nom+(o.visible?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);
+  t.title=o.nom+(objetVu(o)?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);
   t.setAttribute('aria-label',t.title);
   /* Au survol, la bulle : la pièce qu'il contient, telle qu'à l'Armurerie, et sa description. Au
      clic, un aventurier au contact le récupère ; le MJ, lui, choisit : révéler, cacher, ou le
@@ -734,7 +734,7 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
  if(pieces.length)pieces.forEach((it,k)=>{const g=gearDetail(it,null,false);g.hidden=false;g.classList.add('large');if(!k){const p=desc();if(p)g.append(p)}d.append(g)});
  else{const g=document.createElement('div');g.className='gear-detail large';const n=document.createElement('p');n.className='gear-nom';n.textContent=o.nom||'Objet';g.append(n);const p=desc();if(p)g.append(p);d.append(g)}
  if(o.indice&&o.examine&&o.secret){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=o.secret;(d.firstChild||d).append(p)}
- if(view==='mj'&&!o.visible){const c=document.createElement('p');c.className='muted objet-cache-bulle';c.textContent='Caché : '+skillNames[o.test.comp]+', '+o.test.reussites+' réussite'+(o.test.reussites>1?'s':'');(d.firstChild||d).append(c)}
+ if(view==='mj'&&!objetVu(o)){const c=document.createElement('p');c.className='muted objet-cache-bulle';c.textContent='Caché : '+skillNames[o.test.comp]+', '+o.test.reussites+' réussite'+(o.test.reussites>1?'s':'');(d.firstChild||d).append(c)}
  return d}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
    l'objet quitte la carte pour toute la table — jusqu'à ce que la carte soit rechargée. */
@@ -756,7 +756,7 @@ function echapMenuObjet(e){if(e.key==='Escape')fermeMenuObjet()}
 function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
  const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=o.nom||'Objet';m.append(t);
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
- bouton(o.visible?'Cacher à la troupe':'Révéler à la troupe',()=>{o.visible=!o.visible;if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(o.visible?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
+ bouton(objetVu(o)?'Cacher à la troupe':'Révéler à la troupe',()=>{montreObjet(o,!objetVu(o));if(objetVu(o))floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(objetVu(o)?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  // v0.9991 : un Indice ne se donne ni ne se ramasse : il reste où il est.
  const h=o.indice?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
  document.body.append(m);const r=m.getBoundingClientRect();
@@ -866,24 +866,28 @@ function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
  const trouve=jet.reussites>=o.test.reussites;
  log(nomNum(a)+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' sur '+o.test.reussites+' ⦃'+jet.des.join(',')+'⦄ — '
   +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
- if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');render();saveMaps()}
+ if(trouve){montreObjet(o,true);floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');render();saveMaps()}
  return trouve}
 /* Un test de compétence lancé depuis la fiche cherche aussi, dans la zone de contact de
    l'aventurier : chaque objet caché qui s'y trouve — aucun mur entre eux —, découvert par cette
    compétence, la Perception d'ordinaire, et avec assez de réussites, paraît à toute la table. */
+/* v0.9992 : « visible » est le choix de l'éditeur, que la Table ne touche jamais. Ce qu'elle révèle ou cache le MJ en partie
+   tient dans « revele » (un objet caché paru) et « voile » (un objet visible caché d'autorité), effacés au chargement de la carte. */
+const objetVu=o=>!!o&&(o.visible!==false?!o.voile:!!o.revele);
+function montreObjet(o,v){if(o.visible!==false){if(v)delete o.voile;else o.voile=true}else if(v)o.revele=true;else delete o.revele}
 function objetsDecouverts(a,comp,reussites,nouvelle){const m=currentMap();if(!a||!a.hero||!m)return [];
  // La Perception ne cherche que dans la part neuve de la fouille ; une autre compétence, dans tout le contact.
  const murs=walls(),atteint=o=>nouvelle?!wallsBetween(a,o,murs)&&dansFouilleNeuve(o,nouvelle):objetAPortee(a,o);
  // Fouiller révèle tout objet caché de sa zone, quelle que soit la compétence de son test ; un autre test, ceux de sa compétence.
  // v0.899 : Vision des profondeurs (Nain) — +1 réussite contre ce qui est caché dans la pierre.
  const pierre=x=>x&&x.pierre===true&&typeof porteEffet==='function'&&porteEffet(talentsCodes(a),'visionprofondeurs')?1:0;
- const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&(nouvelle||o.test.comp===comp)&&reussites+pierre(o)>=o.test.reussites&&atteint(o));
- trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');
-  // v0.998 : un Indice trouvé s'annonce au milieu de l'écran, et écrit au journal la phrase du MJ.
-  if(o.indice){if(typeof annonceFlottante==='function')annonceFlottante('Indice Repéré !','annonce-indice');if(o.journal)log(o.journal,{ton:'reveal'})}});
+ const trouves=(m.objets||[]).filter(o=>!objetVu(o)&&o.test&&(nouvelle||o.test.comp===comp)&&reussites+pierre(o)>=o.test.reussites&&atteint(o));
+ trouves.forEach(o=>{montreObjet(o,true);floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');
+  // v0.998 : un Indice trouvé s'annonce au milieu de l'écran.
+  if(o.indice&&typeof annonceFlottante==='function')annonceFlottante('Indice Repéré !','annonce-indice')});
  /* La Perception trouve aussi les passages secrets et les coffres cachés que sa fouille neuve touche,
     avec assez de réussites : le passage devient une porte, le coffre paraît. */
- const noms=trouves.map(o=>o.nom);
+ const noms=trouves.map(o=>o.indice?'⁅'+o.nom+'⁆':o.nom);
  if(comp===PERCEPTION&&nouvelle){
   (m.doors||[]).forEach(d=>{if(d.secret&&!d.open&&!d.decouvert&&reussites+pierre(d)>=(Number(d.perception)||1)&&formeDansFouille(d,nouvelle)){
    d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul');noms.push('un passage secret')}});
@@ -895,7 +899,8 @@ function objetsDecouverts(a,comp,reussites,nouvelle){const m=currentMap();if(!a|
  if((comp===PERCEPTION&&nouvelle)||comp===RUSE)(m.pieges||[]).forEach(p=>{if(!p.cache||p.revele||p.rate||!p.detection||p.detection.comp!==comp)return;
   if(!(comp===PERCEPTION?formeDansFouille(p,nouvelle):piegeAPortee(a,p)))return;
   if(reussites>=p.detection.reussites){p.revele=true;floatNumber(centrePiege(p),'Révélé !','nul');noms.push(p.nom)}else if(comp===RUSE){p.rate=true;piegeManque=true}});
- if(noms.length){log(nomNum(a)+' découvre '+noms.join(', ')+' !',{ton:'carte'});render();saveMaps();scheduleSave()}
+ // v0.9992 : la découverte d'abord, puis la phrase du MJ de chaque indice trouvé.
+ if(noms.length){log(nomNum(a)+' découvre '+noms.join(', ')+' !',{ton:'carte'});trouves.forEach(o=>{if(o.indice&&o.journal)log(o.journal,{ton:'reveal'})});render();saveMaps();scheduleSave()}
  else if(piegeManque){saveMaps();scheduleSave()}
  return trouves}
 // Le centre d'une porte ou d'un coffre, là où s'affiche ce qui lui arrive.
@@ -1370,8 +1375,8 @@ function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=docum
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
   b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};(dansBarre?barre:calque).append(b)}))}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
-function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
- objetVue.querySelector('h2').textContent=(o.visible?'':'◌ ')+o.nom;
+function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!objetVu(o)&&view!=='mj'))return;
+ objetVue.querySelector('h2').textContent=(objetVu(o)?'':'◌ ')+o.nom;
  const corps=$('objet-corps');corps.replaceChildren();
  const p=(cls,txt)=>{const e=document.createElement('p');if(cls)e.className=cls;e.textContent=txt;corps.append(e);return e};
  p(o.desc?'objet-desc':'muted',o.desc||'Aucune description.');
@@ -1392,10 +1397,10 @@ function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o
  if(pourquoi&&(liste.length||o.tresor))p('muted',pourquoi);
  if(view==='mj'){const outils=document.createElement('div');outils.className='objet-outils';
   const h=document.createElement('h3');h.textContent='Maître du jeu';corps.append(h);
-  const voile=document.createElement('button');voile.textContent=o.visible?'Cacher à la troupe':'Révéler à la troupe';
-  voile.onclick=()=>{o.visible=!o.visible;log(o.nom+(o.visible?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();openObjetTable(i)};
+  const voile=document.createElement('button');voile.textContent=objetVu(o)?'Cacher à la troupe':'Révéler à la troupe';
+  voile.onclick=()=>{montreObjet(o,!objetVu(o));log(o.nom+(objetVu(o)?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();openObjetTable(i)};
   outils.append(voile);
-  if(!o.visible){const test=document.createElement('button');
+  if(!objetVu(o)){const test=document.createElement('button');
    test.textContent='🎲 Test : '+skillNames[o.test.comp]+' × '+o.test.reussites+(a&&a.hero?' pour '+a.name:'');
    test.disabled=!(a&&a.hero);test.title=a&&a.hero?'Lance la compétence de l’aventurier sélectionné.':'Sélectionne l’aventurier qui cherche.';
    test.onclick=()=>{objetVue.close();testerObjet(a,o)};outils.append(test)}
@@ -1496,7 +1501,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});
+ (m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);

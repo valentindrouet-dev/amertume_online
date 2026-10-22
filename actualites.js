@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.9992","d":"2026-10-22","t":"Caché reste caché"},
 {"v":"0.9991","d":"2026-10-22","t":"Les indices ne se donnent pas"},
 {"v":"0.999","d":"2026-10-22","t":"Talent initial au centre, Coupure automatique"},
 {"v":"0.998","d":"2026-10-22","t":"Indices sur les cartes"},

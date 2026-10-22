@@ -4689,7 +4689,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(carto.includes("function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;")&&carto.includes(" else{l.eteinte=true;l.prise=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}")
   &&carto.includes("bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte){delete l.eteinte;delete l.prise}else l.eteinte=true;")
   &&carto.includes(" vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;")&&carto.includes(" renderPortes();renderCoffres();renderPieges();renderObjets();renderLumieres()}")
-  &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});"),'la prise, le menu, la carte rouverte');
+  &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});"),'la prise, le menu, la carte rouverte');
  assert.ok(vivant.includes("...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),")&&vivant.includes("fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===2){l.eteinte=true;l.prise=true}else if(v===1){l.eteinte=true;delete l.prise}else if(v===0){delete l.eteinte;delete l.prise}});"),'éteinte, en ligne');}
 /* v0.591 — L'obscurité et la vision dans le noir. Sur une carte, une seconde matière, dessinée au rectangle, au contour libre,
    au remplissage d'une pièce, effacée à la gomme : dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, et
@@ -5943,7 +5943,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.ok(!('ouvert' in c)&&!('revele' in c),'ce qui lui est arrivé en partie, non');
  assert.ok(carto.includes("if(f.cache)a.hidden=true;actors.push(a)});")&&page.includes("menuCarte(a.name,[['Révéler à la troupe',()=>{a.hidden=false;render();scheduleSave()}]]")
   &&!carto.includes("'Découvert !'")&&carto.includes("d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul')")&&carto.includes("c.revele=true;floatNumber(centreForme(c),'Révélé !','nul')")
-  &&carto.includes("if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');"),'les révélations');
+  &&carto.includes("if(objetVu(o))floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');"),'les révélations');
  assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}"),'la table partage portes découvertes et coffres');
  // Les règles du coffre : verrou et piège égaux, l'un défait l'autre ; distincts, chacun le sien.
  const ctx={Math,c:null};vm.createContext(ctx);vm.runInContext(carto.match(/const coffreVisible=[^\n]*/)[0]+';this.v=coffreVerrouille;this.a=coffreArme;',ctx);
