@@ -715,13 +715,25 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
    const a=actors[selected],mien=!!(a&&a.hero&&controlled(selected)&&alive(a));
    if(!mien){log('Sélectionne d’abord ton aventurier.',{local:true});return}
    if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
+   if(o.indice){examinerIndice(a,o);return}
    recupererObjet(a,o)};
   vue.append(t)})}
+/* v0.998 — Examiner un Indice découvert, au contact : le test réglé par le MJ (sa compétence, ses réussites), ou l'objet
+   qu'il faut porter. Réussi, son secret s'écrit au journal et se lit ensuite dans sa bulle. */
+function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine)return;
+ if(x.mode==='objet'){const it=(catalog.items||[]).find(i=>i&&i.id===x.item);if(!it)return;
+  if(!(a.inventaire||[]).includes(it.id)){log('Il faut ⟦'+it.id+'⟧.',{local:true});return}
+  o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'});render();saveMaps();scheduleSave();return}
+ const k=Math.max(0,Math.min(7,Number(x.comp)||0)),n=Math.max(1,Number(x.reussites)||1),jet=skillRoll(valeurCompetence(a,k)-1,d6);
+ if(typeof rollOnBoard==='function')rollOnBoard([{dice:jet.des.slice(0,40).map(v=>[v,0])}],a,null);
+ log(nomNum(a)+' · '+skillNames[k]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' sur '+n+' ⦃'+jet.des.join(',')+'⦄',{dice:true});
+ if(jet.reussites>=n){o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'})}render();saveMaps();scheduleSave()}
 function bulleObjetCarte(o){const d=document.createElement('div');d.className='bulle-objet-carte';
  const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  const desc=()=>{if(!o.desc&&!o.tresor)return null;const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=[o.desc,o.tresor?'Trésor : '+o.tresor:''].filter(Boolean).join('\n');return p};
  if(pieces.length)pieces.forEach((it,k)=>{const g=gearDetail(it,null,false);g.hidden=false;g.classList.add('large');if(!k){const p=desc();if(p)g.append(p)}d.append(g)});
  else{const g=document.createElement('div');g.className='gear-detail large';const n=document.createElement('p');n.className='gear-nom';n.textContent=o.nom||'Objet';g.append(n);const p=desc();if(p)g.append(p);d.append(g)}
+ if(o.indice&&o.examine&&o.secret){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=o.secret;(d.firstChild||d).append(p)}
  if(view==='mj'&&!o.visible){const c=document.createElement('p');c.className='muted objet-cache-bulle';c.textContent='Caché : '+skillNames[o.test.comp]+', '+o.test.reussites+' réussite'+(o.test.reussites>1?'s':'');(d.firstChild||d).append(c)}
  return d}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
@@ -751,7 +763,11 @@ function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
 /* Le jeton d'un objet porte l'icône de la première pièce qu'il contient — celle choisie en premier
    dans sa fiche ; sans pièce à icône, son initiale. */
-function poseLogoObjet(el,o){let im=null,piece=null;const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
+function poseLogoObjet(el,o){
+ // v0.998 : un Indice porte son icône, sinon celle des Indices réglée avec les actions spéciales, sinon une loupe.
+ if(o&&o.indice){const l=o.logo||(typeof actionSpeciale==='function'?actionSpeciale('indice').logo:'')||'',im=l&&typeof logoAttaque==='function'?logoAttaque(l,'logo-objet'):null;
+  el.classList.add('indice');if(im){el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent='🔍';return}
+ let im=null,piece=null;const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  for(const it of pieces){im=typeof logoEquipement==='function'?logoEquipement(it):null;if(im){piece=it;break}}
  // Le fond du jeton : celui du carré de cette pièce, à la couleur de sa rareté.
  piece=piece||pieces[0];if(piece&&typeof rareteDe==='function')el.classList.add('piece','r-'+rareteDe(piece));
@@ -861,7 +877,9 @@ function objetsDecouverts(a,comp,reussites,nouvelle){const m=currentMap();if(!a|
  // v0.899 : Vision des profondeurs (Nain) — +1 réussite contre ce qui est caché dans la pierre.
  const pierre=x=>x&&x.pierre===true&&typeof porteEffet==='function'&&porteEffet(talentsCodes(a),'visionprofondeurs')?1:0;
  const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&(nouvelle||o.test.comp===comp)&&reussites+pierre(o)>=o.test.reussites&&atteint(o));
- trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul')});
+ trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');
+  // v0.998 : un Indice trouvé s'annonce au milieu de l'écran, et écrit au journal la phrase du MJ.
+  if(o.indice){if(typeof annonceFlottante==='function')annonceFlottante('Indice Repéré !','annonce-indice');if(o.journal)log(o.journal,{ton:'reveal'})}});
  /* La Perception trouve aussi les passages secrets et les coffres cachés que sa fouille neuve touche,
     avec assez de réussites : le passage devient une porte, le coffre paraît. */
  const noms=trouves.map(o=>o.nom);
@@ -1601,7 +1619,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
- +'<button data-tool="objet">+ Objet</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
+ +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="map-aimant" type="button" aria-pressed="false">🧲 Aimant</button><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -1767,7 +1785,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
  ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
- ['placement','Placement',['start','foe','pnj','objet','coffre','coffrerond','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
+ ['placement','Placement',['start','foe','pnj','objet','indice','coffre','coffrerond','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
 let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
 {const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
@@ -2329,6 +2347,10 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDraft.lumieres.push({id:crypto.randomUUID(),nom:'Torche',x:p.x,y:p.y,rayon:3,items:[]});
   mapSel={kind:'lumiere',i:mapDraft.lumieres.length-1};renderCanvas();saveMaps();openLumiere(mapSel.i);return}
  /* Un objet se pose d'un clic et sa fiche s'ouvre aussitôt : on le nomme avant de l'oublier. */
+ // v0.998 : un Indice se pose comme un objet, caché d'office.
+ if(mapTool==='indice'){pushUndo();
+  mapDraft.objets.push({id:crypto.randomUUID(),nom:'Indice',desc:'',x:p.x,y:p.y,taille:'small',visible:false,indice:true,logo:'',journal:'',secret:'',examen:{mode:'',comp:3,reussites:1,item:''},items:[],tresor:'',test:{comp:3,reussites:1}});
+  mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  if(mapTool==='objet'){pushUndo();
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Objet',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,items:[],tresor:'',test:{comp:3,reussites:1}});
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
@@ -2515,7 +2537,37 @@ function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.val
 /* ---------- La fiche d'un objet ---------- */
 const objetDialog=dialog('objet-editor','Objet','<form id="objet-form"><div id="objet-fields"></div><div class="form-actions"><button type="button" id="objet-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 let objetIndex=null;
-function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;objetIndex=i;
+/* v0.998 — La fiche d'un Indice : son icône, son test de découverte et la phrase qu'il écrit au journal ; puis l'examen qui
+   livre son secret — un test d'une autre compétence, ou un objet à utiliser — et le texte de ce secret. */
+function openIndice(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;objetIndex=i;const x=o.examen||(o.examen={mode:'',comp:3,reussites:1,item:''});
+ objetDialog.querySelector('h2').textContent=o.nom||'Indice';
+ const objets=(catalog.items||[]).filter(it=>it&&!it.forge).sort((u,v)=>String(u.name).localeCompare(String(v.name),'fr'));
+ $('objet-fields').innerHTML='<div class="edit-grid">'
+  +field('Nom','nom',o.nom,'text','required maxlength="60"')
+  +(typeof selLogos==='function'?selLogos('Icône','logo',o.logo||''):'')
+  +sel('Visibilité','visible',o.visible?'1':'0',[['0','Caché — un test le découvre'],['1','Visible']])+'</div>'
+  +'<label>Description lue par les joueurs<textarea name="desc" rows="2" maxlength="600">'+esc(o.desc||'')+'</textarea></label>'
+  +'<div class="edit-grid">'+sel('Test de découverte — compétence','comp',String(o.test.comp),skillNames.map((n,k)=>[String(k),n]))
+  +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')+'</div>'
+  +'<label>Texte du journal quand il est repéré<textarea name="journal" rows="2" maxlength="400">'+esc(o.journal||'')+'</textarea></label>'
+  +'<h2 class="sous-titre">Second test : son secret</h2><div class="edit-grid">'
+  +sel('Pour le révéler','mode',x.mode||'',[['','— aucun —'],['comp','Un test de compétence'],['objet','Un objet à utiliser']])
+  +sel('Compétence','xcomp',String(x.comp??3),skillNames.map((n,k)=>[String(k),n]))
+  +field('Réussites nécessaires','xreussites',x.reussites||1,'number','min="1" max="9"')
+  +sel('Objet','xitem',x.item||'',[['','— choisir —'],...objets.map(it=>[it.id,it.name])])+'</div>'
+  +'<label>Texte du secret, au journal<textarea name="secret" rows="3" maxlength="600">'+esc(o.secret||'')+'</textarea></label>';
+ const f=$('objet-form').elements,maj=()=>{const md=f.mode.value;f.xcomp.closest('label').hidden=f.xreussites.closest('label').hidden=md!=='comp';f.xitem.closest('label').hidden=md!=='objet';f.secret.closest('label').hidden=!md};
+ f.mode.onchange=maj;maj();
+ $('objet-form').onsubmit=e=>{e.preventDefault();pushUndo();
+  o.nom=f.nom.value.trim().slice(0,60)||'Indice';o.visible=f.visible.value==='1';o.desc=f.desc.value.trim().slice(0,600);
+  o.logo=f.logo?f.logo.value:'';o.journal=f.journal.value.trim().slice(0,400);o.secret=f.secret.value.trim().slice(0,600);
+  o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};
+  o.examen={mode:['comp','objet'].includes(f.mode.value)?f.mode.value:'',comp:Math.max(0,Math.min(7,Number(f.xcomp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.xreussites.value)||1)),item:f.xitem.value};
+  objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
+  m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ objetDialog.showModal()}
+function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;if(o.indice)return openIndice(i);objetIndex=i;
  objetDialog.querySelector('h2').textContent=o.nom||'Objet';
  $('objet-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','nom',o.nom,'text','required maxlength="60"')

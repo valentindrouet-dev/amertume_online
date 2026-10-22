@@ -3460,3 +3460,6 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 /* v0.997 : la pastille d'Extension au coin d'un cartouche ne touche plus le suivant. */
 .hero-identite .avec-extension{position:relative;margin-right:14px}
 .hero-identite .sheet-class .pastille-extension{top:-9px;right:-10px;width:22px;height:22px}.hero-identite .sheet-class .pastille-extension img{width:15px;height:15px}
+
+/* v0.998 : « Indice Repéré ! », au milieu de l'écran, à la couleur des révélations. */
+.annonce-flottante.annonce-indice{color:#9d7b1e}

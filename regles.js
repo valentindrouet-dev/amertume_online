@@ -173,6 +173,7 @@ REGLES_SECTIONS.push(
  ()=>rgSection('exploration','L’exploration',RG.pass,'🗺','Hors combat, on se déplace librement, on fouille, on crochète et on évite les pièges.',
   rgListe(['<b>Obscurité</b> : on ne voit que sa zone de contact, plus loin avec la Vision dans le noir ; une zone éclairée se voit de loin.',
    '<b>Fouiller</b> : un test de Perception sur la zone de contact pas encore fouillée révèle objets, coffres, passages et pièges cachés.',
+   '<b>Indices</b> : cachés comme des objets, un test les repère. Au contact, un second test, ou l’objet qu’il faut, livre leur secret.',
    '<b>Pièges</b> : détecter (Perception ou Ruse), désamorcer (Ruse, Technique ou Force), éviter (Agilité).',
    '<b>Coffres et portes</b> : la clé, ou un test de Ruse ou de Technique.',
    '<b>Bruit</b> : un pas s’entend à 5 m (10 m à travers une porte), une attaque au contact à 15 m, un cri à 20 m.',

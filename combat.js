@@ -391,7 +391,11 @@ function cleanObjet(o){const t=o&&o.test||{};
   items:(Array.isArray(o&&o.items)?o.items:[]).filter(x=>typeof x==='string').slice(0,20).map(x=>texte(x,60)).filter(Boolean),
   tresor:texte(o&&o.tresor,200),...(o&&typeof o.quete==='string'&&o.quete?{quete:texte(o.quete,60)}:{}),
   test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),
-   reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))}}}
+   reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))},
+  // v0.998 : un Indice — son icône, sa phrase au journal, et l'examen qui livre son secret (un test, ou un objet à utiliser).
+  ...(o&&o.indice===true?(()=>{const x=o.examen||{},mode=['comp','objet'].includes(x.mode)?x.mode:'';
+   return {indice:true,logo:texte(o.logo,120),journal:texte(o.journal,400),secret:texte(o.secret,600),...(o.examine===true?{examine:true}:{}),
+    examen:{mode,comp:Math.max(0,Math.min(7,Math.trunc(Number(x.comp))||0)),reussites:Math.max(1,Math.min(9,Math.trunc(Number(x.reussites))||1)),item:texte(x.item,60)}}})():{})}}
 /* Une lumière sur la carte : une torche au mur, une lampe, un feu. Un point, un rayon en mètres, et l'objet qu'elle
    contient, que la troupe peut prendre — la lumière s'éteint alors. Sans objet, elle brûle pour de bon. */
 function cleanLumiere(l){return {id:texte(l&&l.id,40),nom:texte(l&&l.nom,60)||'Torche',x:borne(l&&l.x,0,100),y:borne(l&&l.y,0,100),
