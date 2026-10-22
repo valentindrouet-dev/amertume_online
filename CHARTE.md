@@ -115,6 +115,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Calcul** (`.calcul-talent`) : {3×Niveau} s'affiche par son résultat, chiffre gras noir ; Maj tenue, par le calcul : « 3 × Niveau (2) ».
 
+**Fenêtre** (`.door.fenetre`) : sur la carte et dans l'éditeur, bleu verre `#3f7bc0`, vitre `#8fd3f7` ; volets ouverts, pointillé clair sur `#dff4fd`.
+
 **Pointeur de bond** (`.bond-visee`) : socle en pointillés, vert `#2e9b5f` où le bond peut retomber, rouge `#c0392b` barré d'une croix où il ne peut pas.
 
 **Limite d'une Action bonus** (`.talent-limite`) : sous le nom dans la bulle, en italique, couleur atténuée ; rouge `#b03a48` et gras une fois prise dans son créneau, bulle grisée comprise.

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.971","d":"2026-10-22","t":"Éditeur de cartes : familles d'outils, Aimant, Ligne de points, Fenêtres"},
 {"v":"0.970","d":"2026-10-22","t":"Talents d'adversaires du roncier et état Entravé"},
 {"v":"0.969","d":"2026-10-22","t":"Import d'adversaires au Bestiaire"},
 {"v":"0.968","d":"2026-10-21","t":"Calculs des bulles : résultat, et calcul avec Maj"},

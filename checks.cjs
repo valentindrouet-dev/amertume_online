@@ -4677,7 +4677,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&carto.includes("function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||view!=='mj')return;")
   &&carto.includes(" if(d.kind==='lumiere'&&d.grip==='rayon'){const r=$('map-canvas').getBoundingClientRect(),socle=Math.max(8,r.width*echelleSocle(mapDraft)/100);"),'l’outil Lumière');
  // La table : les sources, les halos sous le brouillard, le jeton, la prise, le menu du MJ.
- assert.ok(carto.includes("function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=activeObstacles();")
+ assert.ok(carto.includes("function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=obstaclesVue();")
   &&carto.includes(" const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>libre({x:x.x,y:x.y,rayon:x.rayon*tk})).filter(Boolean);")
   &&carto.includes("  const p=Math.max(lumierePortee(a,items),feu);if(p>0){const s=libre({x:a.x,y:a.y,rayon:p*tk});if(s)l.push(s)}});")
   &&carto.includes("function toileHalos(){let cv=$('halos');if(!cv){cv=document.createElement('canvas');cv.id='halos';cv.setAttribute('aria-hidden','true');$('fog').before(cv)}return cv}")

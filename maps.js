@@ -30,7 +30,7 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
 let shapeCache={cle:'',formes:[],murs:null};
 function geometryKey(m){return m.id+'|'+matiereDe(m).map(p=>(p.verrou?'v':'')+p.anneaux.map(r=>
   r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(4)).join(',')).join(';')
- +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+','+(d.a||0)+(d.open?'o':'f')+(d.secret?'s':'')+(d.decouvert?'d':'')).join(';')}
+ +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+','+(d.a||0)+(d.open?'o':'f')+(d.secret?'s':'')+(d.decouvert?'d':'')+(d.fenetre?'w':'')).join(';')}
 // L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
 let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
@@ -38,7 +38,7 @@ function draftSkin(m){const cle=geometryKey(m);
  return skinCache.contours}
 function mapShapes(m){const cle=geometryKey(m);
  if(shapeCache.cle!==cle){const murs=wallShape(m);
-  shapeCache={cle,murs,formes:[murs,...doorBlocks(m).map(t=>({contours:[t]}))]}}
+  shapeCache={cle,murs,formes:[murs,...doorBlocks(m).map(t=>({contours:[t]}))],formesVue:[murs,...doorBlocksVue(m).map(t=>({contours:[t]}))]}}
  return shapeCache}
 /* ---------- La sélection d'une zone de blocage ---------- */
 /* Un clic dans la matière désigne le polygone qui le contient — toute la zone d'un seul
@@ -60,6 +60,8 @@ function activeObstacles(){const m=currentMap();
  const formes=m?mapShapes(m).formes:$('map').classList.contains('custom')?[]:WALLS.map(p=>({contours:[p]}));
  obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);
  return formes}
+// v0.971 : ce qui arrête le regard et la lumière — les mêmes obstacles, sauf les fenêtres ouvertes.
+function obstaclesVue(){const m=currentMap();return m?mapShapes(m).formesVue:activeObstacles()}
 // Nomme l'obstacle qui coupe la vue, pour que le MJ sache s'il peut l'ouvrir.
 function obstacleLabel(a,b){const m=currentMap(),mj=view==='mj';
  // Un passage secret clos se nomme « un mur » pour la troupe : le message ne doit pas
@@ -98,7 +100,7 @@ function obscuriteKey(m){return obscuriteDe(m).map(p=>p.anneaux.map(r=>r.length+
 const LUMIERE_FEU=4;
 /* Une source prise dans la matière, une torche scellée au mur, éclaire depuis le point libre le plus proche, comme un socle
    collé au mur regarde : son halo ne traverse pas le mur et n'empiète pas sur lui ; les portes closes l'arrêtent aussi. */
-function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=activeObstacles();
+function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=obstaclesVue();
  const libre=s=>{const p=pointLibre(s,formes);return p?{...s,x:p.x,y:p.y}:null};
  const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>libre({x:x.x,y:x.y,rayon:x.rayon*tk})).filter(Boolean);
  actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const feu=hasState(a,'Feu')||(a.orbeStatique&&a.orbeStatique.etat==='Feu')?LUMIERE_FEU:0;
@@ -108,6 +110,11 @@ function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(
   const pts=mur.pts.map(q=>[q.x/100*size.width,q.y/100*size.height]);if(mur.zone&&pts.length>2)pts.push(pts[0]);
   for(let i=1;i<pts.length;i++){const [x1,y1]=pts[i-1],[x2,y2]=pts[i],n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/tk));
    for(let k=i===1?0:1;k<=n;k++){const s=libre({x:(x1+(x2-x1)*k/n)/size.width*100,y:(y1+(y2-y1)*k/n)/size.height*100,rayon:LUMIERE_FEU*tk});if(s)l.push(s)}}});
+ /* v0.971 : une fenêtre ouverte entre le jour et l'obscurité fait entrer la lumière : un rayon de torche, depuis la fenêtre,
+    que les murs arrêtent. Un côté dans le noir, l'autre au clair. */
+ if(!m.obscuriteOff&&obscuriteDe(m).length)(m.doors||[]).forEach(d=>{if(!d||!d.fenetre||!d.open||!(d.w>0&&d.h>0))return;
+  const c={x:d.x+d.w/2,y:d.y+d.h/2},e=Math.max(d.w,d.h)*.6+1,cotes=[[c.x+e,c.y],[c.x-e,c.y],[c.x,c.y+e],[c.x,c.y-e]].map(p=>dansObscurite(m,p));
+  if(cotes.some(Boolean)&&cotes.some(v=>!v)){const s=libre({x:c.x,y:c.y,rayon:(typeof porteeEclat==='function'?porteeEclat():3)*tk});if(s)l.push(s)}});
  return l}
 /* Les halos : un rond de clarté chaude, à peine teinté, autour de chaque source, arrêté par les murs. Une toile à part, sous le
    brouillard : là où l'on voit, le halo paraît ; ailleurs, le noir le couvre. */
@@ -120,7 +127,7 @@ function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
  const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
  const cle=m.id+'|'+W+'x'+H+'|'+sources.map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')+'|'+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;
- const ctx=cv.getContext('2d'),k=W/size.width,formes=activeObstacles();ctx.clearRect(0,0,W,H);
+ const ctx=cv.getContext('2d'),k=W/size.width,formes=obstaclesVue();ctx.clearRect(0,0,W,H);
  sources.forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length<3)return;
   const cx=l.x/100*W,cy=l.y/100*H,r=l.rayon*k;ctx.save();
   ctx.beginPath();poly.forEach((q,i)=>ctx[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));ctx.closePath();ctx.clip();
@@ -217,7 +224,7 @@ function masqueEclaire(){const m=currentMap();if(!m||!fogDim)return null;const d
  const trace=anneaux=>{c.beginPath();anneaux.forEach(r=>{r.forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]/100*d.w,q[1]/100*d.h));c.closePath()})};
  c.fillStyle='#000';obscuriteDe(m).forEach(p=>{trace(p.anneaux);c.fill('evenodd')});
  // Une lumière repousse le noir en rond autour d'elle, jusqu'aux murs.
- const size=mapSize(),formes=activeObstacles();c.fillStyle='#fff';
+ const size=mapSize(),formes=obstaclesVue();c.fillStyle='#fff';
  if(size.width)sourcesLumiere().forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length>2){trace([poly]);c.fill()}});
  const img=c.getImageData(0,0,d.w,d.h).data,data=new Uint8Array(d.n);for(let k=0;k<d.n;k++)data[k]=img[k*4]>127?1:0;
  masqueLum={cle,data};return masqueLum}
@@ -268,7 +275,7 @@ function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)
   lc.drawImage(net,0,0,1,1,0,0,e,e);lc.drawImage(net,W-1,0,1,1,W+e,0,e,e);lc.drawImage(net,0,H-1,1,1,0,H+e,e,e);lc.drawImage(net,W-1,H-1,1,1,W+e,H+e,e,e);
   const fc=f.getContext('2d');fc.clearRect(0,0,W,H);dessineFloute(fc,large,-e,-e,large.width,large.height,flou,[6,9,11])}
  const sources=sourcesLumiere(),c2=c1+'|'+sources.map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')+'|'+geometryKey(m),p=toileCache(nuitPercee,W,H);
- if(nuitPercee.cle!==c2){nuitPercee.cle=c2;const pc=p.getContext('2d'),formes=activeObstacles(),demi=tokenPx()*.5;
+ if(nuitPercee.cle!==c2){nuitPercee.cle=c2;const pc=p.getContext('2d'),formes=obstaclesVue(),demi=tokenPx()*.5;
   pc.globalCompositeOperation='source-over';pc.clearRect(0,0,W,H);pc.drawImage(f,0,0);pc.globalCompositeOperation='destination-out';
   sources.forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length<3)return;
    const cx=l.x/100*W,cy=l.y/100*H,g=pc.createRadialGradient(cx,cy,0,cx,cy,l.rayon*k);
@@ -292,7 +299,7 @@ function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
  if(cv._peinte===cle)return;cv._peinte=cle;
  if(cv.width!==NW||cv.height!==NH){cv.width=NW;cv.height=NH}
  const c=cv.getContext('2d');c.globalCompositeOperation='source-over';c.clearRect(0,0,NW,NH);c.drawImage(nuit,0,0);
- if(joueur){const formes=activeObstacles();c.globalCompositeOperation='destination-out';c.fillStyle='#000';
+ if(joueur){const formes=obstaclesVue();c.globalCompositeOperation='destination-out';c.fillStyle='#000';
   // Ce que l'œil voit dans le noir se fond vers son bord, du même dégradé qu'une lumière.
   const kk=NW/size.width,demi=tokenPx()*.5;
   yeux.forEach(({o,r})=>{c.beginPath();
@@ -360,7 +367,7 @@ function computeFog(){const m=currentMap();
  if(!m){fogVis=null;fogTroupe=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
  if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakMap();brouillardRetrouve(m,d)}
- const formes=activeObstacles(),troupe=fogParty();
+ const formes=obstaclesVue(),troupe=fogParty();
  // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
  const obscur=carteObscure(),M=obscur?masqueEclaire():null;
  const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)+(obscur||blinded(a)?'/'+Math.round(rayonVision(a)):'')).join(';')
@@ -450,7 +457,7 @@ let portesVues={cle:'',vues:new WeakMap(),yeux:[]};
 function doorInSight(d){const size=mapSize();
  if(!size.width||!fogVis)return false;
  const cle=cleCadre(size);
- if(portesVues.cle!==cle){const formes=activeObstacles();
+ if(portesVues.cle!==cle){const formes=obstaclesVue();
   portesVues={cle,vues:new WeakMap(),formes,idx:indexMurs(formes),
    yeux:fogSeers().map(a=>({x:a.x,y:a.y,exclues:formesAutour(a,formes),qui:a}))}}
  if(portesVues.vues.has(d))return portesVues.vues.get(d);
@@ -1361,20 +1368,20 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
   const parCle=!mj&&d.keyLocked&&!!d.cleId&&aLaCle(heroActif(),d.cleId)&&(!d.secret||d.open||d.decouvert);
   const ouvrable=mj||((!doorLockedFor(d,mj)||parCle)&&doorInReach(d));
   const el=svgPorte(d,m.ratio,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')
-   +(d.secret?' secret':'')+(ouvrable?' can-open':''));
+   +(d.secret?' secret':'')+(d.fenetre?' fenetre':'')+(ouvrable?' can-open':''));
   el.style.pointerEvents='all';
   el.onclick=()=>{
    if(doorLockedFor(d,mj)&&!parCle){log(d.secret&&!d.open
     ?'Rien ici qu’un mur : ce passage n’existe pas pour la troupe.'
-    :'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
-   if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
+    :d.fenetre?'Cette fenêtre est verrouillée : seul le MJ peut l’ouvrir.':'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
+   if(!doorInReach(d)){log(d.fenetre?'Trop loin de la fenêtre : approche ton aventurier pour manœuvrer ses volets.':'Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
    /* En combat, ouvrir ou fermer coûte un point de Mouvement à qui manœuvre ; sans point,
       la porte ne bouge pas. En exploration, c'est gratuit. */
    const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;
    if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
      if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul',true);return}
     depensePoint(qui,'mouvement')}
-   d.open=!d.open;
+   d.open=!d.open;if(d.fenetre)log((d.open?'Les volets s’ouvrent':'Les volets se ferment')+(qui?' : '+nomNum(qui)+' dépense 1 point de Mouvement.':'.'),{ton:'talent'});
    render();scheduleSave()};
   portes.append(el)})}
 /* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
@@ -1411,7 +1418,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
- (m.doors||[]).forEach(d=>{d.open=false;delete d.decouvert;delete d.crochetee});const grille=fogDims(m);
+ (m.doors||[]).forEach(d=>{d.open=!!d.fenetre&&etatFenetre(d)==='ouverte';delete d.decouvert;delete d.crochetee});const grille=fogDims(m);
  // Et ses coffres reviennent comme le MJ les a laissés : cachés, verrouillés, piégés, pleins.
  (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
  // Et ses pièges, armés et cachés comme le MJ les a posés.
@@ -1521,24 +1528,25 @@ mapsPage.innerHTML=
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
- +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cadre">Carré de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button>'
+ +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cadre">Carré de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button><button data-tool="courbe">Ligne de points</button>'
  +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="gomme">Pinceau de découpe</button>'
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
  +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
  +'<button data-tool="diffi">Difficile</button><button data-tool="diffilibre">Difficile libre</button><button data-tool="diffiligne">Ligne difficile</button><button data-tool="difficadre">Carré difficile</button><button data-tool="diffigomme">Gomme de difficile</button><span class="bar-sep"></span>'
- +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
+ +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
  +'<button data-tool="objet">+ Objet</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
- +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
+ +'<span class="bar-sep"></span><button id="map-aimant" type="button" aria-pressed="false">🧲 Aimant</button><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
  +'<button id="czoom-in" aria-label="Zoomer">+</button><button id="czoom-reset">Ajuster</button></div>'
  +'<div class="canvas-wrap"><div id="map-canvas"></div></div><p class="muted" id="map-hint"></p></section>'
  +'<aside class="maps-props panel"><h2>Forme sélectionnée</h2><p class="muted" id="shape-label">Aucune sélection.</p>'
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
+  +'<label id="door-fenetre-label" hidden>État de la fenêtre <select id="door-fenetre"><option value="ouverte">Ouverte</option><option value="fermee">Fermée</option><option value="verrouillee">Verrouillée</option></select></label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
   +'<label id="door-perception-label" hidden>Réussites de Perception pour le trouver <input type="number" id="door-perception" min="1" max="9"></label>'
   +'<label id="door-pierre-label" hidden><input type="checkbox" id="door-pierre"> Dans la pierre</label>'
@@ -1586,6 +1594,8 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
  if(e.key==='Enter'){e.preventDefault();applyLasso()}
  else if(e.key==='Escape'){e.preventDefault();if(!annulerTrait()){lasso=null;renderCanvas()}}});
 // Échap abandonne un trait ou un lien de zones en cours.
+document.addEventListener('keydown',e=>{if(editeDomaine()||!courbe||!document.body.classList.contains('page-maps'))return;
+ if(e.key==='Enter'){e.preventDefault();appliqueCourbe()}else if(e.key==='Escape'){e.preventDefault();courbe=null;renderCanvas()}});
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine()||!zoneTrait||e.key!=='Escape')return;
  e.preventDefault();zoneTrait=zoneVise=null;dessineZonesEditeur()});
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine())return;
@@ -1681,13 +1691,43 @@ $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;re
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 $('paysage-play').onclick=()=>{if(estPaysage(mapDraft))afficherPaysage(mapDraft.id)};
 $('paysage-new').onclick=()=>{newPaysage();renderMapList();renderCanvas();saveMaps()};
-document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
+document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='courbe')courbe=null;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme';
  zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
  if(mapTool!=='ligne'&&mapTool!=='impratligne'&&mapTool!=='diffiligne')traitDepart=traitVise=null;
  renderCanvas()});
-
+/* v0.971 : les outils rangés par familles. Une ligne de familles — Sélection, Blocage, Découpe, Obscurité, Impraticable,
+   Difficile, Portes et fenêtres, Placement, Zones — puis, dessous, les outils de la famille ouverte. Annuler, Rétablir,
+   l'Aimant et le zoom restent sur la première ligne. La famille ouverte se garde sur l'appareil. */
+const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
+ ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
+ ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
+ ['placement','Placement',['start','foe','pnj','objet','coffre','coffrerond','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
+let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
+let familleOuverte=(()=>{try{return localStorage.getItem('amertume-famille-outils')||'blocage'}catch(e){return 'blocage'}})();
+{const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
+ const tete=document.createElement('div');tete.className='familles-outils';
+ const outil=k=>barre.querySelector('[data-tool="'+k+'"]');
+ tete.append(outil('select'));
+ const corps=[];
+ FAMILLES_OUTILS.forEach(([k,nom,outils])=>{const b=document.createElement('button');b.type='button';b.className='famille-outil';b.dataset.famille=k;b.textContent=nom;
+  b.onclick=()=>{familleOuverte=familleOuverte===k?'':k;try{localStorage.setItem('amertume-famille-outils',familleOuverte)}catch(e){}majFamillesOutils()};tete.append(b);
+  const r=document.createElement('div');r.className='outils-famille';r.dataset.famille=k;
+  outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foe'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'))});
+  corps.push(r)});
+ const fin=document.createElement('span');fin.className='familles-fin';tete.append(fin);
+ ['pinceau-taille','map-aimant','undo','redo','czoom-out','czoom-label','czoom-in','czoom-reset'].forEach(id=>{const x=$(id);if(x)tete.append(x)});
+ barre.querySelectorAll('.bar-sep').forEach(x=>x.remove());
+ [...barre.children].forEach(x=>{if(x!==tete)tete.append(x)});
+ barre.replaceChildren(tete,...corps)}}
+function majFamillesOutils(){document.querySelectorAll('#map-tools .outils-famille').forEach(r=>{r.hidden=r.dataset.famille!==familleOuverte});
+ document.querySelectorAll('#map-tools .famille-outil').forEach(b=>{const f=FAMILLES_OUTILS.find(x=>x[0]===b.dataset.famille);
+  b.classList.toggle('ouverte',b.dataset.famille===familleOuverte);b.classList.toggle('contient',!!f&&f[2].includes(mapTool));b.setAttribute('aria-expanded',String(b.dataset.famille===familleOuverte))});
+ const ai=$('map-aimant');if(ai){ai.classList.toggle('on',aimantOn);ai.setAttribute('aria-pressed',String(aimantOn))}}
+if($('map-aimant'))$('map-aimant').onclick=()=>{aimantOn=!aimantOn;try{localStorage.setItem('amertume-aimant',aimantOn?'1':'0')}catch(e){}majFamillesOutils();if(!aimantOn&&traitVise)traitVise={...traitVise,aimante:false};dessineTraits()};
+{const rc=renderCanvas;renderCanvas=function(...x){const r=rc(...x);majFamillesOutils();return r}}
+majFamillesOutils();
 /* La liste des cartes : le nom seul, sur une ligne ; en vert, celle qui est chargée sur la table.
    Le détail — zones, portes, adversaires, objets — se lit au survol. */
 /* Les lieux : des cartes rassemblées sous un même nom — les étages d'une tour, les salles d'un grand lieu. Une carte sans lieu
@@ -1745,7 +1785,8 @@ function traitContraint(a,b,droit,ratio){if(!droit||!a)return b;
 /* Aimantation : à portée d'une extrémité déjà posée, le trait s'y accroche. C'est ainsi
    qu'on ferme un carré sans le manquer d'un cheveu. Le seuil se resserre quand on zoome,
    pour ne pas gêner un tracé serré. */
-function boutAimante(p,ratio){const m=mapDraft;if(!m)return null;
+// v0.971 : l'aimant se coupe et se rallume d'un bouton ; coupé par défaut, le choix se garde sur l'appareil.
+function boutAimante(p,ratio){const m=mapDraft;if(!m||!aimantOn)return null;
  const r=Math.max(.05,Number(ratio)||16/9);
  let meilleur=null,court=2.6/Math.max(1,zoomC);
  const test=(x,y)=>{const d=Math.hypot((p.x-x)*r,p.y-y);if(d<court){court=d;meilleur={x,y}}};
@@ -1765,8 +1806,24 @@ function viseTrait(p,droit,ratio,maj){if(maj&&traitDepart)return traitDroit(trai
    case vide au trait plein. */
 function cadreFormes(r,ratio){const e=TRAIT_EPAISSEUR/2,ex=e,ey=e*Math.max(.05,Number(ratio)||16/9),x0=Math.min(r.x,r.x+r.w),x1=Math.max(r.x,r.x+r.w),y0=Math.min(r.y,r.y+r.h),y1=Math.max(r.y,r.y+r.h);
  return [{x:x0-ex,y:y0-ey,w:x1-x0+2*ex,h:2*ey},{x:x0-ex,y:y1-ey,w:x1-x0+2*ex,h:2*ey},{x:x0-ex,y:y0-ey,w:2*ex,h:y1-y0+2*ey},{x:x1-ex,y:y0-ey,w:2*ex,h:y1-y0+2*ey}].map(rectPolygon)}
-function annulerTrait(){if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
-const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour le sélectionner, glisse pour le déplacer, tire un coin pour le redimensionner. ⌘Z annule.',
+function annulerTrait(){if(courbe){courbe=null;renderCanvas();return true}if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
+/* v0.971 : la Ligne de points — chaque clic pose un point, la courbe passe par tous et s'arrondit (Catmull-Rom) ; un
+   double-clic ou Entrée la fond dans la matière, en trait de blocage ouvert ; Échap l'abandonne. */
+let courbe=null;
+function courbeLissee(pts,ratio){if(pts.length<3)return pts.slice();const r=Math.max(.05,Number(ratio)||16/9),out=[];
+ const P=pts.map(p=>({x:p.x*r,y:p.y})),at=i=>P[Math.max(0,Math.min(P.length-1,i))];
+ for(let i=0;i<P.length-1;i++){const p0=at(i-1),p1=at(i),p2=at(i+1),p3=at(i+2),n=Math.max(4,Math.ceil(Math.hypot(p2.x-p1.x,p2.y-p1.y)/.8));
+  for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;
+   const x=.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
+   const y=.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3);out.push({x:x/r,y})}}
+ out.push(pts[pts.length-1]);return out}
+function appliqueCourbe(){if(!courbe||!mapDraft)return;const pts=courbeLissee(courbe.pts,mapDraft.ratio);courbe=null;
+ if(pts.length<2){renderCanvas();return}pushUndo();
+ for(let i=1;i<pts.length;i++){const f=capsulePolygon(pts[i-1],pts[i],TRAIT_EPAISSEUR,mapDraft.ratio,6);if(f)ajouteMatiere(mapDraft,f)}
+ matiereChangee()}
+const HINTS={courbe:'Chaque clic pose un point : la ligne de blocage passe par tous et s’arrondit. Double-clic ou Entrée la termine, Échap l’abandonne.',
+ fenetre:'Glisse pour poser une fenêtre sur un mur, comme une porte. Elle ne se traverse pas et on ne tire pas à travers ; ouverte, elle laisse voir et fait entrer la lumière dans l’obscurité. Son état se choisit à droite.',
+ select:'Clique une zone de blocage, une porte ou un adversaire pour le sélectionner, glisse pour le déplacer, tire un coin pour le redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle de blocage : il coupe la vue et le passage, et fond avec la matière qu’il touche. Suppr efface la sélection.',
  ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj le tient parfaitement horizontal ou vertical, et au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
  cut:'Trace un rectangle dans la matière : la découpe y creuse exactement ce rectangle, vue et passage rétablis.',
@@ -1863,8 +1920,9 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  const piege=mapSel&&mapSel.kind==='piege'?cible:null;$('piege-edit').hidden=$('piege-double').hidden=!piege;
  const piegeDuDecl=mapSel&&mapSel.kind==='declencheur'?(m.pieges||[])[mapSel.i]:null;
  $('door-cle-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)remplitCles($('door-cle'),porte.cleId||'');
- $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
+ $('door-key-label').hidden=$('door-secret-label').hidden=!porte||!!porte.fenetre;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
+ $('door-fenetre-label').hidden=!(porte&&porte.fenetre);if(porte&&porte.fenetre)$('door-fenetre').value=etatFenetre(porte);
  $('door-perception-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-perception').value=Number(porte.perception)||1;
  $('door-pierre-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-pierre').checked=porte.pierre===true;
  $('door-crochet-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)$('door-crochet').value=difficultePorte(porte);
@@ -1886,7 +1944,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  refreshHistory()}
 // Portes, zone de départ et aperçus de tracé sont des boîtes ; la matière, elle, est peinte.
 function shapeEl(kind,i,r){const el=document.createElement('div');
- el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')+(kind==='coffre'&&r.cache?' cache':'')+(kind==='coffre'&&r.rond?' rond':'')+(kind==='piege'&&r.cache?' cache':'')+(kind==='piege'&&r.affichage==='image'&&(r.image||r.logo)?' image-seule':'')
+ el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')+(kind==='door'&&r.fenetre?' fenetre':'')+(kind==='coffre'&&r.cache?' cache':'')+(kind==='coffre'&&r.rond?' rond':'')+(kind==='piege'&&r.cache?' cache':'')+(kind==='piege'&&r.affichage==='image'&&(r.image||r.logo)?' image-seule':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  // Une porte de biais tourne autour de son centre ; ses coins tournent avec elle et la
@@ -1982,7 +2040,11 @@ function dessineTraits(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
    const r=Math.max(.05,Number(m.ratio)||16/9),rx=.7/Math.max(1,zoomC);
    o.setAttribute('cx',traitVise.x);o.setAttribute('cy',traitVise.y);
    o.setAttribute('rx',rx);o.setAttribute('ry',rx*r);
-   o.setAttribute('class','trait-aimant');svg.append(o)}}}
+   o.setAttribute('class','trait-aimant');svg.append(o)}}
+ if(courbe&&courbe.pts.length){const pts=courbeLissee([...courbe.pts,...(courbe.vise?[courbe.vise]:[])],m.ratio),l=document.createElementNS(nsSVG,'polyline');
+  l.setAttribute('points',pts.map(q=>q.x+','+q.y).join(' '));l.setAttribute('class','trait-apercu courbe-apercu');svg.append(l);
+  courbe.pts.forEach(q=>{const o=document.createElementNS(nsSVG,'ellipse'),r=Math.max(.05,Number(m.ratio)||16/9),rx=.5/Math.max(1,zoomC);
+   o.setAttribute('cx',q.x);o.setAttribute('cy',q.y);o.setAttribute('rx',rx);o.setAttribute('ry',rx*r);o.setAttribute('class','courbe-point');svg.append(o)})}}
 function echelleEl(){const m=mapDraft;if(!m)return null;ensure(m);
  const large=$('map-canvas').clientWidth||600,t=Math.max(8,large*echelleSocle(m)/100);
  const el=document.createElement('div');el.className='echelle-token';
@@ -2198,6 +2260,8 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
     le curseur — et Maj le redresse. */
+ if(mapTool==='courbe'){e.preventDefault();
+  if(!courbe)courbe={pts:[]};const der=courbe.pts[courbe.pts.length-1];if(!der||Math.hypot(der.x-p.x,der.y-p.y)>.05)courbe.pts.push({x:p.x,y:p.y});courbe.vise=p;dessineTraits();return}
  if(mapTool==='ligne'||mapTool==='impratligne'||mapTool==='diffiligne'){
   if(!traitDepart){const d=boutAimante(p,mapDraft.ratio)||p;
    traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
@@ -2246,9 +2310,11 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   $('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
  pushUndo();const rect={x:p.x,y:p.y,w:0,h:0,locked:false};
- if(mapTool==='door'||mapTool==='secret'){rect.open=false;
+ if(mapTool==='door'||mapTool==='secret'||mapTool==='fenetre'){rect.open=false;
   // Un passage secret est une porte, née secrète : plus besoin de percer d'abord un trou.
   if(mapTool==='secret')rect.secret=true;
+  // v0.971 : une fenêtre se pose comme une porte, fermée d'abord.
+  if(mapTool==='fenetre'){rect.fenetre=true;rect.etatInitial='fermee'}
   mapDraft.doors.push(rect);mapSel={kind:'door',i:mapDraft.doors.length-1}}
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  else if(mapTool==='coffre'||mapTool==='coffrerond'){Object.assign(rect,{id:crypto.randomUUID(),nom:'Coffre',desc:'',perception:1,verrou:0,piege:0,degats:0,etats:[],items:[],richesses:{}});
@@ -2257,8 +2323,11 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  else if(mapTool==='piege'){Object.assign(rect,{id:crypto.randomUUID(),nom:'Piège',desc:'',affichage:'jeton',contact:true,declencheurs:[],detection:{comp:3,reussites:1},degats:0,etats:[],caracs:[]});
   mapDraft.pieges??=[];mapDraft.pieges.push(rect);mapSel={kind:'piege',i:mapDraft.pieges.length-1}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
+// Un double-clic termine la Ligne de points.
+$('map-canvas').addEventListener('dblclick',e=>{if(mapTool==='courbe'&&courbe){e.preventDefault();appliqueCourbe()}});
 $('map-canvas').addEventListener('pointermove',e=>{
  if(enZones()&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
+ if(courbe&&!mapDrag){courbe.vise=pct(e);dessineTraits();return}
  if(traitDepart&&!mapDrag){traitCurseur=pct(e);traitVise=viseTrait(traitCurseur,e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio,e.shiftKey);
   dessineTraits();return}
  if(!mapDrag)return;const p=pct(e),d=mapDrag;
@@ -2417,6 +2486,11 @@ $('lumiere-double').onclick=()=>{const l=mapSel&&mapSel.kind==='lumiere'&&shapeA
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('shape-delete').onclick=()=>{if(!supprimeSelection())return;
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
+// v0.971 : l'état d'une fenêtre — celui qu'elle a à l'ouverture de la carte.
+const etatFenetre=d=>d.etatInitial==='ouverte'||d.etatInitial==='verrouillee'?d.etatInitial:'fermee';
+$('door-fenetre').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d||!d.fenetre)return;pushUndo();
+ const v=$('door-fenetre').value;d.etatInitial=v;d.open=v==='ouverte';if(v==='verrouillee')d.keyLocked=true;else delete d.keyLocked;
+ renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.keyLocked=$('door-key').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
