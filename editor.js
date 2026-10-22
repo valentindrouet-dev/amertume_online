@@ -507,7 +507,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(!Object.keys(c.analyses).length)delete c.analyses}
  // Jusqu'où les joueurs voient l'arbre de chaque classe : le niveau d'une barrière, rien en dessous.
  {const l=c.limitesArbres&&typeof c.limitesArbres==='object'&&!Array.isArray(c.limitesArbres)?c.limitesArbres:{};c.limitesArbres={};
-  Object.entries(l).slice(0,60).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(typeof k==='string'&&k&&n>=2&&n<=20)c.limitesArbres[k.slice(0,60)]=n});
+  Object.entries(l).slice(0,60).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(typeof k==='string'&&k&&n>=(k==='*'?1:2)&&n<=20)c.limitesArbres[k.slice(0,60)]=n});
   if(!Object.keys(c.limitesArbres).length)delete c.limitesArbres}
  // L'icône et le texte des actions spéciales.
  c.actionsSpeciales=normaliseActionsSpeciales(c.actionsSpeciales);if(!Object.keys(c.actionsSpeciales).length)delete c.actionsSpeciales;
@@ -5681,7 +5681,10 @@ window.addEventListener('resize',()=>{if(arbresDialog.open)placeFlechesArbres()}
 // La partie chargée, chez le MJ : les aventuriers ne gardent que ce qu'ils ont activé dans le sphérier.
 document.addEventListener('amertume-partie-chargee',()=>{if(view==='mj'&&accordeTalentsHeros()){render();scheduleSave()}});
 // La limite de l'arbre d'une classe chez les joueurs : le niveau de sa barrière, ou 0 pour tout l'arbre.
-function limiteArbre(classe){const n=Math.trunc(Number(catalog&&catalog.limitesArbres&&catalog.limitesArbres[classe]));return n>=2?n:0}
+/* v0.982 : la partie visible des joueurs vaut pour tous les arbres à la fois (clé « * ») ; l'ancien réglage par classe ne sert
+   plus que tant qu'aucun choix commun n'est fait. */
+function limiteArbre(classe){const L=catalog&&catalog.limitesArbres,g=L&&L['*'];
+ const n=Math.trunc(Number(g!==undefined?g:L&&L[classe]));return n>=1?n:0}
 /* Où l'arbre s'arrête, dans une colonne : à la plus haute ligne qui porte la limite ou plus ; Infinity sans limite ni telle ligne. */
 function coupeArbre(liste,cases,classe){const L=limiteArbre(classe);if(!L)return Infinity;let y=Infinity;
  liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),p=cases.get(de.id),q=vers&&cases.get(id);
@@ -5922,7 +5925,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '+(parTranche.get(s)||0).toLocaleString('fr-FR')+' XP';l.append(e)});
     arbresTotal.append(l)}}
   /* Ce que les joueurs voient de cet arbre : tout, ou jusqu'à l'une de ses barrières de niveau. */
-  if(liste.length){const req=niveauxRequis(classe),niveaux=[...new Set([...req.values()].filter(n=>n>1))].sort((x,y)=>x-y),L=limiteArbre(classe);
+  // v0.982 : en groupes de niveau, le menu propose les groupes, et le choix vaut pour tous les arbres.
+  if(liste.length&&ARBRE_V3){const L=limiteArbre(classe),v=L?GROUPES_ARBRE.filter(g=>g<=L).pop()||0:0,s=document.createElement('select');s.className='arbres-limite';s.setAttribute('aria-label','Talents visibles des joueurs');
+   s.append(new Option('Tout l’arbre','0'),...GROUPES_ARBRE.slice(0,-1).map(n=>new Option('Jusqu’au niv. '+n,String(n))));s.value=String(v===GROUPES_ARBRE[GROUPES_ARBRE.length-1]?0:v);
+   s.onchange=()=>{const n=Math.trunc(Number(s.value))||0;if(n)catalog.limitesArbres={'*':n};else delete catalog.limitesArbres;
+    document.querySelectorAll('select.arbres-limite').forEach(x=>{if(x!==s)x.value=s.value});renderArbres();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+   arbresTotal.hidden=false;arbresTotal.append(s)}
+  else if(liste.length){const req=niveauxRequis(classe),niveaux=[...new Set([...req.values()].filter(n=>n>1))].sort((x,y)=>x-y),L=limiteArbre(classe);
    if(L&&!niveaux.includes(L))niveaux.push(L);
    if(niveaux.length){const s=document.createElement('select');s.className='arbres-limite';s.setAttribute('aria-label','Talents visibles des joueurs');
     s.append(new Option('Tout l’arbre','0'),...niveaux.sort((x,y)=>x-y).map(n=>new Option('Jusqu’au niv. '+n,String(n))));s.value=String(L);
