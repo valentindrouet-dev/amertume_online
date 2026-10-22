@@ -4619,7 +4619,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(rates,0,'aucun liseré clair contre les murs');
  const f={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[49.5,10],[49.5,90],[10,90]],[[50.5,10],[90,10],[90,90],[50.5,90]]]}],doors:[]};
  C.remplitObscurite(f,[30,50],320);assert.ok(C.dansObscurite(f,[49.4,50])&&!C.dansObscurite(f,[50.7,50]),'le noir mord le mur, pas la pièce voisine');
- assert.ok(carto.includes("function calqueNuit(W,H){")&&carto.includes("lumiereDegrade(l.rayon,demi).forEach(([o,v])=>g.addColorStop(o,'rgba(0,0,0,'+v+')'));"),'le fondu des lumières');
+ assert.ok(carto.includes("function calqueNuit(W,H){")&&carto.includes("lumiereDegrade(l.rayon,demi)).forEach(([o,v])=>g.addColorStop(o,'rgba(0,0,0,'+v+')'));"),'le fondu des lumières');
  assert.ok(outil.includes("function chainesAbsentes(){")&&outil.includes("if(refaire)break;if(f==='checks.cjs')chainesAbsentes();process.exit(1)}"),'toutes les chaînes absentes d’un coup');}
 /* v0.593 — Remplir d'obscurité va par zone : celle que découpent les murs, les portes et les séparations, et que
    réunissent les regroupements ; la case d'une séparation qui touche la zone en fait partie, et dans une miette il inonde

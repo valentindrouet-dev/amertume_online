@@ -114,7 +114,14 @@ function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(
     que les murs arrêtent. Un côté dans le noir, l'autre au clair. */
  if(!m.obscuriteOff&&obscuriteDe(m).length)(m.doors||[]).forEach(d=>{if(!d||!d.fenetre||!d.open||!(d.w>0&&d.h>0))return;
   const c={x:d.x+d.w/2,y:d.y+d.h/2},e=Math.max(d.w,d.h)*.6+1,cotes=[[c.x+e,c.y],[c.x-e,c.y],[c.x,c.y+e],[c.x,c.y-e]].map(p=>dansObscurite(m,p));
-  if(cotes.some(Boolean)&&cotes.some(v=>!v)){const s=libre({x:c.x,y:c.y,rayon:(typeof porteeEclat==='function'?porteeEclat():3)*tk});if(s)l.push(s)}});
+  if(cotes.some(Boolean)&&cotes.some(v=>!v)){const rayon=(typeof porteeEclat==='function'?porteeEclat():3)*tk;
+   /* v0.975 : la lumière part du côté sombre, juste derrière la vitre, et non d'un point pris au hasard autour d'elle : depuis
+      le dehors, elle ne passait que par l'embrasure et traçait des coins à bords droits. Elle s'éteint ensuite en douceur. */
+   const ang=(Number(d.a)||0)*Math.PI/180,large=d.w>=d.h,nx=large?-Math.sin(ang):Math.cos(ang),ny=large?Math.cos(ang):Math.sin(ang);
+   const dedans=q=>formes.some(f=>shapeContains(f,q));let s=null;
+   for(const sg of [1,-1]){for(let t=Math.min(d.w,d.h)/2;t<=3;t+=.15){const q=[c.x+sg*nx*t,c.y+sg*ny*t];
+     if(!dedans(q)){if(dansObscurite(m,q))s={x:q[0]+sg*nx*.3,y:q[1]+sg*ny*.3,rayon,fenetre:true};break}}if(s)break}
+   if(s&&dedans([s.x,s.y]))s=libre(s);if(!s)s=libre({x:c.x,y:c.y,rayon,fenetre:true});if(s)l.push(s)}});
  return l}
 /* Les halos : un rond de clarté chaude, à peine teinté, autour de chaque source, arrêté par les murs. Une toile à part, sous le
    brouillard : là où l'on voit, le halo paraît ; ailleurs, le noir le couvre. */
@@ -279,7 +286,7 @@ function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)
   pc.globalCompositeOperation='source-over';pc.clearRect(0,0,W,H);pc.drawImage(f,0,0);pc.globalCompositeOperation='destination-out';
   sources.forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length<3)return;
    const cx=l.x/100*W,cy=l.y/100*H,g=pc.createRadialGradient(cx,cy,0,cx,cy,l.rayon*k);
-   lumiereDegrade(l.rayon,demi).forEach(([o,v])=>g.addColorStop(o,'rgba(0,0,0,'+v+')'));
+   (l.fenetre?[[0,1],[.25,.8],[.55,.45],[.8,.15],[1,0]]:lumiereDegrade(l.rayon,demi)).forEach(([o,v])=>g.addColorStop(o,'rgba(0,0,0,'+v+')'));
    pc.fillStyle=g;pc.beginPath();poly.forEach((q,i)=>pc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));pc.closePath();pc.fill()});
   pc.globalCompositeOperation='source-over'}
  return p}
