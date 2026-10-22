@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.997","d":"2026-10-22","t":"Pastille Amertüme sur les classes, cartouches écartés"},
 {"v":"0.996","d":"2026-10-22","t":"Portes dessinées comme les fenêtres"},
 {"v":"0.995","d":"2026-10-22","t":"Rond du panneau cohérent avec l'arbre"},
 {"v":"0.994","d":"2026-10-22","t":"Pointeur ordinaire sur les talents fermés"},

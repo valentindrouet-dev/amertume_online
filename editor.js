@@ -1513,6 +1513,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   if(a.sexe)ident.append(cart((a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe,'c-genre'));
   if(String(a.race||'').trim()){const e=cart(String(a.race).trim(),'c-espece'),es=typeof especeDe==='function'?especeDe(a.espece):null;
    const px=es?pastilleExtension(extensionEspece(es)):null;if(px){e.classList.add('avec-extension');e.append(px)}ident.append(e)}
+  // v0.997 : la classe porte aussi la pastille de son Extension.
+  {const cl=(catalog.classes||[]).find(x=>x&&x.name===a.role),px=cl?pastilleExtension(extensionClasse(cl)):null;if(px){classe.classList.add('avec-extension');classe.append(px)}}
   ident.append(classe);if(joueurEl)ident.append(joueurEl);puces.append(ident)}
  else{if(origine)tete.insertBefore(origine,classe.parentNode===tete?classe:outils);tete.insertBefore(classe,outils);if(joueurEl)puces.append(joueurEl)}
  // Créé par un joueur, en attente : le MJ l'accepte ou le refuse ; le joueur attend.
@@ -1757,7 +1759,8 @@ function pastilleExtension(k){k=extensionValide(k);if(!k)return null;const p=doc
  else p.title='Extension : '+nomExtension(k);return p}
 // L'Extension d'une espèce : celle que le MJ lui a donnée, sinon celle de la table des espèces.
 function extensionEspece(e){if(!e)return '';const o=(catalog.extensionsEspeces||{})[e.id];return extensionValide(o===undefined?e.extension||'':o)}
-function extensionClasse(c){return c?extensionValide(c.extension||''):''}
+// v0.997 : une classe sans Extension réglée est d'Amertüme.
+function extensionClasse(c){return c?extensionValide(c.extension||'amertume'):''}
 // Les tokens proposés à qui crée un aventurier : les libres, ceux de son espèce, ceux de sa classe.
 /* v0.885 : les tokens adaptés — liés à une espèce ou une classe, et à celles de l'aventurier — d'abord ; tous les autres ensuite. */
 const tokenAdapte=(t,c)=>!!(t.espece||t.classe)&&(!t.espece||t.espece===c.espece)&&(!t.classe||t.classe===c.role);
