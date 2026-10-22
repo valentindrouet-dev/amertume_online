@@ -1335,13 +1335,13 @@ function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=docum
  const montres=!m||!a||a.horsCarte?[]:(m.pieges||[]).filter(p=>{const dedans=!!p&&tenuParPiege(a)===p;
   return !!p&&!!p.enjambement&&(dedans||(piegeArme(p)&&piegeConnu(p)&&coffreEnVue(p)&&!(Array.isArray(a.franchis)&&a.franchis.includes(p.id))&&piegeAPortee(a,p)))});
  const gris=!!a&&enCombat()&&(pointsRestants(a,'action')<=0||(typeof gelDebut==='function'&&gelDebut(a)));
- const cle=(a?a.id:'')+'|'+gris+'|'+montres.map(p=>p.id+':'+p.x+':'+p.y+':'+p.w+':'+p.h).join(',');
+ const cle=(a?a.id:'')+'|'+gris+'|'+echelleInteraction()+'|'+montres.map(p=>p.id+':'+p.x+':'+p.y+':'+p.w+':'+p.h).join(',');
  // Le même rond, dans la barre d'actions, au bout des petits boutons, cerné de sa couleur.
  let barre=$('actions-contexte');if(!barre){const row=$('attack-row');if(row){barre=document.createElement('span');barre.id='actions-contexte';row.append(barre);enjamberCle=''}}
  if(cle===enjamberCle&&calque.isConnected&&(!barre||barre.isConnected))return;enjamberCle=cle;calque.replaceChildren();if(barre)barre.replaceChildren();
  montres.forEach(p=>[false,true].forEach(dansBarre=>{if(dansBarre&&!barre)return;
   const k=Math.max(0,Math.min(7,Math.trunc(Number(p.enjambement.comp))||0)),b=document.createElement('button');b.type='button';
-  b.className='btn-action rond btn-enjamber'+(dansBarre?' contexte':'');if(!dansBarre){b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%'}b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
+  b.className='btn-action rond btn-enjamber'+(dansBarre?' contexte':' bouton-interaction');if(!dansBarre){b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%';b.style.setProperty('--echelle',echelleInteraction())}b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
   const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
   // Sa bulle, comme celle d'une action : Enjamber le piège, ou Sortir du piège pour qui y est tombé ; le test requis.
   const nom=tenuParPiege(a)===p?'Sortir du piège':'Enjamber le piège',dit='Test de '+skillNames[k]+' requis.';
@@ -1426,6 +1426,8 @@ function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fene
 /* v0.976 : sur la porte que l'aventurier du joueur touche et peut manœuvrer, un rond aux couleurs d'un Mouvement, comme le rond
    Enjamber d'un piège : un clic l'ouvre ou la ferme. Grisé en combat sans point de Mouvement. */
 let portesBoutonsCle='';
+// L'échelle des Boutons d'Interaction : dessinés à 58 px, ils font 45 % du socle de la carte.
+function echelleInteraction(){return (tokenPx()*.45/58).toFixed(3)}
 function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=document.createElement('div');calque.id='porte-boutons';$('map-view').append(calque);portesBoutonsCle=''}
  const m=currentMap(),a=view==='mj'?null:actors[owner];
  const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!doorInReach(d)||!manoeuvresPorte.has(d))return false;
@@ -1433,10 +1435,10 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
  const gris=typeof enCombat==='function'&&enCombat()&&pointsRestants(a,'mouvement')<=0;
  const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',');
  if(cle===portesBoutonsCle&&calque.isConnected)return;portesBoutonsCle=cle;calque.replaceChildren();
- montres.forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action btn-mvt rond btn-porte'+(d.open?' ouverte':'');
+ montres.forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action rond btn-porte bouton-interaction'+(d.open?' ouverte':'');
   b.style.left=(d.x+d.w/2)+'%';b.style.top=(d.y+d.h/2)+'%';
   // v0.980 : sa taille suit la carte, à proportion du socle : il ne grossit pas quand on dézoome.
-  b.style.setProperty('--taille',(tokenPx()*.45).toFixed(1)+'px');
+  b.style.setProperty('--echelle',echelleInteraction());
   // Son icône se choisit dans l'éditeur, avec celles des actions spéciales ; sans elle, une porte dessinée.
   {const ic=typeof centreAction==='function'?centreAction('porte',null):null;if(ic&&typeof ic==='object')b.append(ic);else b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L13 3v18M13 4h5v17M3 21h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="10.5" cy="12.5" r="1.2" fill="currentColor"/></svg>';}
   const nom=d.fenetre?(d.open?'Fermer les volets':'Ouvrir les volets'):(d.open?'Fermer la porte':'Ouvrir la porte');b.setAttribute('aria-label',nom);

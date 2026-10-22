@@ -4091,9 +4091,9 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(page.includes("function obstaclesDuPas(px){")&&page.includes(" const polys=obstaclesDuPas(px);")&&page.includes("function cheminVers(r,p){const size=mapSize(),murs=obstaclesDuPas(")
   &&carto.includes("function renderImpraticables(){")&&carto.includes("if(!m||view!=='mj'||!impratVisible||(typeof oeilJoueur==='function'&&oeilJoueur()))return;")
   &&carto.includes('<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button>'),'le terrain impraticable');
- assert.ok(page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;")&&page.includes("#piege-boutons{position:absolute;inset:0;z-index:6;pointer-events:none}"),'le rond Enjamber en gros bouton, au-dessus des textes');}
-/* v0.641 — Le rond Enjamber garde, à l'écran, la taille d'un petit bouton de la barre d'action, quel que soit le zoom. */
-assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/mapZoom));")&&page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;transform:translate(-50%,-50%) scale(var(--dezoom,1));"),'le rond Enjamber à la taille d’un bouton de la barre');
+ assert.ok(page.includes("#piege-boutons button.btn-action.rond.bouton-interaction,#porte-boutons button.btn-action.rond.bouton-interaction{position:absolute;width:58px;height:58px;")&&page.includes("#piege-boutons{position:absolute;inset:0;z-index:6;pointer-events:none}"),'le rond Enjamber en gros bouton, au-dessus des textes');}
+/* v0.989 — Les Boutons d'Interaction (Enjamber, porte, fenêtre) : un seul dessin à 58 px, à l'échelle de la carte (45 % du socle). */
+assert.ok(page.includes("transform:translate(-50%,-50%) scale(var(--echelle,1));pointer-events:auto;margin:0}")&&fs.readFileSync('maps.js','utf8').includes("function echelleInteraction(){return (tokenPx()*.45/58).toFixed(3)}"),'les Boutons d’Interaction à l’échelle de la carte');
 /* v0.640 — Le jeu à plusieurs : les PV partent en différence additionnée par Firestore, l'état du tour d'un joueur est daté et le
    MJ écarte ce qui arrive d'un tour révolu, le début et la fin d'un combat interrompent les gestes, un coup dont la cible est
    tombée entre-temps passe à l'adversaire suivant, la remise au tour 1 ne clôt plus le combat, la table en ligne a le dernier
@@ -4114,7 +4114,7 @@ assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/map
  assert.ok(page.includes("function pasVisible(a){")&&page.includes("bruitDePas(a,[{x:x0,y:y0},{x:a.x,y:a.y}])}pasVisible(a);")&&page.includes("if(!renduClavier){saveChecks();savePool()}selected=i;"),'le pas d’une flèche se voit aussitôt');
  assert.ok(page.includes("ech.hidden=arm.hidden=!a||!a.hero||!!a.horsCarte;")&&page.includes("if(enCombat())depensePoint(a,'mouvement');fermerBulle();apresEchange()"),'Échanger et Changer d’armes en exploration');
  assert.ok(carto.includes("function ecartAuPiege(p,c,size){")&&carto.includes("return {p:mur.p,...pct(fin),bloque:true}}")
-  &&page.includes("if(piegeClavier&&!piegeClavier.bloque)declenchePiege(")&&carto.includes("b.style.top=(p.y+p.h/2)+'%'}")
+  &&page.includes("if(piegeClavier&&!piegeClavier.bloque)declenchePiege(")&&carto.includes("b.style.top=(p.y+p.h/2)+'%';b.style.setProperty('--echelle',echelleInteraction())}")
   &&carto.includes("if(quoi==='enjambement'&&!ok){declenchePiege(p,a,true);return}")&&carto.includes("if(!p||p.desamorce||(!piegeArme(p)&&!p.enjambement)||"),'le piège connu bloque, on n’en sort qu’en l’enjambant');}
 /* v0.638 — L'arrêt au contact se fait à la sortie : entré à plus de moitié dans la zone d'un adversaire, le socle qui en ressort
    s'arrête au bord, une fois par adversaire et par tour. La barre de mouvement est celle du token sélectionné. */
