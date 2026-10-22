@@ -740,7 +740,7 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
  if(o.indice&&o.examine&&o.secret){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=o.secret;(d.firstChild||d).append(p)}
  // v0.9994 : un second test reste à tenter : sa compétence, à sa couleur.
  if(o.indice&&objetVu(o)&&!o.examine&&o.examen&&o.examen.mode==='comp'){const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),p=document.createElement('p'),b=document.createElement('b');
-  p.className='indice-examen-bulle';b.textContent=skillNames[k];if(SKILL_TINTS[k])b.style.color='rgb('+SKILL_TINTS[k]+')';p.append('Test de ',b,' pour en découvrir davantage.');(d.firstChild||d).append(p)}
+  p.className='indice-examen-bulle';b.textContent=skillNames[k];if(SKILL_TINTS[k])b.style.color='rgb('+SKILL_TINTS[k]+')';const t=document.createElement('b');t.textContent='Test de ';p.append(t,b,' pour en découvrir davantage.');(d.firstChild||d).append(p)}
  if(view==='mj'&&!objetVu(o)){const c=document.createElement('p');c.className='muted objet-cache-bulle';c.textContent='Caché : '+skillNames[o.test.comp]+', '+o.test.reussites+' réussite'+(o.test.reussites>1?'s':'');(d.firstChild||d).append(c)}
  return d}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
