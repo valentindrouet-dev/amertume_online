@@ -117,7 +117,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Fenêtre** (`.door.fenetre`) : sur la carte et dans l'éditeur, bleu verre `#3f7bc0`, vitre `#8fd3f7` ; volets ouverts, pointillé clair sur `#dff4fd`. Contour fin (1,2), même verrouillée ; à la table, sous le brouillard, et chez un joueur seulement dans sa ligne de vue directe, comme une porte.
 
-**Porte à la table** (`.door`, `.door.loin`) : hors de portée de l'aventurier, contour en pointillé fin (1,4) ; à son contact, trait continu ; ouverte, le même en gris `#96a3a7`. Chez un joueur, elle ne se voit que dans sa ligne de vue directe et éclairée. Le rond qui l'ouvre (`.btn-porte`) se pose sur la porte, comme le rond Enjamber d'un piège, de la couleur des actions de Mouvement (`.btn-mvt`, `#cf9152`, comme Changer d'armes) ; son icône se choisit avec celles des actions spéciales.
+**Porte à la table** (`.door`, `.door.loin`) : hors de portée de l'aventurier, contour en pointillé fin (1,4) ; à son contact, trait continu ; ouverte, le même en gris `#96a3a7`. Chez un joueur, elle ne se voit que dans sa ligne de vue directe et éclairée. Le rond qui l'ouvre (`.btn-porte`) se pose sur la porte, comme le rond Enjamber d'un piège, à la taille de la carte (45 % du socle), de la couleur des actions de Mouvement (`.btn-mvt`, `#cf9152`, comme Changer d'armes) ; son icône se choisit avec celles des actions spéciales.
 
 **Talent allumé** (`.talent-allume`) : un talent qui s'allume et s'éteint (Éclat Vivant) garde, allumé, un halo fixe `#ffe08a` / `#ffcf5a`, même grisé.
 

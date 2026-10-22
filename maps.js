@@ -1410,10 +1410,12 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
  const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!doorInReach(d)||!manoeuvresPorte.has(d))return false;
   const parCle=d.keyLocked&&!!d.cleId&&aLaCle(a,d.cleId)&&(!d.secret||d.open||d.decouvert);return !doorLockedFor(d,false)||parCle});
  const gris=typeof enCombat==='function'&&enCombat()&&pointsRestants(a,'mouvement')<=0;
- const cle=(a?a.id:'')+'|'+gris+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',');
+ const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',');
  if(cle===portesBoutonsCle&&calque.isConnected)return;portesBoutonsCle=cle;calque.replaceChildren();
  montres.forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action btn-mvt rond btn-porte'+(d.open?' ouverte':'');
   b.style.left=(d.x+d.w/2)+'%';b.style.top=(d.y+d.h/2)+'%';
+  // v0.980 : sa taille suit la carte, à proportion du socle : il ne grossit pas quand on dézoome.
+  b.style.setProperty('--taille',(tokenPx()*.45).toFixed(1)+'px');
   // Son icône se choisit dans l'éditeur, avec celles des actions spéciales ; sans elle, une porte dessinée.
   {const ic=typeof centreAction==='function'?centreAction('porte',null):null;if(ic&&typeof ic==='object')b.append(ic);else b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L13 3v18M13 4h5v17M3 21h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="10.5" cy="12.5" r="1.2" fill="currentColor"/></svg>';}
   const nom=d.fenetre?(d.open?'Fermer les volets':'Ouvrir les volets'):(d.open?'Fermer la porte':'Ouvrir la porte');b.setAttribute('aria-label',nom);
