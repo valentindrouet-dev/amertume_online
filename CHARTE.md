@@ -117,6 +117,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Fenêtre** (`.door.fenetre`) : sur la carte et dans l'éditeur, bleu verre `#3f7bc0`, vitre `#8fd3f7` ; volets ouverts, pointillé clair sur `#dff4fd`. Contour fin (1,2), même verrouillée ; à la table, sous le brouillard, et chez un joueur seulement dans sa ligne de vue directe, comme une porte. Close, son bloc n'arrête ni la vue ni les ombres : la ligne de blocage dessous tient seule ; ouverte, elle perce le mur pour la vue et la lumière, jamais pour le passage.
 
+**Arbre de talents en roues** (`.arbre-roue`) : chaque groupe de niveau (1, 4, 7, 10) est une roue — le rond central (talent initial, 100 px), puis sous lui deux demi-cercles concentriques et symétriques : les gros ronds (84 px, Actions, Mouvements, Réactions, 4 au plus), puis les moyens (62 px, Actions bonus, Passifs, 6 au plus). Un nombre impair met un rond tout en bas, un nombre pair deux, de part et d'autre.
+
 **Boutons d'Interaction** (`.bouton-interaction` : rond Enjamber d'un piège, porte, fenêtre, et tout bouton posé sur la carte) : un seul dessin, celui du rond Enjamber, dessiné à 58 px et mis à l'échelle de la carte (45 % du socle, `echelleInteraction()`) ; seule la couleur change avec l'usage — la compétence du test, l'orange `#cf9152` d'un Mouvement (PM).
 
 **Porte à la table** (`.door`, `.door.loin`) : hors de portée de l'aventurier, contour en pointillé fin (1,4) ; à son contact, trait continu ; ouverte, le même en gris `#96a3a7`. Chez un joueur, elle ne se voit que dans sa ligne de vue directe et éclairée. Le rond qui l'ouvre (`.btn-porte`) est un Bouton d'Interaction, à l'orange d'un Mouvement `#cf9152` ; son icône se choisit avec celles des actions spéciales.

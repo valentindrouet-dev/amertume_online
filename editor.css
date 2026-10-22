@@ -3431,3 +3431,14 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 #talent-journal{display:grid;gap:8px}
 #talent-journal .journal-champ{display:grid;gap:4px}
 #talent-journal textarea::placeholder{color:var(--muted)}
+
+/* v0.990 : la roue d'un groupe de niveau — le rond central, puis les gros et les moyens en demi-cercles sous lui. */
+.arbre-roue{position:relative;flex:none;margin:0 auto}
+.arbre-roue>.arbre-noeud,.arbre-roue>.arbre-place-groupe{position:absolute;margin:0;transform:translate(-50%,-50%)}
+.arbre-roue>.roue-centre .arbre-rond,.arbre-roue>.arbre-place-groupe.roue-centre{width:100px;height:100px}
+.arbre-roue>.roue-gros .arbre-rond,.arbre-roue>.arbre-place-groupe.roue-gros{width:84px;height:84px}
+.arbre-roue>.roue-moyen .arbre-rond,.arbre-roue>.arbre-place-groupe.roue-moyen{width:62px;height:62px}
+.arbre-roue>.arbre-place-groupe{padding:0;background:none;cursor:pointer}
+.arbre-roue>.arbre-place-groupe:hover{border-color:var(--accent);opacity:1}
+.arbre-col.arbre-col-groupes{min-width:500px;flex:none}
+.arbre-col-groupes .arbre-plan-groupes{max-width:none}
