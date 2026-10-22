@@ -5246,6 +5246,9 @@ function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
  if(tenus.length)return 'Niveau '+Math.min(...tenus.map(x=>niveauLien(x,t)));
  const p=profondeursDe(liste),n=p.get(t.id),haut=v.filter(x=>p.has(x.id)&&p.get(x.id)<n);
  return (haut.length?haut:v).map(x=>x.name).filter(Boolean).join(' ou ')||'—'}
+// v0.972 : sans lignes, un talent s'ouvre au niveau de son groupe ; un petit rond attend toujours son talent.
+{const v0=verrouArbre;verrouArbre=function(portes,liste,t,niveau=Infinity){if(!(typeof ARBRE_V3!=='undefined'&&ARBRE_V3)||!t||lisChemin(t))return v0(portes,liste,t,niveau);
+ const g=groupeArbre(t,liste);return niveau>=g?'':'Niveau '+g}}
 /* Ce qu'on tient encore d'une liste : depuis ses départs tenus, de talent tenu en talent tenu le long
    des lignes ; et, de chaque talent atteint, ses petits ronds rang après rang tant qu'ils sont tenus.
    « sans » : le même chemin, ce talent-là oublié. */
@@ -5257,6 +5260,9 @@ function atteintsDepuis(portes,liste,sans){const tient=new Set((portes||[]).filt
   voisinsDe(L,t).forEach(x=>{if(passe(x)&&!vus.has(x.id))file.push(x)});
   Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!passe(p))break;vus.add(p.id)}})}
  return vus}
+{const at0=atteintsDepuis;atteintsDepuis=function(portes,liste,sans){if(!(typeof ARBRE_V3!=='undefined'&&ARBRE_V3))return at0(portes,liste,sans);
+ const tient=new Set((portes||[]).filter(id=>id!==sans)),L=(liste||[]).filter(Boolean),vus=new Set(),passe=x=>tient.has(x.id)||estVide(x);
+ L.forEach(t=>{if(!passe(t))return;vus.add(t.id);Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!passe(p))break;vus.add(p.id)}})});return vus}}
 /* Oublier un talent fait tomber tout ce qu'on n'atteint plus depuis un départ, petits ronds compris,
    sans exception. */
 function chuteArbre(portes,liste,t){const apres=atteintsDepuis(portes,liste,t.id),tient=new Set(portes||[]);
@@ -5491,6 +5497,21 @@ let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;
 /* L'arbre de talents v2 (v0.805) : l'arbre à gauche, sur trois cinquièmes de la fenêtre ; à droite, le talent regardé en grand,
    ses améliorations et le bouton pour l'apprendre. « false » revient à la v1, celle de la v0.804. */
 const ARBRE_V2=true;let arbreDetailId=null;
+/* v0.972 — L'arbre en groupes de niveau : Niveau 1, 4, 7, 10, sans lignes. Dans chaque groupe, les gros ronds (Actions, Réactions,
+   Mouvements) sur une première ligne, quatre au plus ; les ronds moyens (Actions bonus, Passifs, Maîtrises, Critiques) dessous,
+   six au plus. Le talent initial ouvre l'arbre, seul, en gros rond. Un talent s'apprend dès le niveau de son groupe. */
+const ARBRE_V3=true,GROUPES_ARBRE=[1,4,7,10],MAX_LIGNE_ARBRE={gros:4,moyen:6};
+const ligneArbreDe=t=>['act','reac','mvt'].includes(talentType(t)[0])?'gros':'moyen';
+const groupeDeNiveau=n=>n>=10?10:n>=7?7:n>=4?4:1;
+// Le groupe d'un talent : le sien, sinon d'après le niveau que ses lignes lui demandaient — le plus petit niveau qui l'atteint.
+function niveauxParLignes(liste){const L=(liste||[]).filter(Boolean),out=new Map(),file=[];
+ departsDe(L).forEach(id=>{out.set(id,1);file.push(id)});
+ (typeof departsDeNiveau==='function'?departsDeNiveau(L):new Map()).forEach((n,id)=>{if(!out.has(id)||n<out.get(id)){out.set(id,n);file.push(id)}});
+ for(let k=0;k<5000&&file.length;k++){const id=file.shift(),t=L.find(x=>x.id===id);if(!t)continue;const n=out.get(id);
+  voisinsDe(L,t).forEach(v=>{const m=Math.max(n,niveauLien(t,v)||1);if(!out.has(v.id)||m<out.get(v.id)){out.set(v.id,m);file.push(v.id)}})}
+ return out}
+function groupeArbre(t,liste){if(GROUPES_ARBRE.includes(Number(t&&t.groupe)))return Number(t.groupe);const n=niveauxParLignes(liste).get(t&&t.id);return groupeDeNiveau(n||1)}
+const ordreArbre=t=>Number.isFinite(Number(t&&t.ordreArbre))?Number(t.ordreArbre):(()=>{const p=posDe(t);return p?p.x*100+p.y:0})();
 // Le talent d'où part la ligne que le MJ est en train de tracer.
 let lienDepuis=null;
 /* La vue joueur : le MJ regarde l'arbre comme la troupe le lira — sans outils, sans places
@@ -6141,6 +6162,43 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  /* Une colonne : le bandeau — renommable, dissoluble —, puis le plan, où chaque talent tient sa case
     et ses petits ronds leurs chemins, les lignes tracées par-dessus une fois le plan mesuré. Chez le
     MJ, une marge tout autour, là où l'arbre peut grandir ; puis « + Talent », tout en bas. */
+ /* v0.972 : une colonne en groupes de niveau. Le MJ glisse un talent sur un autre de la même ligne pour échanger leurs places,
+    ou sur une ligne d'un groupe pour l'y mettre au bout ; une ligne pleine n'accepte qu'un échange. */
+ const colonneGroupes=(col,c,libre)=>{col.classList.add('arbre-col-groupes');col.arbreInfo={liste:c.liste,mj,a};
+  if(!c.liste.length&&!mj){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v);return col}
+  const L=c.liste.filter(t=>t&&!estVide(t)),initial=L.find(t=>t.flottant===true)||null,limite=limiteArbre(classe),limiteVue=view==='mj'&&!arbresVueJoueur&&!a;
+  // Chez le MJ, le groupe calculé d'un talent qui n'en avait pas s'écrit : il ne bougera plus.
+  if(mj){const sans=L.filter(t=>!GROUPES_ARBRE.includes(Number(t.groupe)));if(sans.length){const g=new Map(sans.map(t=>[t.id,groupeArbre(t,c.liste)]));sans.forEach(t=>{t.groupe=g.get(t.id)});scheduleSave()}}
+  const plan=document.createElement('div');plan.className='arbre-plan-groupes';
+  const deplace=(id,g,ligne,avant)=>{const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||t===initial)return false;
+   if(!c.liste.includes(t)){note('Glisse ce talent depuis cet arbre, ou range-le d’abord dans cette colonne.');return false}
+   if(ligneArbreDe(t)!==ligne){note(ligne==='gros'?'Cette ligne reçoit les Actions, Réactions et Mouvements.':'Cette ligne reçoit les Actions bonus, Passifs, Maîtrises et Critiques.');return false}
+   const sur=L.filter(x=>x!==initial&&x!==t&&groupeArbre(x,c.liste)===g&&ligneArbreDe(x)===ligne).sort((u,v)=>ordreArbre(u)-ordreArbre(v));
+   if(avant&&avant!==t){// Échange : chacun prend le groupe et la place de l'autre.
+    const gt=groupeArbre(t,c.liste),ot=ordreArbre(t);t.groupe=g;t.ordreArbre=ordreArbre(avant);avant.groupe=gt;avant.ordreArbre=ot;return true}
+   if(groupeArbre(t,c.liste)!==g&&sur.length>=MAX_LIGNE_ARBRE[ligne]){note('Cette ligne est pleine : dépose le talent sur un autre pour les échanger.');return false}
+   t.groupe=g;t.ordreArbre=sur.length?ordreArbre(sur[sur.length-1])+1:0;return true};
+  // Le talent et la place captent le dépôt avant la ligne qui les tient ; la ligne ne reçoit que ce qui tombe entre eux.
+  const surDepot=(el,g,ligne,avant,capte=true)=>{el.addEventListener('dragover',e=>{if(arbreGlisse){e.preventDefault();el.classList.add('survol')}},capte);
+   el.addEventListener('dragleave',()=>el.classList.remove('survol'),capte);
+   el.addEventListener('drop',e=>{el.classList.remove('survol');if(!arbreGlisse)return;e.preventDefault();e.stopImmediatePropagation();
+    const id=arbreGlisse;arbreGlisse=null;if(deplace(id,g,ligne,avant))arbreChange()},capte)};
+  const ligneEl=(cls,liste,g,ligne)=>{const r=document.createElement('div');r.className='arbre-ligne-groupe '+cls;
+   liste.forEach(t=>{const el=noeudArbre(t,c,libre);if(t===initial)el.classList.add('racine');if(mj&&t!==initial)surDepot(el,g,ligne,t);r.append(el)});
+   if(mj&&ligne&&liste.length<MAX_LIGNE_ARBRE[ligne]){const v=document.createElement('div');v.className='arbre-place-groupe '+cls;v.title=ligne==='gros'?'Actions, Réactions, Mouvements':'Actions bonus, Passifs, Maîtrises, Critiques';surDepot(v,g,ligne,null);r.append(v)}
+   if(mj&&ligne)surDepot(r,g,ligne,null,false);return r};
+  GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
+   const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');
+   if(a&&(Number(a.level)||1)<g)sec.classList.add('groupe-ferme');
+   const sep=document.createElement('div');sep.className='arbre-sep-niveau';const b=document.createElement('span');b.className='arbre-niveau-pastille';
+   const s=document.createElement('small');s.textContent='Niv.';const n=document.createElement('b');n.textContent=String(g);b.append(s,n);sep.append(b);sec.append(sep);
+   const du=L.filter(t=>t!==initial&&groupeArbre(t,c.liste)===g).sort((u,v)=>ordreArbre(u)-ordreArbre(v));
+   if(g===1&&initial)sec.append(ligneEl('initiale',[initial],1,null));
+   const gros=du.filter(t=>ligneArbreDe(t)==='gros'),moyens=du.filter(t=>ligneArbreDe(t)==='moyen');
+   if(gros.length||mj)sec.append(ligneEl('gros',gros,g,'gros'));
+   if(moyens.length||mj)sec.append(ligneEl('moyen',moyens,g,'moyen'));
+   if(gros.length||moyens.length||mj||(g===1&&initial))plan.append(sec)});
+  col.append(plan);return col};
  const colonne=(c,libre)=>{const col=document.createElement('div');col.className='arbre-col'+(libre?' libre':'')+(mj?' editable':'');
   const h=document.createElement('h4');h.className='arbre-titre';
   // Chez un aventurier, le bandeau de la colonne se passe de son nom.
@@ -6161,6 +6219,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(supprimerArbre(c.famille,c.rang))arbreChange()});
     x.classList.add('voie-x');h.append(x)}}
   col.append(h);
+  if(ARBRE_V3&&!c.sansDepart)return colonneGroupes(col,c,libre);
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','arbre-chemins');col.append(svg);
   col.arbreInfo={liste:c.liste,mj,a};
   if(!c.liste.length&&!mj){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v)}
@@ -6365,6 +6424,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    l'effacer. */
 const CASE_SPHERIER=170;
 function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.open)return;
+ // v0.972 : l'arbre en groupes n'a plus de lignes ; l'arbre d'espèce n'en a pas non plus.
+ if(ARBRE_V3){corps.querySelectorAll('.arbre-chemins').forEach(s=>s.replaceChildren());corps.querySelectorAll('.arbre-col>.arbre-niveau').forEach(x=>x.remove());return}
  corps.querySelectorAll('.arbre-col').forEach(col=>{const info=col.arbreInfo,svg=col.querySelector('.arbre-chemins');if(!info||!svg)return;
   const ns='http://www.w3.org/2000/svg',R=col.getBoundingClientRect(),{liste,mj,a}=info;
   svg.setAttribute('viewBox','0 0 '+Math.max(1,R.width)+' '+Math.max(1,R.height));svg.replaceChildren();

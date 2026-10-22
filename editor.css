@@ -3397,3 +3397,21 @@ body.maj-calcul .calcul-talent .calcul-formule{display:inline;font-weight:700}
 .calque-traits .courbe-apercu{fill:none}
 .calque-traits .courbe-point{fill:var(--accent);stroke:none}
 .shape.door.fenetre{background:repeating-linear-gradient(90deg,#8fd3f7 0 3px,#dff4fd 3px 6px);border-color:#3f7bc0}
+/* v0.972 : l'arbre en groupes de niveau — Niveau 1, 4, 7, 10 —, sans lignes. Gros ronds sur la première ligne d'un groupe,
+   ronds moyens dessous ; un trait de séparation porte le niveau en pastille. La largeur suit les talents. */
+.arbre-col.arbre-col-groupes{align-items:center}
+.arbre-plan-groupes{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:max-content;max-width:100%;margin:0 auto;padding:4px 8px 12px}
+.arbre-groupe{display:flex;flex-direction:column;align-items:center;gap:10px}
+.arbre-groupe.groupe-ferme .arbre-ligne-groupe{opacity:.55}
+.arbre-sep-niveau{position:relative;align-self:stretch;display:flex;justify-content:center;margin:10px 0 2px}
+.arbre-sep-niveau::before{content:'';position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--line)}
+.arbre-niveau-pastille{position:relative;padding:2px 12px;border-radius:999px;background:var(--panel);border:1.5px solid var(--line);color:var(--muted);font:700 12px system-ui;letter-spacing:1px;text-transform:uppercase}
+.arbre-niveau-pastille b{font-size:15px;margin-left:5px;color:var(--ink)}
+.arbre-ligne-groupe{display:flex;justify-content:center;align-items:flex-start;gap:18px;min-height:40px;padding:4px 10px;border-radius:14px}
+.arbre-ligne-groupe .arbre-noeud{position:relative;left:auto;top:auto;transform:none}
+.arbre-ligne-groupe.gros .arbre-rond,.arbre-ligne-groupe.initiale .arbre-rond{width:93px;height:93px}
+.arbre-ligne-groupe.moyen .arbre-rond{width:70px;height:70px}
+.arbre-place-groupe{flex:none;box-sizing:border-box;border:2px dashed var(--line);border-radius:50%;opacity:.7}
+.arbre-place-groupe.gros{width:93px;height:93px}.arbre-place-groupe.moyen{width:70px;height:70px}
+.arbre-ligne-groupe.survol,.arbre-place-groupe.survol{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.arbre-groupe.hors-limite-mj{opacity:.5}
