@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.979","d":"2026-10-22","t":"Fenêtres visibles seulement en vue directe"},
 {"v":"0.978","d":"2026-10-22","t":"Rond de porte Mouvement, liste des aventuriers présents"},
 {"v":"0.977","d":"2026-10-22","t":"Portes visibles seulement en vue directe"},
 {"v":"0.976","d":"2026-10-22","t":"Portes en pointillé et rond d'ouverture, halo d'Éclat Vivant"},
