@@ -3381,3 +3381,7 @@ i.pt.pt-texte.mvt{background:url(img/points/pm.webp) center/contain no-repeat}
 body.maj-calcul .calcul-talent .calcul-resultat{display:none}
 body.maj-calcul .calcul-talent .calcul-formule{display:inline;font-weight:700}
 .calcul-talent .calcul-resultat{color:#000}
+/* v0.969 : l'import d'adversaires. */
+#import-adv-form textarea{width:100%;box-sizing:border-box;font:12px/1.45 ui-monospace,Menlo,monospace}
+.import-doublons{margin-top:10px}.import-doublon{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0}
+.import-avis{font-size:12px;color:var(--muted);max-height:180px;overflow:auto}

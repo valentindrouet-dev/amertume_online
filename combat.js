@@ -357,7 +357,7 @@ function cleanMonster(t){const dés={};
   const etats=[...new Set((Array.isArray(a&&a.etats)?a.etats:[a&&a.etat]).filter(e=>ETATS_JEU.includes(e)))].slice(0,6);
   if(etats.length){o.etats=etats;o.etat=etats[0]}
   return o});
- return {name:texte(t&&t.name,120)||'Adversaire',type:['standard','solitaire','boss'].includes(t&&t.type)?t.type:'standard',
+ return {name:texte(t&&t.name,120)||'Adversaire',type:['standard','alpha','solitaire','boss'].includes(t&&t.type)?t.type:'standard',
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
