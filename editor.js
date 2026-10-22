@@ -444,6 +444,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   c.talents.forEach(t=>{if(!t||t.effet||t.famille!=='Adversaires')return;const e=NOMS_MECANIQUES[k(t.name)];if(e&&typeof TALENTS_CODES!=='undefined'&&TALENTS_CODES[e]){t.effet=e;t.type=TALENTS_CODES[e].type||t.type;if(/^Importé sans mécanique/.test(t.notes||''))delete t.notes}})}
  if(!c.semisForge.includes('griffes-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='griffes'&&(t.type==='pass'||/^Vos attaques sans arme/.test(t.effects||''))){t.type='act';t.effects='Vous effectuez 1 Attaque au contact qui inflige 1 dé rouge + Dégâts et Saignée.'}});c.semisForge.push('griffes-action')}
  // v0.986 : Agrippe entrave désormais ; son texte d'origine suit, une fois, s'il n'a pas été réécrit.
+ // v0.999 : Coupure devient une maîtrise automatique : une réaction d'avant prend le type Maîtrise, une fois.
+ if(!c.semisForge.includes('coupure-maitrise')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='lamevent'&&t.type==='reac')t.type='mait'});c.semisForge.push('coupure-maitrise')}
  // v0.987 : Agripper devient une Action ; son texte d'origine suit, une fois, s'il n'a pas été réécrit.
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
    if(typeof t.effects!=='string'||!t.effects.trim()||/^Sur un critique, la cible est (Au sol|Entravée)\.?$/.test(t.effects.trim()))t.effects='Au contact, vous infligez Entravé et 1 dé rouge + dégâts.'});c.semisForge.push('agripper-action')}
@@ -5360,7 +5362,9 @@ function accordeArbres(){let change=false;
    const l=col?col.liste.filter(t=>!estVide(t)&&posDe(t)):[],haut=l.length?Math.min(...l.map(t=>posDe(t).y)):0;
    const xs=l.map(t=>posDe(t).x),centre=xs.length?(Math.min(...xs)+Math.max(...xs))/2:0;
    const init=l.filter(t=>posDe(t).y===haut&&t.type==='mait').sort((x,y)=>Math.abs(posDe(x).x-centre)-Math.abs(posDe(y).x-centre)||posDe(x).x-posDe(y).x)[0]||null;
-   (catalog.talents||[]).forEach(t=>{if(!t||talentFamily(t)!==classe||t.horsArbre)return;const doit=t===init;
+   // v0.999 : en roues, le talent initial est celui que le MJ a posé au centre ; la règle de la grille ne sert qu'à défaut.
+   const pose=typeof ARBRE_V3!=='undefined'&&ARBRE_V3?(catalog.talents||[]).find(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&t.flottant===true&&t.flottantPose===true):null;
+   (catalog.talents||[]).forEach(t=>{if(!t||talentFamily(t)!==classe||t.horsArbre)return;const doit=pose?t===pose:t===init;
     if(doit&&t.flottant!==true){t.flottant=true;change=true}else if(!doit&&t.flottant===true&&posDe(t)){delete t.flottant;change=true}})}
   colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id)),posees=[];
    /* Le talent de classe sans case : en haut, au centre de sa colonne, une rangée au-dessus des autres. */
@@ -5473,7 +5477,8 @@ function placerTalent0(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||
  if(dest.flottant){if(estBonus(t)||peutEtrePetit(t))return false;const fam=dest.famille||GENERIQUES;
   tousTalents().forEach(x=>{if(x!==t&&x.flottant&&talentFamily(x)===fam){delete x.flottant;x.horsArbre=true}});
   if(!t.horsArbre&&(posDe(t)||lisChemin(t))){laisseLignes(t);detacheDeLArbre(t)}
-  t.famille=fam;t.voie='';t.prerequis='';t.flottant=true;delete t.horsArbre;delete t.pos;delete t.liens;delete t.chemin;delete t.branche;return true}
+  tousTalents().forEach(x=>{if(x!==t&&talentFamily(x)===fam)delete x.flottantPose});
+  t.famille=fam;t.voie='';t.prerequis='';t.flottant=true;t.flottantPose=true;delete t.horsArbre;delete t.pos;delete t.liens;delete t.chemin;delete t.branche;return true}
  if(dest.chemin){if(!peutEtrePetit(t))return false;const de=tousTalents().find(x=>x.id===dest.chemin.de),dir=dest.chemin.dir;
   if(!de||de===t||!DIRS[dir]||(!posDe(de)&&!de.flottant)||de.horsArbre)return false;
   // Le talent de classe d'avant la grille, sans case : ses trois améliorations, en bas à gauche, à droite et dessous.
@@ -6225,7 +6230,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Ranger « t » au groupe g : dans un demi-cercle (ligne), ou au centre (ligne « centre ») ; « sur » : le talent qu'il remplace.
   const deplace=(id,g,ligne,sur)=>{const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||t===initial||t===sur)return false;
    if(!c.liste.includes(t)){note('Glisse ce talent depuis cet arbre, ou range-le d’abord dans cette colonne.');return false}
-   if(ligne==='centre'){if(g===1)return false;const ancien=centreDe(g);
+   // Au niveau 1, le centre est le talent initial de la classe : il s'y pose comme dans l'ancien gros rond.
+   if(ligne==='centre'){if(g===1)return placerTalent(t.id,{famille:c.famille,flottant:true});const ancien=centreDe(g);
     if(ancien&&ancien!==t){delete ancien.centreGroupe;ancien.groupe=groupeArbre(t,c.liste);ancien.ordreArbre=ordreArbre(t)}
     t.groupe=g;t.centreGroupe=true;return true}
    if(ligneArbreDe(t)!==ligne&&!(t.centreGroupe&&sur&&ligneArbreDe(sur)===ligneArbreDe(t))){note(ligne==='gros'?'Ce demi-cercle reçoit les Actions, Réactions et Mouvements.':'Ce demi-cercle reçoit les Actions bonus, Passifs, Maîtrises et Critiques.');return false}
@@ -6235,13 +6241,17 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const l=anneau(g,ligne).filter(x=>x!==t);
    if(l.length>=MAX_LIGNE_ARBRE[ligne]){note('Ce demi-cercle est plein : dépose le talent sur un autre pour les échanger.');return false}
    delete t.centreGroupe;t.groupe=g;t.ordreArbre=l.length?ordreArbre(l[l.length-1])+1:0;return true};
-  const surDepot=(el,g,ligne,sur)=>{el.addEventListener('dragover',e=>{if(arbreGlisse){e.preventDefault();e.stopPropagation();el.classList.add('survol')}},true);
-   el.addEventListener('dragleave',()=>el.classList.remove('survol'),true);
-   el.addEventListener('drop',e=>{el.classList.remove('survol');if(!arbreGlisse)return;e.preventDefault();e.stopImmediatePropagation();
-    const id=arbreGlisse;arbreGlisse=null;if(deplace(id,g,ligne,sur))arbreChange()},true)};
+  /* Le dépôt se lit sur la roue, à la capture : avant tout autre écouteur des ronds (l'ancien gros rond du talent de classe
+     prenait le dépôt pour lui). Chaque rond ou place porte sa destination. */
+  const surDepot=(el,g,ligne,sur)=>{el._depot={g,ligne,sur}};
+  const ecouteRoue=roue=>{const cible=e=>{const x=e.target&&e.target.closest&&e.target.closest('.arbre-roue>*');return x&&x._depot?x:null};
+   roue.addEventListener('dragover',e=>{const x=arbreGlisse&&cible(e);roue.querySelectorAll('.survol').forEach(z=>{if(z!==x)z.classList.remove('survol')});if(x){e.preventDefault();e.stopPropagation();x.classList.add('survol')}},true);
+   roue.addEventListener('dragleave',e=>{if(!roue.contains(e.relatedTarget))roue.querySelectorAll('.survol').forEach(z=>z.classList.remove('survol'))},true);
+   roue.addEventListener('drop',e=>{const x=cible(e);roue.querySelectorAll('.survol').forEach(z=>z.classList.remove('survol'));if(!x||!arbreGlisse)return;e.preventDefault();e.stopPropagation();
+    const id=arbreGlisse,{g,ligne,sur}=x._depot;arbreGlisse=null;if(deplace(id,g,ligne,sur))arbreChange()},true)};
   // Une case libre de la grille, pour un talent créé ici : la grille ancienne garde ses cases, la roue ne s'en sert pas.
   const caseLibreGrille=()=>{const pris=new Set(L.map(t=>{const p=posDe(t);return p?p.x+','+p.y:''}));for(let y=0;y<400;y++)for(let x=0;x<8;x++)if(!pris.has(x+','+y))return {x,y};return {x:0,y:0}};
-  const creeIci=(g,ligne)=>{const l=ligne==='centre'?[]:anneau(g,ligne);
+  const creeIci=(g,ligne)=>{if(ligne==='centre'&&g===1){ajouterDansArbre({famille:c.famille,voie:c.voie,flottant:true,type:'mait'});return}const l=ligne==='centre'?[]:anneau(g,ligne);
    ajouterDansArbre({famille:c.famille,voie:c.voie,pos:caseLibreGrille(),groupe:g,ordreArbre:l.length?ordreArbre(l[l.length-1])+1:0,...(ligne==='centre'?{centreGroupe:true}:{}),type:ligne==='moyen'?'pass':'act'})};
   const place=(cls,g,ligne)=>{const v=document.createElement('button');v.type='button';v.className='arbre-place-groupe '+cls;
    v.setAttribute('aria-label',ligne==='centre'?'Talent initial du niveau '+g:ligne==='gros'?'Ajouter une Action, une Réaction ou un Mouvement':'Ajouter une Action bonus ou un Passif');
@@ -6257,10 +6267,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');
    if(!centre&&!gros.length&&!moyens.length&&!mj)return;
    const W=2*R.moyen+D.moyen+2*MARGE,cx=W/2,cy=MARGE+D.centre/2,H=cy+R.moyen+D.moyen/2+MARGE;
-   const roue=document.createElement('div');roue.className='arbre-roue';roue.style.width=W+'px';roue.style.height=H+'px';
+   const roue=document.createElement('div');roue.className='arbre-roue';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const pose=(el,x,y,cls)=>{el.classList.add('roue-'+cls);el.style.left=x+'px';el.style.top=y+'px';roue.append(el)};
-   if(centre){const el=noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');else if(mj)surDepot(el,g,'centre',centre);pose(el,cx,cy,'centre')}
-   else if(mj&&g>1)pose(place('centre',g,'centre'),cx,cy,'centre');
+   if(centre){const el=noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,cx,cy,'centre')}
+   else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),cx,cy,'centre');
    [['gros',gros],['moyen',moyens]].forEach(([ligne,l])=>{const vierge=mj&&l.length<MAX_LIGNE_ARBRE[ligne],an=angles(l.length+(vierge?1:0),ligne);
     l.forEach((t,k)=>{const el=noeudArbre(t,c,libre);if(mj)surDepot(el,g,ligne,t);const r=an[k]*Math.PI/180;pose(el,cx+R[ligne]*Math.cos(r),cy+R[ligne]*Math.sin(r),ligne)});
     if(vierge){const r=an[l.length]*Math.PI/180;pose(place(ligne,g,ligne),cx+R[ligne]*Math.cos(r),cy+R[ligne]*Math.sin(r),ligne)}});

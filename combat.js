@@ -1088,7 +1088,7 @@ function degatsPeril(n,a,p){if(!a||!(Number(a.max)>0))return n;const s=Math.max(
 /* Les dés qu'un orbe peut lancer : ceux de l'attaque, moins le dé de Soin, qui ne frappe pas. */
 const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent','Ombrelame'],type:'mait',bouton:'⚡ Coupure',
- aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
+ aide:'Automatique, une fois par tour : un mouvement (PM) qui s’arrête au contact d’un adversaire rejoint ce tour lui inflige ton bonus de dégâts.',
  params:[{cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99},
   {cle:'etat',nom:'État infligé',type:'choix',defaut:'',options:CHOIX_ETAT},
   {cle:'mode',nom:'Cet état vient',type:'choix',defaut:'plus',
