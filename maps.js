@@ -355,7 +355,12 @@ let fogMemorise=new WeakMap(),fogVisQui=[],fogTroupeQui=[];
 /* La mémoire d'exploration n'est réemballée en base64 — quelques millisecondes pour
    deux cent mille cases — que lorsqu'elle a changé, et une fois par calcul. */
 let fogAEmballer=false;
-function emballeFog(){if(!fogAEmballer)return;fogAEmballer=false;const m=currentMap();
+/* v0.985 : la vue suit le socle qu'on glisse — le brouillard, les portes et leurs ronds se refont pendant le geste, quelques
+   fois par seconde ; la mémoire ne s'emballe et ne s'enregistre qu'au relâchement. */
+let fogEnGeste=false,vueGesteT=0;
+function vueEnGeste(){const t=performance.now();if(t-vueGesteT<45)return;vueGesteT=t;fogEnGeste=true;
+ try{computeFog();renderFog();if(typeof renderPortes==='function')renderPortes()}finally{fogEnGeste=false}}
+function emballeFog(){if(fogEnGeste||!fogAEmballer)return;fogAEmballer=false;const m=currentMap();
  if(!m||!fogSeen||!fogDim)return;
  m.fog=fogSeenSrc=packMask(fogSeen,fogDim.n);delete m.seen;scheduleSave();garderBrouillardJoueur()}
 /* Chez un joueur en ligne, rien ne s'enregistre : sa mémoire d'exploration se garde donc à part, sur l'appareil, par table et par
@@ -1431,7 +1436,7 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
   b.onclick=e=>{e.stopPropagation();if(typeof estInerte==='function'&&estInerte(b))return;const f=manoeuvresPorte.get(d);if(f)f()};calque.append(b)})}
 {const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsPortes();return r}}
-/* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
+/* (v0.985 : il se refait aussi pendant le geste, quelques fois par seconde — vueEnGeste.) Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
    repeindre à chaque image — une toile de quatre mille pixels, floutée — faisait accrocher
    la main, et c'est la main qui prime. Au relâchement, il est prêt en quelques
    millisecondes : les portes sont testées par lancer de rayon, la mémoire n'est

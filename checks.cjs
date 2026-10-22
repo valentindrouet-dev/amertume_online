@@ -1269,7 +1269,7 @@ assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))
    combat seulement, avec cadre et murs lus une fois. */
 assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
- &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>figeCadre(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderEnjamber==='function')renderEnjamber();if(typeof renderNuit==='function'){renderHalos();renderNuit()}}));")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>figeCadre(()=>{if(drag)drag.image=0;if(typeof vueEnGeste==='function')vueEnGeste();visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderEnjamber==='function')renderEnjamber();if(typeof renderNuit==='function'){renderHalos();renderNuit()}}));")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
 /* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
    portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
@@ -4539,7 +4539,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("const apercusEnGeste=new Set();\nfunction visibilitesEnGeste(){")
   &&page.includes("const cls=joueur?'unseen':(a.hidden?'cachemj':'veiled');t.classList.toggle(cls,cache);if(t._pv)t._pv.classList.toggle(cls,cache)})}")
   &&page.includes("||troupeVoit(a)||apercusEnGeste.has(a.id)));\n apercusEnGeste.clear();")
-  &&page.includes("drag.image=0;visibilitesEnGeste();updateRing();")&&vivant.includes("if(typeof visibilitesEnGeste==='function')visibilitesEnGeste();"),'les socles suivent la lumière pendant le geste');}
+  &&page.includes("drag.image=0;if(typeof vueEnGeste==='function')vueEnGeste();visibilitesEnGeste();updateRing();")&&vivant.includes("if(typeof visibilitesEnGeste==='function')visibilitesEnGeste();"),'les socles suivent la lumière pendant le geste');}
 /* v0.598 — Une lumière posée passe devant les socles dans la page : tout ce qui retrouvait le socle d'un combattant par
    son rang — le glissement, la sélection, la taille des socles, le focus au clavier — ne compte plus qu'eux, et le socle
    glissé suit enfin la souris. Un rond qui apporte son icône la garde, même avec sa propre bulle : deux objets lumineux,
