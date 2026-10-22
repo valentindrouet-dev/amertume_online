@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.9994","d":"2026-10-22","t":"Second test annoncé"},
 {"v":"0.9993","d":"2026-10-22","t":"Tests d'interaction épurés"},
 {"v":"0.9992","d":"2026-10-22","t":"Caché reste caché"},
 {"v":"0.9991","d":"2026-10-22","t":"Les indices ne se donnent pas"},

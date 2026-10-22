@@ -1984,6 +1984,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .objet-rang .cat-pill.gear-carre.pris{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
 .objet-rang .cat-pill.gear-carre.pris::after{content:'✓';position:absolute;top:-7px;right:-7px;width:15px;height:15px;border-radius:50%;background:var(--accent);color:var(--on-accent,#fff);font:700 10px/15px system-ui;text-align:center}
 /* Le jeton d'un objet sur la carte : l'icône de sa première pièce. */
+.indice-examen-bulle{margin:6px 0 0;font-style:normal}
 .token.objet.indice-test .skill-ico{width:66%;height:66%;margin:auto;object-fit:contain;pointer-events:none}
 .token.objet.avec-logo .logo-objet,.shape.objet.avec-logo .logo-objet{width:74%;height:74%;margin:auto;object-fit:contain;pointer-events:none}
 .shape.objet.avec-logo{display:grid;place-items:center}
