@@ -738,9 +738,9 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
  return d}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
    l'objet quitte la carte pour toute la table — jusqu'à ce que la carte soit rechargée. */
-function recupererObjet(a,o){if(!a||!o||o.pris)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
+function recupererObjet(a,o){if(!a||!o||o.pris||o.indice)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
  prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k;if(arr[i]===2)return null;arr[i]=2;return arr},()=>recupereObjetFait(a,o))}
-function recupereObjetFait(a,o){
+function recupereObjetFait(a,o){if(o&&o.indice)return;
  const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
  if(o.tresor)noteInventaire(a,o.tresor);o.pris=true;
@@ -757,7 +757,8 @@ function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div
  const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=o.nom||'Objet';m.append(t);
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
  bouton(o.visible?'Cacher à la troupe':'Révéler à la troupe',()=>{o.visible=!o.visible;if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(o.visible?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
- const h=heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
+ // v0.9991 : un Indice ne se donne ni ne se ramasse : il reste où il est.
+ const h=o.indice?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
