@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.986","d":"2026-10-22","t":"Agrippe entrave"},
 {"v":"0.985","d":"2026-10-22","t":"La ligne de vue suit le token pendant le geste"},
 {"v":"0.984","d":"2026-10-22","t":"Achat dans l'arbre réparé, plus de délai au lâcher d'un token"},
 {"v":"0.983","d":"2026-10-22","t":"Phrases du journal de combat réglables par talent"},

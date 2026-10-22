@@ -443,6 +443,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   const k=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   c.talents.forEach(t=>{if(!t||t.effet||t.famille!=='Adversaires')return;const e=NOMS_MECANIQUES[k(t.name)];if(e&&typeof TALENTS_CODES!=='undefined'&&TALENTS_CODES[e]){t.effet=e;t.type=TALENTS_CODES[e].type||t.type;if(/^Importé sans mécanique/.test(t.notes||''))delete t.notes}})}
  if(!c.semisForge.includes('griffes-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='griffes'&&(t.type==='pass'||/^Vos attaques sans arme/.test(t.effects||''))){t.type='act';t.effects='Vous effectuez 1 Attaque au contact qui inflige 1 dé rouge + Dégâts et Saignée.'}});c.semisForge.push('griffes-action')}
+ // v0.986 : Agrippe entrave désormais ; son texte d'origine suit, une fois, s'il n'a pas été réécrit.
+ if(!c.semisForge.includes('agrippe-entrave')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='agrippe'&&typeof t.effects==='string'&&/Au sol\.?\s*$/.test(t.effects.trim())&&/critique/i.test(t.effects))t.effects=t.effects.trim().replace(/Au sol\.?$/,'Entravée.')});c.semisForge.push('agrippe-entrave')}
  if(!c.semisForge.includes('planche-especes-6')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
   if(p){const pres=(k,x0,x1)=>p.cases.findIndex(q=>Array.isArray(q)&&q[0]>=x0&&q[0]<=x1&&Math.abs(q[1]-0.716)<0.015),g=pres(0,0,0.03),d=pres(0,0.235,0.275);
    if(g>=0&&d>=0&&p.cases[g][0]+p.cases[g][2]<0.27){p.cases[g]=[0.00661,0.716,0.26587,0.06819];p.cases[d]=[0.27249,0.716,0.22222,0.06857]}}
