@@ -222,7 +222,7 @@ function migreOmbrelame(c){(c.classes||[]).forEach(k=>{if(k&&k.name==='Lamevent'
   if(t.paliers&&typeof t.paliers==='object')Object.values(t.paliers).forEach(p=>{if(p&&typeof p==='object')p.effects=ombrelame(p.effects)})})}
 /* Les actions spéciales de la barre d'action, Analyser, Repos court, Crier, Fouiller, et celles à venir : le MJ choisit leur icône
    et leur texte, qui prend ses symboles et ses couleurs comme celui d'un talent. Une ligne de plus ici, et la suivante y entre. */
-const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller'],['crocheter','Crocheter'],['echanger','Échanger un objet'],['armes','Changer d’armes']];
+const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller'],['crocheter','Crocheter'],['echanger','Échanger un objet'],['armes','Changer d’armes'],['porte','Ouvrir une porte']];
 function normaliseActionsSpeciales(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
  ACTIONS_SPECIALES.forEach(([k])=>{const v=o[k];if(!v||typeof v!=='object')return;const e={};
   if(typeof v.logo==='string'&&v.logo&&v.logo.length<=120)e.logo=v.logo;
@@ -7560,7 +7560,7 @@ const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>T
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=sceneTitle();$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);sceneTitle($('scene-form').elements.title.value);renderSettings();$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
 const originalRender=render;render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();
- const mj=view==='mj';['reset-map'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
+ const mj=view==='mj';['reset-map'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero&&(!a.horsCarte||i===owner))$('owner').add(new Option(a.name,String(i)))});/* v0.978 : seuls les aventuriers présents sur la carte ouverte ; celui qu'on tient reste, pour ne pas perdre la main. */$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
 
  // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous
  // « Attaque » appartient désormais aux cibles à portée.
