@@ -163,7 +163,7 @@ function relieTalents(m,lignes,rapport){lignes.forEach(l=>{const p=l.split('|').
  const t=(catalog.talents||[]).find(x=>x&&cle(nomEnClair(x.name))===cle(nom));
  if(t){if(!m.talents.includes(t.id))m.talents.push(t.id);return}
  // Pas au catalogue, mais une mécanique du moteur porte ce nom : le talent est créé, câblé sur elle.
- const code=typeof TALENTS_CODES!=='undefined'?Object.values(TALENTS_CODES).find(c=>c&&cle(c.nom)===cle(nom)):null;
+ const codes=typeof TALENTS_CODES!=='undefined'?Object.values(TALENTS_CODES).filter(c=>c&&(cle(c.nom)===cle(nom)||cle(c.nom)===cle(nom+' (adversaire)'))):[],code=codes.find(c=>c.monstre)||codes[0]||null;
  if(code){const n={id:crypto.randomUUID(),name:nom.slice(0,120),famille:typeof ADVERSAIRES!=='undefined'?ADVERSAIRES:'Adversaires',type:code.type||'pass',level:1,effet:code.cle,effects:(p[2]||'').slice(0,600),logo:'',params:{},couts:[0,0,0]};
   catalog.talents.push(n);m.talents.push(n.id);rapport.cables.push(nom);return}
  const ty=CHOIX.typeTalent[cle(p[1]||'passif')]||'pass';

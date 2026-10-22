@@ -5222,7 +5222,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planc
 /* v0.932 — Le nuage de fumée reste jusqu'à la fin du combat. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("if(enCombat()&&neuf!=='combat')actors.forEach(a=>{if(a&&a.fumee)dissipeFumee(a)})")&&!fs.readFileSync('index.html','utf8').includes('round>=a.fumee.fin'),'v0.932');
 /* v0.931 — L'état Caché, donné par le nuage de fumée. */
-assert.ok(fs.readFileSync('combat.js','utf8').includes("'Surpris','Charme','Caché'];")&&fs.readFileSync('index.html','utf8').includes('function majCaches()')&&fs.readFileSync('index.html','utf8').includes("case 'Caché':"),'v0.931');
+assert.ok(fs.readFileSync('combat.js','utf8').includes("'Surpris','Charme','Caché',")&&fs.readFileSync('index.html','utf8').includes('function majCaches()')&&fs.readFileSync('index.html','utf8').includes("case 'Caché':"),'v0.931');
 /* v0.930 — L'Allsteiner. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("{id:'allsteiner',nom:'Allsteiner',teinte:'#a8743a',endu:1,dmg:1,vitesse:9,comps:{Perception:1,Technique:1},")&&['bouffeevapeur','tireurallstein','masquerespiratoire','experiencesinterdites'].every(k=>cb.includes(k+':{cle:'))

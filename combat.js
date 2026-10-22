@@ -1049,7 +1049,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché','Entravé'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1496,6 +1496,46 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Invocation : un adversaire en appelle un autre du bestiaire, posé sur la carte là où le
     MJ clique. Le modèle se choisit à la création du talent ; son nom se lit par la page,
     qui seule connaît le bestiaire. */
+ /* v0.970 — Talents d'adversaires du roncier (Ronceur, Moisi, Pot-Gueule, Brindille, Ysembrin…). */
+ agrippe:{cle:'agrippe',nom:'Agrippe',type:'pass',monstre:true,aide:'Passif : sur un critique au contact, la cible est Au sol.',
+  params:[],phrase(){return 'Sur un <b>critique</b> au contact, la cible est <b>Au sol</b>.'}},
+ vulnerablefeu:{cle:'vulnerablefeu',nom:'Vulnérable au Feu',type:'pass',monstre:true,aide:'Passif : sous Feu, 1 dé rouge de dégâts en plus à chaque tour.',
+  params:[],phrase(){return 'Sous <b>Feu</b>, subit <b>1 dé rouge</b> de dégâts en plus à chaque tour.'}},
+ pique:{cle:'pique',nom:'Pique',type:'pass',monstre:true,aide:'Passif : ses attaques visent l’aventurier qui vient de soigner.',
+  params:[],phrase(){return 'Vise en priorité l’aventurier qui vient de lancer un <b>soin</b>.'}},
+ enracine:{cle:'enracine',nom:'Enraciné',type:'pass',monstre:true,aide:'Passif : ne se déplace pas, ne peut être ni déplacé ni mis Au sol ; le quitter ne provoque pas d’attaque d’opportunité.',
+  params:[],phrase(){return 'Ne se déplace pas et ne peut pas être mis <b>Au sol</b>.'}},
+ spores:{cle:'spores',nom:'Spores',type:'pass',monstre:true,aide:'Passif : chaque coup au contact qui porte pose Corruption 1.',
+  params:[],phrase(){return 'Chaque coup au contact pose <b>Corruption 1</b>.'}},
+ sensiblefongicide:{cle:'sensiblefongicide',nom:'Sensible au fongicide',type:'pass',monstre:true,aide:'Passif : un Fongicide amer lancé sur lui inflige 2 dés blancs contre sa DEF.',
+  params:[],phrase(){return 'Le <b>Fongicide amer</b> lancé sur lui inflige <b>2 dés blancs</b>.'}},
+ traque:{cle:'traque',nom:'Acharnement (adversaire)',type:'pass',monstre:true,aide:'Passif : ses attaques visent le dernier aventurier qui l’a blessé.',
+  params:[],phrase(){return 'Attaque toujours le dernier aventurier qui l’a touché.'}},
+ avaler:{cle:'avaler',nom:'Avaler',type:'pass',monstre:true,aide:'Passif : sur un critique au contact, la cible est Au sol et subit Corruption 2.',
+  params:[],phrase(){return 'Sur un <b>critique</b> au contact, la cible est <b>Au sol</b> et subit <b>Corruption 2</b>.'}},
+ chargesanglier:{cle:'chargesanglier',nom:'Charge (adversaire)',type:'pass',monstre:true,aide:'Passif : au début du tour, s’il n’est au contact d’aucun aventurier, il se jette au contact du plus proche et le met Au sol.',
+  params:[],phrase(){return 'S’il commence son tour à distance, il passe au contact et met la cible <b>Au sol</b>.'}},
+ centyeux:{cle:'centyeux',nom:'Cent yeux',type:'pass',monstre:true,aide:'Passif : ne peut jamais être Surpris.',
+  params:[],phrase(){return 'Ne peut jamais être <b>Surpris</b>.'}},
+ enlacer:{cle:'enlacer',nom:'Enlacer',type:'pass',monstre:true,aide:'Passif : sur un critique au contact, la cible est Entravée et subit Nécrose 1. Se libérer : 1 PM et un test de Force.',
+  params:[{cle:'reussites',nom:'Réussites de Force pour se libérer',type:'nombre',defaut:2,min:1,max:6}],
+  phrase(p){return 'Sur un <b>critique</b> au contact, la cible est <b>Entravée</b> et subit <b>Nécrose 1</b>. Se libérer : <b>1 PM</b>, test de <b>Force '+((p&&p.reussites)||2)+'</b>.'}},
+ rosesfanees:{cle:'rosesfanees',nom:'Roses fanées',type:'act',monstre:true,bouton:'Roses fanées',aide:'Action, une fois par tour : soigne de 2 dés verts l’allié blessé le plus bas du modèle choisi (pas le porteur).',
+  params:[{cle:'modele',nom:'Allié soigné',type:'modele',defaut:''}],phrase(){return 'Soigne un allié de <b>2 dés verts</b>.'}},
+ enracinee:{cle:'enracinee',nom:'Enracinée',type:'pass',monstre:true,aide:'Passif, une fois par combat : sous la moitié de ses PV, ne se déplace plus, gagne Armure 10 ; en fin de tour, 1 dé blanc à chaque aventurier au contact.',
+  params:[],phrase(){return 'À la moitié de ses PV : ne se déplace plus, gagne <b>Armure 10</b>, et chaque aventurier au contact subit <b>1 dé blanc</b> en fin de tour.'}},
+ service:{cle:'service',nom:'Service',type:'act',monstre:true,gratuit:true,bouton:'Service',aide:'Action gratuite, une fois par combat : réveille des alliés du modèle choisi, à son contact.',
+  params:[{cle:'modele',nom:'Allié réveillé',type:'modele',defaut:''},{cle:'nombre',nom:'Nombre',type:'nombre',defaut:2,min:1,max:6}],
+  phrase(p){return 'Une fois par combat : réveille <b>'+((p&&p.nombre)||2)+'</b> alliés à son contact.'}},
+ semis:{cle:'semis',nom:'Semis',type:'pass',monstre:true,aide:'Passif : phase 1, au début des tours pairs, invoque des alliés du modèle choisi près de la Graine-Cœur, dans la limite du plafond.',
+  params:[{cle:'modele',nom:'Allié invoqué',type:'modele',defaut:''},{cle:'nombre',nom:'Nombre',type:'nombre',defaut:2,min:1,max:6},{cle:'plafond',nom:'Plafond en jeu',type:'nombre',defaut:6,min:1,max:20}],
+  phrase(p){return 'Phase 1, aux tours pairs : invoque <b>'+((p&&p.nombre)||2)+'</b> alliés.'}},
+ racinedevie:{cle:'racinedevie',nom:'Racine de vie',type:'pass',monstre:true,aide:'Passif : tant que la Graine (le porteur Enraciné) vit, le porteur lié ne descend pas sous 1 PV et récupère 1 dé vert au début du tour ; en phase 2, la Graine regagne 10 PV par tour.',
+  params:[],phrase(){return 'Tant que la Graine-Cœur vit, ne descend pas sous <b>1 PV</b> et récupère <b>1 dé vert</b> au début du tour.'}},
+ grenier:{cle:'grenier',nom:'Le grenier est son corps',type:'pass',monstre:true,aide:'Passif : phase 2, ne se déplace plus ; en fin de tour, une ronce frappe un aventurier au hasard pour 1 dé rouge, sans DEF.',
+  params:[],phrase(){return 'Phase 2 : ne se déplace plus. En fin de tour, <b>1 dé rouge</b> à un aventurier au hasard.'}},
+ inflammable:{cle:'inflammable',nom:'Inflammable',type:'pass',monstre:true,aide:'Passif : sous Feu, subit le double des dégâts.',
+  params:[],phrase(){return 'Subit le <b>double</b> des dégâts sous <b>Feu</b>.'}},
  invocation:{cle:'invocation',nom:'Invocation',type:'act',monstre:true,bouton:'✦ Invocation',
   aide:'Action : pose sur la carte, là où tu cliques, un allié du bestiaire.',
   params:[{cle:'modele',nom:'Adversaire invoqué',type:'modele',defaut:''}],

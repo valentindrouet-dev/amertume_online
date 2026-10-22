@@ -437,6 +437,11 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('humain-ingenieux')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-humain-debrouillard'&&x.effet==='debrouillard');
   if(t)Object.assign(t,{name:'Ingénieux',type:'abon',effet:'ingenieux',params:{},effects:'Avant d’effectuer une attaque ou un test de compétence, vous ajoutez 1 dé noir au résultat du jet. Une fois entre chaque repos court.'});
   c.semisForge.push('humain-ingenieux')}
+ if(!c.semisForge.includes('etat-entrave')){c.logosEtats={...(c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{}),'Entravé':'planches/ETATS 2.webp#8'};c.semisForge.push('etat-entrave')}
+ // v0.970 : les talents d'adversaires créés sans mécanique (import) prennent la leur, à leur nom.
+ if(Array.isArray(c.talents)){const NOMS_MECANIQUES={'agrippe':'agrippe','vulnerable au feu':'vulnerablefeu','pique':'pique','enracine':'enracine','spores':'spores','sensible au fongicide':'sensiblefongicide','acharnement':'traque','avaler':'avaler','charge':'chargesanglier','cent yeux':'centyeux','enlacer':'enlacer','roses fanees':'rosesfanees','enracinee':'enracinee','service':'service','semis':'semis','racine de vie':'racinedevie','le grenier est son corps':'grenier','inflammable':'inflammable'};
+  const k=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  c.talents.forEach(t=>{if(!t||t.effet||t.famille!=='Adversaires')return;const e=NOMS_MECANIQUES[k(t.name)];if(e&&typeof TALENTS_CODES!=='undefined'&&TALENTS_CODES[e]){t.effet=e;t.type=TALENTS_CODES[e].type||t.type;if(/^Importé sans mécanique/.test(t.notes||''))delete t.notes}})}
  if(!c.semisForge.includes('griffes-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='griffes'&&(t.type==='pass'||/^Vos attaques sans arme/.test(t.effects||''))){t.type='act';t.effects='Vous effectuez 1 Attaque au contact qui inflige 1 dé rouge + Dégâts et Saignée.'}});c.semisForge.push('griffes-action')}
  if(!c.semisForge.includes('planche-especes-6')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
   if(p){const pres=(k,x0,x1)=>p.cases.findIndex(q=>Array.isArray(q)&&q[0]>=x0&&q[0]<=x1&&Math.abs(q[1]-0.716)<0.015),g=pres(0,0,0.03),d=pres(0,0.235,0.275);
@@ -2592,6 +2597,7 @@ function enElementDuMystique(html,etat){if(!etat)return html;
 const TEINTE_INCIDENT='#b03a48';
 // v0.927 : chaque état, en gras, à la couleur dominante de son icône (planche ETATS), foncée pour se lire sur fond clair.
 const TEINTE_ETAT_MOT={'Au sol':'#a65b26','Aveugle':'#9c21de','Blindage':'#1b70bb','Ciblage':'#198014','Faille':'#c41ca7','Feu':'#cd331d','Foudre':'#786e11','Furie':'#d6271f','Gardé':'#1e8113','Gel':'#1b71bb','Invisible':'#5d6b7d','Onde':'#1b7e2d','Poison':'#ac20df','Saignée':'#d6231f','Vie':'#218019','Affaibli':'#97652b','Rage':'#d6281f','Coma':'#9e602e','Sommeil':'#1f6adb','Nécrose':'#5e7821','Corruption':'#a920df','Surpris':'#aa5a18','Charme':'#cd1d81','Caché':'#6e6a66'};
+TEINTE_ETAT_MOT['Entravé']='#7a5a2b';
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',plasma:'#c23fbe',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};

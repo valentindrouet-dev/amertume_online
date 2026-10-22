@@ -144,6 +144,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 | Surpris | `#aa5a18` | gras |
 | Charme | `#cd1d81` | gras |
 | Caché | `#6e6a66` | gras |
+| Entravé | `#7a5a2b` | gras |
 | Autres états | `#a2691f` | gras |
 
 Chaque état prend la **couleur dominante de son icône** (planche ETATS), foncée pour se lire sur fond clair. Le mot **Vie** garde la couleur de la caractéristique VIE.
