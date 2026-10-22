@@ -1705,14 +1705,14 @@ const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pi
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
  ['placement','Placement',['start','foe','pnj','objet','coffre','coffrerond','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
-let familleOuverte=(()=>{try{return localStorage.getItem('amertume-famille-outils')||'blocage'}catch(e){return 'blocage'}})();
+let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
 {const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
  const tete=document.createElement('div');tete.className='familles-outils';
  const outil=k=>barre.querySelector('[data-tool="'+k+'"]');
  tete.append(outil('select'));
  const corps=[];
  FAMILLES_OUTILS.forEach(([k,nom,outils])=>{const b=document.createElement('button');b.type='button';b.className='famille-outil';b.dataset.famille=k;b.textContent=nom;
-  b.onclick=()=>{familleOuverte=familleOuverte===k?'':k;try{localStorage.setItem('amertume-famille-outils',familleOuverte)}catch(e){}majFamillesOutils()};tete.append(b);
+  b.onclick=()=>{familleOuverte=k;try{localStorage.setItem('amertume-famille-outils',familleOuverte)}catch(e){}majFamillesOutils()};tete.append(b);
   const r=document.createElement('div');r.className='outils-famille';r.dataset.famille=k;
   outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foe'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'))});
   corps.push(r)});
@@ -1720,7 +1720,8 @@ let familleOuverte=(()=>{try{return localStorage.getItem('amertume-famille-outil
  ['pinceau-taille','map-aimant','undo','redo','czoom-out','czoom-label','czoom-in','czoom-reset'].forEach(id=>{const x=$(id);if(x)tete.append(x)});
  barre.querySelectorAll('.bar-sep').forEach(x=>x.remove());
  [...barre.children].forEach(x=>{if(x!==tete)tete.append(x)});
- barre.replaceChildren(tete,...corps)}}
+ const pile=document.createElement('div');pile.className='outils-familles';pile.append(...corps);
+ barre.replaceChildren(tete,pile)}}
 function majFamillesOutils(){document.querySelectorAll('#map-tools .outils-famille').forEach(r=>{r.hidden=r.dataset.famille!==familleOuverte});
  document.querySelectorAll('#map-tools .famille-outil').forEach(b=>{const f=FAMILLES_OUTILS.find(x=>x[0]===b.dataset.famille);
   b.classList.toggle('ouverte',b.dataset.famille===familleOuverte);b.classList.toggle('contient',!!f&&f[2].includes(mapTool));b.setAttribute('aria-expanded',String(b.dataset.famille===familleOuverte))});
@@ -1811,11 +1812,20 @@ function annulerTrait(){if(courbe){courbe=null;renderCanvas();return true}if(!tr
    double-clic ou Entrée la fond dans la matière, en trait de blocage ouvert ; Échap l'abandonne. */
 let courbe=null;
 function courbeLissee(pts,ratio){if(pts.length<3)return pts.slice();const r=Math.max(.05,Number(ratio)||16/9),out=[];
- const P=pts.map(p=>({x:p.x*r,y:p.y})),at=i=>P[Math.max(0,Math.min(P.length-1,i))];
- for(let i=0;i<P.length-1;i++){const p0=at(i-1),p1=at(i),p2=at(i+1),p3=at(i+2),n=Math.max(4,Math.ceil(Math.hypot(p2.x-p1.x,p2.y-p1.y)/.8));
-  for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;
-   const x=.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
-   const y=.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3);out.push({x:x/r,y})}}
+ const P=pts.map(p=>({x:p.x*r,y:p.y})).filter((p,i,a)=>!i||Math.hypot(p.x-a[i-1].x,p.y-a[i-1].y)>1e-6);if(P.length<3)return pts.slice();
+ // v0.973 : un point où le tracé tourne de plus de 60° est un angle net ; la courbe ne lisse qu'entre deux angles.
+ const coin=i=>{const a=P[i-1],b=P[i],c=P[i+1],u={x:b.x-a.x,y:b.y-a.y},v={x:c.x-b.x,y:c.y-b.y};
+  return (u.x*v.x+u.y*v.y)/(Math.hypot(u.x,u.y)*Math.hypot(v.x,v.y))<Math.cos(Math.PI/3)};
+ const morceaux=[];let deb=0;for(let i=1;i<P.length-1;i++)if(coin(i)){morceaux.push(P.slice(deb,i+1));deb=i}morceaux.push(P.slice(deb));
+ // Catmull-Rom centripète : elle passe par chaque point sans boucler ni déborder, même aux points serrés.
+ const lisse=Q=>{const R=[];if(Q.length<3){Q.forEach((q,i)=>{if(i<Q.length-1)R.push(q)});return R}
+  const ext=(a,b)=>({x:2*a.x-b.x,y:2*a.y-b.y}),at=i=>i<0?ext(Q[0],Q[1]):i>=Q.length?ext(Q[Q.length-1],Q[Q.length-2]):Q[i];
+  const L=(m,n,ta,tb,t)=>tb-ta<1e-9?m:{x:(tb-t)/(tb-ta)*m.x+(t-ta)/(tb-ta)*n.x,y:(tb-t)/(tb-ta)*m.y+(t-ta)/(tb-ta)*n.y};
+  for(let i=0;i<Q.length-1;i++){const p0=at(i-1),p1=at(i),p2=at(i+1),p3=at(i+2),d=(m,n)=>Math.max(1e-6,Math.sqrt(Math.hypot(n.x-m.x,n.y-m.y)));
+   const t0=0,t1=t0+d(p0,p1),t2=t1+d(p1,p2),t3=t2+d(p2,p3),n=Math.max(4,Math.ceil(Math.hypot(p2.x-p1.x,p2.y-p1.y)/.8));
+   for(let k=0;k<n;k++){const t=t1+(t2-t1)*k/n,A1=L(p0,p1,t0,t1,t),A2=L(p1,p2,t1,t2,t),A3=L(p2,p3,t2,t3,t),B1=L(A1,A2,t0,t2,t),B2=L(A2,A3,t1,t3,t);R.push(L(B1,B2,t1,t2,t))}}
+  return R};
+ morceaux.forEach(Q=>lisse(Q).forEach(q=>out.push({x:q.x/r,y:q.y})));
  out.push(pts[pts.length-1]);return out}
 function appliqueCourbe(){if(!courbe||!mapDraft)return;const pts=courbeLissee(courbe.pts,mapDraft.ratio);courbe=null;
  if(pts.length<2){renderCanvas();return}pushUndo();
