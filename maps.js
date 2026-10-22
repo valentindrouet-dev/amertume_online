@@ -1376,6 +1376,8 @@ function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fene
   const mj=view==='mj';
   // Un passage secret clos n'existe pas pour la troupe : elle ne voit qu'un mur.
   if(doorHiddenFrom(d,mj)||!doorSeen(d))return;
+  // v0.977 : chez un joueur, une porte ne se dessine que dans sa ligne de vue directe, et éclairée : ni de mémoire, ni dans le noir.
+  if(!mj&&!d.fenetre&&oeilJoueur()&&!m.fogOff&&fogVis&&!doorInSight(d))return;
   // Une porte que ce lecteur peut manœuvrer s'annonce au survol.
   /* La clé de la porte, dans l'inventaire de l'aventurier choisi : elle ouvre ce que seul le MJ ouvrait —
      une porte verrouillée, un passage secret découvert et verrouillé. Elle n'est pas consommée. */
