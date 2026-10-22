@@ -909,6 +909,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
   // Un talent de début de combat encore à faire rayonne, pour ne pas l'oublier.
   if(t.rayonne)b.classList.add('debut-combat');
+  // v0.976 : un talent qui s'allume et s'éteint, allumé, garde un halo : Éclat Vivant tant que sa lumière brille.
+  if(t.code&&t.code.cle==='eclatvivant'&&a&&a.eclat)b.classList.add('talent-allume');
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
   if(t.cibles&&typeof surbrillanceCibles==='function')surbrillanceCibles(b,()=>t.cibles());

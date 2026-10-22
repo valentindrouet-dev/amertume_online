@@ -3419,3 +3419,7 @@ body.maj-calcul .calcul-talent .calcul-formule{display:inline;font-weight:700}
 .arbre-place-groupe.gros{width:93px;height:93px}.arbre-place-groupe.moyen{width:70px;height:70px}
 .arbre-ligne-groupe.survol,.arbre-place-groupe.survol{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .arbre-groupe.hors-limite-mj{opacity:.5}
+
+/* v0.976 : un talent allumé (Éclat Vivant) garde un halo fixe, même grisé jusqu'au tour suivant. */
+button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #ffcf5a}
+.map-panel .barre-actions button.btn-action.rond.talent-allume:is(:disabled,.inerte){opacity:.8}

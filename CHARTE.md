@@ -117,6 +117,10 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Fenêtre** (`.door.fenetre`) : sur la carte et dans l'éditeur, bleu verre `#3f7bc0`, vitre `#8fd3f7` ; volets ouverts, pointillé clair sur `#dff4fd`. Contour fin (1,2), même verrouillée ; à la table, sous le brouillard, contrairement aux portes.
 
+**Porte à la table** (`.door`, `.door.loin`) : hors de portée de l'aventurier, contour en pointillé ; à son contact, trait continu ; ouverte, le même en gris `#96a3a7`. Le rond qui l'ouvre (`.btn-porte`) se pose sur la porte, comme le rond Enjamber d'un piège, aux couleurs d'un Mouvement `#8a6440` / `#eee2d4`.
+
+**Talent allumé** (`.talent-allume`) : un talent qui s'allume et s'éteint (Éclat Vivant) garde, allumé, un halo fixe `#ffe08a` / `#ffcf5a`, même grisé.
+
 **Pointeur de bond** (`.bond-visee`) : socle en pointillés, vert `#2e9b5f` où le bond peut retomber, rouge `#c0392b` barré d'une croix où il ne peut pas.
 
 **Limite d'une Action bonus** (`.talent-limite`) : sous le nom dans la bulle, en italique, couleur atténuée ; rouge `#b03a48` et gras une fois prise dans son créneau, bulle grisée comprise.

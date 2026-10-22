@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.976","d":"2026-10-22","t":"Portes en pointillé et rond d'ouverture, halo d'Éclat Vivant"},
 {"v":"0.975","d":"2026-10-22","t":"Lumière des fenêtres en dégradé"},
 {"v":"0.974","d":"2026-10-22","t":"Fenêtres discrètes sous le brouillard"},
 {"v":"0.973","d":"2026-10-22","t":"Barre d'outils stable, angles nets de la Ligne de points"},

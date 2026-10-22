@@ -1369,7 +1369,9 @@ function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o
 function calqueFenetres(){let f=$('map-fenetres');if(!f){const doors=$('map-doors'),fog=$('fog');if(!doors||!fog)return doors;
   f=document.createElementNS('http://www.w3.org/2000/svg','svg');f.id='map-fenetres';f.setAttribute('viewBox','0 0 100 100');f.setAttribute('preserveAspectRatio','none');f.setAttribute('aria-hidden','true');
   fog.before(f)}return f}
-function renderPortes(){const portes=$('map-doors'),fenetres=calqueFenetres(),m=currentMap();portes.replaceChildren();if(fenetres&&fenetres!==portes)fenetres.replaceChildren();if(!m)return;
+/* v0.976 : ce qui manœuvre chaque porte dessinée, pour le rond qui l'ouvre (renderBoutonsPortes). */
+const manoeuvresPorte=new Map();
+function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fenetres=calqueFenetres(),m=currentMap();portes.replaceChildren();if(fenetres&&fenetres!==portes)fenetres.replaceChildren();if(!m)return;
  (m.doors||[]).forEach((d,i)=>{
   const mj=view==='mj';
   // Un passage secret clos n'existe pas pour la troupe : elle ne voit qu'un mur.
@@ -1380,7 +1382,7 @@ function renderPortes(){const portes=$('map-doors'),fenetres=calqueFenetres(),m=
   const parCle=!mj&&d.keyLocked&&!!d.cleId&&aLaCle(heroActif(),d.cleId)&&(!d.secret||d.open||d.decouvert);
   const ouvrable=mj||((!doorLockedFor(d,mj)||parCle)&&doorInReach(d));
   const el=svgPorte(d,m.ratio,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')
-   +(d.secret?' secret':'')+(d.fenetre?' fenetre':'')+(ouvrable?' can-open':''));
+   +(d.secret?' secret':'')+(d.fenetre?' fenetre':'')+(ouvrable?' can-open':'')+(!mj&&!doorInReach(d)?' loin':''));
   el.style.pointerEvents='all';
   el.onclick=()=>{
    if(doorLockedFor(d,mj)&&!parCle){log(d.secret&&!d.open
@@ -1395,7 +1397,27 @@ function renderPortes(){const portes=$('map-doors'),fenetres=calqueFenetres(),m=
     depensePoint(qui,'mouvement')}
    d.open=!d.open;if(d.fenetre)log((d.open?'Les volets s’ouvrent':'Les volets se ferment')+(qui?' : '+nomNum(qui)+' dépense 1 point de Mouvement.':'.'),{ton:'talent'});
    render();scheduleSave()};
-  (d.fenetre&&fenetres?fenetres:portes).append(el)})}
+  manoeuvresPorte.set(d,el.onclick);
+  (d.fenetre&&fenetres?fenetres:portes).append(el)});portesBoutonsCle='';if($('map-view'))renderBoutonsPortes()}
+/* v0.976 : sur la porte que l'aventurier du joueur touche et peut manœuvrer, un rond aux couleurs d'un Mouvement, comme le rond
+   Enjamber d'un piège : un clic l'ouvre ou la ferme. Grisé en combat sans point de Mouvement. */
+let portesBoutonsCle='';
+function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=document.createElement('div');calque.id='porte-boutons';$('map-view').append(calque);portesBoutonsCle=''}
+ const m=currentMap(),a=view==='mj'?null:actors[owner];
+ const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!doorInReach(d)||!manoeuvresPorte.has(d))return false;
+  const parCle=d.keyLocked&&!!d.cleId&&aLaCle(a,d.cleId)&&(!d.secret||d.open||d.decouvert);return !doorLockedFor(d,false)||parCle});
+ const gris=typeof enCombat==='function'&&enCombat()&&pointsRestants(a,'mouvement')<=0;
+ const cle=(a?a.id:'')+'|'+gris+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',');
+ if(cle===portesBoutonsCle&&calque.isConnected)return;portesBoutonsCle=cle;calque.replaceChildren();
+ montres.forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action rond btn-porte'+(d.open?' ouverte':'');
+  b.style.left=(d.x+d.w/2)+'%';b.style.top=(d.y+d.h/2)+'%';
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4.5L13 3v18M13 4h5v17M3 21h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="10.5" cy="12.5" r="1.2" fill="currentColor"/></svg>';
+  const nom=d.fenetre?(d.open?'Fermer les volets':'Ouvrir les volets'):(d.open?'Fermer la porte':'Ouvrir la porte');b.setAttribute('aria-label',nom);
+  if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
+  if(typeof inerte==='function')inerte(b,gris);
+  b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
+  b.onclick=e=>{e.stopPropagation();if(typeof estInerte==='function'&&estInerte(b))return;const f=manoeuvresPorte.get(d);if(f)f()};calque.append(b)})}
+{const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsPortes();return r}}
 /* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
    repeindre à chaque image — une toile de quatre mille pixels, floutée — faisait accrocher
    la main, et c'est la main qui prime. Au relâchement, il est prêt en quelques
