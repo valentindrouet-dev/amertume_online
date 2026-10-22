@@ -1500,9 +1500,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
     MJ clique. Le modèle se choisit à la création du talent ; son nom se lit par la page,
     qui seule connaît le bestiaire. */
  /* v0.970 — Talents d'adversaires du roncier (Ronceur, Moisi, Pot-Gueule, Brindille, Ysembrin…). */
- agrippe:{cle:'agrippe',nom:'Agrippe',type:'pass',monstre:true,aide:'Passif : sur un critique au contact, la cible est Entravée. Se libérer : 1 PM et un test de Force.',
-  params:[{cle:'reussites',nom:'Réussites de Force pour se libérer',type:'nombre',defaut:2,min:1,max:6}],
-  phrase(p){return 'Sur un <b>critique</b> au contact, la cible est <b>Entravée</b>. Se libérer : <b>1 PM</b>, test de <b>Force '+((p&&p.reussites)||2)+'</b>.'}},
+ agrippe:{cle:'agrippe',nom:'Agripper',type:'act',bouton:'Agripper',monstre:true,attaque:true,aide:'Action : 1 Attaque au contact ; touchée, la cible est Entravée. Se libérer : 1 PM et un test de Force.',
+  params:[{cle:'rouges',nom:'Dés rouges',type:'nombre',defaut:1,min:0,max:6},{cle:'bonus',nom:'Bonus de dégâts',type:'nombre',defaut:0,min:0,max:30},
+   {cle:'degats',nom:'Ses Dégâts',type:'choix',defaut:'oui',options:[['oui','s’ajoutent'],['non','ne comptent pas']]},
+   {cle:'reussites',nom:'Réussites de Force pour se libérer',type:'nombre',defaut:2,min:1,max:6}],
+  phrase(p){const n=p&&Number.isFinite(Number(p.rouges))?Number(p.rouges):1,b=Math.max(0,Math.trunc(Number(p&&p.bonus))||0),d=!(p&&p.degats==='non');
+   return 'Au contact, vous infligez <b>Entravé</b> et <b>'+n+' dé'+(n>1?'s':'')+' rouge'+(n>1?'s':'')+'</b>'+(d?' + Dégâts':'')+(b?' + '+b:'')+'. Se libérer : <b>1 PM</b>, test de <b>Force '+((p&&p.reussites)||2)+'</b>.'}},
  vulnerablefeu:{cle:'vulnerablefeu',nom:'Vulnérable au Feu',type:'pass',monstre:true,aide:'Passif : sous Feu, 1 dé rouge de dégâts en plus à chaque tour.',
   params:[],phrase(){return 'Sous <b>Feu</b>, subit <b>1 dé rouge</b> de dégâts en plus à chaque tour.'}},
  pique:{cle:'pique',nom:'Pique',type:'pass',monstre:true,aide:'Passif : ses attaques visent l’aventurier qui vient de soigner.',

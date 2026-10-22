@@ -290,6 +290,8 @@ Une ligne par événement, en cartouche arrondi, fond et bord pâles du **ton** 
 
 Une information qui se voit déjà (une recharge animée, un état affiché) **ne s'écrit pas** au journal.
 
+**Aucune nouvelle ligne de journal** sans demande expresse : une porte ou des volets qu'on ouvre se voient sur la carte, ils ne s'écrivent pas.
+
 ---
 
 ## 12. Animations

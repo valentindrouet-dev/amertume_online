@@ -77,7 +77,7 @@ Object.assign(REGLES_ETATS,{
  'Coma':'À 0 PV : hors jeu. Un aventurier y perd 1 VIE ; il revient à lui à la fin du combat.',
  'Ciblage':'Un repère posé sur la cible : aucun effet automatique.',
  'Charme':'N’attaque pas celui qui l’a charmé. Tombe à la fin du combat.',
- 'Entravé':'Ne peut pas quitter le contact de celui qui l’enlace ou l’agrippe. <b>Se libérer</b> : 1 PM, test de <b>Force</b> (réussites selon le talent). Tombe si celui qui l’enlace meurt.'});
+ 'Entravé':'Ne peut pas quitter le contact de celui qui l’enlace ou l’agrippe (Agripper : une Action, 1 Attaque au contact). <b>Se libérer</b> : 1 PM, test de <b>Force</b> (réussites selon le talent). Tombe si celui qui l’enlace meurt.'});
 const RG={act:'#4f7fb5',mvt:'#8a6440',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',ame:'#5e9a5b',mait:'#c99a3c',bonus:'#2a9d8f',accent:'#9c631c',vert:'#3d7a5b',rouge:'#a4442f'};
 const rgN=(v,d)=>typeof v!=='undefined'?v:d;
 REGLES_SECTIONS.push(

@@ -358,8 +358,10 @@ let fogAEmballer=false;
 /* v0.985 : la vue suit le socle qu'on glisse — le brouillard, les portes et leurs ronds se refont pendant le geste, quelques
    fois par seconde ; la mémoire ne s'emballe et ne s'enregistre qu'au relâchement. */
 let fogEnGeste=false,vueGesteT=0;
-function vueEnGeste(){const t=performance.now();if(t-vueGesteT<45)return;vueGesteT=t;fogEnGeste=true;
- try{computeFog();renderFog();if(typeof renderPortes==='function')renderPortes()}finally{fogEnGeste=false}}
+let vueGesteDuree=0;
+// Le pas se règle sur le coût : une mise à jour qui a pris 20 ms attend 80 ms avant la suivante ; la main garde la priorité.
+function vueEnGeste(){const t=performance.now();if(t-vueGesteT<Math.max(40,vueGesteDuree*4))return;vueGesteT=t;fogEnGeste=true;
+ try{computeFog();renderFog();if(typeof renderPortes==='function')renderPortes()}finally{fogEnGeste=false;fogKey='';vueGesteDuree=performance.now()-t}}
 function emballeFog(){if(fogEnGeste||!fogAEmballer)return;fogAEmballer=false;const m=currentMap();
  if(!m||!fogSeen||!fogDim)return;
  m.fog=fogSeenSrc=packMask(fogSeen,fogDim.n);delete m.seen;scheduleSave();garderBrouillardJoueur()}
@@ -404,7 +406,7 @@ function computeFog(){const m=currentMap();
  /* Dans le noir, la mémoire ne retient que les cases éclairées : ce que l'aventurier n'a vu qu'au contact, ou par sa vision
     dans le noir, s'y referme derrière lui. L'aveugle n'en retient que sa zone de contact. Ce qu'il a mémorisé vaut tant que
     ni la lumière ni son rayon ne changent. */
- let neuf=0;const size=mapSize();for(const a of troupe){const p=vu(a),r=obscur||blinded(a)?rayonVision(a):Infinity;
+ let neuf=0;const size=mapSize();for(const a of (fogEnGeste?[]:troupe)){const p=vu(a),r=obscur||blinded(a)?rayonVision(a):Infinity;
   const cleM=(M?M.cle:'')+'|'+Math.round(r)+(blinded(a)?'b':'');
   if(fogMemorise.get(p)===cleM)continue;fogMemorise.set(p,cleM);
   if(!Number.isFinite(r)&&!M){neuf+=fillPolygonGrid(fogSeen,d.w,d.h,p);continue}
@@ -527,6 +529,7 @@ function leverVoile(){const m=currentMap(),cv=$('fog');
  if(!peint)return;cartePeinte=cleVoile();voileAttente.hidden=true}
 let vueTroupe=false;
 function oeilJoueur(){return view!=='mj'||vueTroupe}
+let memFloue=null;
 function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  // Voile levé par le MJ : plus rien ne masque la carte, pour personne.
  if(!m||!fogVis||!d||m.fogOff){cv.style.display='none';return}
@@ -561,7 +564,13 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
     tracé au trait, et ne doit rien à ce lissage. */
  if(mem){ctx.globalAlpha=1-memoire/inconnu;
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  dessineFloute(ctx,mem,0,0,W,H,Math.max(1,W/d.w*.7),[0,0,0])}
+  /* v0.987 : la mémoire floutée se garde sur sa propre toile, tant qu'elle ne change pas : pendant le glisser d'un socle, seul
+     le champ vu se repeint, et le flou — le plus cher, sur une toile de plusieurs milliers de pixels — ne se refait plus. */
+  const cleFlou=fogMemTick+'|'+W+'x'+H+'|'+d.w;
+  if(!memFloue||memFloue._cle!==cleFlou){if(!memFloue)memFloue=document.createElement('canvas');if(memFloue.width!==W||memFloue.height!==H){memFloue.width=W;memFloue.height=H}
+   const mc=memFloue.getContext('2d');mc.clearRect(0,0,W,H);mc.imageSmoothingEnabled=true;mc.imageSmoothingQuality='high';
+   dessineFloute(mc,mem,0,0,W,H,Math.max(1,W/d.w*.7),[0,0,0]);memFloue._cle=cleFlou}
+  ctx.drawImage(memFloue,0,0)}
  ctx.globalAlpha=1;ctx.fillStyle='#000';
  const trace=(c,poly)=>{c.beginPath();c.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
   for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);c.closePath()};
@@ -1410,7 +1419,7 @@ function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fene
    if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
      if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul',true);return}
     depensePoint(qui,'mouvement')}
-   d.open=!d.open;if(d.fenetre)log((d.open?'Les volets s’ouvrent':'Les volets se ferment')+(qui?' : '+nomNum(qui)+' dépense 1 point de Mouvement.':'.'),{ton:'talent'});
+   d.open=!d.open;
    render();scheduleSave()};
   manoeuvresPorte.set(d,el.onclick);
   (d.fenetre&&fenetres?fenetres:portes).append(el)});portesBoutonsCle='';if($('map-view'))renderBoutonsPortes()}
