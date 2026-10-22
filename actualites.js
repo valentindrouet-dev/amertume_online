@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.993","d":"2026-10-22","t":"Portes closes : la ligne de blocage dessous prévaut"},
 {"v":"0.992","d":"2026-10-22","t":"Roues : clics justes, états lisibles"},
 {"v":"0.991","d":"2026-10-22","t":"Portes fines, boutons sous les tokens, Bestiaire par lieu"},
 {"v":"0.990","d":"2026-10-22","t":"Arbres de talents en roues"},

@@ -736,7 +736,10 @@ function encreDroite(carves,tol){return (carves||[]).map(p=>{
    s'arrête — et au plus de sa propre épaisseur : si l'on ne ressort pas dans cette
    limite, c'est un gros bloc et non un mur, on n'y creuse que la porte elle-même. */
 // v0.988 : une fenêtre close ne perce pas le mur : la ligne de blocage dessous tient seule ; ouverte, elle s'ouvre comme une porte.
-function doorPierces(d){return !!d&&(d.fenetre?!!d.open:(!d.secret||!!d.open||!!d.decouvert))}
+/* v0.993 : une porte close ne perce pas le mur non plus : la ligne de blocage dessous arrête la vue et le passage ; ouverte,
+   elle s'ouvre. Une porte posée dans un vide du mur, sans matière dessous, se bouche encore de son seul rectangle. */
+function doorPierces(d){return !!d&&!!d.open}
+function porteSurMatiere(d,map){return matiereDe(map).some(p=>polygoneContient(p,[d.x+d.w/2,d.y+d.h/2]))}
 function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
 /* Une porte de biais. Elle garde son rectangle {x,y,w,h} et gagne un angle « a », en
    degrés, qui la tourne autour de son centre — dans le repère de l'écran, sinon elle se
@@ -797,10 +800,11 @@ function trouPorte(d,map){if(!d||!(d.w>0&&d.h>0))return null;
  const pt=(k,o)=>[(f.cx+kx*k+lx*o)/f.r,f.cy+ky*k+ly*o];
  return [pt(lo,-autre),pt(hi,-autre),pt(hi,autre),pt(lo,autre)]}
 // Une porte close rebouche exactement le trou qu'elle avait percé, prolongement compris.
-function doorBlocks(map){return (map&&map.doors||[]).filter(d=>d&&(d.fenetre?!!d.open:!d.open)&&d.w>0&&d.h>0).map(d=>trouPorte(d,map)).filter(Boolean)}
+function doorBlocks(map){const l=(map&&map.doors||[]).filter(d=>d&&d.w>0&&d.h>0);
+ return [...l.filter(d=>d.fenetre&&d.open).map(d=>trouPorte(d,map)),...l.filter(d=>!d.fenetre&&!d.open&&!porteSurMatiere(d,map)).map(d=>doorPolygon(d,map.ratio))].filter(Boolean)}
 /* v0.971 : une fenêtre ne se traverse jamais, et on ne tire pas à travers ; ouverte, elle laisse passer le regard et la lumière.
    Le regard et la lumière n'ont donc pour bouchons que les portes et les fenêtres closes. */
-function doorBlocksVue(map){return (map&&map.doors||[]).filter(d=>d&&!d.fenetre&&!d.open&&d.w>0&&d.h>0).map(d=>trouPorte(d,map)).filter(Boolean)}
+function doorBlocksVue(map){return (map&&map.doors||[]).filter(d=>d&&!d.fenetre&&!d.open&&d.w>0&&d.h>0&&!porteSurMatiere(d,map)).map(d=>doorPolygon(d,map.ratio)).filter(Boolean)}
 /* Géométrie effectivement opposée au regard et aux tirs : la matière percée de ses portes,
    puis chaque porte close. Dessin et calcul y puisent ensemble, donc l'ombre commence
    exactement là où le mur est peint. */

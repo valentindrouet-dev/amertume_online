@@ -600,9 +600,10 @@ const sommets=m=>C.matiereDe(m).map(p=>p.anneaux.map(r=>r.length));
  assert.equal(trou.length,4);
  assert.ok(bt.y<=40&&bt.y2>=50,'prolongée à travers le mur : '+JSON.stringify(trou));
  assert.ok(Math.abs(bt.x-48)<1e-9&&Math.abs(bt.x2-54)<1e-9,'largeur gardée : '+JSON.stringify(bt));
- assert.equal(C.wallShape(m).contours.length,2);                            // Le mur est coupé en deux.
+ // v0.993 : close, elle ne perce pas le mur ; la ligne dessous arrête seule la vue. Ouverte, elle le coupe en deux.
+ assert.equal(C.wallShape(m).contours.length,1);
  assert.ok(C.wallsBetween({x:51,y:20},{x:51,y:70},C.obstaclesFrom(m)));    // Close : vue coupée.
- m.doors[0].open=true;
+ m.doors[0].open=true;assert.equal(C.wallShape(m).contours.length,2);
  assert.ok(!C.wallsBetween({x:51,y:20},{x:51,y:70},C.obstaclesFrom(m)));   // Ouverte : vue libre.
  assert.ok(C.wallsBetween({x:30,y:20},{x:30,y:70},C.obstaclesFrom(m)));    // À côté, le mur tient.
  // Un passage secret clos ne perce rien ; ouvert, il perce comme une porte.
@@ -649,7 +650,7 @@ const sommets=m=>C.matiereDe(m).map(p=>p.anneaux.map(r=>r.length));
  const m={ratio:R,matiere:[{anneaux:[murBiais]}],doors:[]};
  // La porte, tracée droite sur le mur puis tournée de trente degrés par sa poignée.
  const porte={x:50-5/R,y:48,w:10/R,h:4,a:30,open:false};m.doors.push(porte);
- assert.equal(C.wallShape(m).contours.length,2);                               // Le mur est coupé en deux.
+ assert.equal(C.wallShape(m).contours.length,1);                               // v0.993 : close, le mur reste entier.
  const trou=C.trouPorte(porte,m);assert.equal(trou.length,4);
  // De part et d'autre de la porte, perpendiculairement au mur : bloqué close, libre ouverte.
  const n=[-Math.sin(Math.PI/6),Math.cos(Math.PI/6)];
@@ -5933,7 +5934,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
 {const C=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.equal(C.doorHiddenFrom({secret:true,open:false,decouvert:true},false),false,'un passage découvert se voit');
  assert.equal(C.doorLockedFor({secret:true,open:false,decouvert:true},false),false,'et s’ouvre comme une porte');
- assert.equal(C.doorPierces({secret:true,open:false,decouvert:true}),true);assert.equal(C.doorPierces({secret:true,open:false}),false);
+ assert.equal(C.doorPierces({secret:true,open:false,decouvert:true}),false,'v0.993 : clos, même découvert, il ne perce pas');assert.equal(C.doorPierces({secret:true,open:true}),true);
  const m=C.packMaps([{name:'A',doors:[{x:1,y:1,w:5,h:2,secret:true,perception:3,decouvert:true}],foes:[{x:1,y:1,cache:true,tpl:{name:'G'}}],
   coffres:[{x:10,y:10,w:4,h:3,nom:'Malle',cache:true,perception:2,verrou:2,piege:2,degats:3,etats:['Feu','Rien'],items:['epee'],richesses:{or:12,'brisure-citrine':2,faux:9},ouvert:true,revele:true}]}]).maps[0];
  assert.equal(m.doors[0].perception,3);assert.ok(!('decouvert' in m.doors[0]),'la découverte reste à la partie');assert.equal(m.foes[0].cache,true);
