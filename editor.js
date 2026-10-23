@@ -6279,7 +6279,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       talent choisi. Les segments et les billes sont modelés : fond dégradé, liseré sombre, reflet clair ; vides, ils gardent
       le fond du panneau et le liseré de leur couleur. */
    // v1.002 : les segments, à l'échelle de leur rond (11 px × 29 px sur le talent initial de 100 px), mêmes proportions à 1, 2, 3 ou 4. Les billes, à 8 px du rond.
-   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,JOUR=12,kE=D[cls]/100,ep=11*kE,rb={centre:9,gros:8,moyen:6.5}[cls];
+   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,kE=D[cls]/100,JOUR=Math.max(9,12*kE),ep=11*kE,rb={centre:9,gros:8,moyen:6.5}[cls];
+   // v1.003 : l'écart du rond suit aussi l'échelle (12 px sur le talent initial, 9 px au moins : le cercle d'or du talent choisi passe dessous).
    const rA=Ro+JOUR+ep/2,rB=Ro+8+rb,S=2*(Math.max(rA+ep/2,rB+rb)+4),c=S/2,uid='sat'+(++satN);
    const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-satellites');svg.setAttribute('viewBox','0 0 '+S+' '+S);svg.style.width=svg.style.height=S+'px';
    const defs=document.createElementNS(NS,'defs');svg.append(defs);
