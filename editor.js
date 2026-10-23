@@ -1708,6 +1708,13 @@ function teinteLogoSur(el,im,cle){const pose=t=>{if(t)el.style.setProperty('--ti
  if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}
  const lis=()=>{if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}if(!im.naturalWidth)return;const t=teinteDominante(im);if(t){TEINTES_LOGOS.set(cle,t);pose(t)}};
  if(im.complete&&im.naturalWidth)lis();im.addEventListener('load',lis)}
+/* v1.004 : la couleur d'une compétence, partout la même que sur la fiche : la couleur dominante de son logo, la sienne
+   (SKILL_TINTS) à défaut ou en attendant qu'il soit lu. « pose » reçoit « r,g,b », tout de suite puis à la lecture du logo. */
+function teinteCompetence(k,pose){const l=iconesCompetences()[k];pose(SKILL_TINTS[k]);if(!l)return;
+ if(TEINTES_LOGOS.has(l)){pose(TEINTES_LOGOS.get(l));return}
+ const im=logoCompetence(k);if(!(im instanceof HTMLImageElement))return;
+ const lis=()=>{if(!TEINTES_LOGOS.has(l)){if(!im.naturalWidth)return;const t=teinteDominante(im);if(!t)return;TEINTES_LOGOS.set(l,t)}pose(TEINTES_LOGOS.get(l))};
+ if(im.complete&&im.naturalWidth)lis();else im.addEventListener('load',lis)}
 // Les planches Caractéristiques et Compétences d'abord, puis les planches Actions, puis le reste des icônes.
 function groupesLogosCompetence(){const vus=new Set(),groupes=[],rang=f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f)?0:/action/i.test(nomPlanche(f))||/action/i.test(f)?1:-1;
  planchesDuCatalogue().map(p=>p.fichier).filter(f=>rang(f)>=0).sort((x,y)=>rang(x)-rang(y)||nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
@@ -6320,12 +6327,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    // Les billes, à 9 px l'une de l'autre, étagées à droite de part et d'autre de l'horizontale ; la première, en haut.
    if(bons.length){const n=bons.length,pas=(2*rb+9)/rB*deg;
     bons.forEach((x,k)=>{const [cx,cy]=pt((k-(n-1)/2)*pas,rB),p=paramsTalent(x)||{},carac=p.carac||'pv',on=tenu(x);
-     const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(p.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
      const b=mk('circle',{cx:f(cx),cy:f(cy),r:rb,'class':'sat-bille'+(on?' tenu':'')+(gris(x)?' gris':'')});
-     if(on){const g=mk('radialGradient',{id:uid+'b'+k,cx:'35%',cy:'30%',r:'75%'});
-      g.append(mk('stop',{offset:'0','stop-color':'rgb('+mix(tint,255,.55)+')'}),mk('stop',{offset:'.55','stop-color':'rgb('+tint+')'}),mk('stop',{offset:'1','stop-color':'rgb('+mix(tint,0,.22)+')'}));defs.append(g);
-      b.style.fill='url(#'+uid+'b'+k+')';b.style.stroke='rgb('+mix(tint,0,.45)+')'}
-     else b.style.stroke='rgb('+tint+')';svg.append(b);bulle(b,x)})}
+     let g=null;if(on){g=mk('radialGradient',{id:uid+'b'+k,cx:'35%',cy:'30%',r:'75%'});g.append(mk('stop',{offset:'0'}),mk('stop',{offset:'.55'}),mk('stop',{offset:'1'}));defs.append(g);b.style.fill='url(#'+uid+'b'+k+')'}
+     // Sa couleur : celle de sa caractéristique ; pour une compétence, celle de son logo, comme sur la fiche.
+     const teinte=tint=>{if(g){const st=g.querySelectorAll('stop');st[0].setAttribute('stop-color','rgb('+mix(tint,255,.55)+')');st[1].setAttribute('stop-color','rgb('+tint+')');st[2].setAttribute('stop-color','rgb('+mix(tint,0,.22)+')');b.style.stroke='rgb('+mix(tint,0,.45)+')'}else b.style.stroke='rgb('+tint+')'};
+     if(carac==='comp')teinteCompetence(Math.max(0,Math.min(7,Number(p.comp)||0)),teinte);else teinte(carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150');
+     svg.append(b);bulle(b,x)})}
    const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
    const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');
@@ -6532,6 +6539,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
       const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(pb.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
       c.classList.add('bonus-rond-panneau');c.style.setProperty('--tint',tint);
+      // v1.004 : le rond d'un bonus de compétence prend la couleur de son logo, comme la compétence sur la fiche.
+      if(carac==='comp')teinteCompetence(Math.max(0,Math.min(7,Number(pb.comp)||0)),t=>c.style.setProperty('--tint',t));
       const rond=document.createElement('span');rond.className='rond-bonus';const ic=logoBonus(pb);if(ic)rond.append(remplitCase(ic));
       const pr=l.querySelector('.detail-prix'),ot=l.querySelector('.detail-oter');c.replaceChildren(rond,...(pr?[pr]:[]),...(ot?[ot]:[]));
       surveille(c,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+carac;const t=document.createElement('p');t.className='talent-bulle-nom';
