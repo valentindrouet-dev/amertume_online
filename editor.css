@@ -3442,7 +3442,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue>.roue-moyen .arbre-rond,.arbre-roue>.arbre-place-groupe.roue-moyen{width:62px;height:62px}
 .arbre-roue>.arbre-place-groupe{padding:0;background:none;cursor:pointer}
 .arbre-roue>.arbre-place-groupe:hover{border-color:var(--accent);opacity:1}
-.arbre-col.arbre-col-groupes{min-width:500px;flex:none}
+.arbre-col.arbre-col-groupes{min-width:600px;flex:none}
 .arbre-col-groupes .arbre-plan-groupes{max-width:none}
 /* v0.992 : dans la roue, seul le rond se prend (la boîte du nœud débordait sur ses voisins) ; un seul cercle, doublé d'or pour le
    talent choisi. Acquis : rond et icône en couleur. Achetable : l'icône seule en couleur, le rond neutre. Fermé ou trop cher : tout en gris. */
@@ -3465,3 +3465,12 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 
 /* v0.998 : « Indice Repéré ! », au milieu de l'écran, à la couleur des révélations. */
 .annonce-flottante.annonce-indice{color:#9d7b1e}
+/* v0.9998 : les satellites d'un rond de l'arbre — à gauche, l'arc segmenté des Améliorations (vert `#5e9a5b`, pâle `#d3e5cd`
+   tant qu'elle n'est pas tenue) ; à droite, les billes des bonus, à la couleur de leur caractéristique, vides tant qu'ils ne sont pas tenus. */
+.arbre-roue>.arbre-noeud .arbre-rond{overflow:visible}
+.arbre-satellites{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
+.arbre-satellites .sat-arc{fill:none;stroke:#d3e5cd;stroke-linecap:butt}
+.arbre-satellites .sat-arc.tenu{stroke:#5e9a5b}
+.arbre-satellites .sat-bille{fill:var(--panel);stroke:var(--tint);stroke-width:3}
+.arbre-satellites .sat-bille.tenu{fill:var(--tint)}
+.arbre-roue>.arbre-noeud.verrou .arbre-satellites{filter:grayscale(1);opacity:.55}

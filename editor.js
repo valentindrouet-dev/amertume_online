@@ -6264,7 +6264,27 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      Mouvements, Réactions, 3 au plus) dans les trois autres coins. À droite, deux colonnes de moyens ronds (Actions bonus,
      Passifs…), 6 au plus, centrées en hauteur sur le carré : la hauteur d'un niveau ne change pas. Ce qui dépasse (un arbre
      ancien) continue en lignes dessous. */
-  const D={centre:100,gros:84,moyen:62},PAS_G=122,PAS_MX=78,PAS_MY=76,ECART=106,MARGE=10;
+  // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
+  const D={centre:100,gros:84,moyen:62},PAS_G=146,PAS_MX=104,PAS_MY=91,ECART=127,MARGE=22;
+  /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
+     talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
+     ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */
+  const satellites=(el,t,cls)=>{const P=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x));
+   const ams=P.filter(x=>!estBonus(x)).slice(0,{centre:4,gros:4,moyen:3}[cls]),bons=P.filter(estBonus).slice(0,{centre:4,gros:3,moyen:2}[cls]);
+   if(!ams.length&&!bons.length)return;
+   const NS='http://www.w3.org/2000/svg',ep={centre:10,gros:9,moyen:7}[cls],rb={centre:9,gros:8,moyen:6.5}[cls],r=D[cls]/2+ep/2+7,rB=r+2,S=2*(rB+rb*2+3),c=S/2;
+   const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-satellites');svg.setAttribute('viewBox','0 0 '+S+' '+S);svg.style.width=svg.style.height=S+'px';
+   const tenu=x=>!a||porte(x),pt=(ang,rr)=>[c+rr*Math.cos(ang*Math.PI/180),c+rr*Math.sin(ang*Math.PI/180)];
+   // Les segments, de 125° à 235° (à gauche, 180° au milieu), un jour entre deux.
+   if(ams.length){const de=122,fin=238,jour=7,n=ams.length,pas=(fin-de-jour*(n-1))/n;
+    ams.forEach((x,k)=>{const s0=de+k*(pas+jour),[x1,y1]=pt(s0,r),[x2,y2]=pt(s0+pas,r),p=document.createElementNS(NS,'path');
+     p.setAttribute('d','M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+r+' '+r+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1));p.setAttribute('class','sat-arc'+(tenu(x)?' tenu':''));p.style.strokeWidth=ep;svg.append(p)})}
+   // Les billes, étagées à droite, de part et d'autre de l'horizontale.
+   if(bons.length){const n=bons.length,ouv=Math.min(110,40*(n-1));
+    bons.forEach((x,k)=>{const [cx,cy]=pt(n===1?0:-ouv/2+k*ouv/(n-1),rB),p=paramsTalent(x)||{},carac=p.carac||'pv';
+     const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(p.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
+     const b=document.createElementNS(NS,'circle');b.setAttribute('cx',cx.toFixed(1));b.setAttribute('cy',cy.toFixed(1));b.setAttribute('r',rb);b.setAttribute('class','sat-bille'+(tenu(x)?' tenu':''));b.style.setProperty('--tint','rgb('+tint+')');svg.append(b)})}
+   const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
    const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');
    if(a&&(Number(a.level)||1)<g)sec.classList.add('groupe-ferme');
@@ -6283,11 +6303,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const H=Math.max(y0+(lignesG-1)*PAS_G+D.gros/2,ym+(lignesM-1)/2*PAS_MY+D.moyen/2)+dy+MARGE;
    const roue=document.createElement('div');roue.className='arbre-roue';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const pose=(el,p,cls)=>{el.classList.add('roue-'+cls);el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';roue.append(el)};
-   if(centre){const el=estVide(centre)?noeudVide(centre,c,false):noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
+   if(centre){const el=estVide(centre)?noeudVide(centre,c,false):noeudArbre(centre,c,libre);if(!estVide(centre))satellites(el,centre,'centre');if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
    else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),caseG(0),'centre');
    /* v0.9997 : un rond de remplissage (« ? ») tient sa place comme un talent ; chez le MJ, un clic y pose un talent, qui le
       remplace, ou change sa couleur. */
-   const nd=(t,ligne)=>{if(!estVide(t))return noeudArbre(t,c,libre);const el=noeudVide(t,c,false);
+   const nd=(t,ligne)=>{if(!estVide(t)){const el=noeudArbre(t,c,libre);satellites(el,t,ligne);return el}const el=noeudVide(t,c,false);
     if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',...(t.centreGroupe?{centreGroupe:true}:{}),remplace:t.id})};return el};
    gros.forEach((t,k)=>{const el=nd(t,'gros');if(mj)surDepot(el,g,'gros',t);pose(el,caseG(k+1),'gros')});
    if(vG)pose(place('gros',g,'gros'),caseG(gros.length+1),'gros');

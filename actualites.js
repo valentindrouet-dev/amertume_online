@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.9998","d":"2026-10-23","t":"Satellites des talents"},
 {"v":"0.9997","d":"2026-10-23","t":"Remplissages rétablis"},
 {"v":"0.9996","d":"2026-10-23","t":"Arbre en carré"},
 {"v":"0.9995","d":"2026-10-22","t":"Second test aéré"},
