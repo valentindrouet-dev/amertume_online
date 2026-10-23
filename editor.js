@@ -5158,6 +5158,7 @@ function iconeRemplissage(){const l=typeof catalog!=='undefined'&&catalog.logoRe
 // Posé sur une case vide, il la colore ; ailleurs, il prend sa place comme un talent neuf.
 function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissage=true;v.couleur=couleur;return true}
  const t={id:crypto.randomUUID(),vide:true,remplissage:true,couleur,name:'',famille:dest.famille||GENERIQUES,voie:dest.voie||'',type:dest.chemin?'ame':'pass',level:1,effet:'',effects:'',couts:[0,0,0]};
+ if(dest.groupe&&!dest.centreGroupe)t.ligneArbre=dest.type==='pass'?'moyen':'gros';
  catalog.talents.push(t);if(placerTalent(t.id,dest))return true;
  catalog.talents.splice(catalog.talents.indexOf(t),1);return false}
 /* Les niveaux de l'arbre : un niveau posé sur la ligne entre deux talents, gardé sur celui d'où elle part
@@ -5470,7 +5471,9 @@ function laisseLignes(t){const p=posDe(t);if(!p||t.horsArbre||lisChemin(t)||estV
 function placerTalent(id,dest){const ok=placerTalent0(id,dest);
  // v0.990 : posé sur une place de la roue, il en prend le groupe, le rang et, au centre, la place du talent initial.
  if(ok&&dest&&typeof GROUPES_ARBRE!=='undefined'&&GROUPES_ARBRE.includes(Number(dest.groupe))){const t=tousTalents().find(x=>x.id===id);if(t){t.groupe=Number(dest.groupe);
-  if(Number.isFinite(Number(dest.ordreArbre)))t.ordreArbre=Number(dest.ordreArbre);if(dest.centreGroupe)t.centreGroupe=true;else delete t.centreGroupe}}
+  if(Number.isFinite(Number(dest.ordreArbre)))t.ordreArbre=Number(dest.ordreArbre);if(dest.centreGroupe)t.centreGroupe=true;else delete t.centreGroupe}
+  // v0.9997 : un talent posé sur un rond de remplissage le remplace.
+  const v=dest.remplace&&dest.remplace!==id?tousTalents().find(x=>x.id===dest.remplace&&estVide(x)):null;if(v){const i=catalog.talents.indexOf(v);if(i>=0)catalog.talents.splice(i,1)}}
  return ok}
 function placerTalent0(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!dest)return false;
  // Dans le gros rond flottant : un talent seul, hors de la grille ; celui qui y était revient à la Bibliothèque.
@@ -5543,7 +5546,8 @@ const ARBRE_V2=true;let arbreDetailId=null;
    Mouvements) sur une première ligne, quatre au plus ; les ronds moyens (Actions bonus, Passifs, Maîtrises, Critiques) dessous,
    six au plus. Le talent initial ouvre l'arbre, seul, en gros rond. Un talent s'apprend dès le niveau de son groupe. */
 const ARBRE_V3=true,GROUPES_ARBRE=[1,4,7,10],MAX_LIGNE_ARBRE={gros:3,moyen:6};
-const ligneArbreDe=t=>['act','reac','mvt'].includes(talentType(t)[0])?'gros':'moyen';
+// v0.9997 : un rond de remplissage garde la place où le MJ l'a posé ; sinon sa couleur la dit.
+const ligneArbreDe=t=>estRemplissage(t)?(['gros','moyen'].includes(t.ligneArbre)?t.ligneArbre:['act','reac','mvt'].includes(t.couleur)?'gros':'moyen'):['act','reac','mvt'].includes(talentType(t)[0])?'gros':'moyen';
 const groupeDeNiveau=n=>n>=10?10:n>=7?7:n>=4?4:1;
 // Le groupe d'un talent : le sien, sinon d'après le niveau que ses lignes lui demandaient — le plus petit niveau qui l'atteint.
 function niveauxParLignes(liste){const L=(liste||[]).filter(Boolean),out=new Map(),file=[];
@@ -6221,7 +6225,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      sur une place l'y range, sur un autre talent les échange. */
  const colonneGroupes=(col,c,libre)=>{col.classList.add('arbre-col-groupes');col.arbreInfo={liste:c.liste,mj,a};
   if(!c.liste.length&&!mj){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v);return col}
-  const L=c.liste.filter(t=>t&&!estVide(t)),initial=L.find(t=>t.flottant===true)||null,limite=limiteArbre(classe),limiteVue=view==='mj'&&!arbresVueJoueur&&!a;
+  const L=c.liste.filter(t=>t&&(!estVide(t)||estRemplissage(t))),initial=L.find(t=>t.flottant===true)||null,limite=limiteArbre(classe),limiteVue=view==='mj'&&!arbresVueJoueur&&!a;
   // Chez le MJ, le groupe calculé d'un talent qui n'en avait pas s'écrit : il ne bougera plus.
   if(mj){const sans=L.filter(t=>!GROUPES_ARBRE.includes(Number(t.groupe)));if(sans.length){const g=new Map(sans.map(t=>[t.id,groupeArbre(t,c.liste)]));sans.forEach(t=>{t.groupe=g.get(t.id)});scheduleSave()}}
   const plan=document.createElement('div');plan.className='arbre-plan-groupes';
@@ -6279,11 +6283,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const H=Math.max(y0+(lignesG-1)*PAS_G+D.gros/2,ym+(lignesM-1)/2*PAS_MY+D.moyen/2)+dy+MARGE;
    const roue=document.createElement('div');roue.className='arbre-roue';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const pose=(el,p,cls)=>{el.classList.add('roue-'+cls);el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';roue.append(el)};
-   if(centre){const el=noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
+   if(centre){const el=estVide(centre)?noeudVide(centre,c,false):noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
    else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),caseG(0),'centre');
-   gros.forEach((t,k)=>{const el=noeudArbre(t,c,libre);if(mj)surDepot(el,g,'gros',t);pose(el,caseG(k+1),'gros')});
+   /* v0.9997 : un rond de remplissage (« ? ») tient sa place comme un talent ; chez le MJ, un clic y pose un talent, qui le
+      remplace, ou change sa couleur. */
+   const nd=(t,ligne)=>{if(!estVide(t))return noeudArbre(t,c,libre);const el=noeudVide(t,c,false);
+    if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',...(t.centreGroupe?{centreGroupe:true}:{}),remplace:t.id})};return el};
+   gros.forEach((t,k)=>{const el=nd(t,'gros');if(mj)surDepot(el,g,'gros',t);pose(el,caseG(k+1),'gros')});
    if(vG)pose(place('gros',g,'gros'),caseG(gros.length+1),'gros');
-   moyens.forEach((t,k)=>{const el=noeudArbre(t,c,libre);if(mj)surDepot(el,g,'moyen',t);pose(el,caseM(k),'moyen')});
+   moyens.forEach((t,k)=>{const el=nd(t,'moyen');if(mj)surDepot(el,g,'moyen',t);pose(el,caseM(k),'moyen')});
    if(vM)pose(place('moyen',g,'moyen'),caseM(moyens.length),'moyen');
    sec.append(roue);plan.append(sec)});
   col.append(plan);return col};
