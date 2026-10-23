@@ -5215,7 +5215,7 @@ function cleLogoBonus(p){const c=(p&&p.carac)||'pv';return c+(c==='comp'?':'+(p&
 /* L'icône d'un chiffre de fiche, devant laquelle il se lit. Sa couleur — celle de l'image choisie,
    ou celle de l'icône du jeu — teinte très légèrement la valeur. */
 // v0.942 : les couleurs des caractéristiques, partout celles des bonus de l'arbre (STAT_TINTS).
-const TEINTES_STATS={pv:'47,122,91',endu:'44,140,133',vie:'122,92,184',dmg:'180,72,58',def:'96,110,118',xp:'190,150,60'};
+const TEINTES_STATS={pv:'214,86,118',endu:'44,140,133',vie:'122,92,184',dmg:'180,72,58',def:'96,110,118',xp:'190,150,60'};
 function iconeStat(tuile,carac){const ic=logoBonus({carac});if(!tuile||!ic)return;
  ic.classList.add('stat-ico');tuile.prepend(ic);tuile.classList.add('avec-icone');tuile.style.setProperty('--tint',TEINTES_STATS[carac]||'150,150,150');
  if(ic.tagName==='IMG')teinteLogoSur(tuile,ic,'stat:'+carac+':'+((catalog.logosBonus||{})[carac]||''))}
@@ -6265,25 +6265,43 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      Passifs…), 6 au plus, centrées en hauteur sur le carré : la hauteur d'un niveau ne change pas. Ce qui dépasse (un arbre
      ancien) continue en lignes dessous. */
   // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
-  const D={centre:100,gros:84,moyen:62},PAS_G=146,PAS_MX=104,PAS_MY=91,ECART=127,MARGE=22;
+  let satN=0;const D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
   /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
      talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
      ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */
-  const satellites=(el,t,cls)=>{const P=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x));
+  const satellites=(el,t,cls)=>{
+   // Dans l'ordre du panneau de droite : les améliorations de haut en bas, les bonus de gauche à droite.
+   const ORDRE=['so','s','se','o','e','no','n','ne'],rangP=x=>{const k=lisChemin(x);return [k.rang,ORDRE.indexOf(k.dir)]};
+   const P=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x)).sort((x,y)=>rangP(x)[0]-rangP(y)[0]||rangP(x)[1]-rangP(y)[1]);
    const ams=P.filter(x=>!estBonus(x)).slice(0,{centre:4,gros:4,moyen:3}[cls]),bons=P.filter(estBonus).slice(0,{centre:4,gros:3,moyen:2}[cls]);
    if(!ams.length&&!bons.length)return;
-   const NS='http://www.w3.org/2000/svg',ep={centre:10,gros:9,moyen:7}[cls],rb={centre:9,gros:8,moyen:6.5}[cls],r=D[cls]/2+ep/2+7,rB=r+2,S=2*(rB+rb*2+3),c=S/2;
+   /* Le rond déborde de sa bordure (3 px) ; un jour de 12 px le sépare de ses satellites, hors du double cercle d'or du
+      talent choisi. Les segments et les billes sont modelés : fond dégradé, liseré sombre, reflet clair ; vides, ils gardent
+      le fond du panneau et le liseré de leur couleur. */
+   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,JOUR=12,ep={centre:11,gros:10,moyen:7}[cls],rb={centre:9,gros:8,moyen:6.5}[cls];
+   const rA=Ro+JOUR+ep/2,rB=Ro+JOUR+rb,S=2*(Math.max(rA+ep/2,rB+rb)+4),c=S/2,uid='sat'+(++satN);
    const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-satellites');svg.setAttribute('viewBox','0 0 '+S+' '+S);svg.style.width=svg.style.height=S+'px';
-   const tenu=x=>!a||porte(x),pt=(ang,rr)=>[c+rr*Math.cos(ang*Math.PI/180),c+rr*Math.sin(ang*Math.PI/180)];
-   // Les segments, de 125° à 235° (à gauche, 180° au milieu), un jour entre deux.
-   if(ams.length){const de=122,fin=238,jour=7,n=ams.length,pas=(fin-de-jour*(n-1))/n;
-    ams.forEach((x,k)=>{const s0=de+k*(pas+jour),[x1,y1]=pt(s0,r),[x2,y2]=pt(s0+pas,r),p=document.createElementNS(NS,'path');
-     p.setAttribute('d','M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+r+' '+r+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1));p.setAttribute('class','sat-arc'+(tenu(x)?' tenu':''));p.style.strokeWidth=ep;svg.append(p)})}
-   // Les billes, étagées à droite, de part et d'autre de l'horizontale.
+   const defs=document.createElementNS(NS,'defs');svg.append(defs);
+   const mk=(n,attrs)=>{const e=document.createElementNS(NS,n);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));return e};
+   const mix=(rgb,w,k)=>rgb.split(',').map(v=>Math.round(Number(v)*(1-k)+w*k)).join(',');
+   const tenu=x=>!a||porte(x),pt=(ang,rr)=>[c+rr*Math.cos(ang*Math.PI/180),c+rr*Math.sin(ang*Math.PI/180)],f=v=>v.toFixed(1);
+   const AME='94,154,91';
+   if(ams.length){const haut=238,bas=122,jour=7,n=ams.length,pas=(haut-bas-jour*(n-1))/n,R1=rA+ep/2,R0=rA-ep/2;
+    const g=mk('linearGradient',{id:uid+'a',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:0,y2:S});
+    g.append(mk('stop',{offset:'0','stop-color':'rgb('+mix(AME,255,.42)+')'}),mk('stop',{offset:'1','stop-color':'rgb('+mix(AME,0,.12)+')'}));defs.append(g);
+    ams.forEach((x,k)=>{const a1=haut-k*(pas+jour),a0=a1-pas,[x1,y1]=pt(a0,R1),[x2,y2]=pt(a1,R1),[x3,y3]=pt(a1,R0),[x4,y4]=pt(a0,R0),on=tenu(x);
+     const p=mk('path',{d:'M'+f(x1)+' '+f(y1)+' A'+R1+' '+R1+' 0 0 1 '+f(x2)+' '+f(y2)+' L'+f(x3)+' '+f(y3)+' A'+R0+' '+R0+' 0 0 0 '+f(x4)+' '+f(y4)+' Z','class':'sat-arc'+(on?' tenu':'')});
+     p.style.stroke='rgb('+mix(AME,0,.45)+')';if(on)p.style.fill='url(#'+uid+'a)';svg.append(p);
+     if(on){const rr=rA+ep*.2,[hx,hy]=pt(a0+4,rr),[kx,ky]=pt(a1-4,rr);
+      const h=mk('path',{d:'M'+f(hx)+' '+f(hy)+' A'+rr+' '+rr+' 0 0 1 '+f(kx)+' '+f(ky),'class':'sat-reflet'});h.style.strokeWidth=ep*.26;svg.append(h)}})}
    if(bons.length){const n=bons.length,ouv=Math.min(110,40*(n-1));
-    bons.forEach((x,k)=>{const [cx,cy]=pt(n===1?0:-ouv/2+k*ouv/(n-1),rB),p=paramsTalent(x)||{},carac=p.carac||'pv';
+    bons.forEach((x,k)=>{const [cx,cy]=pt(n===1?0:-ouv/2+k*ouv/(n-1),rB),p=paramsTalent(x)||{},carac=p.carac||'pv',on=tenu(x);
      const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(p.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
-     const b=document.createElementNS(NS,'circle');b.setAttribute('cx',cx.toFixed(1));b.setAttribute('cy',cy.toFixed(1));b.setAttribute('r',rb);b.setAttribute('class','sat-bille'+(tenu(x)?' tenu':''));b.style.setProperty('--tint','rgb('+tint+')');svg.append(b)})}
+     const b=mk('circle',{cx:f(cx),cy:f(cy),r:rb,'class':'sat-bille'+(on?' tenu':'')});
+     if(on){const g=mk('radialGradient',{id:uid+'b'+k,cx:'35%',cy:'30%',r:'75%'});
+      g.append(mk('stop',{offset:'0','stop-color':'rgb('+mix(tint,255,.55)+')'}),mk('stop',{offset:'.55','stop-color':'rgb('+tint+')'}),mk('stop',{offset:'1','stop-color':'rgb('+mix(tint,0,.22)+')'}));defs.append(g);
+      b.style.fill='url(#'+uid+'b'+k+')';b.style.stroke='rgb('+mix(tint,0,.45)+')'}
+     else b.style.stroke='rgb('+tint+')';svg.append(b)})}
    const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
    const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');

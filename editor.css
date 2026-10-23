@@ -1432,7 +1432,7 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .zone-nom-champ{width:6.5em;margin:0;padding:1px 4px;font:800 12px/1 system-ui;text-align:center;border-radius:6px;border:1px solid #fff;background:#fff;color:#222}
 /* Un nœud de bonus dans l'arbre : un rond ambré à la valeur, la caractéristique en nom. */
 /* Les bonus prennent la couleur de leur caractéristique, celle des tuiles de la fiche. */
-.arbre-noeud.bonus{--teinte:#b8862b}.arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}.arbre-noeud.bonus-endu{--teinte:rgb(44,140,133)}.arbre-noeud.bonus-pv{--teinte:rgb(47,122,91)}.arbre-noeud.bonus-def{--teinte:rgb(96,110,118)}.arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}
+.arbre-noeud.bonus{--teinte:#b8862b}.arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}.arbre-noeud.bonus-endu{--teinte:rgb(44,140,133)}.arbre-noeud.bonus-pv{--teinte:rgb(214,86,118)}.arbre-noeud.bonus-def{--teinte:rgb(96,110,118)}.arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}
 .arbre-noeud.bonus .arbre-rond{width:50px;height:50px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
 /* La valeur, et sous elle la caractéristique en petit : le nom n'est plus écrit sous le rond. */
 .arbre-noeud.bonus .arbre-rond b{font:800 16px/1 system-ui}
@@ -2138,7 +2138,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .bulle-detail-degats .j-detail{margin:0}
 /* La bulle d'un bonus prend la teinte de son rond. */
 .talent-detail.bulle-bonus{--teinte:#b8862b;background:color-mix(in srgb,var(--teinte) 20%,#fff8ec);border-left:4px solid var(--teinte)}
-.talent-detail.bulle-bonus.bonus-vie{--teinte:rgb(122,92,184)}.talent-detail.bulle-bonus.bonus-endu{--teinte:rgb(44,140,133)}.talent-detail.bulle-bonus.bonus-pv{--teinte:rgb(47,122,91)}
+.talent-detail.bulle-bonus.bonus-vie{--teinte:rgb(122,92,184)}.talent-detail.bulle-bonus.bonus-endu{--teinte:rgb(44,140,133)}.talent-detail.bulle-bonus.bonus-pv{--teinte:rgb(214,86,118)}
 .talent-detail.bulle-bonus.bonus-def{--teinte:rgb(96,110,118)}.talent-detail.bulle-bonus.bonus-dmg{--teinte:rgb(180,72,58)}.talent-detail.bulle-bonus.bonus-orbe{--teinte:#8a63c9}.talent-detail.bulle-bonus.bonus-comp{--teinte:#5a7a6c}
 /* Le détail des dés d'une attaque, au journal : une bulle comme celle des talents. */
 .bulle-detail-degats .j-detail{margin:0;padding:7px 10px;border:1px solid #00000026;border-left:4px solid #b4553a;border-radius:9px;background:#f3e3dc;color:#2a2118;box-shadow:0 2px 5px #0000002e}
@@ -2221,7 +2221,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Un bonus en petit rond : sa couleur, son logo, son total en pastille. */
 .hero-card .talent-ameliorations .bonus-rond{position:relative;--teinte:#b8862b;border-color:var(--teinte);background:var(--panel)}
 .hero-card .talent-ameliorations .bonus-rond.bonus-vie{--teinte:rgb(122,92,184)}.hero-card .talent-ameliorations .bonus-rond.bonus-endu{--teinte:rgb(44,140,133)}
-.hero-card .talent-ameliorations .bonus-rond.bonus-pv{--teinte:rgb(47,122,91)}.hero-card .talent-ameliorations .bonus-rond.bonus-dmg{--teinte:rgb(180,72,58)}
+.hero-card .talent-ameliorations .bonus-rond.bonus-pv{--teinte:rgb(214,86,118)}.hero-card .talent-ameliorations .bonus-rond.bonus-dmg{--teinte:rgb(180,72,58)}
 .hero-card .talent-ameliorations .bonus-rond.bonus-orbe{--teinte:#8a63c9}.hero-card .talent-ameliorations .bonus-rond.bonus-comp{--teinte:#5a7a6c}
 .hero-card .talent-ameliorations .bonus-rond svg,.hero-card .talent-ameliorations .bonus-rond img,.hero-card .talent-ameliorations .bonus-rond .bonus-lettres{width:62%;height:62%;font:800 9px/1 system-ui}
 .hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 11px/1 system-ui;text-align:center;pointer-events:none;-webkit-text-stroke:2.5px #1d1a16;paint-order:stroke fill}
@@ -3465,12 +3465,12 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 
 /* v0.998 : « Indice Repéré ! », au milieu de l'écran, à la couleur des révélations. */
 .annonce-flottante.annonce-indice{color:#9d7b1e}
-/* v0.9998 : les satellites d'un rond de l'arbre — à gauche, l'arc segmenté des Améliorations (vert `#5e9a5b`, pâle `#d3e5cd`
-   tant qu'elle n'est pas tenue) ; à droite, les billes des bonus, à la couleur de leur caractéristique, vides tant qu'ils ne sont pas tenus. */
+/* v0.9998 : les satellites d'un rond de l'arbre — à gauche, l'arc segmenté des Améliorations (vert `#5e9a5b`) ; à droite, les billes
+   des bonus, à la couleur de leur caractéristique. Modelés : dégradé, liseré sombre, reflet ; vides tant qu'ils ne sont pas tenus. */
 .arbre-roue>.arbre-noeud .arbre-rond{overflow:visible}
 .arbre-satellites{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
-.arbre-satellites .sat-arc{fill:none;stroke:#d3e5cd;stroke-linecap:butt}
-.arbre-satellites .sat-arc.tenu{stroke:#5e9a5b}
-.arbre-satellites .sat-bille{fill:var(--panel);stroke:var(--tint);stroke-width:3}
-.arbre-satellites .sat-bille.tenu{fill:var(--tint)}
+.arbre-satellites .sat-arc{fill:var(--panel);stroke-width:1.5;stroke-linejoin:round}
+.arbre-satellites .sat-reflet{fill:none;stroke:#fff;stroke-opacity:.42;stroke-linecap:round}
+.arbre-satellites .sat-bille{fill:var(--panel);stroke-width:2}
+.arbre-satellites .sat-bille.tenu{stroke-width:1.5}
 .arbre-roue>.arbre-noeud.verrou .arbre-satellites{filter:grayscale(1);opacity:.55}
