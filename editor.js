@@ -5542,7 +5542,7 @@ const ARBRE_V2=true;let arbreDetailId=null;
 /* v0.972 — L'arbre en groupes de niveau : Niveau 1, 4, 7, 10, sans lignes. Dans chaque groupe, les gros ronds (Actions, Réactions,
    Mouvements) sur une première ligne, quatre au plus ; les ronds moyens (Actions bonus, Passifs, Maîtrises, Critiques) dessous,
    six au plus. Le talent initial ouvre l'arbre, seul, en gros rond. Un talent s'apprend dès le niveau de son groupe. */
-const ARBRE_V3=true,GROUPES_ARBRE=[1,4,7,10],MAX_LIGNE_ARBRE={gros:4,moyen:6};
+const ARBRE_V3=true,GROUPES_ARBRE=[1,4,7,10],MAX_LIGNE_ARBRE={gros:3,moyen:6};
 const ligneArbreDe=t=>['act','reac','mvt'].includes(talentType(t)[0])?'gros':'moyen';
 const groupeDeNiveau=n=>n>=10?10:n>=7?7:n>=4?4:1;
 // Le groupe d'un talent : le sien, sinon d'après le niveau que ses lignes lui demandaient — le plus petit niveau qui l'atteint.
@@ -6234,12 +6234,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(ligne==='centre'){if(g===1)return placerTalent(t.id,{famille:c.famille,flottant:true});const ancien=centreDe(g);
     if(ancien&&ancien!==t){delete ancien.centreGroupe;ancien.groupe=groupeArbre(t,c.liste);ancien.ordreArbre=ordreArbre(t)}
     t.groupe=g;t.centreGroupe=true;return true}
-   if(ligneArbreDe(t)!==ligne&&!(t.centreGroupe&&sur&&ligneArbreDe(sur)===ligneArbreDe(t))){note(ligne==='gros'?'Ce demi-cercle reçoit les Actions, Réactions et Mouvements.':'Ce demi-cercle reçoit les Actions bonus, Passifs, Maîtrises et Critiques.');return false}
+   if(ligneArbreDe(t)!==ligne&&!(t.centreGroupe&&sur&&ligneArbreDe(sur)===ligneArbreDe(t))){note(ligne==='gros'?'Ces places reçoivent les Actions, Réactions et Mouvements.':'Ces places reçoivent les Actions bonus, Passifs, Maîtrises et Critiques.');return false}
    if(sur){// Échange : chacun prend la place de l'autre, centre compris.
     const gt=groupeArbre(t,c.liste),ot=ordreArbre(t),ct=t.centreGroupe===true;t.groupe=groupeArbre(sur,c.liste);t.ordreArbre=ordreArbre(sur);
     if(sur.centreGroupe)t.centreGroupe=true;else delete t.centreGroupe;sur.groupe=gt;sur.ordreArbre=ot;if(ct)sur.centreGroupe=true;else delete sur.centreGroupe;return true}
    const l=anneau(g,ligne).filter(x=>x!==t);
-   if(l.length>=MAX_LIGNE_ARBRE[ligne]){note('Ce demi-cercle est plein : dépose le talent sur un autre pour les échanger.');return false}
+   if(l.length>=MAX_LIGNE_ARBRE[ligne]){note('Ces places sont pleines : dépose le talent sur un autre pour les échanger.');return false}
    delete t.centreGroupe;t.groupe=g;t.ordreArbre=l.length?ordreArbre(l[l.length-1])+1:0;return true};
   /* Le dépôt se lit sur la roue, à la capture : avant tout autre écouteur des ronds (l'ancien gros rond du talent de classe
      prenait le dépôt pour lui). Chaque rond ou place porte sa destination. */
@@ -6256,9 +6256,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const place=(cls,g,ligne)=>{const v=document.createElement('button');v.type='button';v.className='arbre-place-groupe '+cls;
    v.setAttribute('aria-label',ligne==='centre'?'Talent initial du niveau '+g:ligne==='gros'?'Ajouter une Action, une Réaction ou un Mouvement':'Ajouter une Action bonus ou un Passif');
    v.onclick=()=>creeIci(g,ligne);surDepot(v,g,ligne,null);return v};
-  // Taille des ronds et rayons des demi-cercles, en pixels ; angles en degrés, 90 tout en bas.
-  const D={centre:100,gros:84,moyen:62},R={gros:115,moyen:200},PAS={gros:[60,160],moyen:[26,150]},MARGE=10;
-  const angles=(n,ligne)=>{if(n<=1)return [90];const [pas,ouv]=PAS[ligne],p=Math.min(pas,ouv/(n-1)),d=90+p*(n-1)/2;return Array.from({length:n},(_,k)=>d-p*k)};
+  /* v0.9996 : chaque niveau en deux blocs. À gauche, un carré : le talent initial en haut à gauche, les gros ronds (Actions,
+     Mouvements, Réactions, 3 au plus) dans les trois autres coins. À droite, deux colonnes de moyens ronds (Actions bonus,
+     Passifs…), 6 au plus, centrées en hauteur sur le carré : la hauteur d'un niveau ne change pas. Ce qui dépasse (un arbre
+     ancien) continue en lignes dessous. */
+  const D={centre:100,gros:84,moyen:62},PAS_G=122,PAS_MX=78,PAS_MY=76,ECART=106,MARGE=10;
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
    const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');
    if(a&&(Number(a.level)||1)<g)sec.classList.add('groupe-ferme');
@@ -6266,14 +6268,23 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const s=document.createElement('small');s.textContent='Niv.';const n=document.createElement('b');n.textContent=String(g);b.append(s,n);sep.append(b);sec.append(sep);
    const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');
    if(!centre&&!gros.length&&!moyens.length&&!mj)return;
-   const W=2*R.moyen+D.moyen+2*MARGE,cx=W/2,cy=MARGE+D.centre/2,H=cy+R.moyen+D.moyen/2+MARGE;
+   const vG=mj&&gros.length<MAX_LIGNE_ARBRE.gros,vM=mj&&moyens.length<MAX_LIGNE_ARBRE.moyen,nG=gros.length+(vG?1:0),nM=moyens.length+(vM?1:0);
+   // Le carré : la case 0 est le talent initial ; les gros prennent les cases 1, 2, 3, puis la suite, deux par ligne.
+   const x0=MARGE+D.centre/2,y0=MARGE+D.centre/2,caseG=i=>({x:x0+(i%2)*PAS_G,y:y0+Math.floor(i/2)*PAS_G});
+   const lignesG=Math.max(2,Math.ceil((nG+1)/2)),lignesM=Math.max(1,Math.ceil(nM/2));
+   const xm=x0+PAS_G+D.gros/2+ECART-PAS_MX/2+D.moyen/2,ym=y0+PAS_G/2;
+   // Les moyens, deux par ligne ; les lignes centrées sur le carré, un rond seul au milieu de sa ligne.
+   const caseM=i=>{const r=Math.floor(i/2),seul=r===lignesM-1&&nM%2===1;return {x:seul?xm+PAS_MX/2:xm+(i%2)*PAS_MX,y:ym+(r-(lignesM-1)/2)*PAS_MY}};
+   const W=xm+PAS_MX+D.moyen/2+MARGE,dy=Math.max(0,(lignesM-1)/2*PAS_MY+D.moyen/2-(ym-MARGE));
+   const H=Math.max(y0+(lignesG-1)*PAS_G+D.gros/2,ym+(lignesM-1)/2*PAS_MY+D.moyen/2)+dy+MARGE;
    const roue=document.createElement('div');roue.className='arbre-roue';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
-   const pose=(el,x,y,cls)=>{el.classList.add('roue-'+cls);el.style.left=x+'px';el.style.top=y+'px';roue.append(el)};
-   if(centre){const el=noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,cx,cy,'centre')}
-   else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),cx,cy,'centre');
-   [['gros',gros],['moyen',moyens]].forEach(([ligne,l])=>{const vierge=mj&&l.length<MAX_LIGNE_ARBRE[ligne],an=angles(l.length+(vierge?1:0),ligne);
-    l.forEach((t,k)=>{const el=noeudArbre(t,c,libre);if(mj)surDepot(el,g,ligne,t);const r=an[k]*Math.PI/180;pose(el,cx+R[ligne]*Math.cos(r),cy+R[ligne]*Math.sin(r),ligne)});
-    if(vierge){const r=an[l.length]*Math.PI/180;pose(place(ligne,g,ligne),cx+R[ligne]*Math.cos(r),cy+R[ligne]*Math.sin(r),ligne)}});
+   const pose=(el,p,cls)=>{el.classList.add('roue-'+cls);el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';roue.append(el)};
+   if(centre){const el=noeudArbre(centre,c,libre);if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
+   else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),caseG(0),'centre');
+   gros.forEach((t,k)=>{const el=noeudArbre(t,c,libre);if(mj)surDepot(el,g,'gros',t);pose(el,caseG(k+1),'gros')});
+   if(vG)pose(place('gros',g,'gros'),caseG(gros.length+1),'gros');
+   moyens.forEach((t,k)=>{const el=noeudArbre(t,c,libre);if(mj)surDepot(el,g,'moyen',t);pose(el,caseM(k),'moyen')});
+   if(vM)pose(place('moyen',g,'moyen'),caseM(moyens.length),'moyen');
    sec.append(roue);plan.append(sec)});
   col.append(plan);return col};
  const colonne=(c,libre)=>{const col=document.createElement('div');col.className='arbre-col'+(libre?' libre':'')+(mj?' editable':'');
