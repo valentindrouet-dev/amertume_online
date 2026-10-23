@@ -3469,8 +3469,16 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
    des bonus, à la couleur de leur caractéristique. Modelés : dégradé, liseré sombre, reflet ; vides tant qu'ils ne sont pas tenus. */
 .arbre-roue>.arbre-noeud .arbre-rond{overflow:visible}
 .arbre-satellites{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
+.arbre-satellites :is(.sat-arc,.sat-bille){pointer-events:auto;cursor:pointer}
+.arbre-satellites :is(.sat-arc,.sat-bille).gris{filter:grayscale(1);opacity:.5}
 .arbre-satellites .sat-arc{fill:var(--panel);stroke-width:1.5;stroke-linejoin:round}
 .arbre-satellites .sat-reflet{fill:none;stroke:#fff;stroke-opacity:.42;stroke-linecap:round}
 .arbre-satellites .sat-bille{fill:var(--panel);stroke-width:2}
 .arbre-satellites .sat-bille.tenu{stroke-width:1.5}
 .arbre-roue>.arbre-noeud.verrou .arbre-satellites{filter:grayscale(1);opacity:.55}
+/* v1.000 : la bulle d'un satellite reprend les cartes du panneau de droite, dans le cadre ordinaire des bulles. */
+.bulle.bulle-satellite .bulle-satellite-cadre{display:block;padding:8px;background:var(--panel);border:1px solid var(--line-strong);border-radius:10px}
+.bulle.bulle-satellite .arbres-detail.bulle-satellite .bonus-rond-panneau{align-self:center}
+.bulle.bulle-satellite .arbres-detail.bulle-satellite .talent-detail.bulle-bonus{margin:0}
+.bulle.bulle-satellite .arbres-detail.bulle-satellite{position:static;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:240px;max-width:300px;padding:0;border:0;background:none;box-shadow:none}
+.bulle.bulle-satellite .arbres-detail.bulle-satellite .detail-amelioration{cursor:default}

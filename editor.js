@@ -6284,24 +6284,48 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const defs=document.createElementNS(NS,'defs');svg.append(defs);
    const mk=(n,attrs)=>{const e=document.createElementNS(NS,n);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));return e};
    const mix=(rgb,w,k)=>rgb.split(',').map(v=>Math.round(Number(v)*(1-k)+w*k)).join(',');
-   const tenu=x=>!a||porte(x),pt=(ang,rr)=>[c+rr*Math.cos(ang*Math.PI/180),c+rr*Math.sin(ang*Math.PI/180)],f=v=>v.toFixed(1);
+   const tenu=x=>!a||porte(x),pt=(ang,rr)=>[c+rr*Math.cos(ang*Math.PI/180),c+rr*Math.sin(ang*Math.PI/180)],f=v=>v.toFixed(1),deg=180/Math.PI;
+   const dispo=a?xpDisponible(a,catalog.talents):0,gris=x=>!!a&&!porte(x)&&coutPalier(x,1)>dispo;
+   /* v1.000 : la bulle d'un satellite — la carte de l'amélioration, palier par palier, ou celle du bonus, telles que le panneau
+      de droite les dessine (mêmes classes, mêmes couleurs : tenue, achetable, trop chère). */
+   const carte=x=>{const cadre=document.createElement('div');cadre.className='arbres-v2 bulle-satellite-cadre';const d=document.createElement('div');d.className='arbres-detail bulle-satellite';cadre.append(d);
+    const xv=vu(x),bonus=estBonus(x),max=paliersDe(x),k=a?palierDe(a,x):0;
+    for(let n=1;n<=max;n++){const cd=document.createElement('div'),prix=coutPalier(x,n),suivante=!!a&&n===k+1&&prix<=dispo;
+     cd.className='detail-amelioration'+(bonus?' detail-bonus':'')+(k>=n?' acquise':'')+(suivante?' achetable':'')+(!a?' editable':'');
+     const l=document.createElement('p');l.className='detail-am-nom';const b=document.createElement('b');
+     if(bonus){const xp=talentAuPalier(x,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}))}else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n])}
+     l.append(b);if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';l.append(pr)}
+     cd.append(l);const tx=bonus?'':talentAuPalier(xv,n).effects||'';if(tx){const e=document.createElement('p');texteEnrichi(e,tx,nomsDeLArbre(x),a);cd.append(e)}
+     // Un bonus : son rond et son prix comme dans le panneau, puis sa bulle de bonus, telle qu'elle s'y lit au survol.
+     if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
+      const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(pb.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
+      cd.classList.add('bonus-rond-panneau');cd.style.setProperty('--tint',tint);const rond=document.createElement('span');rond.className='rond-bonus';const ic=logoBonus(pb);if(ic)rond.append(remplitCase(ic));
+      const pr=l.querySelector('.detail-prix');cd.replaceChildren(rond,...(pr?[pr]:[]));
+      const bl=document.createElement('div');bl.className='talent-detail large bulle-bonus bonus-'+carac;const t2=document.createElement('p');t2.className='talent-bulle-nom';const b2=document.createElement('b');b2.append(libelleBonusEl(pb,{talent:xp}));t2.append(b2);bl.append(t2);
+      d.append(cd,bl);continue}
+     d.append(cd)}
+    return cadre};
+   const bulle=(forme,x)=>{if(typeof surveille==='function')surveille(forme,()=>ouvrirBulle(forme,carte(x),'bulle-satellite'))};
    const AME='94,154,91';
-   if(ams.length){const haut=238,bas=122,jour=7,n=ams.length,pas=(haut-bas-jour*(n-1))/n,R1=rA+ep/2,R0=rA-ep/2;
+   /* Les segments gardent la même longueur (29 px) et le même jour (8,5 px), qu'il y en ait un ou quatre : la file se centre
+      sur la gauche du rond ; le premier, en haut. */
+   if(ams.length){const n=ams.length,la=29/rA*deg,ja=8.5/rA*deg,haut=180+(n*la+(n-1)*ja)/2,R1=rA+ep/2,R0=rA-ep/2;
     const g=mk('linearGradient',{id:uid+'a',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:0,y2:S});
     g.append(mk('stop',{offset:'0','stop-color':'rgb('+mix(AME,255,.42)+')'}),mk('stop',{offset:'1','stop-color':'rgb('+mix(AME,0,.12)+')'}));defs.append(g);
-    ams.forEach((x,k)=>{const a1=haut-k*(pas+jour),a0=a1-pas,[x1,y1]=pt(a0,R1),[x2,y2]=pt(a1,R1),[x3,y3]=pt(a1,R0),[x4,y4]=pt(a0,R0),on=tenu(x);
-     const p=mk('path',{d:'M'+f(x1)+' '+f(y1)+' A'+R1+' '+R1+' 0 0 1 '+f(x2)+' '+f(y2)+' L'+f(x3)+' '+f(y3)+' A'+R0+' '+R0+' 0 0 0 '+f(x4)+' '+f(y4)+' Z','class':'sat-arc'+(on?' tenu':'')});
-     p.style.stroke='rgb('+mix(AME,0,.45)+')';if(on)p.style.fill='url(#'+uid+'a)';svg.append(p);
-     if(on){const rr=rA+ep*.2,[hx,hy]=pt(a0+4,rr),[kx,ky]=pt(a1-4,rr);
+    ams.forEach((x,k)=>{const a1=haut-k*(la+ja),a0=a1-la,[x1,y1]=pt(a0,R1),[x2,y2]=pt(a1,R1),[x3,y3]=pt(a1,R0),[x4,y4]=pt(a0,R0),on=tenu(x);
+     const p=mk('path',{d:'M'+f(x1)+' '+f(y1)+' A'+R1+' '+R1+' 0 0 1 '+f(x2)+' '+f(y2)+' L'+f(x3)+' '+f(y3)+' A'+R0+' '+R0+' 0 0 0 '+f(x4)+' '+f(y4)+' Z','class':'sat-arc'+(on?' tenu':'')+(gris(x)?' gris':'')});
+     p.style.stroke='rgb('+mix(AME,0,.45)+')';if(on)p.style.fill='url(#'+uid+'a)';svg.append(p);bulle(p,x);
+     if(on){const rr=rA+ep*.2,[hx,hy]=pt(a0+3,rr),[kx,ky]=pt(a1-3,rr);
       const h=mk('path',{d:'M'+f(hx)+' '+f(hy)+' A'+rr+' '+rr+' 0 0 1 '+f(kx)+' '+f(ky),'class':'sat-reflet'});h.style.strokeWidth=ep*.26;svg.append(h)}})}
-   if(bons.length){const n=bons.length,ouv=Math.min(110,40*(n-1));
-    bons.forEach((x,k)=>{const [cx,cy]=pt(n===1?0:-ouv/2+k*ouv/(n-1),rB),p=paramsTalent(x)||{},carac=p.carac||'pv',on=tenu(x);
+   // Les billes, serrées (5 px entre deux), étagées à droite de part et d'autre de l'horizontale ; la première, en haut.
+   if(bons.length){const n=bons.length,pas=(2*rb+5)/rB*deg;
+    bons.forEach((x,k)=>{const [cx,cy]=pt((k-(n-1)/2)*pas,rB),p=paramsTalent(x)||{},carac=p.carac||'pv',on=tenu(x);
      const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(p.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
-     const b=mk('circle',{cx:f(cx),cy:f(cy),r:rb,'class':'sat-bille'+(on?' tenu':'')});
+     const b=mk('circle',{cx:f(cx),cy:f(cy),r:rb,'class':'sat-bille'+(on?' tenu':'')+(gris(x)?' gris':'')});
      if(on){const g=mk('radialGradient',{id:uid+'b'+k,cx:'35%',cy:'30%',r:'75%'});
       g.append(mk('stop',{offset:'0','stop-color':'rgb('+mix(tint,255,.55)+')'}),mk('stop',{offset:'.55','stop-color':'rgb('+tint+')'}),mk('stop',{offset:'1','stop-color':'rgb('+mix(tint,0,.22)+')'}));defs.append(g);
       b.style.fill='url(#'+uid+'b'+k+')';b.style.stroke='rgb('+mix(tint,0,.45)+')'}
-     else b.style.stroke='rgb('+tint+')';svg.append(b)})}
+     else b.style.stroke='rgb('+tint+')';svg.append(b);bulle(b,x)})}
    const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
    const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');

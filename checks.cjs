@@ -5372,7 +5372,7 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const charte=fs.readFileSync('CHARTE.md','utf8');
  (charte.match(/img\/charte\/[a-z-]+\.webp/g)||[]).forEach(f=>assert.ok(fs.existsSync(f),'charte : capture absente '+f));
  const src=['editor.js','index.html','maps.js','planches.js','domaine.js','campagnes.js','live.js'].filter(f=>fs.existsSync(f)).map(f=>fs.readFileSync(f,'utf8')).join('\n');
- const permises=['bulle-talent','bulle-calcul','bulle-comp','bulle-gear','bulle-modele','bulle-test','bulle-detail-degats','bulle-fouilleur','bulle-joueurs'];
+ const permises=['bulle-talent','bulle-calcul','bulle-comp','bulle-gear','bulle-modele','bulle-test','bulle-detail-degats','bulle-fouilleur','bulle-joueurs','bulle-satellite'];
  const re=/ouvrirBulle\(([^()]|\([^()]*\))*\)/g;let m,sans=0;
  while((m=re.exec(src))){const k=m[0].match(/,\s*'([a-z-]+)'\s*\)$/);if(k)assert.ok(permises.includes(k[1]),'charte § 3 : bulle inconnue « '+k[1]+' » — reprendre la bulle de talent');else sans++}
  assert.ok(sans<=5,'charte § 3 : une nouvelle bulle sans classe — reprendre la bulle de talent');
