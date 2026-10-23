@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.002","d":"2026-10-23","t":"Arcs à l'échelle"},
 {"v":"1.001","d":"2026-10-23","t":"Satellites ajustés"},
 {"v":"1.000","d":"2026-10-23","t":"Satellites finis"},
 {"v":"0.9999","d":"2026-10-23","t":"Satellites modelés"},
