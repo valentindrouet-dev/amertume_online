@@ -3471,8 +3471,11 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue>.arbre-noeud .arbre-rond{overflow:visible}
 .arbre-satellites{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
 .arbre-satellites :is(.sat-arc,.sat-bille){pointer-events:auto;cursor:pointer}
-/* v1.001 : le rond grossit au survol, pas ses satellites : leur bulle resterait à sauter sous la souris. */
+/* v1.001 : le rond grossit au survol, pas ses satellites : leur bulle resterait à sauter sous la souris.
+   v1.005 : la souris sur un satellite ne grossit pas le rond : lui seul, survolé, grossit. */
 .arbre-noeud:not(.verrou):not(.auto):hover .arbre-rond .arbre-satellites{transform:translate(-50%,-50%) scale(calc(1/1.06))}
+.arbre-noeud:hover .arbre-rond:has(.arbre-satellites :is(.sat-arc,.sat-bille):hover){transform:none}
+.arbre-noeud:hover .arbre-rond:has(.arbre-satellites :is(.sat-arc,.sat-bille):hover) .arbre-satellites{transform:translate(-50%,-50%)}
 .arbre-satellites :is(.sat-arc,.sat-bille).gris{filter:grayscale(1);opacity:.5}
 .arbre-satellites .sat-arc{fill:var(--panel);stroke-width:1.5;stroke-linejoin:round}
 .arbre-satellites .sat-reflet{fill:none;stroke:#fff;stroke-opacity:.42;stroke-linecap:round}

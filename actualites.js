@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.005","d":"2026-10-23","t":"Survol des satellites"},
 {"v":"1.004","d":"2026-10-23","t":"Billes de compétence"},
 {"v":"1.003","d":"2026-10-23","t":"Arcs rapprochés"},
 {"v":"1.002","d":"2026-10-23","t":"Arcs à l'échelle"},
