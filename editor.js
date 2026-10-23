@@ -3477,6 +3477,8 @@ const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',murelem:'Mystique',mur
  gardien:'Gardien',rempart:'Gardien',boutoir:'Gardien',boutoirtous:'Gardien',boutoirimpact:'Gardien',coupbouclier:'Gardien',coupbouclierplus:'Gardien',coupboucliernoir:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame',lameventcibles:'Ombrelame',lameventdouble:'Ombrelame',lameventpoison:'Ombrelame',lameventprofonde:'Ombrelame',lameventfatale:'Ombrelame',impulsion:'Ombrelame',impulsiontour:'Ombrelame',impulsionallie:'Ombrelame',insaisispoison:'Ombrelame',insaisisadieu:'Ombrelame',insaisisombre:'Ombrelame',insaisisdegats:'Ombrelame',coursemortelle:'Ombrelame',coursechoix:'Ombrelame',courseombrelame:'Ombrelame',bondissement:'Ombrelame',bondissementlibre:'Ombrelame',bondissementfrappe:'Ombrelame',decoupe:'Ombrelame',decoupedegats:'Ombrelame',decoupeplus:'Ombrelame',lameempoisonnee:'Ombrelame',lamepoisonplus:'Ombrelame',lamepoisoncontact:'Ombrelame'};
 // Frappe Furieuse et la maîtrise Rage sont au Destructeur.
 Object.assign(CLASSES_EFFETS_DEVINEES,{stimulant:'Mécaniste',stimulantsoi:'Mécaniste',stimulantonde:'Mécaniste',stimulantplasma:'Mécaniste',ganteletsbleu:'Mécaniste',ganteletssur:'Mécaniste',ganteletsdeux:'Mécaniste',gantelets:'Mécaniste',clemolette:'Mécaniste',clemolettetout:'Mécaniste',clemolettereparer:'Mécaniste',cellule:'Mécaniste',grandecellule:'Mécaniste',condensateur:'Mécaniste',valvesecours:'Mécaniste',vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
+// v1.007 : les effets d'Ombrelame.
+Object.assign(CLASSES_EFFETS_DEVINEES,{attaqueempoisonnee:'Ombrelame',attaquepoisonplus:'Ombrelame',attaquepoisoncontact:'Ombrelame',pasdecote:'Ombrelame',lancerdagues:'Ombrelame',lancerdaguesdeux:'Ombrelame',lancerdaguesdegats:'Ombrelame',larcin:'Ombrelame',larcinloot:'Ombrelame',larcinruse:'Ombrelame',acrobate:'Ombrelame',soufflemortel:'Ombrelame',souffledes:'Ombrelame',souffletous:'Ombrelame'});
 const ADVERSAIRES='Adversaires';
 // v0.883 : les Talents d'Espèce ont leur groupe, comme ceux des Adversaires ; pas d'arbre.
 const FAMILLE_ESPECES='Espèces';
@@ -7158,14 +7160,15 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
 /* Le butin d'un adversaire retiré de la scène, comme son XP : chaque exemplaire qu'il possède
    tombe selon sa chance et va dans l'inventaire de l'aventurier le plus proche de son jeton, un
    vivant de préférence, sur la carte. Une ligne au journal par aventurier servi. */
-function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));if(!heros.length)return;
+// v1.007 : « pour » — Larcin : le butin va à ce seul aventurier, et quitte l'adversaire, qui reste debout.
+function butinDesRetires(partants,tirage=Math.random,pour=null){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));if(!heros.length)return;
  const vivants=heros.filter(h=>h.hp>0),parmi=vivants.length?vivants:heros,taille=typeof mapSize==='function'?mapSize():null,gains=new Map();
  partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);if(!(f.inventaire||[]).length&&!Object.keys(tire).length)return;
   // Son loot forgé : le sien, ou celui de son modèle, sinon la chance de son type.
   const modele=(catalog.monsters||[]).find(m=>m&&m.id===f.template),forgeF=forgeAdvEffectif({type:f.type,forge:f.forge||(modele&&modele.forge)});
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
-  const h=parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
-  (f.inventaire||[]).forEach(id=>{const o=objetDe(id),ch=chanceButin(chances,id);if(!o||!ch||tirage()*100>=ch)return;
+  const h=pour||parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
+  [...(f.inventaire||[])].forEach(id=>{const o=objetDe(id),ch=chanceButin(chances,id);if(!o||!ch||tirage()*100>=ch)return;if(pour)retirerInventaire(f,o);
    // Une arme ou une armure qui tombe peut sortir forgée : de tant à tant d'affixes, au niveau de qui la reçoit.
    let donne=o;if((o.category==='weapon'||o.category==='armor')&&!o.forge){const n=tireNombreAffixes(catalog.forge,forgeF,tirage);
     if(n>0){const aff=tireAffixes(o,n,catalog.affixes||[],Number(h.level)||1,tirage);if(aff.length){const rec={id:'forge-'+crypto.randomUUID(),base:o.id,affixes:aff};
@@ -7174,6 +7177,7 @@ function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(
    // Qui l'a laissée tomber : son modèle au Bestiaire et son nom, pour la bulle de la pièce au journal.
    if(!g.src.has(donne.id))g.src.set(donne.id,[]);g.src.get(donne.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})});
   // L'or et les gemmes de sa bourse, tirés aux dés : au même aventurier.
+  if(pour)f.bourse=[];
   Object.entries(tire).forEach(([k,v])=>{if(k==='or')ajouteOr(h,v);else{h.richesses={...(h.richesses||{})};h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v}
    if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.richesses[k]=(g.richesses[k]||0)+v;g.de.add(f)})});
  // Chaque pièce part au journal sous son identifiant, « ⟦id⟧ » : le journal y pose son logo, et sa bulle.

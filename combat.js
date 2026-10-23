@@ -1171,13 +1171,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(p){return 'Le porteur gagne <b>1 point de Mouvement</b> supplémentaire '+((p&&p.quand)==='chaque'?'<b>au début de chaque tour</b>':'<b>au premier tour de combat</b>')+'.'}},
  /* Larcin : une action. Le porteur attaque, puis un test de Ruse dérobe à la cible ce que ses
     réussites atteignent — le plus précieux : arme, armure, objet, ressource, ou de l'or. */
- larcin:{cle:'larcin',nom:'Larcin',type:'act',bouton:'✋ Larcin',attaque:true,
-  aide:'Action : le porteur attaque, puis un test de Ruse automatique dérobe une chose à la cible — de l’or, une ressource, un objet, une armure ou une arme — selon les réussites.',
-  params:[{cle:'or',nom:'Réussites pour de l’or',type:'nombre',defaut:1,min:1,max:9},{cle:'orQte',nom:'Or dérobé',type:'nombre',defaut:5,min:1,max:999},
-   {cle:'ressource',nom:'Réussites pour une ressource',type:'nombre',defaut:2,min:1,max:9},{cle:'objet',nom:'Réussites pour un objet',type:'nombre',defaut:3,min:1,max:9},
-   {cle:'armure',nom:'Réussites pour une armure',type:'nombre',defaut:4,min:1,max:9},{cle:'arme',nom:'Réussites pour une arme',type:'nombre',defaut:5,min:1,max:9}],
-  phrase(p){const n=k=>Math.max(1,(p&&p[k])|0);
-   return 'Le porteur effectue <b>une attaque</b>, puis un <b>test de Ruse</b> pour dérober à la cible : de l’<b>or</b> ('+n('or')+' réussite'+(n('or')>1?'s':'')+', '+Math.max(1,(p&&p.orQte)|0)+' or), une <b>ressource</b> ('+n('ressource')+'), un <b>objet</b> ('+n('objet')+'), une <b>armure</b> ('+n('armure')+') ou une <b>arme</b> ('+n('arme')+') — le plus précieux qu’il atteint.'}},
+ /* v1.007 — Larcin : une action bonus, au contact. Un test de Ruse contre l'adversaire — 1 réussite contre un sbire, 2 contre
+    une Élite, 3 contre un Solitaire, 4 contre un Boss — ; réussi, le porteur lui dérobe 1d6 or, s'il en a dans son loot.
+    Améliorations : réussi, un test de loot comme si l'adversaire était vaincu ; +1 réussite au test. */
+ larcin:{cle:'larcin',nom:'Larcin',type:'abon',bouton:'✋ Larcin',
+  aide:'Action bonus, au contact : un test de Ruse contre l’adversaire (1 réussite contre un sbire, 2 contre une Élite, 3 contre un Solitaire, 4 contre un Boss) ; réussi, le porteur lui dérobe 1d6 or, s’il en a dans son loot.',
+  params:[],phrase(){return 'Au contact, le porteur fait un <b>test de Ruse</b> contre l’adversaire — <b>1</b> réussite contre un sbire, <b>2</b> contre une Élite, <b>3</b> contre un Solitaire, <b>4</b> contre un Boss. Réussi, il lui dérobe <b>1d6 or</b>, s’il en a dans son loot.'}},
+ larcinloot:{cle:'larcinloot',nom:'Larcin — Butin',court:'Butin',type:'ame',
+  aide:'Amélioration de Larcin : réussi, le porteur fait aussi un test de loot contre l’adversaire, comme s’il était vaincu.',
+  params:[],phrase(){return 'Réussi, <b>Larcin</b> fait aussi un <b>test de loot</b> contre l’adversaire, comme s’il était vaincu.'}},
+ larcinruse:{cle:'larcinruse',nom:'Larcin — Main sûre',court:'Main sûre',type:'ame',
+  aide:'Amélioration de Larcin : +1 réussite au test de Ruse.',
+  params:[],phrase(){return '<b>+1 réussite</b> au test de Ruse de <b>Larcin</b>.'}},
  /* Pris en tenailles : une amélioration. Des dégâts en plus par adversaire au contact, au-delà du premier. */
  tenailles:{cle:'tenailles',nom:'Pris en tenailles',type:'ame',
   aide:'Amélioration : le porteur augmente son bonus de dégâts pour chaque adversaire au contact au-delà du premier.',
@@ -1311,6 +1316,50 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration de Coup de Bouclier : +2 dés rouges.',params:[],phrase(){return '<b>Coup de Bouclier</b> donne <b>+2 dés</b> de dégâts.'}},
  coupboucliernoir:{cle:'coupboucliernoir',nom:'Coup de Bouclier — dés noirs',court:'dés noirs',type:'ame',
   aide:'Amélioration de Coup de Bouclier : ses dés de dégâts en plus sont noirs.',params:[],phrase(){return 'Les dés de <b>Coup de Bouclier</b> sont des <b>dés noirs</b>.'}},
+ /* v1.007 — Attaque Empoisonnée : une action. Le porteur attaque, avec 1 dé de Poison en plus dans ses dégâts.
+    Améliorations : des dés de Poison en plus ; le Poison des dés qui passent gagne aussi un adversaire au contact. */
+ attaqueempoisonnee:{cle:'attaqueempoisonnee',nom:'Attaque Empoisonnée',type:'act',bouton:'🗡 Attaque Empoisonnée',attaque:true,
+  aide:'Action : le porteur effectue une attaque et ajoute 1 dé de Poison aux dégâts lancés.',
+  params:[],phrase(){return 'Le porteur effectue <b>une attaque</b> et ajoute <b>1 dé de Poison</b> aux dégâts lancés.'}},
+ attaquepoisonplus:{cle:'attaquepoisonplus',nom:'Attaque Empoisonnée — Venin',court:'Venin',type:'ame',
+  aide:'Amélioration d’Attaque Empoisonnée : des dés de Poison en plus.',
+  params:[{cle:'n',nom:'Dés de Poison en plus',type:'nombre',defaut:1,min:1,max:6}],
+  phrase(p){const n=Math.max(1,Math.min(6,Math.trunc(Number(p&&p.n))||1));return '<b>Attaque Empoisonnée</b> lance <b>+'+n+' dé'+(n>1?'s':'')+' de Poison</b>.'}},
+ attaquepoisoncontact:{cle:'attaquepoisoncontact',nom:'Attaque Empoisonnée — Poison au contact',court:'Poison au contact',type:'ame',
+  aide:'Amélioration d’Attaque Empoisonnée : le Poison des dés qui passent est aussi infligé à un adversaire au contact.',
+  params:[],phrase(){return 'Le <b>Poison</b> des dés qui passent est aussi infligé à <b>un adversaire au contact</b>.'}},
+ /* v1.007 — Pas de Côté : une réaction. Avant une attaque au contact, le porteur quitte le contact de l'attaquant d'un mouvement
+    gratuit ; le coup se reporte sur un autre aventurier au contact de l'attaquant, s'il y en a un, sinon il est perdu. */
+ pasdecote:{cle:'pasdecote',nom:'Pas de Côté',type:'reac',bouton:'↷ Pas de Côté',gratuit:true,
+  aide:'Réaction : avant une attaque au contact, le porteur quitte le contact de l’attaquant d’un mouvement gratuit ; le coup se reporte sur un autre aventurier au contact de l’attaquant, sinon il est perdu.',
+  params:[],phrase(){return 'Avant <b>une attaque au contact</b>, le porteur fait un <b>mouvement gratuit</b> pour quitter le contact de l’attaquant. L’attaque se reporte sur <b>un autre aventurier au contact</b>, s’il y en a un.'}},
+ /* v1.007 — Lancer de Dagues : une action bonus. Le porteur lance une Dague de Lancer de son inventaire sur un adversaire visible
+    et lui inflige les dés de cette arme, sans son bonus de dégâts ; la dague est perdue. Au contact, les dégâts d'opportunité
+    s'appliquent. Améliorations : deux dagues sur deux adversaires ; le bonus de dégâts du porteur s'ajoute. */
+ lancerdagues:{cle:'lancerdagues',nom:'Lancer de Dagues',type:'abon',bouton:'🗡 Lancer de Dagues',
+  aide:'Action bonus : le porteur lance une Dague de Lancer de son inventaire sur un adversaire visible et lui inflige les dégâts de cette arme ; la dague est perdue. Au contact, il subit les dégâts d’opportunité.',
+  params:[],phrase(){return 'Le porteur lance sur <b>un adversaire visible</b> une <b>Dague de Lancer</b> de son inventaire et lui inflige <b>les dégâts de cette arme</b>. La dague est perdue. Au contact, il subit les <b>dégâts d’opportunité</b>.'}},
+ lancerdaguesdeux:{cle:'lancerdaguesdeux',nom:'Lancer de Dagues — Deux lames',court:'Deux lames',type:'ame',
+  aide:'Amélioration de Lancer de Dagues : deux dagues, sur deux adversaires différents.',
+  params:[],phrase(){return 'Le porteur lance <b>2 Dagues</b> sur <b>2 adversaires différents</b>.'}},
+ lancerdaguesdegats:{cle:'lancerdaguesdegats',nom:'Lancer de Dagues — Lancer appuyé',court:'Lancer appuyé',type:'ame',
+  aide:'Amélioration de Lancer de Dagues : le bonus de dégâts du porteur s’ajoute au lancer.',
+  params:[],phrase(){return 'Le porteur ajoute <b>ses dégâts</b> au lancer de dagues.'}},
+ /* v1.007 — Acrobate : un passif. Le porteur traverse les tokens adverses et ne subit jamais Au sol. */
+ acrobate:{cle:'acrobate',nom:'Acrobate',type:'pass',
+  aide:'Passif : le porteur peut traverser les tokens adverses, et ne subit jamais Au sol.',
+  params:[],phrase(){return 'Le porteur peut <b>traverser les tokens adverses</b>. Il ne subit jamais <b>Au sol</b>.'}},
+ /* v1.007 — Souffle Mortel : un passif. Touché par une attaque au contact, le porteur inflige Poison 1 à l'attaquant.
+    Améliorations : 1 dé de Poison à la place ; à tous les adversaires au contact. */
+ soufflemortel:{cle:'soufflemortel',nom:'Souffle Mortel',type:'pass',
+  aide:'Passif : quand le porteur est touché par une attaque au contact, il inflige Poison 1 à l’adversaire qui le frappe.',
+  params:[],phrase(){return 'Quand le porteur subit <b>une attaque au contact</b>, il inflige <b>Poison 1</b> à l’adversaire.'}},
+ souffledes:{cle:'souffledes',nom:'Souffle Mortel — Venin',court:'Venin',type:'ame',
+  aide:'Amélioration de Souffle Mortel : 1 dé de Poison à la place de Poison 1.',
+  params:[],phrase(){return '<b>Souffle Mortel</b> inflige <b>1 dé de Poison</b> à la place.'}},
+ souffletous:{cle:'souffletous',nom:'Souffle Mortel — Nuage',court:'Nuage',type:'ame',
+  aide:'Amélioration de Souffle Mortel : le Poison est infligé à tous les adversaires au contact.',
+  params:[],phrase(){return '<b>Souffle Mortel</b> inflige son Poison à <b>tous les adversaires au contact</b>.'}},
  /* Coupure — Empoisonnée : Poison à l'adversaire touché le plus proche ; à tous au palier 2. Profonde : le double du bonus de
     dégâts, le triple au palier 2. Fatale : un adversaire tué par Coupure donne 1 PM, 1 PA et 1 PM au palier 2, une fois par tour. */
  lameventpoison:{cle:'lameventpoison',nom:'Coupure — Empoisonnée',court:'Empoisonnée',type:'ame',
