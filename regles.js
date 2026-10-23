@@ -62,7 +62,8 @@ Object.assign(REGLES_DES,{
  4:'Ne frappe jamais : il sert aux <b>soins</b> (Vie, potions, repos…).',
  5:'Passe <b>toujours</b> la DEF, même sous Solidité. Ses 1 ne comptent pas pour l’échec.',
  6:'Sa valeur est multipliée par le numéro du tour, <b>×3 au plus</b>.',
- 7:'Lancé à chaque attaque d’un porteur de Faille : <b>tous les dés tombés sur sa face</b> sortent du compte. Il ne blesse jamais.'});
+ 7:'Passe la DEF si sa face la dépasse, et inflige alors <b>Poison</b> de la valeur de sa face à la cible, en plus de ses dégâts.',
+ 8:'Lancé à chaque attaque d’un porteur de Faille : <b>tous les dés tombés sur sa face</b> sortent du compte. Il ne blesse jamais.'});
 // Les états qui se cumulent se disent avec « n », le nombre de crans ; ceux que le survol ne décrit pas ont leur phrase.
 Object.assign(REGLES_ETATS,{
  'Feu':'À chaque nouveau tour, subit <b>n dés noirs</b> de dégâts, sans DEF. Le Gel l’éteint.',

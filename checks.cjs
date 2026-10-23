@@ -59,7 +59,7 @@ assert.deepEqual(gearApi.attackChoices({weapons:['rap','arc'],attacks:[]},PANOPL
  .map(x=>x.name+'/'+x.range),['Rapière/contact','Arc court/distance']);
 assert.deepEqual(gearApi.attackChoices({weapons:['arc','rap'],attacks:[]},PANOPLIE).map(x=>x.name),['Rapière','Arc court']);
 assert.deepEqual(gearApi.attackChoices({weapons:['arc'],attacks:[]},PANOPLIE).map(x=>x.name+'/'+x.range),['Arc court/distance']);
-assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[0].dice,{white:2,red:0,bone:0,blue:0,green:0,black:0,yellow:0});
+assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[0].dice,{white:2,red:0,bone:0,blue:0,green:0,black:0,yellow:0,purple:0});
 assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[1].dice.red,2);
 assert.deepEqual(gearApi.attackChoices({weapons:['rap','dag'],attacks:[]},PANOPLIE)
  .map(x=>x.name),['Rapière + Dague']);                       // Deux mains libres : une seule attaque.
@@ -336,8 +336,8 @@ assert.ok(!wallsBetween({x:5,y:15},{x:25,y:15},[]));   // Aucun mur défini.
 // Équipement : dés de l'arme, portée et DEF de l'armure.
 const {equippedPool,equippedRanged,equippedDef,slideOutOfWalls}=require('./combat.js');
 const OBJETS=[{id:'ep',category:'weapon',dice:{white:2}},{id:'dg',category:'weapon',dice:{white:1,bone:1}},{id:'arc',category:'weapon',ranged:true,dice:{white:1,red:1}},{id:'ma',category:'armor',slot:'body',def:3},{id:'bo',category:'armor',slot:'shield',def:1}];
-assert.deepEqual(equippedPool({weapons:['ep']},OBJETS),[2,0,0,0,0,0,0]);
-assert.deepEqual(equippedPool({weapons:['ep','dg']},OBJETS),[3,1,0,0,0,0,0]); // Deux armes cumulent.
+assert.deepEqual(equippedPool({weapons:['ep']},OBJETS),[2,0,0,0,0,0,0,0]);
+assert.deepEqual(equippedPool({weapons:['ep','dg']},OBJETS),[3,1,0,0,0,0,0,0]); // Deux armes cumulent.
 assert.equal(equippedPool({weapons:[]},OBJETS),null);                        // Rien d'équipé : dés propres.
 assert.equal(equippedRanged({weapons:['ep']},OBJETS),false);
 assert.equal(equippedRanged({weapons:['ep','arc']},OBJETS),true);            // Une arme à distance suffit.
@@ -1125,7 +1125,7 @@ assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).f
   &&src.includes("if(parent){if(!perso&&c.court)texteNom=c.court;")&&src.includes("tr.draggable=true;")&&src.includes("function glisseBiblio(table){"),'la ligne : sans type, nom cliquable, sans le talent racine, déplaçable');
  {const o=C.variablesPhrase('orbes',{}),v=k=>o.variables.find(x=>x.cle===k);
   assert.deepEqual(o.variables.map(x=>[x.cle,o.texte.slice(x.de,x.a)]),[['orbes','1'],['des','1'],['couleur','Mystique']],'les orbes : deux nombres et une couleur, à leur place');
-  assert.deepEqual(v('couleur').options.map(x=>x[1]),['Simple','Léger','Lourd','Mystique','Mortel','Phase']);assert.equal(v('orbes').options.length,9);
+  assert.deepEqual(v('couleur').options.map(x=>x[1]),['Simple','Léger','Lourd','Mystique','Mortel','Phase','Poison']);assert.equal(v('orbes').options.length,9);
   const a=C.variablesPhrase('attaqueetat',{});assert.deepEqual(a.variables.find(x=>x.cle==='condition').options.map(x=>x[1]),['S’il tue la cible','Si la cible n’est pas tuée'],'un choix garde les mots qui changent ensemble');
   const l=C.variablesPhrase('lamevent',{});assert.deepEqual(l.hors,['bonus','etat','mode'],'un réglage absent de la phrase reste hors du texte');
   const r=C.variablesPhrase('orbes',{des:3,couleur:'red'});assert.equal(r.texte,C.texteBrut(C.phraseTalent('orbes',{des:3,couleur:'red'})));assert.equal(r.variables.find(x=>x.cle==='des').valeur,3);

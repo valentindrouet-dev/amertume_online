@@ -168,6 +168,7 @@ Chaque état prend la **couleur dominante de son icône** (planche ETATS), fonc�
 | XP | `rgb(157,123,30)` | gras |
 | **Incident** | `#b03a48` | gras *italique*, partout ; la ligne « Incident : … » entière en italique |
 | `{plasma}` | dé rose `#c23fbe` | petite icône de dé |
+| `{poison}` ou `{violet}` | dé de Poison violet `#7b4bb3` | petite icône de dé |
 | `{état}` ou `[état]` | — | remplacé par l'icône de l'état |
 | Mots du MJ (Paramètres) | leur couleur, sinon `--accent` | gras |
 

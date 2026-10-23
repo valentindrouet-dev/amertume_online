@@ -1,6 +1,6 @@
 'use strict';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const keys=['white','bone','red','blue','green','black','yellow'];
+const keys=['white','bone','red','blue','green','black','yellow','purple'];
 let catalog=structuredClone(AMERTUME_CATALOG),mapImage=null,db=null,loading=true,saveTimer;
 const num=(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0));
 const poolFrom=d=>keys.map(k=>num(d?.[k],0,12));
@@ -93,7 +93,7 @@ function migreRessources(c){
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
 const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,treasure:0},
- des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,restes:25,
+ des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25,purple:25},def:20,deuxMains:5,etat:15,restes:25,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
 function normaliseGuidePrix(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const D=GUIDE_PRIX_DEFAUT;
@@ -1858,7 +1858,7 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
    pastille sont mis à l'échelle ensemble. Empilés en boîtes CSS, ils tombaient chacun
    sur une fraction de pixel différente dès que la page n'était pas à 100 %, et l'un
    sortait écrasé, sa pastille avec. Là, quel que soit le zoom, tous sont identiques. */
-const DIE_ORDER=[5,2,3,4,6,0,1],DIE_PALE=[5],DIE_LIGHT_PIP=[2,3,5];
+const DIE_ORDER=[5,2,7,3,4,6,0,1],DIE_PALE=[5],DIE_LIGHT_PIP=[2,3,5,7];
 const dieCache=new Map();
 // Le dé muet porte sa pastille ; le dé qui affiche une valeur s'en passe.
 function dieFace(c,muet=true){const cle=c+(muet?'p':'v');if(dieCache.has(cle))return dieCache.get(cle);
@@ -2665,7 +2665,7 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  return motsClesCache={cle,entrees,rx,couleur}}
 /* Un dé dans une description : {bleu}, {Mystique}, {ROUGE}… sa couleur ou son nom, casse et accents
    ignorés, devient l'icône du dé. Ce n'est pas une accolade d'élément : le talent ne devient pas élémentaire. */
-const DES_ACCOLADES=new Map([['blanc',0],['simple',0],['os',1],['ivoire',1],['beige',1],['leger',1],['rouge',2],['lourd',2],['bleu',3],['mystique',3],['vert',4],['soin',4],['noir',5],['mortel',5],['jaune',6],['phase',6]]);
+const DES_ACCOLADES=new Map([['blanc',0],['simple',0],['os',1],['ivoire',1],['beige',1],['leger',1],['rouge',2],['lourd',2],['bleu',3],['mystique',3],['vert',4],['soin',4],['noir',5],['mortel',5],['jaune',6],['phase',6],['violet',7],['poison',7]]);
 // v0.959 : un état de plusieurs mots s'y écrit aussi, {au sol}, {en apnée}.
 const ACCOLADES_DES=/\{(\p{L}{2,12}(?: \p{L}{1,12}){0,2})\}/gu;
 const deAccolade=k=>{const c=DES_ACCOLADES.get(String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());return c===undefined?-1:c};

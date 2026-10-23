@@ -7,16 +7,18 @@
 /* « doublesCritiques » : Destructeur — n'importe quel double vaut un critique, pas
    seulement deux 6 ; un double 1 reste un échec, il est jugé avant. */
 /* « facesEnPlus » (v0.873) : les faces de dés lancés à part — les dés de Plasma —, avec lesquelles un dé Mystique (bleu) double aussi. */
+/* v1.006 : le dé de Poison (violet, 7) blesse comme un dé Simple et, s'il passe la DEF, empoisonne la cible de sa face :
+   « poison » somme les faces des dés violets qui passent. */
 function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false,sansEchec=false,sansCritique=false,facesEnPlus=[]}){
  const all=dice.map(d=>[...d]);
- if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
+ if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6,7].includes(c)))throw Error('Réserve offensive invalide');
  /* Un dé d'os qui double avec un autre dé lancé s'en va d'abord, avant tout le reste :
     il ne compte ni pour l'échec, ni pour le critique, ni pour les dégâts. Un 6 d'os et
     un 6 blanc ne font donc pas de critique — l'os est parti avant qu'on les compte. */
  const faces0={};all.forEach(([v])=>faces0[v]=(faces0[v]||0)+1);
  const vifs=all.filter(([v,c])=>!(c===1&&faces0[v]>1));
  // Dominateur : contre un adversaire au sol, le double 1 n'est pas un échec.
- if(!sansEchec&&vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
+ if(!sansEchec&&vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false,poison:0};
  const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
  // « sansCritique » : un orbe ne fait pas de critique, sauf amélioration (Orbes critiques).
  const critical=!sansCritique&&(faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2)));
@@ -27,10 +29,10 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
  /* La DEF écarte les dés : un dé dont la face est égale ou inférieure à sa valeur ne compte
     pas. Le Lourd (rouge) et le Mortel (noir) passent toujours ; sous Solidité, le Lourd la
     subit comme les autres. Sans un dé qui passe, pas de coup : ni bonus, ni saignée. */
- const seuil=defPlafonnee(def);let damage=0,hit=false;
- kept.forEach(d=>{if(!passeDef(d,seuil,solidite))return;const [v,c]=d;hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1)});
+ const seuil=defPlafonnee(def);let damage=0,hit=false,poison=0;
+ kept.forEach(d=>{if(!passeDef(d,seuil,solidite))return;const [v,c]=d;hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1);if(c===7)poison+=v});
  const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
- return {dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit};
+ return {dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit,poison};
 }
 /* La DEF va de 0 à 6 : à 6, plus aucune face ne la passe, seuls le Lourd et le Mortel. */
 const DEF_MAX=6;
@@ -77,7 +79,8 @@ function segmentHitsPolys(p,q,shapes){return (shapes||[]).some(s=>contoursOf(s).
 function wallsBetween(a,b,walls){return segmentHitsPolys([a.x,a.y],[b.x,b.y],walls)}
 /* Équipement : l'arme confère les dés, l'armure la DEF. Renvoient null quand rien
    n'est équipé, pour laisser les valeurs propres du combattant (monstres). */
-const DICE_KEYS=['white','bone','red','blue','green','black','yellow'];
+// v1.006 : « purple », le dé de Poison — violet, à la place 7 ; la Faille, qui n'est pas une réserve, passe à la place 8 de « types ».
+const DICE_KEYS=['white','bone','red','blue','green','black','yellow','purple'];
 function gearOf(ids,items){return (ids||[]).filter(Boolean).map(id=>(items||[]).find(w=>w&&w.id===id)).filter(Boolean)}
 function equippedPool(actor,items){const worn=gearOf(actor&&actor.weapons,items);if(!worn.length)return null;
  return DICE_KEYS.map(k=>Math.min(12,worn.reduce((sum,w)=>sum+(Number(w.dice&&w.dice[k])||0),0)))}
@@ -1088,7 +1091,7 @@ function montantDegats(p,bonus){const x=Math.max(1,Math.min(20,Math.trunc(Number
 function degatsPeril(n,a,p){if(!a||!(Number(a.max)>0))return n;const s=Math.max(5,Math.min(95,Math.trunc(Number(p&&p.seuil))||50));
  if(Number(a.hp)/Number(a.max)*100>=s)return n;return p&&p.effet==='moitie'?Math.ceil(n/2):n*2}
 /* Les dés qu'un orbe peut lancer : ceux de l'attaque, moins le dé de Soin, qui ne frappe pas. */
-const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
+const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase'],['purple','Poison']];
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent','Ombrelame'],type:'mait',bouton:'⚡ Coupure',
  aide:'Automatique, une fois par tour : un mouvement (PM) qui s’arrête au contact d’un adversaire rejoint ce tour lui inflige ton bonus de dégâts.',
  params:[{cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99},
@@ -2842,7 +2845,7 @@ const RANG_RARETE={inhabituel:0,rare:1,mystique:2,epique:3};
 const ETATS_POSITIFS=['Blindage','Furie','Invisible','Onde','Vie','Rage'];
 // Combien de fois un objet confère son état : à volonté, entre deux repos courts, une fois par jour.
 const USAGES_AFFIXE=[['court','Une fois entre deux repos courts'],['jour','Une fois par jour'],['libre','À volonté']];
-const NOMS_DES=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
+const NOMS_DES=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase'],['purple','Poison']];
 const RARETES_FORGE=['commun','inhabituel','rare','mystique','epique'];
 const rareteForge=n=>RARETES_FORGE[Math.max(0,Math.min(4,Math.trunc(Number(n))||0))];
 function normaliseAffixe(x){x=x&&typeof x==='object'?x:{};const n=(v,a,b,d)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(a,Math.min(b,k)):d};
