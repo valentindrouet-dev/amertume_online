@@ -6278,8 +6278,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    /* Le rond déborde de sa bordure (3 px) ; un jour de 12 px le sépare de ses satellites, hors du double cercle d'or du
       talent choisi. Les segments et les billes sont modelés : fond dégradé, liseré sombre, reflet clair ; vides, ils gardent
       le fond du panneau et le liseré de leur couleur. */
-   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,JOUR=12,ep={centre:11,gros:10,moyen:7}[cls],rb={centre:9,gros:8,moyen:6.5}[cls];
-   const rA=Ro+JOUR+ep/2,rB=Ro+JOUR+rb,S=2*(Math.max(rA+ep/2,rB+rb)+4),c=S/2,uid='sat'+(++satN);
+   // Les segments ont partout la taille de ceux du talent initial : 11 px d'épaisseur, 29 px de long. Les billes, à 8 px du rond.
+   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,JOUR=12,ep=11,rb={centre:9,gros:8,moyen:6.5}[cls];
+   const rA=Ro+JOUR+ep/2,rB=Ro+8+rb,S=2*(Math.max(rA+ep/2,rB+rb)+4),c=S/2,uid='sat'+(++satN);
    const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-satellites');svg.setAttribute('viewBox','0 0 '+S+' '+S);svg.style.width=svg.style.height=S+'px';
    const defs=document.createElementNS(NS,'defs');svg.append(defs);
    const mk=(n,attrs)=>{const e=document.createElementNS(NS,n);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));return e};
@@ -6296,29 +6297,27 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(bonus){const xp=talentAuPalier(x,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}))}else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n])}
      l.append(b);if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';l.append(pr)}
      cd.append(l);const tx=bonus?'':talentAuPalier(xv,n).effects||'';if(tx){const e=document.createElement('p');texteEnrichi(e,tx,nomsDeLArbre(x),a);cd.append(e)}
-     // Un bonus : son rond et son prix comme dans le panneau, puis sa bulle de bonus, telle qu'elle s'y lit au survol.
+     // Un bonus : sa seule vignette, telle que le panneau la montre au survol de son rond.
      if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
-      const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(pb.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
-      cd.classList.add('bonus-rond-panneau');cd.style.setProperty('--tint',tint);const rond=document.createElement('span');rond.className='rond-bonus';const ic=logoBonus(pb);if(ic)rond.append(remplitCase(ic));
-      const pr=l.querySelector('.detail-prix');cd.replaceChildren(rond,...(pr?[pr]:[]));
       const bl=document.createElement('div');bl.className='talent-detail large bulle-bonus bonus-'+carac;const t2=document.createElement('p');t2.className='talent-bulle-nom';const b2=document.createElement('b');b2.append(libelleBonusEl(pb,{talent:xp}));t2.append(b2);bl.append(t2);
-      d.append(cd,bl);continue}
+      d.append(bl);continue}
      d.append(cd)}
     return cadre};
    const bulle=(forme,x)=>{if(typeof surveille==='function')surveille(forme,()=>ouvrirBulle(forme,carte(x),'bulle-satellite'))};
-   const AME='94,154,91';
+   // Le vert des arcs, plus franc que celui des cartes : clair en haut, plein en bas, liseré sombre.
+   const AME='72,152,64',AME_CLAIR='142,206,112',AME_SOMBRE='44,96,40';
    /* Les segments gardent la même longueur (29 px) et le même jour (8,5 px), qu'il y en ait un ou quatre : la file se centre
       sur la gauche du rond ; le premier, en haut. */
    if(ams.length){const n=ams.length,la=29/rA*deg,ja=8.5/rA*deg,haut=180+(n*la+(n-1)*ja)/2,R1=rA+ep/2,R0=rA-ep/2;
     const g=mk('linearGradient',{id:uid+'a',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:0,y2:S});
-    g.append(mk('stop',{offset:'0','stop-color':'rgb('+mix(AME,255,.42)+')'}),mk('stop',{offset:'1','stop-color':'rgb('+mix(AME,0,.12)+')'}));defs.append(g);
+    g.append(mk('stop',{offset:'0','stop-color':'rgb('+AME_CLAIR+')'}),mk('stop',{offset:'1','stop-color':'rgb('+AME+')'}));defs.append(g);
     ams.forEach((x,k)=>{const a1=haut-k*(la+ja),a0=a1-la,[x1,y1]=pt(a0,R1),[x2,y2]=pt(a1,R1),[x3,y3]=pt(a1,R0),[x4,y4]=pt(a0,R0),on=tenu(x);
      const p=mk('path',{d:'M'+f(x1)+' '+f(y1)+' A'+R1+' '+R1+' 0 0 1 '+f(x2)+' '+f(y2)+' L'+f(x3)+' '+f(y3)+' A'+R0+' '+R0+' 0 0 0 '+f(x4)+' '+f(y4)+' Z','class':'sat-arc'+(on?' tenu':'')+(gris(x)?' gris':'')});
-     p.style.stroke='rgb('+mix(AME,0,.45)+')';if(on)p.style.fill='url(#'+uid+'a)';svg.append(p);bulle(p,x);
+     p.style.stroke='rgb('+AME_SOMBRE+')';if(on)p.style.fill='url(#'+uid+'a)';svg.append(p);bulle(p,x);
      if(on){const rr=rA+ep*.2,[hx,hy]=pt(a0+3,rr),[kx,ky]=pt(a1-3,rr);
       const h=mk('path',{d:'M'+f(hx)+' '+f(hy)+' A'+rr+' '+rr+' 0 0 1 '+f(kx)+' '+f(ky),'class':'sat-reflet'});h.style.strokeWidth=ep*.26;svg.append(h)}})}
-   // Les billes, serrées (5 px entre deux), étagées à droite de part et d'autre de l'horizontale ; la première, en haut.
-   if(bons.length){const n=bons.length,pas=(2*rb+5)/rB*deg;
+   // Les billes, à 9 px l'une de l'autre, étagées à droite de part et d'autre de l'horizontale ; la première, en haut.
+   if(bons.length){const n=bons.length,pas=(2*rb+9)/rB*deg;
     bons.forEach((x,k)=>{const [cx,cy]=pt((k-(n-1)/2)*pas,rB),p=paramsTalent(x)||{},carac=p.carac||'pv',on=tenu(x);
      const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(p.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
      const b=mk('circle',{cx:f(cx),cy:f(cy),r:rb,'class':'sat-bille'+(on?' tenu':'')+(gris(x)?' gris':'')});
