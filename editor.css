@@ -3512,3 +3512,9 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .cg-grille .cat-pill.gear-carre.a-cliquer{cursor:pointer}
 .dom-coffre-payer{margin-top:4px;padding:2px 8px;font:600 11px system-ui}
 @media(max-width:800px){.cg-cadre{grid-template-columns:1fr}}
+/* v1.012 — Les trois paliers de Récolte d'une Ressource : une ligne par pièce, sa quantité, fixe ou aux dés. */
+.ressource-paliers{display:grid;gap:8px;margin-top:6px}
+.palier-ressource{display:grid;gap:4px;margin:0;padding:6px 10px 8px;border:1px solid var(--line);border-radius:8px}
+.palier-ressource legend{padding:0 4px;font:700 12px system-ui;color:var(--muted)}
+.ligne-ressource{display:grid;grid-template-columns:1fr 84px auto;gap:6px;align-items:center}
+.palier-ressource>button{justify-self:start}

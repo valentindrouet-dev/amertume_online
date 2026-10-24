@@ -2953,7 +2953,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("+'<div class=\"edit-grid logos-elements t-seul\" id=\"logos-elements\" hidden>'+ELEMENTS.map(e=>selLogos('Logo · '+e.nom,'logo_'+e.cle,(t.logos||{})[e.cle]||'',true)).join('')+'</div>'")
   &&src.includes("$('logos-elements').hidden=!oui;menuLogo.closest('label').hidden=oui;")
   &&src.includes("if(Object.keys(logos).length){t.logos=logos;t.logo=logos[ELEMENTS.find(e=>logos[e.cle]).cle]}else delete t.logos;")
-  &&src.includes("function selLogos(label,key,value,sansElementaires){")&&src.includes("ELEMENTS.forEach(e=>{const v=t.logos[e.cle];if(typeof v==='string'&&v&&v.length<=100)o[e.cle]=v});"),'trois menus de logo, un par élément, enregistrés et relus');}
+  &&src.includes("function selLogos(label,key,value,sansElementaires,enTete){")&&src.includes("ELEMENTS.forEach(e=>{const v=t.logos[e.cle];if(typeof v==='string'&&v&&v.length<=100)o[e.cle]=v});"),'trois menus de logo, un par élément, enregistrés et relus');}
 /* v0.302 — Invulnérable refuse un état ou une couleur de dés, et prend pour logo, tout seul,
    le jeton de l'état ou le dé barré de rouge, comme les anneaux de l'armurerie. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -3227,7 +3227,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    menu et de la grille, chacune sous son nom. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
   &&src.includes("+selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
 /* v0.337 — Un « + » à l'en-tête de chaque colonne de l'Armurerie ouvre l'éditeur sur une pièce
    neuve de cette catégorie. La famille de talents « Génériques » disparaît : un talent resté sans
@@ -3256,7 +3256,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const peau={category:'restes',ressource1:'cuir',rendement1:3,ressource2:'corde',rendement2:1,rarete:'rare'};
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({})).total,3,'3 Cuir à 4 + 1 Corde à 2 = 14 ; 25 %, arrondi en dessous : 3 — ni base, ni rareté');
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({restes:50})).total,7,'la part se règle au guide');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
 /* v0.340 — Les tris restent d'une session à l'autre ; plus de pointillés entre les rangées de talents. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];")&&src.includes("localStorage.setItem('amertume-tris',JSON.stringify(o))")
@@ -3677,7 +3677,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.711 — Cinq planches Artisanat et leur catégorie ; dans la grille des logos d'un objet, une planche par groupe replié,
    son nom et sa première icône en tête. */
 {const pl=fs.readFileSync('planches.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États']];")
+ assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']];")
   &&pl.includes("CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f).split(/\\s+-\\s+/)[0]))")&&pl.includes("groupe(nomPlanche(f),l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),true,true)")
   &&ed.includes("...iconesPlanches('divers'),...iconesPlanches('artisanat'),"),'planches Artisanat et grille repliée');}
 /* v0.710 — Trois points de compétence ; une arme de contact en main renvoie les munitions au sac ; l'équipement de départ
@@ -3946,7 +3946,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(desAttaque(a,at.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
 /* v0.675 — La planche GARDIEN et sa catégorie. */
-assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États']]"),'la planche GARDIEN');
+assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
 {const C10=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  [['boutoirtous','boutoir'],['boutoirimpact','boutoir'],['coupbouclierplus','coupbouclier'],['coupboucliernoir','coupbouclier']].forEach(([k,p])=>assert.equal(C10.TALENTS_CODES[k].pour,p,k));
@@ -4061,7 +4061,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(carto.includes("function hitboxSous(p){")&&carto.includes("if(hb&&(!dessous||dessous.kind==='start'||dessous.kind==='matiere'||(dessous.kind==='lumiere'&&!surCoeur)))dessous=hb}")
   &&carto.includes("mapTool='select';mapSel={kind:'declencheur',i,k};")&&fs.readFileSync('editor.css','utf8').includes('.hitbox.selected{z-index:3}'),'la hitbox se reprend');
  assert.ok(/function pickNow\(i\)\{[\s\S]*?renderEnjamber\(\);\n return true\}/.test(idx),'les ronds Enjamber suivent le token choisi');
- assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
+ assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
 /* v0.646 — Sorti du fond d'un piège par un test réussi, l'aventurier regagne la place d'où le piège l'avait happé, ou à défaut le
    premier point libre hors du piège. */
 {const carto=fs.readFileSync('maps.js','utf8');
@@ -5356,7 +5356,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("[...ESPECES].sort((x,y)=
 /* v0.892 — Les talents d'espèce dans la même grille que les autres groupes. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-rangee.espece-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));'),'v0.892');
 /* v0.891 — La planche d'icônes des espèces, et sa catégorie. */
-assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États']];"),'v0.891');
+assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']];"),'v0.891');
 /* v0.890 — L'arbre d'espèce : un bouton au nom de l'espèce, ses talents en deux rangées, leur description au panneau. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;")&&ed.includes("ge.className='arbres-cols arbres-cols-espece';")&&ed.includes("const tous=tEsp.length?tEsp:colonnesArbre(classe)"),'v0.890');}

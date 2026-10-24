@@ -726,6 +726,7 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
    if(!mien){log('Sélectionne d’abord ton aventurier.',{local:true});return}
    if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
    if(o.indice){examinerIndice(a,o);return}
+   if(o.ressource===true){recolterRessource(a,o);return}
    recupererObjet(a,o)};
   vue.append(t)})}
 /* v0.998 — Examiner un Indice découvert, au contact : le test réglé par le MJ (sa compétence, ses réussites), ou l'objet
@@ -749,9 +750,28 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
   p.className='indice-examen-bulle';b.textContent=skillNames[k];if(SKILL_TINTS[k])b.style.color='rgb('+SKILL_TINTS[k]+')';const t=document.createElement('b');t.textContent='Test de ';p.append(t,b,' pour en découvrir davantage.');(d.firstChild||d).append(p)}
  if(view==='mj'&&!objetVu(o)){const c=document.createElement('p');c.className='muted objet-cache-bulle';c.textContent='Caché : '+skillNames[o.test.comp]+', '+o.test.reussites+' réussite'+(o.test.reussites>1?'s':'');(d.firstChild||d).append(c)}
  return d}
+/* v1.012 — La Récolte d'une Ressource, au contact, hors combat : un test de la compétence réglée, plus les réussites que
+   donnent les talents (Bonus de Récolte) pour ce type de ressource et cette compétence. N réussites donnent le premier
+   palier ; N+1, le deuxième en plus ; N×2, le troisième en plus. Réussie ou non, la ressource quitte la carte pour
+   toute la table : on ne la récolte qu'une fois. */
+function bonusRecolte(a,o){const k=normaliseRecolte(o&&o.recolte).comp,type=String(o&&o.type||'').toLowerCase();
+ return (typeof talentsCodes==='function'?talentsCodes(a):[]).filter(t=>t.code.cle==='bonusrecolte').reduce((s,t)=>{const p=t.params||{};
+  if(p.ressource&&String(p.ressource).toLowerCase()!==type)return s;if(p.comp!==''&&p.comp!=null&&Number(p.comp)!==k)return s;return s+(Number(p.n)||0)},0)}
+function recolterRessource(a,o){if(!a||!o||o.pris||o.ressource!==true||enCombat())return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
+ prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k;if(arr[i]===2)return null;arr[i]=2;return arr},()=>recolteFaite(a,o))}
+function recolteFaite(a,o){if(!o||o.pris)return;const r=normaliseRecolte(o.recolte),k=r.comp,n=r.reussites;
+ const jet=skillRoll(valeurCompetence(a,k)-1,d6),total=jet.reussites+bonusRecolte(a,o);
+ if(typeof rollOnBoard==='function')rollOnBoard([{dice:jet.des.slice(0,40).map(v=>[v,0])}],a,null);
+ log(nomNum(a)+' - ⟬t'+k+'|'+total+'|'+jet.des.slice(0,40).join(',')+'⟭');
+ o.pris=true;const gains=new Map();
+ [n,n+1,2*n].forEach((s,j)=>{if(total<s)return;r.paliers[j].forEach(x=>{const it=(catalog.items||[]).find(i=>i&&i.id===x.id);if(!it)return;
+  const q=tireQuantite(x.q,d6);let mis=0;for(let c=0;c<q;c++){if(typeof ajouterInventaire!=='function'||!ajouterInventaire(a,it))break;mis++}
+  if(mis)gains.set(it.id,(gains.get(it.id)||0)+mis)})});
+ if(gains.size)log(nomNum(a)+' récolte '+[...gains].map(([id,q])=>'⟦'+id+'⟧'+(q>1?' ×'+q:'')).join(' ')+'.',{ton:'butin'});
+ render();saveMaps();scheduleSave()}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
    l'objet quitte la carte pour toute la table — jusqu'à ce que la carte soit rechargée. */
-function recupererObjet(a,o){if(!a||!o||o.pris||o.indice||o.groupe===true)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
+function recupererObjet(a,o){if(!a||!o||o.pris||o.indice||o.groupe===true||o.ressource===true)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
  prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k;if(arr[i]===2)return null;arr[i]=2;return arr},()=>recupereObjetFait(a,o))}
 function recupereObjetFait(a,o){if(o&&o.indice)return;
  const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
@@ -771,13 +791,19 @@ function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
  bouton(objetVu(o)?'Cacher à la troupe':'Révéler à la troupe',()=>{montreObjet(o,!objetVu(o));if(objetVu(o))floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(objetVu(o)?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  // v0.9991 : un Indice ne se donne ni ne se ramasse : il reste où il est.
- const h=o.indice||o.groupe===true?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
+ const h=o.indice||o.groupe===true||o.ressource===true?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
+ // v1.012 : une Ressource, le MJ la fait récolter par l'aventurier actif au contact, sinon par le plus proche.
+ if(o.ressource===true){const a=heroActif(),r=a&&objetAPortee(a,o)?a:heroLePlusProche(o);if(r)bouton('Récolte · '+nomNum(r),()=>recolterRessource(r,o))}
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
 /* Le jeton d'un objet porte l'icône de la première pièce qu'il contient — celle choisie en premier
    dans sa fiche ; sans pièce à icône, son initiale. */
 function poseLogoObjet(el,o){
+ // v1.012 : une Ressource porte l'icône choisie dans sa fiche ; sans elle, celle de la première pièce qu'elle donne.
+ if(o&&o.ressource===true){const prem=(((o.recolte||{}).paliers)||[]).flat().map(x=>(catalog.items||[]).find(it=>it&&it.id===x.id)).find(Boolean);
+  const im=o.logo&&typeof logoAttaque==='function'?logoAttaque(o.logo,'logo-objet'):prem&&typeof logoEquipement==='function'?logoEquipement(prem):null;el.classList.add('ressource');
+  if(im){im.classList.add('logo-objet');el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent=(o.nom||'?')[0].toUpperCase();return}
  // v1.011 : le Coffre de Groupe porte l'icône choisie dans sa fiche ; sans elle, un coffre dessiné.
  if(o&&o.groupe===true){const im=o.logo&&typeof logoAttaque==='function'?logoAttaque(o.logo,'logo-objet'):null;el.classList.add('coffre-groupe');
   el.classList.add('avec-logo');if(im){el.replaceChildren(im);return}
@@ -1649,7 +1675,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
- +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="coffregroupe">Coffre de groupe</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
+ +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="ressource">Ressource</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="coffregroupe">Coffre de groupe</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="map-aimant" type="button" aria-pressed="false">🧲 Aimant</button><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -1815,7 +1841,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
  ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
- ['placement','Placement',['start','foe','pnj','objet','indice','coffre','coffrerond','coffregroupe','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
+ ['placement','Placement',['start','foe','pnj','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
 let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
 {const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
@@ -2381,6 +2407,11 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='indice'){pushUndo();
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Indice',desc:'',x:p.x,y:p.y,taille:'small',visible:false,indice:true,logo:'',journal:'',secret:'',examen:{mode:'',comp:3,reussites:1,item:''},items:[],tresor:'',test:{comp:3,reussites:1}});
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
+ // v1.012 : une Ressource se pose comme un objet ; sa fiche s'ouvre aussitôt.
+ if(mapTool==='ressource'){pushUndo();
+  mapDraft.objets.push({id:crypto.randomUUID(),nom:'Ressource',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,ressource:true,logo:'',type:typesRessources()[0]||'',
+   recolte:{comp:TECHNIQUE,reussites:1,paliers:[[],[],[]]},items:[],tresor:'',test:{comp:3,reussites:1}});
+  mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  // v1.011 : le Coffre de Groupe se pose comme un objet, un jeton à son icône ; sa fiche s'ouvre aussitôt.
  if(mapTool==='coffregroupe'){pushUndo();
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Coffre de groupe',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,groupe:true,logo:'',items:[],tresor:'',test:{comp:3,reussites:1}});
@@ -2601,6 +2632,54 @@ function openIndice(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  objetDialog.showModal()}
+/* v1.012 — La fiche d'une Ressource : son nom, son icône, sa taille, son type ; caché ou non, comme un objet ; puis sa Récolte :
+   la compétence, les réussites demandées, et trois paliers — N, N+1, N×2 —, chacun avec ses pièces et leur quantité. */
+function typesRessources(){return typeof catalog!=='undefined'&&Array.isArray(catalog.typesRessources)?catalog.typesRessources:normaliseTypesRessources()}
+function openRessource(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;objetIndex=i;
+ const r=normaliseRecolte(o.recolte),paliers=r.paliers.map(l=>l.map(x=>({...x})));
+ objetDialog.querySelector('h2').textContent=o.nom||'Ressource';
+ const pieces=(catalog.items||[]).filter(it=>it&&!it.forge&&it.id).sort((u,v)=>String(u.name).localeCompare(String(v.name),'fr'));
+ const groupes=[['herbe','Herboristerie'],['ressource','Ressources'],['restes','Restes']];
+ const optionsPieces=v=>'<option value="">— choisir —</option>'+[...groupes,['','Autres']].map(([c,n])=>{const l=pieces.filter(it=>c?it.category===c:!groupes.some(([g])=>g===it.category));
+   return l.length?'<optgroup label="'+esc(n)+'">'+l.map(it=>'<option value="'+esc(it.id)+'"'+(it.id===v?' selected':'')+'>'+esc(it.name)+'</option>').join('')+'</optgroup>':''}).join('');
+ const optionsTypes=v=>{const l=typesRessources(),tous=v&&!l.includes(v)?[...l,v]:l;
+  return tous.map(t=>'<option value="'+esc(t)+'"'+(t===v?' selected':'')+'>'+esc(t)+'</option>').join('')+'<option value="__nouveau">+ Nouveau type…</option>'};
+ $('objet-fields').innerHTML='<div class="edit-grid">'
+  +field('Nom','nom',o.nom,'text','required maxlength="60"')
+  +(typeof selLogos==='function'?selLogos('Icône','logo',o.logo||'',false,'herboristerie'):'')
+  +sel('Taille','taille',o.taille,[['small','Petit'],['medium','Moyen'],['large','Grand']])
+  +'<label>Type<select name="type">'+optionsTypes(o.type||'')+'</select></label>'
+  +sel('Visibilité','visible',o.visible?'1':'0',[['1','Visible'],['0','Caché — un test le découvre']])+'</div>'
+  +'<label>Description lue par les joueurs<textarea name="desc" rows="2" maxlength="600">'+esc(o.desc||'')+'</textarea></label>'
+  +'<div class="edit-grid">'+sel('Test de découverte — compétence','comp',String(o.test.comp),skillNames.map((n,k)=>[String(k),n]))
+  +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')+'</div>'
+  +'<h2 class="sous-titre">Récolte</h2><div class="edit-grid">'
+  +sel('Compétence','rcomp',String(r.comp),skillNames.map((n,k)=>[String(k),n]))
+  +field('Réussites demandées','rreussites',r.reussites,'number','min="1" max="9"')+'</div>'
+  +'<div id="ressource-paliers" class="ressource-paliers"></div>';
+ const f=$('objet-form').elements,boite=$('ressource-paliers');
+ f.type.onchange=()=>{if(f.type.value!=='__nouveau')return;const t=(prompt('Nouveau type de ressource :','')||'').trim().slice(0,40);
+  if(t){catalog.typesRessources=normaliseTypesRessources([...typesRessources(),t]);scheduleSave()}
+  const v=t?(typesRessources().find(x=>x.toLowerCase()===t.toLowerCase())||t):(o.type||typesRessources()[0]||'');f.type.innerHTML=optionsTypes(v);f.type.value=v};
+ const lis=()=>boite.querySelectorAll('.palier-ressource').forEach((fs,j)=>{paliers[j]=[...fs.querySelectorAll('.ligne-ressource')].map(l=>({id:l.querySelector('select').value,q:l.querySelector('input').value}))});
+ const dessine=()=>{const n=Math.max(1,Math.min(9,Math.trunc(Number(f.rreussites.value))||1));boite.replaceChildren();
+  [n,n+1,2*n].forEach((s,j)=>{const fs=document.createElement('fieldset');fs.className='palier-ressource';
+   fs.innerHTML='<legend>Palier '+(j+1)+' — '+s+' réussite'+(s>1?'s':'')+'</legend>';
+   paliers[j].forEach((x,k)=>{const l=document.createElement('div');l.className='ligne-ressource';
+    l.innerHTML='<select aria-label="Pièce">'+optionsPieces(x.id)+'</select><input aria-label="Quantité" maxlength="9" value="'+esc(x.q||'1')+'"><button type="button" aria-label="Retirer">✕</button>';
+    l.querySelector('button').onclick=()=>{lis();paliers[j].splice(k,1);dessine()};fs.append(l)});
+   const plus=document.createElement('button');plus.type='button';plus.textContent='+ Pièce';plus.onclick=()=>{lis();paliers[j].push({id:'',q:'1'});dessine()};
+   fs.append(plus);boite.append(fs)})};
+ f.rreussites.oninput=()=>{lis();dessine()};dessine();
+ $('objet-form').onsubmit=e=>{e.preventDefault();lis();pushUndo();
+  o.nom=f.nom.value.trim().slice(0,60)||'Ressource';o.logo=f.logo?f.logo.value:'';o.taille=f.taille.value;o.visible=f.visible.value==='1';
+  o.type=f.type.value==='__nouveau'?(o.type||''):f.type.value;o.desc=f.desc.value.trim().slice(0,600);
+  o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};
+  o.recolte=normaliseRecolte({comp:f.rcomp.value,reussites:f.rreussites.value,paliers});
+  objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
+  m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ objetDialog.showModal()}
 // v1.011 : la fiche d'un Coffre de Groupe posé : son nom, son icône, sa taille, sa description.
 function openCoffreGroupeCarte(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;objetIndex=i;
  objetDialog.querySelector('h2').textContent=o.nom||'Coffre de groupe';
@@ -2615,7 +2694,7 @@ function openCoffreGroupeCarte(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  objetDialog.showModal()}
-function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;if(o.indice)return openIndice(i);if(o.groupe===true)return openCoffreGroupeCarte(i);objetIndex=i;
+function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;if(o.indice)return openIndice(i);if(o.groupe===true)return openCoffreGroupeCarte(i);if(o.ressource===true)return openRessource(i);objetIndex=i;
  objetDialog.querySelector('h2').textContent=o.nom||'Objet';
  $('objet-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','nom',o.nom,'text','required maxlength="60"')

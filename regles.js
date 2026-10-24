@@ -178,6 +178,7 @@ REGLES_SECTIONS.push(
   rgListe(['<b>Obscurité</b> : on ne voit que sa zone de contact, plus loin avec la Vision dans le noir ; une zone éclairée se voit de loin.',
    '<b>Fouiller</b> : un test de Perception sur la zone de contact pas encore fouillée révèle objets, coffres, passages et pièges cachés.',
    '<b>Indices</b> : cachés comme des objets, un test les repère. Au contact, un second test, ou l’objet qu’il faut, livre leur secret.',
+   '<b>Ressources</b> : au contact, hors combat, un clic lance la Récolte, un test de la compétence réglée. N réussites donnent le premier palier ; N+1, le deuxième en plus ; N×2, le troisième en plus. Réussie ou non, la ressource quitte la carte : elle ne se récolte qu’une fois. Chacune a un type ('+(typeof typesRessources==='function'?typesRessources().join(', '):'Filon, Plante, Bête, Mystique')+') ; certains talents y ajoutent des réussites.',
    '<b>Pièges</b> : détecter (Perception ou Ruse), désamorcer (Ruse, Technique ou Force), éviter (Agilité).',
    '<b>Coffres et portes</b> : la clé, ou un test de Ruse ou de Technique.',
    '<b>Bruit</b> : un pas s’entend à 5 m (10 m à travers une porte), une attaque au contact à 15 m, un cri à 20 m.',

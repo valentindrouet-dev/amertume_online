@@ -524,6 +524,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   c.planches=[...c.planches.filter(x=>x.fichier!==f),{fichier:f,lignes:6,colonnes:5,cases,icones:cases.map((_,i)=>({nom:noms[i]||'',cat:'etats'}))}];
   c.logosEtats={...(c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{})};noms.slice(0,23).forEach((e,i)=>{c.logosEtats[e]=f+'#'+(i+1)});
   c.semisForge.push('planche-etats')}
+ /* v1.012 — La planche d'Herboristerie (img/planches/HERBORISTERIE.webp), 10 × 10, découpée une fois ; ses icônes rangées
+    dans Herboristerie. Une découpe déjà faite à la main reste la sienne. */
+ if(!c.semisForge.includes('planche-herboristerie')){const f='planches/HERBORISTERIE.webp';
+  if(!c.planches.some(x=>x.fichier===f)){const cases=[[0.0074,0.0261,0.09864,0.07948],[0.10727,0.01305,0.09371,0.09015],[0.20592,0.0261,0.09001,0.07711],[0.30086,0.01542,0.09371,0.0866],[0.39581,0.02491,0.10234,0.07711],[0.50062,0.01423,0.09618,0.08897],[0.59926,0.02372,0.09618,0.07829],[0.6979,0.01186,0.09371,0.09609],[0.80271,0.01186,0.08261,0.09371],[0.90629,0.01542,0.08631,0.08897],[0.01726,0.10439,0.08261,0.09727],[0.10604,0.10676,0.09618,0.09253],[0.21085,0.10558,0.08138,0.09609],[0.30333,0.11151,0.09371,0.08304],[0.40321,0.11269,0.09618,0.08304],[0.49938,0.1032,0.10111,0.09846],[0.60912,0.11032,0.08015,0.09134],[0.71147,0.10913,0.06658,0.09134],[0.80641,0.10439,0.07028,0.09846],[0.90506,0.10913,0.07275,0.09253],[0.00986,0.20047,0.09248,0.09134],[0.10974,0.19929,0.08878,0.09253],[0.20838,0.20047,0.08631,0.09371],[0.30086,0.20047,0.09494,0.09371],[0.39951,0.20641,0.09741,0.07948],[0.50185,0.20403,0.09371,0.08897],[0.59803,0.20285,0.09741,0.08897],[0.69667,0.20166,0.09371,0.09015],[0.79901,0.20047,0.09125,0.09015],[0.89766,0.20047,0.08755,0.09134],[0.0111,0.29893,0.08631,0.08422],[0.11837,0.29775,0.06905,0.0866],[0.20469,0.29063,0.08385,0.09134],[0.30086,0.29063,0.09248,0.09371],[0.39951,0.29063,0.08878,0.09253],[0.50185,0.29181,0.08878,0.09253],[0.59926,0.29419,0.09371,0.09015],[0.69667,0.29063,0.09248,0.09609],[0.79901,0.28944,0.08261,0.09609],[0.89766,0.29063,0.08385,0.09371],[0.01603,0.38671,0.07891,0.09134],[0.10234,0.38671,0.09494,0.09253],[0.20222,0.38434,0.08755,0.0949],[0.30086,0.38434,0.09494,0.09727],[0.40691,0.38197,0.08755,0.09727],[0.50062,0.3879,0.08878,0.09134],[0.59926,0.38553,0.09001,0.09134],[0.70654,0.38553,0.07645,0.09371],[0.81258,0.38553,0.05549,0.09371],[0.89519,0.38553,0.09371,0.0949],[0.00863,0.48161,0.09248,0.09253],[0.10481,0.48043,0.08878,0.09371],[0.19852,0.47924,0.09248,0.09371],[0.30086,0.47805,0.09248,0.09609],[0.40197,0.48517,0.09864,0.09253],[0.50062,0.47924,0.09864,0.09727],[0.60543,0.47924,0.09001,0.09846],[0.6979,0.48043,0.09248,0.09609],[0.79531,0.48043,0.09618,0.09371],[0.89519,0.47924,0.08878,0.09609],[0.0111,0.57651,0.08878,0.09015],[0.10481,0.5777,0.09371,0.08541],[0.20345,0.57414,0.09618,0.08897],[0.30086,0.57533,0.09494,0.09134],[0.39951,0.5694,0.09494,0.0949],[0.50185,0.57295,0.09248,0.08897],[0.59679,0.57414,0.09125,0.09253],[0.7053,0.57295,0.08631,0.09371],[0.79655,0.58007,0.09125,0.0866],[0.89396,0.57533,0.09371,0.09015],[0.0111,0.66904,0.09371,0.08897],[0.10604,0.66667,0.09125,0.09015],[0.20222,0.66429,0.09618,0.09609],[0.30333,0.66904,0.09371,0.08897],[0.40074,0.66904,0.08755,0.08541],[0.49938,0.67023,0.09494,0.08778],[0.59926,0.66904,0.08878,0.08066],[0.70284,0.6726,0.08385,0.07829],[0.79531,0.66904,0.09001,0.09015],[0.89396,0.67141,0.08878,0.08304],[0.00986,0.75682,0.09371,0.09371],[0.10481,0.75801,0.09618,0.09253],[0.20345,0.76038,0.09494,0.09015],[0.3058,0.75801,0.09001,0.09371],[0.39951,0.75801,0.09618,0.09253],[0.49938,0.75801,0.09248,0.09253],[0.59803,0.76038,0.09864,0.09015],[0.6942,0.75919,0.09741,0.09371],[0.79655,0.76038,0.09494,0.08897],[0.89642,0.75682,0.09125,0.0949],[0.00986,0.85528,0.09371,0.09964],[0.10481,0.85528,0.09371,0.09846],[0.20345,0.85409,0.09494,0.09846],[0.3021,0.85528,0.09001,0.09846],[0.39704,0.85291,0.10111,0.10083],[0.49815,0.85291,0.09618,0.09964],[0.59926,0.85647,0.09248,0.09846],[0.6979,0.85291,0.08385,0.10083],[0.79038,0.85765,0.10234,0.09727],[0.89396,0.85291,0.09494,0.10202]];
+   c.planches=[...c.planches,{fichier:f,lignes:10,colonnes:10,cases,icones:cases.map(()=>({nom:'',cat:'herboristerie'}))}]}
+  c.semisForge.push('planche-herboristerie')}
+ // v1.012 : les types de ressource de la carte, partagés par toutes les cartes.
+ c.typesRessources=normaliseTypesRessources(c.typesRessources);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
  // La classe où le MJ range chaque effet de talent, pour la bibliothèque : un nom par effet connu.
  const ce=c.classesEffets&&typeof c.classesEffets==='object'&&!Array.isArray(c.classesEffets)?c.classesEffets:{};
@@ -3904,6 +3912,9 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  const vals=reglagesPaliers(code,d);
  const champ=(p,nom,v,lab)=>{const aria=' aria-label="'+esc(lab)+'"';
   if(p.type==='nombre')return '<input type="number" name="'+nom+'" value="'+esc(String(v))+'" min="'+p.min+'" max="'+p.max+'"'+aria+'>';
+  // v1.012 : un type de ressource : le menu se remplit des types du catalogue.
+  if(p.type==='typeRessource'){const l=typeof typesRessources==='function'?typesRessources():[],tous=v&&!l.includes(v)?[...l,v]:l;
+   return '<select name="'+nom+'"'+aria+'><option value="">tout type</option>'+tous.map(k=>'<option value="'+esc(k)+'"'+(k===v?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select>'}
   // Un modèle du bestiaire : le menu se remplit des adversaires créés.
   const opts=p.type==='modele'?[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])]:(p.options||[]);
   return '<select name="'+nom+'"'+aria+'>'+opts.map(([k,t])=>'<option value="'+esc(String(k))+'"'+(String(k)===String(v)?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select>'};
@@ -7321,7 +7332,9 @@ const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
  if(n===n.toUpperCase()&&!/^DEF\b/.test(n))n=n.toLowerCase();return n?n[0].toUpperCase()+n.slice(1):''};
 // Un menu de logos en familles : un groupe par famille, « — aucun — » en tête.
 // Les icônes de planches en tête, par catégorie : ce sont les nouvelles qu'on cherche.
-function selLogos(label,key,value,sansElementaires){const familles=[...famillesPlanches(),...FAMILLES_LOGOS],garde=value&&!familles.some(([,l])=>l.includes(value));
+function selLogos(label,key,value,sansElementaires,enTete){const familles=[...famillesPlanches(),...FAMILLES_LOGOS],garde=value&&!familles.some(([,l])=>l.includes(value));
+ // v1.012 : une catégorie d'icônes passe en tête — Herboristerie pour une Ressource de la carte.
+ if(enTete){const t='Icônes · '+((CATS_ICONES.find(([k])=>k===enTete)||[])[1]||'');familles.sort((x,y)=>(y[0]===t)-(x[0]===t))}
  return '<label>'+label+'<span class="logo-ligne"><select name="'+key+'"><option value="">— aucun —</option>'
  // Un logo choisi que les menus ne proposent pas (liste pas encore venue) reste en tête : l'enregistrer ne l'efface pas.
  +(garde?'<option value="'+esc(value)+'" selected>'+esc(nomLogo(value))+'</option>':'')
@@ -7336,7 +7349,7 @@ function selLogos(label,key,value,sansElementaires){const familles=[...famillesP
    une ressource (peaux, os, écailles…), les Armes pour une arme ou une munition, les Armures pour
    une armure, puis Armes 06, qui en porte aussi. Les motifs se suivent dans l'ordre donné ; sous
    un même motif, les planches dans l'ordre de leurs noms. */
-const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i]};
+const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i],herbe:[/herboristerie/i]};
 function planchesEnTete(o){const motifs=PLANCHES_EN_TETE[o&&o.category];if(!motifs)return [];const fichiers=planchesDuCatalogue().map(p=>p.fichier),vues=new Set();
  return motifs.flatMap(re=>{const l=fichiers.filter(f=>!vues.has(f)&&(re.test(nomPlanche(f))||re.test(f)))
   .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}));l.forEach(f=>vues.add(f));return l})}

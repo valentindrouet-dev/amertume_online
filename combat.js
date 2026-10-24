@@ -396,6 +396,20 @@ function cleanTraits(list){return (Array.isArray(list)?list:[]).slice(0,600).map
    toutes lettres ; visible, ou caché derrière un test de compétence — la compétence est
    un rang de la liste (Perception vaut 3), et il faut tant de réussites. */
 const TAILLES_OBJET=['small','medium','large'];
+/* v1.012 — Les Ressources de la carte : leurs types, partagés par toutes les cartes, et leur Récolte. Une quantité
+   se donne fixe, « 3 », ou aux dés, « 1d6 », « 2d6+1 ». */
+const TYPES_RESSOURCE_BASE=['Filon','Plante','Bête','Mystique'];
+function normaliseTypesRessources(l){if(!Array.isArray(l))return [...TYPES_RESSOURCE_BASE];const vus=new Set();
+ return l.filter(t=>typeof t==='string'&&t.trim()).map(t=>t.trim().slice(0,40)).filter(t=>{const k=t.toLowerCase();if(vus.has(k))return false;vus.add(k);return true}).slice(0,60)}
+function normaliseQuantite(q){const m=/^(\d{1,3})?(d6?)?(?:\+(\d{1,3}))?$/.exec(String(q==null?'':q).toLowerCase().replace(/\s+/g,''));
+ if(!m||(!m[1]&&!m[2]))return '1';
+ if(!m[2])return String(Math.max(1,Math.min(99,Number(m[1])+(Number(m[3])||0))));
+ const n=Math.max(1,Math.min(20,Number(m[1])||1)),p=Math.min(99,Number(m[3])||0);return n+'d6'+(p?'+'+p:'')}
+function tireQuantite(q,roll){const s=normaliseQuantite(q),m=/^(\d+)d6(?:\+(\d+))?$/.exec(s);if(!m)return Number(s);
+ let t=Number(m[2])||0;for(let i=0;i<Number(m[1]);i++)t+=roll();return t}
+function normaliseRecolte(r){r=r&&typeof r==='object'?r:{};const p=Array.isArray(r.paliers)?r.paliers:[];
+ return {comp:Math.max(0,Math.min(7,Math.trunc(Number(r.comp??7))||0)),reussites:Math.max(1,Math.min(9,Math.trunc(Number(r.reussites))||1)),
+  paliers:[0,1,2].map(i=>(Array.isArray(p[i])?p[i]:[]).filter(x=>x&&typeof x.id==='string'&&x.id).slice(0,12).map(x=>({id:texte(x.id,60),q:normaliseQuantite(x.q)})))}}
 function cleanObjet(o){const t=o&&o.test||{};
  return {id:texte(o&&o.id,40),nom:texte(o&&o.nom,60)||'Objet',desc:texte(o&&o.desc,600),
   x:borne(o&&o.x,0,100),y:borne(o&&o.y,0,100),taille:TAILLES_OBJET.includes(o&&o.taille)?o.taille:'medium',
@@ -408,6 +422,8 @@ function cleanObjet(o){const t=o&&o.test||{};
   tresor:texte(o&&o.tresor,200),...(o&&typeof o.quete==='string'&&o.quete?{quete:texte(o.quete,60)}:{}),
   test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),
    reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))},
+  // v1.012 : une Ressource — son icône, son type, et sa Récolte : la compétence, les réussites, les trois paliers.
+  ...(o&&o.ressource===true?{ressource:true,logo:texte(o.logo,120),type:texte(o.type,40).trim(),recolte:normaliseRecolte(o.recolte)}:{}),
   // v1.011 : un Coffre de Groupe posé comme un objet, et l'icône de son jeton.
   ...(o&&o.groupe===true?{groupe:true,logo:texte(o.logo,120)}:{}),
   // v0.998 : un Indice — son icône, sa phrase au journal, et l'examen qui livre son secret (un test, ou un objet à utiliser).
@@ -1359,6 +1375,15 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration de Lancer de Dagues : le bonus de dégâts du porteur s’ajoute au lancer.',
   params:[],phrase(){return 'Le porteur ajoute <b>ses dégâts</b> au lancer de dagues.'}},
  /* v1.007 — Acrobate : un passif. Le porteur traverse les tokens adverses et ne subit jamais Au sol. */
+ /* v1.012 — Bonus de Récolte : un passif. Des réussites en plus aux tests de Récolte d'un type de ressource — ou de tous —,
+    faits avec une compétence — ou n'importe laquelle. */
+ bonusrecolte:{cle:'bonusrecolte',nom:'Bonus de Récolte',type:'pass',
+  aide:'Passif : des réussites en plus aux tests de Récolte d’un type de ressource.',
+  params:[{cle:'ressource',nom:'Type de ressource',type:'typeRessource',defaut:''},
+   {cle:'comp',nom:'Compétence',type:'choix',defaut:'',options:[['','toute compétence'],...COMPETENCES.map((n,k)=>[String(k),n])]},
+   {cle:'n',nom:'Réussites en plus',type:'nombre',defaut:1,min:1,max:9}],
+  phrase(p){const n=Math.max(1,Math.min(9,Math.trunc(Number(p&&p.n))||1)),c=COMPETENCES[Number(p&&p.comp)],c2=p&&p.comp!==''&&p.comp!=null?c:'',t=p&&p.ressource||'';
+   return 'Vous obtenez automatiquement <b>+'+n+' Réussite'+(n>1?'s':'')+'</b> aux tests de Récolte'+(c2?' (<b>'+c2+'</b>)':'')+(t?' pour récolter une ressource <b>'+t+'</b>':'')+'.'}},
  acrobate:{cle:'acrobate',nom:'Acrobate',type:'pass',
   aide:'Passif : le porteur peut traverser les tokens adverses, et ne subit jamais Au sol.',
   params:[],phrase(){return 'Le porteur peut <b>traverser les tokens adverses</b>. Il ne subit jamais <b>Au sol</b>.'}},
@@ -2650,6 +2675,8 @@ function reglageTalent(code,params,cle){const d=(code&&code.params||[]).find(p=>
   return Number.isFinite(n)?Math.max(d.min,Math.min(d.max,n)):d.defaut}
  // Un modèle du bestiaire : un identifiant, que seule la page peut vérifier.
  if(d.type==='modele')return typeof v==='string'?v.slice(0,100):(d.defaut||'');
+ // v1.012 : un type de ressource, choisi parmi ceux du catalogue.
+ if(d.type==='typeRessource')return typeof v==='string'?v.trim().slice(0,40):(d.defaut||'');
  return (d.options||[]).some(([k])=>k===v)?v:d.defaut}
 /* La Régénération que porte un combattant, réglages relus ; null s'il n'en a pas. */
 function regenerationDe(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='regeneration');
@@ -3523,7 +3550,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,BRUIT_PAS,BRUIT_PAS_PORTE,BRUIT_ATTAQUE,BRUIT_CRI,metresDiscretion,formuleDegats,lisFormuleDegats,tireDegats,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,BRUIT_PAS,BRUIT_PAS_PORTE,BRUIT_ATTAQUE,BRUIT_CRI,metresDiscretion,formuleDegats,lisFormuleDegats,tireDegats,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TYPES_RESSOURCE_BASE,normaliseTypesRessources,normaliseQuantite,tireQuantite,normaliseRecolte,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,CARACS_AFFIXE,CARACS_POINTS,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,FORGE_TYPE_ADV,FORGE_MAX_TYPE_ADV,plafondForgeAdv,forgeAdvEffectif,clesAffixes,repetable,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
