@@ -606,7 +606,7 @@ function blocMagasin(out,b){const client=enteteClient(out,b,'au magasin');
  if(!enVente.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.';out.append(p)}
  else{const g=document.createElement('div');g.className='dom-articles';
   enVente.forEach(o=>{const p=client?peutAcheter(client,o):null;
-   g.append(carteMagasin(o,1,prixAchat(o),!!p&&p.ok,!client?'Il faut être au magasin pour acheter.':p.ok?'Acheter '+o.name+' pour '+prixAchat(o)+' or':'Il manque '+p.manque+' or.',()=>acheterPour(client,o),'achat'))});
+   g.append(carteMagasin(o,1,prixAchat(o),!!p&&p.ok,!client?'Il faut être au magasin pour acheter.':p.ok?'Acheter '+o.name+' pour '+prixAchat(o)+' or':'Il manque '+p.manque+' or.',()=>acheterPour(client,o),'achat',client?boutonCoffre(prixAchat(o),()=>acheterPour(client,o,true)):null))});
   out.append(g)}
  if(!client)return;
  // Ce que l'acheteur peut revendre : son inventaire, une carte par pièce, le nombre s'il en a plusieurs.
@@ -632,8 +632,9 @@ function carteMagasin(o,n,prix,actif,titre,faire,sens,sous){const carte=document
   piece.title=(sens==='vente'?'Revente : ':'Prix : ')+(prix?prix.toLocaleString('fr-FR')+' or':'gratuit');p.append(piece)}
  carte.append(p,nom);if(sous)carte.append(sous);return carte}
 function apresMagasin(){renderDomaine(true);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
-function acheterPour(a,o){const p=peutAcheter(a,o),ici=batimentDom(lieuDe(a));if(!p.ok||!agitPour(a)||!ici||ici.fonction!=='magasin'||!fonctionActive(ici))return;
- if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or':'')+'.');apresMagasin()}
+// v1.009 : « parCoffre » — l'or du Coffre de Groupe paie à la place de la bourse de l'aventurier.
+function acheterPour(a,o,parCoffre){const p=peutAcheter(a,o),ici=batimentDom(lieuDe(a));if(!(parCoffre?p.enVente&&coffreVue().or>=p.prix:p.ok)||!agitPour(a)||!ici||ici.fonction!=='magasin'||!fonctionActive(ici))return;
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix});else ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
 async function vendrePour(a,o){if(!agitPour(a)||!(a.inventaire||[]).includes(o.id))return;const v=prixVente(o);
  const porte=[...(a.weapons||[]),...(a.armures||[]),a.shieldId,a.munitionId].includes(o.id);
  const texte='Vendre « '+o.name+' »'+(porte?', que '+a.name+' porte,':'')+' pour '+v+' or ?';
@@ -651,11 +652,11 @@ function blocTannerie(out,b){const client=enteteClient(out,b,'à la tannerie');c
  if(!produits.length)texteFonction(out,mjDom()?'Rien à vendre : coche « Tanneur » sur des pièces de l’armurerie.':'Le tanneur n’a rien à vendre pour l’instant.');
  else{const g=document.createElement('div');g.className='dom-articles';
   produits.forEach(o=>{const prix=prixAchat(o),ok=!!client&&orDe(client)>=prix;
-   g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à la tannerie pour acheter.':ok?'Acheter '+o.name+' pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.',()=>acheterTannerie(client,o),'achat'))});
+   g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à la tannerie pour acheter.':ok?'Acheter '+o.name+' pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.',()=>acheterTannerie(client,o),'achat',client?boutonCoffre(prix,()=>acheterTannerie(client,o,true)):null))});
   out.append(g)}
  // Fabriquer : la recette se prend dans la réserve du domaine.
  const fabricables=produits.filter(o=>o.recette&&o.recette.length);
- if(fabricables.length){out.append(titre('Fabriquer, avec la réserve du domaine'));const reserve=reserveVue(),g=document.createElement('div');g.className='dom-articles';
+ if(fabricables.length){out.append(titre('Fabriquer, avec la réserve du domaine et le coffre de groupe'));const reserve=reserveAvecCoffre(),g=document.createElement('div');g.className='dom-articles';
   fabricables.forEach(o=>{const manque=manqueRecette(reserve,o),ok=!!client&&!manque.length;
    g.append(carteMagasin(o,1,null,ok,!client?'Il faut être à la tannerie pour faire fabriquer.':ok?'Fabriquer '+o.name+' : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])))
     :'Il manque '+texteRessources(Object.fromEntries(manque))+' dans la réserve.',()=>fabriquerTannerie(client,o),'fabrique',puceRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])),manque)))});
@@ -691,10 +692,10 @@ function reserveVue(){const r={...(domaine.ressources||{})},vus=new Set(domaine.
 function recueilleDepots(redessine=true){if(!mjDom())return false;const vus=new Set(domaine.depotsVus||[]);let n=0;
  actors.filter(a=>a.hero).forEach(a=>normaliseDepots(a.depots).forEach(e=>{if(vus.has(e.id))return;appliqueDelta(domaine.ressources||(domaine.ressources={}),e.delta);vus.add(e.id);n++}));
  if(!n)return false;domaine.depotsVus=[...vus].slice(-500);sauveDomaine();if(redessine&&document.body.classList.contains('page-domaine'))renderDomaine(true);return true}
-function acheterTannerie(a,o){const prix=prixAchat(o);if(!aLaTannerie(a)||o.tanneur!==true||orDe(a)<prix)return;
- if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' à la tannerie'+(prix?' pour '+prix+' or':'')+'.');apresMagasin()}
-function fabriquerTannerie(a,o){if(!aLaTannerie(a)||o.tanneur!==true||!o.recette||!o.recette.length||manqueRecette(reserveVue(),o).length)return;
- if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;versDomaine(a,recetteDelta(o));ajouterInventaire(a,o);log(nomNum(a)+' fait fabriquer '+o.name+' à la tannerie, avec '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])))+' de la réserve.');apresMagasin()}
+function acheterTannerie(a,o,parCoffre){const prix=prixAchat(o);if(!aLaTannerie(a)||o.tanneur!==true||(parCoffre?coffreVue().or:orDe(a))<prix)return;
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-prix});else ajouteOr(a,-prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' à la tannerie'+(prix?' pour '+prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
+function fabriquerTannerie(a,o){if(!aLaTannerie(a)||o.tanneur!==true||!o.recette||!o.recette.length||manqueRecette(reserveAvecCoffre(),o).length)return;
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;prendRecette(a,o);ajouterInventaire(a,o);log(nomNum(a)+' fait fabriquer '+o.name+' à la tannerie, avec '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])))+' de la réserve.');apresMagasin()}
 function vendreReste(a,o){if(!aLaTannerie(a)||o.category!=='restes'||!(a.inventaire||[]).includes(o.id))return;const v=prixAchat(o);
  retirerInventaire(a,o);ajouteOr(a,v);log(nomNum(a)+' vend '+o.name+' à la tannerie'+(v?' pour '+v+' or':'')+'.');apresMagasin()}
 function convertirReste(a,o){const r=rendementReste(o);if(!aLaTannerie(a)||!Object.keys(r).length||!(a.inventaire||[]).includes(o.id))return;
@@ -919,3 +920,82 @@ function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceCh
   // Les joueurs lisent où est chacun ; le MJ le choisit.
   if(mjDom())row.append(tete,lieu);else{const l=document.createElement('span');l.className='dom-av-lieu';l.textContent=nomLieu(ou);row.append(tete,l)}
   boite.append(row)})}
+/* ---------- v1.009 — Le Coffre de Groupe ----------
+   Un coffre de carte coché « Coffre de groupe » ouvre, au contact, la fenêtre commune : à gauche le coffre, ses onglets et son or ;
+   à droite l'inventaire et la bourse de l'aventurier. Un clic range ou reprend une pièce, Maj + clic tous ses exemplaires ; l'or se
+   dépose et se retire au montant voulu. Le coffre est au domaine (combat.js : normaliseCoffreGroupe) ; un joueur y agit par une
+   opération posée sur son aventurier, que l'appareil du MJ verse — comme les dépôts à la réserve. */
+function coffreVue(){const c=normaliseCoffreGroupe(structuredClone(domaine.coffre||{})),vus=new Set(domaine.coffreVus||[]),ops=[];
+ actors.filter(a=>a&&a.hero).forEach(a=>normaliseOpsCoffre(a.coffreOps).forEach(op=>{if(!vus.has(op.id))ops.push(op)}));
+ ops.sort((x,y)=>x.t-y.t).forEach(op=>appliqueOpCoffre(c,op));return c}
+function versCoffre(a,op){const e={...op,id:idDomaine(),t:Date.now()};
+ if(mjDom()){domaine.coffre=appliqueOpCoffre(normaliseCoffreGroupe(domaine.coffre),e);sauveDomaine();return}
+ const vus=new Set(domaine.coffreVus||[]);a.coffreOps=[...normaliseOpsCoffre(a.coffreOps).filter(x=>!vus.has(x.id)),e].slice(-80)}
+// Chez le MJ : les opérations des joueurs sur le coffre se versent avec les dépôts, une seule fois, dans l'ordre où elles ont eu lieu.
+{const r0=recueilleDepots;recueilleDepots=function(redessine=true){const fait=r0(redessine);if(!mjDom())return fait;
+ const vus=new Set(domaine.coffreVus||[]),ops=[];actors.filter(h=>h&&h.hero).forEach(h=>normaliseOpsCoffre(h.coffreOps).forEach(op=>{if(!vus.has(op.id))ops.push(op)}));
+ if(!ops.length)return fait;const c=normaliseCoffreGroupe(domaine.coffre);ops.sort((x,y)=>x.t-y.t).forEach(op=>{appliqueOpCoffre(c,op);vus.add(op.id)});
+ domaine.coffre=c;domaine.coffreVus=[...vus].slice(-800);sauveDomaine();if(coffreGroupeDialog.open)dessineCoffreGroupe();return true}}
+// Les pièces forgées du coffre gardent leur fiche : l'armurerie les connaît, comme celles des inventaires.
+{const sf=syncForges;syncForges=function(){sf();if(typeof catalog==='undefined'||!catalog||!Array.isArray(catalog.items))return;
+ const items=catalog.items,base=items.filter(o=>o&&!o.forge),vus=new Set(items.filter(o=>o&&o.forge).map(o=>o.id)),guide=normaliseGuidePrix(catalog.guidePrix);
+ coffreVue().forges.forEach(f=>{if(vus.has(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)})}}
+// La réserve et les ressources rangées au coffre, ensemble : ce dont une recette peut disposer.
+function reserveAvecCoffre(){const r=reserveVue();coffreVue().tabs.forEach(t=>t.forEach(id=>{const o=objetDe(id);if(o&&o.category==='ressource'&&o.cle)r[o.cle]=(Number(r[o.cle])||0)+1}));return r}
+// Une recette se prend d'abord dans la réserve du domaine, puis au coffre.
+function prendRecette(a,o){const res=reserveVue(),delta={};
+ normaliseRecette(o.recette).forEach(({cle,qte})=>{const pris=Math.min(qte,Number(res[cle])||0);if(pris)delta[cle]=-pris;let reste=qte-pris;
+  const c=coffreVue();c.tabs.forEach((t,tab)=>{if(reste<=0)return;const ids=[...new Set(t)].filter(id=>{const x=objetDe(id);return x&&x.category==='ressource'&&x.cle===cle});
+   ids.forEach(id=>{if(reste<=0)return;const n=Math.min(reste,t.filter(y=>y===id).length);if(n){versCoffre(a,{item:id,tab,n:-n});reste-=n}})})});
+ if(Object.keys(delta).length)versDomaine(a,delta)}
+// Sous une carte de magasin : payer avec l'or du coffre, quand il suffit.
+function boutonCoffre(prix,faire){const b=document.createElement('button');b.type='button';b.className='dom-coffre-payer';b.textContent='Payer avec le coffre';
+ const ok=coffreVue().or>=prix;b.disabled=!ok;b.title=ok?'':'Il manque '+(prix-coffreVue().or)+' or dans le coffre de groupe.';b.onclick=e=>{e.preventDefault();e.stopPropagation();if(ok)faire()};return b}
+const coffreGroupeDialog=dialog('coffre-groupe','Coffre de Groupe','<div class="cg-cadre"><section class="cg-coffre"><div class="cg-onglets" id="cg-onglets"></div><div class="cg-or" id="cg-or-coffre"></div><div class="dom-articles cg-grille" id="cg-coffre"></div></section>'
+ +'<section class="cg-sac"><h3 class="cg-qui" id="cg-qui"></h3><div class="cg-or" id="cg-or-sac"></div><div class="dom-articles cg-grille" id="cg-sac"></div></section></div>');
+let coffreGroupeDe=null,coffreGroupeOnglet=0,coffreGroupeAchat=false,coffreGroupeMinuterie=null;
+function ouvrirCoffreGroupe(a,c){if(!a||!agitPour(a))return;coffreGroupeDe=a.id;coffreGroupeOnglet=0;coffreGroupeAchat=false;
+ coffreGroupeDialog.querySelector('h2').textContent=c&&c.nom||'Coffre de Groupe';syncForges();dessineCoffreGroupe();if(!coffreGroupeDialog.open)coffreGroupeDialog.showModal();
+ clearInterval(coffreGroupeMinuterie);coffreGroupeMinuterie=setInterval(()=>{if(!coffreGroupeDialog.open){clearInterval(coffreGroupeMinuterie);return}dessineCoffreGroupe()},1500)}
+function apresCoffre(){syncForges();dessineCoffreGroupe();render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+function deposerAuCoffre(a,o,tous){const c=coffreVue(),tab=coffreGroupeOnglet,t=c.tabs[tab]||[];if(!agitPour(a)||!(a.inventaire||[]).includes(o.id))return;
+ if(!t.includes(o.id)&&placesOnglet(t)>=COFFRE_PLACES){log('Cet onglet du coffre est plein.',{local:true});return}
+ const n=tous?(a.inventaire||[]).filter(x=>x===o.id).length:1,forge=o.forge?(a.forges||[]).find(f=>f.id===o.id):null;
+ for(let i=0;i<n;i++)retirerInventaire(a,o);if(forge&&typeof oublieForge==='function')oublieForge(a,o.id);
+ versCoffre(a,{item:o.id,tab,n,...(forge?{forge}:{})});apresCoffre()}
+function prendreAuCoffre(a,id,tous){const c=coffreVue(),tab=coffreGroupeOnglet,t=c.tabs[tab]||[],o=objetDe(id);if(!agitPour(a)||!o||!t.includes(id))return;
+ const voulu=tous?t.filter(x=>x===id).length:1,forge=c.forges.find(f=>f.id===id);if(forge&&!(a.forges||[]).some(f=>f.id===id))a.forges=[...(a.forges||[]),forge];
+ let n=0;for(let i=0;i<voulu;i++){if(!ajouterInventaire(a,o))break;n++}
+ if(!n){log('L’inventaire de '+a.name+' ne prend plus '+o.name+'.',{local:true});return}versCoffre(a,{item:id,tab,n:-n});apresCoffre()}
+function orAuCoffre(a,n,sens){n=Math.max(0,Math.trunc(Number(n))||0);if(!n||!agitPour(a))return;
+ if(sens>0){n=Math.min(n,orDe(a));if(!n)return;ajouteOr(a,-n);versCoffre(a,{or:n})}else{n=Math.min(n,coffreVue().or);if(!n)return;ajouteOr(a,n);versCoffre(a,{or:-n})}apresCoffre()}
+function acheterOnglet(a,parCoffre){const c=coffreVue();if(!agitPour(a)||c.onglets>=COFFRE_ONGLETS_MAX)return;const prix=PRIX_ONGLETS[c.onglets];
+ if(parCoffre){if(c.or<prix)return;versCoffre(a,{onglet:1,or:-prix})}else{if(orDe(a)<prix)return;ajouteOr(a,-prix);versCoffre(a,{onglet:1})}
+ log(nomNum(a)+' ouvre l’onglet '+(c.onglets+1)+' du coffre de groupe pour '+prix+' or'+(parCoffre?' du coffre':'')+'.');coffreGroupeAchat=false;coffreGroupeOnglet=c.onglets;apresCoffre()}
+// Une ligne d'or : le montant, un champ, et le bouton qui le fait passer de l'autre côté.
+function ligneOrCoffre(n,txt,max,faire){const l=document.createElement('div');l.className='cg-ligne-or';l.append(ligneOr(n,null));
+ const i=document.createElement('input');i.type='number';i.min='1';i.max=String(Math.max(1,max));i.value=String(Math.min(Math.max(1,max),10));i.disabled=max<1;
+ const b=document.createElement('button');b.type='button';b.textContent=txt;b.disabled=max<1;b.onclick=()=>faire(i.value);l.append(i,b);return l}
+function carreCoffre(o,n,titre,faire){const p=carreInventaire(o,n);p.classList.add('a-cliquer');p.setAttribute('role','button');p.tabIndex=0;p.setAttribute('aria-label',titre);
+ p.onclick=e=>{e.preventDefault();faire(e.shiftKey)};p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();faire(e.shiftKey)}};
+ const w=document.createElement('div');w.className='cat-carte dom-article';const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;w.append(p,nom);return w}
+function dessineCoffreGroupe(){const a=actors.find(x=>x&&x.id===coffreGroupeDe);if(!a){coffreGroupeDialog.close();return}
+ const c=coffreVue();if(coffreGroupeOnglet>=c.onglets)coffreGroupeOnglet=0;const tab=coffreGroupeOnglet,t=c.tabs[tab]||[];
+ // Les onglets : ceux qu'on a, puis le suivant, à acheter.
+ const og=$('cg-onglets');og.replaceChildren();
+ for(let i=0;i<c.onglets;i++){const b=document.createElement('button');b.type='button';b.className='cg-onglet'+(i===tab?' on':'');b.textContent=String(i+1);
+  b.title=placesOnglet(c.tabs[i])+' / '+COFFRE_PLACES;b.onclick=()=>{coffreGroupeOnglet=i;coffreGroupeAchat=false;dessineCoffreGroupe()};og.append(b)}
+ if(c.onglets<COFFRE_ONGLETS_MAX){const prix=PRIX_ONGLETS[c.onglets],b=document.createElement('button');b.type='button';b.className='cg-onglet cg-achat'+(coffreGroupeAchat?' on':'');
+  b.textContent='🔒 '+prix.toLocaleString('fr-FR')+' or';b.onclick=()=>{coffreGroupeAchat=!coffreGroupeAchat;dessineCoffreGroupe()};og.append(b);
+  if(coffreGroupeAchat){const l=document.createElement('div');l.className='cg-payer';
+   const p1=document.createElement('button');p1.type='button';p1.textContent='Payer';p1.disabled=orDe(a)<prix;p1.onclick=()=>acheterOnglet(a,false);
+   const p2=document.createElement('button');p2.type='button';p2.textContent='Payer avec le coffre';p2.disabled=c.or<prix;p2.onclick=()=>acheterOnglet(a,true);l.append(p1,p2);og.append(l)}}
+ const places=document.createElement('span');places.className='cg-places';places.textContent=placesOnglet(t)+' / '+COFFRE_PLACES;og.append(places);
+ $('cg-or-coffre').replaceChildren(ligneOrCoffre(c.or,'Retirer',c.or,v=>orAuCoffre(a,v,-1)));
+ const gc=$('cg-coffre');gc.replaceChildren();const comptes=new Map();t.forEach(id=>comptes.set(id,(comptes.get(id)||0)+1));
+ comptes.forEach((n,id)=>{const o=objetDe(id);if(o)gc.append(carreCoffre(o,n,'Reprendre '+o.name,tous=>prendreAuCoffre(a,id,tous)))});
+ $('cg-qui').textContent=a.name;
+ $('cg-or-sac').replaceChildren(ligneOrCoffre(orDe(a),'Déposer',orDe(a),v=>orAuCoffre(a,v,1)));
+ const gs=$('cg-sac');gs.replaceChildren();const sac=new Map();(a.inventaire||[]).forEach(id=>sac.set(id,(sac.get(id)||0)+1));
+ sac.forEach((n,id)=>{const o=objetDe(id);if(o)gs.append(carreCoffre(o,n,'Ranger '+o.name,tous=>deposerAuCoffre(a,o,tous)))})}
+coffreGroupeDialog.addEventListener('close',()=>{clearInterval(coffreGroupeMinuterie);coffreGroupeDe=null});

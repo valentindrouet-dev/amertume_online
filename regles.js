@@ -170,7 +170,8 @@ REGLES_SECTIONS.push(
   rgEl('div','rg-puces',...(typeof RARETES!=='undefined'?RARETES:[]).map(([k,n])=>rgEl('span','rg-puce r-'+k,n))),
   rgListe(['<b>Usages</b> : '+(typeof USAGES_OBJET!=='undefined'?USAGES_OBJET.map(([,n])=>n.split(' — ')[0]).join(', '):'')+'.',
    '<b>Emplacements</b> : 2 mains, '+(typeof EMPLACEMENTS!=='undefined'?EMPLACEMENTS.map(([,n,k])=>n+' '+k).join(', '):'')+'. Un bouclier tient une main ; une arme à distance, deux.',
-   'Sans arme : 1 dé Léger + Dégâts, à mains nues.','Un objet forgé a 1 à 4 affixes : Inhabituel, Rare, Épique, Légendaire.','Un soin ne se gâche pas : refusé à PV pleins.'])),
+   'Sans arme : 1 dé Léger + Dégâts, à mains nues.','Un objet forgé a 1 à 4 affixes : Inhabituel, Rare, Épique, Légendaire.','Un soin ne se gâche pas : refusé à PV pleins.',
+   '<b>Coffre de Groupe</b> : au contact, chacun y dépose et y reprend or et objets ; '+(typeof COFFRE_PLACES!=='undefined'?COFFRE_PLACES:50)+' emplacements par onglet, 2 onglets d’office, jusqu’à 10 ('+(typeof PRIX_ONGLETS!=='undefined'?PRIX_ONGLETS.slice(2).join(', '):'')+' or). Son or paie aux magasins ; ses ressources servent aux fabrications, après la réserve du domaine.'])),
  // 14. L'exploration.
  ()=>rgSection('exploration','L’exploration',RG.pass,'🗺','Hors combat, on se déplace librement, on fouille, on crochète et on évite les pièges.',
   rgListe(['<b>Obscurité</b> : on ne voit que sa zone de contact, plus loin avec la Vision dans le noir ; une zone éclairée se voit de loin.',

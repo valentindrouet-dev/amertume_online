@@ -31,7 +31,7 @@ function normalizeActor(a){a.id??=crypto.randomUUID();
  if(a.enAventure!==true)delete a.enAventure;
  // L'image qu'un joueur a donnée à son aventurier : une image en ligne, légère.
  if(typeof a.imageJeton!=='string'||!/^data:image\/(webp|png|jpeg);base64,/.test(a.imageJeton)||a.imageJeton.length>200000)delete a.imageJeton;
-a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.forges=normaliseForges(a.forges);
+a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.coffreOps=normaliseOpsCoffre(a.coffreOps);if(!a.coffreOps.length)delete a.coffreOps;a.forges=normaliseForges(a.forges);
  // Les zones fouillées par la Perception : la carte, le centre et le rayon, rien d'autre.
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
  if(a.reposCourts===undefined&&a.reposPris)a.reposCourts=1;a.reposCourts=Math.max(0,Math.trunc(Number(a.reposCourts))||0);a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
@@ -7434,6 +7434,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});
  if($('item-bonus'))a.bonus=lireBonusItem();
  for(const k of ['qty','price','hands','def','lumiere'])if(f[k])a[k]=num(f[k].value,0,k==='def'?DEF_MAX:k==='lumiere'?40:999999);
+ if(c==='herbe'&&f['drop_plantes']){const d=normaliseDrops(Object.fromEntries(FAMILLES_MONSTRES.map(([k])=>[k,f['drop_'+k]?f['drop_'+k].value:0])));if(Object.keys(d).length)a.drops=d;else delete a.drops}
  if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement=Math.max(.5,Math.min(40,Number(f.bonusMouvement.value)||1));else delete a.bonusMouvement}
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
@@ -7499,6 +7500,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
    :sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])
    +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))
   +'</div>'
+  // v1.009 : une plante d'herboristerie — sa chance de tomber, famille par famille (0 : jamais).
+  +(a.category==='herbe'?'<fieldset class="familles-adv drops-plante"><legend>Drop sur les adversaires (%)</legend>'+FAMILLES_MONSTRES.map(([k,n])=>field(n,'drop_'+k,(a.drops&&a.drops[k])||0,'number','min="0" max="100" step="1"')).join('')+'</fieldset>':'')
   // En vente au magasin du domaine, au prix ci-dessus.
   +'<label class="field-check"><input name="magasin" type="checkbox" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'
   +'<label class="field-check"><input name="unique" type="checkbox" '+(estUnique(a)?'checked':'')+'>Unique</label>'

@@ -30,6 +30,8 @@ const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','align
 CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
 // v0.915 : le Charme retient qui l'a charmé ; Sang Féerique, le combat où il a servi.
 CHAMPS_VIVANTS.push('charmePar','sangFeerique');
+// v1.009 : les opérations d'un aventurier sur le Coffre de Groupe, que l'appareil du MJ verse une fois.
+CHAMPS_VIVANTS.push('coffreOps');
 // v0.916 : la compétence de Compétent (Humain).
 CHAMPS_VIVANTS.push('competent');
 // v0.921 : l'Ascendance du Drakéide.

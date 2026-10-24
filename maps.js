@@ -1013,6 +1013,8 @@ function menuCarte(titre,entrees,x,y){fermeMenuObjet();if(!entrees.length)return
 function menuCoffre(c,x,y){const mj=view==='mj',a=heroActif(),proche=!!a&&coffreAPortee(a,c),entrees=[];
  if(!mj&&!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
  if(!mj&&!proche){log('Approche '+a.name+' : il faut être au contact de '+c.nom+'.',{local:true});return}
+ // v1.009 : le Coffre de Groupe s'ouvre sur la fenêtre commune ; le MJ l'ouvre pour l'aventurier actif au contact, sinon le plus proche.
+ if(c.groupe===true&&typeof ouvrirCoffreGroupe==='function'){const h=proche?a:mj?heroLePlusProche(centreForme(c)):null;if(h)ouvrirCoffreGroupe(h,c);return}
  const comps=[[RUSE,'Ruse'],[TECHNIQUE,'Technique']];
  if(proche){if(!coffreVerrouille(c))entrees.push(['Ouvrir',()=>ouvrirCoffre(c,a,false)]);
   else{// Sa clé, si l'aventurier la porte : le verrou cède, la clé reste dans son inventaire.
@@ -2787,7 +2789,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
  $('coffre-fields').innerHTML='<div class="edit-grid">'+field('Nom','nom',c.nom||'Coffre','text','required maxlength="60"')+'</div>'
   +'<label>Description lue par les joueurs<textarea name="desc" rows="2" maxlength="600">'+esc(c.desc||'')+'</textarea></label>'
   // Caché, verrouillé, piégé : chaque case ouvre ses champs, et seulement elle.
-  +'<div class="coffre-cases">'+coche('cache','Caché',!!c.cache)+coche('ferme','Verrouillé',c.verrou>0)+coche('piege_on','Piégé',c.piege>0)+'</div>'
+  +'<div class="coffre-cases">'+coche('cache','Caché',!!c.cache)+coche('ferme','Verrouillé',c.verrou>0)+coche('piege_on','Piégé',c.piege>0)+coche('groupe','Coffre de groupe',c.groupe===true)+'</div>'
   +'<div class="edit-grid coffre-si" data-si="cache">'+nb('Réussites de Perception pour le trouver','perception',c.perception||1,1,9)+coche('pierre','Dans la pierre',c.pierre===true)+'</div>'
   +'<div class="edit-grid coffre-si" data-si="ferme">'+nb('Réussites de Ruse ou Technique','verrou',Math.max(1,c.verrou||1),1,9)
   +'<label>Clé qui l’ouvre<select name="cleId"></select></label></div>'
@@ -2805,7 +2807,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
  // Les pièces de l'armurerie, choisies comme l'inventaire d'un adversaire : un clic, une de plus ; le clic droit, une de moins.
  const contenu={inventaire:[...(c.items||[])]};contenuCoffre($('coffre-contenu'),contenu);
  $('coffre-form').onsubmit=e=>{e.preventDefault();const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));pushUndo();
-  c.nom=f.nom.value.trim().slice(0,60)||'Coffre';c.desc=f.desc.value.trim().slice(0,600);
+  c.nom=f.nom.value.trim().slice(0,60)||'Coffre';c.desc=f.desc.value.trim().slice(0,600);if(f.groupe.checked)c.groupe=true;else delete c.groupe;
   if(f.cache.checked){c.cache=true;c.perception=Math.max(1,n(f.perception.value,9));if(f.pierre.checked)c.pierre=true;else delete c.pierre}else{delete c.cache;delete c.pierre}
   c.verrou=f.ferme.checked?Math.max(1,n(f.verrou.value,9)):0;if(f.ferme.checked&&f.cleId.value)c.cleId=f.cleId.value;else delete c.cleId;
   c.piege=f.piege_on.checked?Math.max(1,n(f.piege.value,9)):0;{const d=c.piege?lisFormuleDegats(f.degats.value):null;if(!c.piege){c.degats=0;delete c.degatsDes}else if(d){c.degats=d.degats;if(d.degatsDes)c.degatsDes=d.degatsDes;else delete c.degatsDes}}

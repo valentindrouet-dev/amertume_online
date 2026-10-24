@@ -3085,7 +3085,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  {const ctxI={};vm.createContext(ctxI);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('function retirerInventaire('))+';this.ajouterInventaire=ajouterInventaire;',ctxI);
   const a={inventaire:Array(98).fill('f')};assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),true);assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),false);assert.equal(a.inventaire.length,99,'99 au plus');}
  assert.ok(src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}")
-  &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
+  &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix});else ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
  assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")

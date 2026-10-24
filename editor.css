@@ -3492,3 +3492,23 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .familles-adv{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 12px;margin:0;padding:6px 10px 8px;border:1px solid var(--line);border-radius:8px}
 .familles-adv legend{padding:0 4px;font:700 12px system-ui;color:var(--muted)}
 .familles-adv .field-check{margin:0}
+/* v1.009 : les chances de drop d'une plante, un champ par famille. */
+.drops-plante{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin:10px 0}
+.drops-plante label{font-size:12px}
+/* v1.009 : le Coffre de Groupe — le coffre à gauche, l'aventurier à droite. */
+#coffre-groupe{width:min(1100px,96vw)}
+.cg-cadre{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.cg-cadre>section{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.cg-onglets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.cg-onglet{min-width:34px;padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font:700 13px system-ui;cursor:pointer}
+.cg-onglet.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.cg-achat{font-weight:600}
+.cg-payer{display:flex;gap:6px;flex-basis:100%}
+.cg-places{margin-left:auto;font:600 12px system-ui;color:var(--muted)}
+.cg-qui{margin:0 0 10px;font:700 18px 'Killam',Georgia,serif}
+.cg-ligne-or{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+#coffre-groupe .cg-ligne-or input{flex:0 0 90px;width:90px}
+.cg-grille{min-height:80px;max-height:52vh;overflow:auto}
+.cg-grille .cat-pill.gear-carre.a-cliquer{cursor:pointer}
+.dom-coffre-payer{margin-top:4px;padding:2px 8px;font:600 11px system-ui}
+@media(max-width:800px){.cg-cadre{grid-template-columns:1fr}}
