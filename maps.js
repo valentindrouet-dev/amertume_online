@@ -3254,3 +3254,79 @@ $('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target
  e.preventDefault();e.stopImmediatePropagation();const p=mapPct(e),mj=view==='mj';pingCarte(p.x,p.y,mj);if(typeof diffuserPing==='function')diffuserPing(p.x,p.y,mj)},true);
 // v0.897 : Gageur — un adversaire dont un Fielsang tient le gage, à 10 m de lui, se voit toujours.
 {const ps=partySees,tv=troupeVoit;partySees=function(a){return ps(a)||(typeof troupeVoitParGage==='function'&&troupeVoitParGage(a))};troupeVoit=function(a){return tv(a)||(typeof troupeVoitParGage==='function'&&troupeVoitParGage(a))}}
+
+/* ---------- v1.013 — Les effets des potions d'herboristerie ----------
+   Ce que l'emploi d'une potion laisse sur le buveur : une vision dans le noir ou une lumière jusqu'à la fin de la carte
+   (« visionPotion », « lumierePotion » : la carte, les mètres), des PM jusqu'à la fin du combat (« pmPotion »), un enduit sur
+   ses prochaines attaques (« enduit » : les états, le nombre d'attaques), et, pour toute la troupe, le répulsif des bêtes
+   (« repulsif » : la carte). Le reste agit sur l'instant : relever un aventurier tombé, une couleur de dés choisie, une purge,
+   un objet lancé, une recette apprise, les passages secrets de la pièce. */
+const CODES_POTION=['vision','mouvement','resurrection','fluxdes','purge','repulsif','enduit','lancer','lumiere','grimoire','revelesecrets'];
+function finPotion(a,o,dit){const u=usageObjet(o);if(usageLimite(u))a.usages={...(a.usages||{}),[o.id]:u};if(usageConsomme(u))retirerInventaire(a,o);
+ log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
+ render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+const menuAuCentre=(titre,entrees)=>menuCarte(titre,entrees,innerWidth/2-90,innerHeight/2-60);
+const estBete=o=>!!o&&!o.hero&&((typeof normaliseFamillesMonstre==='function'&&normaliseFamillesMonstre(o.familles).includes('betes'))||/b[êe]te/i.test(String(o.family||'')));
+const carteDuMoment=()=>String(currentMapId||'hors-carte');
+const repousse=a=>!!a&&a.hero===true&&!!a.repulsif&&a.repulsif===carteDuMoment()&&estBete(actors[selected]);
+// Ceux qui touchent la cible d'un objet lancé : ses alliés à son contact, sans mur entre eux.
+function voisinsDuLancer(vise,a){const size=mapSize();if(!size.width)return [];const murs=walls();
+ return actors.filter(o=>o&&o!==vise&&alive(o)&&!o.horsCarte&&hostiles(o,a)&&inContact(vise,o,size,tokenOf(vise),tokenOf(o))&&!wallsBetween(vise,o,murs))}
+function poseEtatPotion(x,etat,crans,a){let ok=false;for(let i=0;i<Math.max(1,crans|0);i++){const r=infligeEtat(x,etat);if(r===true)ok=true;else break}
+ if(ok&&etat==='Charme')x.charmePar=a.id;if(ok&&typeof floatNumber==='function')floatNumber(x,'✦ '+etat+(crans>1?' '+crans:''),'perte');return ok}
+function lancerPotion(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la carte.',{local:true});return}
+ viserCible('◈ '+o.name+' — clique l’adversaire visé',vise=>{const j=actors.indexOf(vise);
+  if(!vise||!alive(vise)||!hostiles(vise,a)||!ciblesAtteignables(a,[j],'distance').length){log(o.name+' : vise un adversaire en vue.',{local:true});return}
+  const crans=Math.max(1,p.crans|0),autres=p.zone==='tous'?actors.filter(x=>x&&alive(x)&&!x.horsCarte&&hostiles(x,a)&&(x.revealed||x.hero)):p.zone==='voisins'?[vise,...voisinsDuLancer(vise,a)]:[];
+  const poseAutres=()=>{const touches=p.etat?autres.filter(x=>(p.de&&p.zone==='voisins'&&x===vise)?false:alive(x)&&poseEtatPotion(x,p.etat,crans,a)):[];return touches};
+  if(p.de){if(enCombat()&&pointsRestants(a,'action')<1){log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return}
+   finPotion(a,o,'lancé sur '+nomNum(vise));selected=actors.indexOf(a);
+   attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee:'distance',sansDegats:true,potion:true,
+    etatsEnPlus:{etats:p.etat&&p.zone!=='tous'?Array(crans).fill(p.etat):[],touches:[]},
+    apres:()=>{const t=poseAutres();if(t.length)log(o.name+' : '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', ')+'.',{ton:'talent'});render();scheduleSave()}});return}
+  if(!payeAction(a))return;
+  const cibles=p.zone==='cible'?[vise]:autres,t=p.etat?cibles.filter(x=>poseEtatPotion(x,p.etat,crans,a)):[];
+  finPotion(a,o,'lancé sur '+nomNum(vise)+(t.length?', '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', '):', sans effet'))},o.name+' : geste annulé.')}
+function releverAvecPotion(a,o,h){if(estMort(h)){if(h.poussiere===true)return;h.vie=1}
+ h.comaVie=false;h.states=[];h.cumuls={};h.bleed=0;if(typeof leveNecrose==='function')leveNecrose(h);if(typeof recalculerPV==='function')recalculerPV(h);h.hp=h.max;setState(h,'Coma',false);
+ if(h.horsCarte){h.horsCarte=false;moveActor(h,a.x,a.y,true)}
+ finPotion(a,o,nomNum(h)+' se relève, PV au complet')}
+function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);if(!m||!z)return 0;let n=0;
+ (m.doors||[]).forEach(d=>{if(!d||!d.secret||d.decouvert||d.open)return;const c=centreForme(d),r=1.5;
+  if([[r,0],[-r,0],[0,r],[0,-r],[r,r],[-r,-r],[r,-r],[-r,r]].some(([dx,dy])=>zoneAu(zones,c.x+dx,c.y+dy)===z)){d.decouvert=true;n++;floatNumber(c,'Révélé !','nul')}});
+ if(n)saveMaps();return n}
+{const ae=appliquerEffetObjet;appliquerEffetObjet=function(a,o){const code=objetCode(o);if(!a||!code||!CODES_POTION.includes(code.cle))return ae(a,o);
+ if(!objetDisponible(a,o)){log(o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',{local:true});return}
+ const p=paramsObjet(o)||{},carte=carteDuMoment();
+ switch(code.cle){
+  case 'vision':a.visionPotion={carte,m:Math.max(1,p.portee|0)};finPotion(a,o,'voit dans le noir à '+a.visionPotion.m+' m');return;
+  case 'lumiere':a.lumierePotion={carte,m:Math.max(1,p.m|0)};finPotion(a,o,'éclaire à '+a.lumierePotion.m+' m');return;
+  case 'mouvement':a.pmPotion=Math.min(3,(Math.trunc(Number(a.pmPotion))||0)+Math.max(1,p.n|0));finPotion(a,o,'+'+Math.max(1,p.n|0)+' PM jusqu’à la fin du combat');return;
+  case 'enduit':{const etats=[p.etat,p.etat2].filter((e,i,l)=>e&&l.indexOf(e)===i),n=Math.max(1,p.n|0);a.enduit={etats,n};
+   finPotion(a,o,(n>1?'ses '+n+' prochaines attaques posent ':'sa prochaine attaque pose ')+etats.join(' et '));return}
+  case 'repulsif':actors.filter(h=>h&&h.hero).forEach(h=>{h.repulsif=carte});finPotion(a,o,'les bêtes ne surprennent plus la troupe');return;
+  case 'purge':{const leves=[p.etat,p.etat2].filter((e,i,l)=>e&&l.indexOf(e)===i).filter(e=>{const avait=hasState(a,e)||(e==='Nécrose'&&Number(a.necrose)>0);
+    if(e==='Nécrose'&&typeof leveNecrose==='function')leveNecrose(a);setState(a,e,false);if(a.cumuls)delete a.cumuls[e];return avait});
+   finPotion(a,o,leves.length?leves.join(' et ')+(leves.length>1?' levés':' levé'):'rien à lever');return}
+  case 'fluxdes':menuAuCentre(o.name,DES_ORBE.filter(([k])=>k!=='green').map(([k,n])=>[n,()=>{poseImmunite(a,'des',k);finPotion(a,o,'insensible aux dés '+n.toLowerCase()+'s')}]));return;
+  case 'resurrection':{const tombes=actors.filter(h=>h&&h.hero&&h!==a&&h.poussiere!==true&&(estMort(h)||Number(h.hp)<=0));
+   if(!tombes.length){log('Aucun aventurier tombé à relever.',{local:true});return}
+   menuAuCentre(o.name,tombes.map(h=>[nomNum(h),()=>releverAvecPotion(a,o,h)]));return}
+  case 'lancer':lancerPotion(a,o,p);return;
+  case 'grimoire':{const r=objetDe(p.recette);if(!r){log(o.name+' : aucune recette.',{local:true});return}
+   if((a.recettes||[]).includes(r.id)){log(nomNum(a)+' connaît déjà la recette : '+r.name+'.',{local:true});return}
+   a.recettes=[...(a.recettes||[]),r.id];finPotion(a,o,'apprend la recette : '+r.name);return}
+  case 'revelesecrets':{const n=revelePassages(a);finPotion(a,o,n?n+' passage'+(n>1?'s secrets révélés':' secret révélé'):'aucun passage secret');return}}}}
+// Les PM de la potion, jusqu'à la fin du combat.
+{const pt=pointsDeTalents;pointsDeTalents=function(a,quoi){return pt(a,quoi)+(quoi==='mouvement'&&a&&a.pmPotion>0?Math.min(3,Math.trunc(a.pmPotion)):0)}}
+{const bm=basculerMode;basculerMode=function(neuf,...x){const fin=mode==='combat'&&neuf!=='combat';const r=bm(neuf,...x);if(fin)actors.forEach(a=>{if(a&&a.pmPotion)delete a.pmPotion});return r}}
+// La vision et la lumière de la potion, sur la carte où elle a été bue.
+{const vn=visionNoirDe;visionNoirDe=function(a){const v=vn(a),p=a&&a.visionPotion;return p&&p.carte===carteDuMoment()?Math.max(v,Number(p.m)||0):v}}
+{const lp=lumierePortee;lumierePortee=function(a,items){const v=lp(a,items),p=a&&a.lumierePotion;return p&&p.carte===carteDuMoment()?Math.max(v,Number(p.m)||0):v}}
+// Le répulsif : une bête ne surprend plus la troupe.
+{const ia=insensibleA;insensibleA=function(a,etat){return ia(a,etat)||(etat==='Surpris'&&repousse(a))}}
+{const ss=setState;setState=function(a,etat,pose,...x){if(pose&&etat==='Surpris'&&repousse(a))return;return ss(a,etat,pose,...x)}}
+// L'enduit : les états qu'il pose s'ajoutent à chaque attaque du porteur, jusqu'à la dernière.
+{const at=attack;attack=function(opts={}){const a=actors[selected],e=a&&a.enduit;if(!e||!(e.n>0)||!Array.isArray(e.etats)||!e.etats.length||(opts&&opts.potion))return at(opts);
+ const ep=opts.etatsEnPlus||{etats:[],touches:[]},avant=ep.etats||[],ap=opts.apres;ep.etats=[...avant,...e.etats];
+ return at({...opts,etatsEnPlus:ep,apres:r=>{ep.etats=avant;if(a.enduit){a.enduit.n--;if(!(a.enduit.n>0))delete a.enduit}if(ap)ap(r);else{render();scheduleSave()}}})}}

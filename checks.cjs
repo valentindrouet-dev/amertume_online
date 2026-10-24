@@ -276,7 +276,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
  const objets=fs.readdirSync('img').filter(f=>/^item_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
- assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
+ assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'||c==='potion'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
   &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:''")
   &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
@@ -1810,7 +1810,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
 /* Les effets d'équipement : une banque déclarée comme celle des talents — une clé, des
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
- assert.equal(Object.keys(codes).sort().join(),'armure,etat,invulnerabilite,soin');
+ assert.equal(Object.keys(codes).sort().join(),'armure,enduit,etat,fluxdes,grimoire,invulnerabilite,lancer,lumiere,mouvement,purge,repulsif,resurrection,revelesecrets,soin,vision');
  assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso']));
  assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
@@ -3198,7 +3198,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(d.batiments.map(b=>b.fonction).join(','),'tannerie,','la Tannerie devient la tannerie, une fois');
  d.batiments[0].fonction='';assert.equal(C.normaliseDomaine(d).batiments[0].fonction,'','ensuite, le MJ choisit');
  assert.equal(J(C.normaliseDomaine({depotsVus:['a','mauvais id!','b']}).depotsVus),J(['a','b']));
- assert.ok(src.includes("function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésors']];")
+ assert.ok(src.includes("function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésors']];")
   &&src.includes("o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);")
   &&src.includes("?sel('Donne','ressource1',ressourceValide(a.ressource1),")&&src.includes("function dessineRecette(){")&&src.includes("if($('recette-lignes'))a.recette=lireRecette();")
   &&src.includes("{cle:'tanneur',nom:'Tanneur',type:'case',")&&src.includes("groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);"),'les Restes et la recette du tanneur, à l’Armurerie');
@@ -3227,7 +3227,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    menu et de la grille, chacune sous son nom. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i],potion:[/herboristerie/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
   &&src.includes("+selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
 /* v0.337 — Un « + » à l'en-tête de chaque colonne de l'Armurerie ouvre l'éditeur sur une pièce
    neuve de cette catégorie. La famille de talents « Génériques » disparaît : un talent resté sans
@@ -3256,7 +3256,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const peau={category:'restes',ressource1:'cuir',rendement1:3,ressource2:'corde',rendement2:1,rarete:'rare'};
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({})).total,3,'3 Cuir à 4 + 1 Corde à 2 = 14 ; 25 %, arrondi en dessous : 3 — ni base, ni rareté');
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({restes:50})).total,7,'la part se règle au guide');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i],potion:[/herboristerie/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
 /* v0.340 — Les tris restent d'une session à l'autre ; plus de pointillés entre les rangées de talents. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];")&&src.includes("localStorage.setItem('amertume-tris',JSON.stringify(o))")

@@ -55,6 +55,8 @@ CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
 CHAMPS_VIVANTS.push('ajuste');
 // Où chaque test de compétence a été fait : le même ne se refait pas sans être sorti de sa zone de contact.
 CHAMPS_VIVANTS.push('testsLieux');
+// v1.013 : les recettes d'herboristerie apprises, et ce que les potions laissent sur le buveur.
+CHAMPS_VIVANTS.push('recettes','pmPotion','visionPotion','lumierePotion','enduit','repulsif');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */

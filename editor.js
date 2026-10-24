@@ -91,7 +91,7 @@ function migreRessources(c){
    dégâts, chaque point de DEF, la deuxième main, l'état infligé, l'effet, chaque bonus, les
    ressources dont elle est faite ; la rareté multiplie ensuite le tout. L'Armurerie en tire un
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
-const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésor']];
+const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor']];
 const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,herbe:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25,purple:25},def:20,deuxMains:5,etat:15,restes:25,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
@@ -249,7 +249,7 @@ const FAMILLES_MONSTRES=[['plantes','Plantes'],['plantesligneuses','Plantes lign
  ['mortsvivants','Morts-vivants'],['mortsvivantsmajeurs','Morts-vivants majeurs'],['constructspierre','Constructs de pierre'],['aquatiques','Créatures aquatiques'],
  ['elementairesfeu','Élémentaires de feu'],['elementairesglace','Élémentaires de glace'],['elementairesair','Élémentaires d’air'],['charognards','Charognards'],
  ['sylvestres','Créatures sylvestres'],['allsteiners','Allsteiners'],['celestes','Créatures célestes'],['magiques','Créatures magiques'],['tellures','Tellures'],
- ['dryades','Dryades'],['lumiere','Créatures de lumière'],['gardienssylvestres','Gardiens sylvestres'],['bosssylvestres','Boss sylvestres']];
+ ['dryades','Dryades'],['lumiere','Créatures de lumière'],['gardienssylvestres','Gardiens sylvestres'],['bosssylvestres','Boss sylvestres'],['betes','Bêtes']];
 const normaliseFamillesMonstre=l=>[...new Set((Array.isArray(l)?l:[]).filter(k=>FAMILLES_MONSTRES.some(([x])=>x===k)))];
 function normaliseDrops(d){const out={};if(!d||typeof d!=='object'||Array.isArray(d))return out;
  FAMILLES_MONSTRES.forEach(([k])=>{const v=Math.max(0,Math.min(100,Math.round(Number(d[k]))||0));if(v)out[k]=v});return out}
@@ -266,6 +266,77 @@ const PLANTES_HERBORISTERIE=[
  ['Fleur d’Hephos','rare',30,{celestes:10}],['Lotus noir','rare',40,{magiques:6}],['Racine-cristal tellurique','rare',45,{tellures:8}],
  ['Larme de dryade','mystique',80,{dryades:5}],['Champignon d’âme','mystique',100,{mortsvivantsmajeurs:4}],['Soleil-de-nuit','mystique',120,{lumiere:3}],
  ['Sève du flux','mystique',150,{gardienssylvestres:4}],['Graine du Premier Arbre','epique',300,{bosssylvestres:2}]];
+/* v1.013 — Les potions de l'Herboristerie : 40 pièces de la catégorie Potions, leurs recettes, leur apprentissage. Une ligne :
+   nom, sous-type, rareté, ingrédients (nom × quantité), effet du moteur et ses réglages, usage, texte de l'effet, prix de vente,
+   apprentissage (0 : un grimoire), rang d'herboriste, niveau de labo, icône de la planche d'Herboristerie. */
+const POTIONS_HERBORISTERIE=[
+ ['Potion de soin mineure','Potion','commun',[['Fiole',1],['Eau',1],['Herbe-à-plaie',2]],'soin',{quantite:5,forme:'fixe'},'conso','Soigne 5 PV',9,15,1,1,32],
+ ['Potion de soin','Potion','inhabituel',[['Fiole',1],['Eau',1],['Herbe-à-plaie',2],['Écorce de saule pleureur',1]],'soin',{quantite:2,forme:'des'},'conso','Soigne 2d6 PV',21,50,1,1,36],
+ ['Potion de soin majeure','Potion','rare',[['Fiole',1],['Eau',1],['Écorce de saule pleureur',2],['Orchidée de sang',1]],'soin',{quantite:4,forme:'des'},'conso','Soigne 4d6 PV',77,150,2,2,50],
+ ['Antidote','Potion','commun',[['Fiole',1],['Eau',1],['Sauge des marais',1],['Racine amère',1]],'invulnerabilite',{contre:'etat',etat:'Poison'},'conso','Insensible au Poison jusqu’à la fin du combat',14,15,1,1,37],
+ ['Potion de chaleur','Potion','inhabituel',[['Fiole',1],['Eau',1],['Piment de braise',2]],'invulnerabilite',{contre:'etat',etat:'Gel'},'conso','Insensible au Gel jusqu’à la fin du combat',32,50,1,1,35],
+ ['Potion ignifuge','Potion','inhabituel',[['Fiole',1],['Eau',1],['Fleur de givre',2]],'invulnerabilite',{contre:'etat',etat:'Feu'},'conso','Insensible au Feu jusqu’à la fin du combat',39,50,1,1,39],
+ ['Potion de rage','Potion','inhabituel',[['Fiole',1],['Eau',1],['Piment de braise',1],['Aconit bleu',1]],'etat',{etat:'Rage'},'conso','Le buveur entre en Rage',32,50,1,1,20],
+ ['Élixir d’écorce','Potion','inhabituel',[['Fiole',1],['Eau',1],['Résine de pin noir',2],['Écorce de saule pleureur',1]],'armure',{quantite:5},'conso','Reçoit 5 d’Armure',24,50,1,1,17],
+ ['Œil de lanterne','Potion','commun',[['Fiole',1],['Eau',1],['Champignon lanterne',2]],'vision',{portee:6},'conso','Voit dans l’obscurité jusqu’à la fin de la carte',12,15,1,1,49],
+ ['Potion d’invisibilité','Potion','rare',[['Fiole',1],['Eau',1],['Lotus noir',1],['Gui d’argent',1]],'etat',{etat:'Invisible'},'conso','Le buveur devient Invisible',105,150,2,2,40],
+ ['Souffle d’Hephos','Potion','rare',[['Fiole',1],['Eau',1],['Fleur d’Hephos',2]],'mouvement',{n:1},'conso','+1 PM jusqu’à la fin du combat',115,150,2,2,38],
+ ['Élixir de Radiance','Élixir','mystique',[['Fiole',1],['Eau',1],['Soleil-de-nuit',1],['Racine-cristal tellurique',1],['Brisure de citrine',1]],'soin',{quantite:3,forme:'des',radiant:'oui'},'conso','Soigne 3d6 PV radiants',347,400,3,3,34],
+ ['Eau d’âme','Élixir','mystique',[['Fiole',1],['Eau',1],['Champignon d’âme',1],['Larme de dryade',1],['Argent',1]],'resurrection',{},'horsconso','Relève un aventurier tombé, hors combat',417,400,3,3,67],
+ ['Élixir du flux','Élixir','mystique',[['Fiole',1],['Eau',1],['Sève du flux',1],['Essence arcanique',1],['Racine-cristal tellurique',1]],'fluxdes',{},'conso','Insensible à une couleur de dés jusqu’à la fin du combat',457,400,3,3,33],
+ ['Onguent cicatrisant','Onguent','commun',[['Huile de base',1],['Herbe-à-plaie',1],['Mousse de pierre',1]],'soin',{quantite:1,forme:'des'},'horsconso','Hors combat : soigne 1d6 PV',8,15,1,1,3],
+ ['Onguent de camouflage','Onguent','commun',[['Huile de base',1],['Lichen cendré',2],['Mousse de pierre',1]],'etat',{etat:'Caché'},'conso','Le porteur devient Caché',10,15,1,1,7],
+ ['Baume purifiant','Onguent','rare',[['Huile de base',1],['Gui d’argent',1],['Sauge des marais',2],['Argent',1]],'purge',{etat:'Nécrose',etat2:'Corruption'},'conso','Retire Nécrose et Corruption',87,150,2,2,1],
+ ['Baume répulsif','Onguent','commun',[['Graisse',1],['Sauge des marais',1],['Ortie grise',1]],'repulsif',{},'conso','La troupe ne peut pas être Surprise par des bêtes',10,15,1,1,5],
+ ['Enduit de belladone','Enduit d’arme','inhabituel',[['Huile de base',1],['Belladone',2]],'enduit',{etat:'Poison',etat2:'',n:3},'conso','Les 3 prochaines attaques posent Poison',25,50,1,1,10],
+ ['Enduit de braise','Enduit d’arme','inhabituel',[['Huile de base',1],['Piment de braise',2]],'enduit',{etat:'Feu',etat2:'',n:3},'conso','Les 3 prochaines attaques posent Feu',32,50,1,1,4],
+ ['Enduit de givre','Enduit d’arme','inhabituel',[['Huile de base',1],['Fleur de givre',2]],'enduit',{etat:'Gel',etat2:'',n:3},'conso','Les 3 prochaines attaques posent Gel',38,50,1,1,9],
+ ['Enduit d’orage','Enduit d’arme','rare',[['Huile de base',1],['Pollen d’orage',2],['Bronze',1]],'enduit',{etat:'Foudre',etat2:'',n:3},'conso','Les 3 prochaines attaques posent Foudre',56,150,2,2,8],
+ ['Venin d’aconit','Poison','rare',[['Fiole',1],['Aconit bleu',2],['Glande à venin',1]],'enduit',{etat:'Poison',etat2:'Affaibli',n:1},'conso','Enduit : la prochaine attaque pose Poison et Affaibli',48,150,2,2,31],
+ ['Sève de charogne','Poison','rare',[['Fiole',1],['Mousse de charogne',2],['Os',1]],'enduit',{etat:'Nécrose',etat2:'',n:1},'conso','Enduit : la prochaine attaque pose Nécrose',88,150,2,2,46],
+ ['Nuée urticante','Gaz','commun',[['Fiole',1],['Ortie grise',3]],'lancer',{de:'',nb:1,etat:'Affaibli',crans:1,zone:'voisins'},'conso','Lancée : la cible et ses voisins sont Affaiblis',9,15,1,1,29],
+ ['Fiole de spores','Gaz','inhabituel',[['Fiole',1],['Spore de vesse-de-loup',2]],'lancer',{de:'',nb:1,etat:'Aveugle',crans:1,zone:'voisins'},'conso','Lancée : la cible et ses voisins sont Aveugles',24,50,1,1,28],
+ ['Gaz soporifique','Gaz','inhabituel',[['Fiole',1],['Pavot des talus',3],['Sauge des marais',1]],'lancer',{de:'',nb:1,etat:'Sommeil',crans:1,zone:'voisins'},'conso','Lancée : la cible et ses voisins tombent en Sommeil',19,50,1,1,12],
+ ['Brume d’Allstein','Gaz','rare',[['Fiole',1],['Rose de vapeur',2],['Soufre',1]],'lancer',{de:'',nb:1,etat:'Corruption',crans:2,zone:'voisins'},'conso','Lancée : Corruption 2 sur la cible et ses voisins',117,150,2,2,22],
+ ['Poudre de mandragore','Gaz','rare',[['Fiole',1],['Racine de mandragore',2],['Gui d’argent',1]],'lancer',{de:'',nb:1,etat:'Charme',crans:1,zone:'cible'},'conso','Lancée : la cible est Charmée',74,150,2,2,26],
+ ['Pétard de résine','Explosif','commun',[['Résine de pin noir',1],['Charbon de bois',1],['Mèche',1]],'lancer',{de:'bone',nb:2,etat:'Surpris',crans:1,zone:'cible'},'conso','Lancé : 2 dés os, la cible est Surprise',8,15,1,1,24],
+ ['Bombe à éclats d’os','Explosif','inhabituel',[['Os',3],['Soufre',1],['Charbon de bois',1],['Mèche',1]],'lancer',{de:'white',nb:3,etat:'Saignée',crans:1,zone:'cible'},'conso','Lancée : 3 dés blancs, Saignée',25,50,1,1,15],
+ ['Bombe de braise','Explosif','inhabituel',[['Fiole',1],['Piment de braise',2],['Soufre',1],['Mèche',1]],'lancer',{de:'red',nb:2,etat:'Feu',crans:1,zone:'cible'},'conso','Lancée : 2 dés rouges, Feu',44,50,1,1,14],
+ ['Grenade de givre','Explosif','inhabituel',[['Fiole',1],['Fleur de givre',2],['Soufre',1],['Mèche',1]],'lancer',{de:'blue',nb:2,etat:'Gel',crans:1,zone:'cible'},'conso','Lancée : 2 dés bleus, Gel',51,50,1,1,16],
+ ['Charge d’orage','Explosif','rare',[['Fer',1],['Pollen d’orage',2],['Soufre',2],['Mèche',1]],'lancer',{de:'blue',nb:3,etat:'Foudre',crans:1,zone:'voisins'},'conso','Lancée : 3 dés bleus, Foudre sur la cible et ses voisins',71,150,2,2,13],
+ ['Cœur du Premier Arbre','Explosif','epique',[['Graine du Premier Arbre',1],['Éclat de rubis',1],['Essence arcanique',2],['Soufre',2]],'lancer',{de:'black',nb:2,etat:'Entravé',crans:1,zone:'tous'},'conso','Lancé : 2 dés noirs, tous les adversaires Entravés',1049,0,3,3,43],
+ ['Bâton-lanterne','Utilitaire','commun',[['Bois',1],['Champignon lanterne',1],['Résine de pin noir',1]],'lumiere',{m:3},'conso','Lumière portée pour une carte',10,15,1,1,42],
+ ['Encens de veille','Utilitaire','inhabituel',[['Gui d’argent',1],['Sauge des marais',2],['Cire',1]],'',{},'conso','Temple : la menace des Profondeurs recule d’un cran',38,50,1,1,66],
+ ['Cataplasme de monture','Utilitaire','commun',[['Herbe-à-plaie',2],['Algue des puits',1]],'',{},'conso','Écuries : soigne une monture',7,15,1,1,2],
+ ['Encre révélatrice','Utilitaire','rare',[['Fiole',1],['Eau',1],['Gui d’argent',1],['Champignon lanterne',2]],'revelesecrets',{},'conso','Révèle les passages secrets d’une pièce',39,150,2,2,27],
+ ['Engrais de mandragore','Utilitaire','rare',[['Racine de mandragore',1],['Os',2],['Algue des puits',2]],'',{},'conso','Jardin du Domaine : +2 composants communs par aventure, 3 aventures',36,150,2,2,11]];
+/* Ce qu'il faut en plus des plantes : nom, catégorie, rareté, prix, vendu à l'herboristerie, icône. Une pièce du même nom déjà
+   à l'armurerie sert telle quelle. Fer, Bois, Argent, Bronze viennent de la réserve du domaine ; citrine et rubis, de la bourse. */
+const BASES_HERBORISTERIE=[['Fiole','herbe','commun',3,true,49],['Eau','herbe','commun',1,true,39],['Huile de base','herbe','commun',3,true,19],['Graisse','herbe','commun',2,true,5],
+ ['Cire','herbe','commun',3,true,10],['Mèche','herbe','commun',2,true,66],['Charbon de bois','herbe','commun',1,true,23],['Soufre','herbe','commun',6,true,4],
+ ['Essence arcanique','herbe','rare',30,false,34],['Glande à venin','restes','inhabituel',8,false,0],['Os','restes','commun',2,false,0]];
+const GEMMES_HERBORISTERIE={'brisure de citrine':'brisure-citrine','eclat de rubis':'eclat-rubis'};
+const cleNomHerbo=n=>String(n||'').replace(/œ/g,'oe').replace(/Œ/g,'Oe').replace(/æ/g,'ae').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
+const idPotion=n=>'potion-'+cleNomHerbo(n).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+function semePotions(c){const P='planches/HERBORISTERIE.webp#',parNom=n=>c.items.find(o=>o&&!o.forge&&cleNomHerbo(o.name)===cleNomHerbo(n));
+ BASES_HERBORISTERIE.forEach(([name,category,rarete,price,herboriste,ico])=>{const o=parNom(name);if(o){if(herboriste&&o.herboriste!==false)o.herboriste=true;return}
+  c.items.push({id:(category==='restes'?'restes-':'herbe-')+cleNomHerbo(name).replace(/[^a-z0-9]+/g,'-'),name,category,price,qty:1,logo:ico?P+ico:'',rarete,magasin:false,...(herboriste?{herboriste:true}:{})})});
+ const materiaux=new Set(MATERIAUX.map(cleNomHerbo));
+ POTIONS_HERBORISTERIE.forEach(([name,sousType,rarete,ingr,effet,params,usage,notes,price,apprentissage,rang,labo,ico])=>{const id=idPotion(name);if(c.items.some(o=>o&&o.id===id))return;
+  const ingredients=[],recette=[],gemmes={};
+  ingr.forEach(([n,q])=>{const k=cleNomHerbo(n);if(GEMMES_HERBORISTERIE[k]){gemmes[GEMMES_HERBORISTERIE[k]]=q;return}
+   if(materiaux.has(k)){recette.push({cle:cleRessource(n),qte:q});return}const o=parNom(n);if(o)ingredients.push({id:o.id,n:q})});
+  const herbo={rang,labo,apprentissage,...(apprentissage?{}:{grimoire:true})};
+  /* Une pièce du même nom existe déjà (la Potion de soin d'origine) : elle passe dans les Potions avec sa recette, sous son
+     identifiant — les inventaires la gardent —, et garde ce qu'elle avait déjà : effet, prix, icône, texte. */
+  const deja=parNom(name);
+  if(deja){Object.assign(deja,{category:'potion',sousType,rarete:deja.rarete||rarete,ingredients,recette,gemmes,herbo});
+   if(!deja.logo)deja.logo=P+ico;if(!(Number(deja.price)>0))deja.price=price;if(!String(deja.notes||'').trim())deja.notes=notes;
+   if(!OBJETS_CODES[deja.effet]){deja.effet=effet;deja.params={...params};deja.usage=usage}return}
+  c.items.push({id,name,category:'potion',sousType,rarete,price,qty:1,logo:P+ico,effet,params:{...params},usage,notes,ingredients,recette,gemmes,herbo,magasin:false})});
+ // Le grimoire du Cœur du Premier Arbre : trouvé en aventure, il en apprend la recette.
+ if(!c.items.some(o=>o&&o.id==='grimoire-coeur-du-premier-arbre'))c.items.push({id:'grimoire-coeur-du-premier-arbre',name:'Grimoire : Cœur du Premier Arbre',category:'object',
+  rarete:'epique',price:0,qty:1,logo:P+21,effet:'grimoire',params:{recette:idPotion('Cœur du Premier Arbre')},usage:'conso',notes:'',magasin:false})}
 const idPlante=n=>'herbe-'+String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  // Les pièces forgées ne sont pas au catalogue : elles vivent chez les aventuriers, et s'y recomposent (syncForges).
@@ -474,6 +545,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.008 : les plantes de l'Herboristerie, une fois ; celles que le MJ a effacées ne reviennent pas.
  if(!c.semisForge.includes('herboristerie')&&Array.isArray(c.items)){PLANTES_HERBORISTERIE.forEach(([name,rarete,price,drops])=>{const id=idPlante(name);
   if(!c.items.some(o=>o&&o.id===id))c.items.push({id,name,category:'herbe',price,qty:1,logo:'',rarete,magasin:false,drops:{...drops}})});c.semisForge.push('herboristerie')}
+ // v1.013 : les potions de l'Herboristerie, leurs ingrédients et leurs recettes, une fois — après les plantes.
+ if(!c.semisForge.includes('potions-herboristerie')&&Array.isArray(c.items)&&c.semisForge.includes('herboristerie')){semePotions(c);c.semisForge.push('potions-herboristerie')}
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
    if(typeof t.effects!=='string'||!t.effects.trim()||/^Sur un critique, la cible est (Au sol|Entravée)\.?$/.test(t.effects.trim()))t.effects='Au contact, vous infligez Entravé et 1 dé rouge + dégâts.'});c.semisForge.push('agripper-action')}
  if(!c.semisForge.includes('agrippe-entrave')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='agrippe'&&typeof t.effects==='string'&&/Au sol\.?\s*$/.test(t.effects.trim())&&/critique/i.test(t.effects))t.effects=t.effects.trim().replace(/Au sol\.?$/,'Entravée.')});c.semisForge.push('agrippe-entrave')}
@@ -713,6 +786,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(o.category==='weapon'&&o.ranged===true&&o.lancer===true){o.hands=1;o.usesAmmo=false}else delete o.lancer;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
+  // v1.013 : une potion — son sous-type, sa recette d'herboristerie ; vendue à l'herboristerie, toute pièce cochée.
+  if(o.category==='potion'){o.sousType=SOUS_TYPES_POTION.includes(o.sousType)?o.sousType:'Potion';o.ingredients=normaliseIngredients(o.ingredients);o.gemmes=normaliseGemmesRecette(o.gemmes);
+   const h=normaliseHerbo(o.herbo);if(h)o.herbo=h;else delete o.herbo}else{delete o.sousType;delete o.ingredients;delete o.gemmes;delete o.herbo}
+  if(o.herboriste===true)o.herboriste=true;else delete o.herboriste;
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{const fm=normaliseFamillesMonstre(m.familles);if(fm.length)m.familles=fm;else delete m.familles;m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';if(!(Number.isInteger(m.defBonus)&&m.defBonus>0&&m.defBonus<=DEF_MAX))delete m.defBonus;const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
@@ -1939,7 +2016,7 @@ function dicePips(dice,etat,place){const out=document.createElement('span');out.
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
-function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='herbe'?'herbe':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
+function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='herbe'?'herbe':a.category==='potion'?'potion':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
@@ -2090,7 +2167,7 @@ function pastilleInsensible(p){let el=null,titre='';
  if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
  const w=document.createElement('span');w.className='effet-pastille barre';w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
 // Une pièce sans logo : le glyphe de sa colonne.
-function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':col==='herbe'?'🌿':'⚔';return g}
+function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':col==='herbe'?'🌿':col==='potion'?'⚗':'⚔';return g}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -2190,7 +2267,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Une arme, une armure, une munition, une ressource, un reste ou un objet de soin : sa valeur, « 7 » et la pièce d'or.
  // v1.011 : une plante d'Herboristerie, « Composant Alchimique », en italique, au-dessus de sa valeur.
  if(col==='herbe')ligne('Composant Alchimique','gear-composant');
- if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // v1.013 : une potion — son sous-type en italique, puis ce qu'elle fait.
+ if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligne(o.notes)}
+ if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='potion'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
  if(col==='object')ligne(o.notes);
@@ -2903,7 +2982,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
-const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésors']];
+const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -2931,8 +3010,8 @@ let masseAnnule=null;
 // Une pièce neuve, par colonne de l'Armurerie : sa catégorie, sa portée, ses mains.
 const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},ranged:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
  armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},cle:{category:'cle',name:'Nouvelle clé'},ressource:{category:'ressource',name:'Nouvelle ressource'},
- restes:{category:'restes',name:'Nouveaux restes'},herbe:{category:'herbe',name:'Nouvelle plante'},treasure:{category:'treasure',name:'Nouveau trésor'}};
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésor']];
+ restes:{category:'restes',name:'Nouveaux restes'},herbe:{category:'herbe',name:'Nouvelle plante'},potion:{category:'potion',name:'Nouvelle potion',sousType:'Potion',usage:'conso'},treasure:{category:'treasure',name:'Nouveau trésor'}};
+const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
@@ -5066,10 +5145,11 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
   groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
   groupe('Boucliers',filtre(o=>o.category==='armor'&&o.slot==='shield'),porte,gearPill,clic);
-  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='herbe'),porte,gearPill,clic);
+  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='herbe'&&o.category!=='potion'),porte,gearPill,clic);
   groupe('Ressources',filtre(o=>o.category==='ressource'),porte,gearPill,clic);
   groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);
   groupe('Herboristerie',filtre(o=>o.category==='herbe'),porte,gearPill,clic);
+  groupe('Potions',filtre(o=>o.category==='potion'),porte,gearPill,clic);
   groupe('Trésors',filtre(o=>o.category==='treasure'),porte,gearPill,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun objet de ce nom.':'L’armurerie est vide : crée un objet dans l’onglet Armurerie.';
@@ -7349,7 +7429,7 @@ function selLogos(label,key,value,sansElementaires,enTete){const familles=[...fa
    une ressource (peaux, os, écailles…), les Armes pour une arme ou une munition, les Armures pour
    une armure, puis Armes 06, qui en porte aussi. Les motifs se suivent dans l'ordre donné ; sous
    un même motif, les planches dans l'ordre de leurs noms. */
-const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i],herbe:[/herboristerie/i]};
+const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i],herbe:[/herboristerie/i],potion:[/herboristerie/i]};
 function planchesEnTete(o){const motifs=PLANCHES_EN_TETE[o&&o.category];if(!motifs)return [];const fichiers=planchesDuCatalogue().map(p=>p.fichier),vues=new Set();
  return motifs.flatMap(re=>{const l=fichiers.filter(f=>!vues.has(f)&&(re.test(nomPlanche(f))||re.test(f)))
   .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}));l.forEach(f=>vues.add(f));return l})}
@@ -7361,7 +7441,7 @@ function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
  groupes.push(['Logos',autres]);return groupes}
 function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches('artisanat'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
- const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
+ const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'||c==='potion'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
  return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
@@ -7427,7 +7507,7 @@ function logoTalent(t,cls){t=logoHerite(t);const propre=logoImage(t&&t.logo,LOGO
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],
- ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésor'],['misc','Divers']];
+ ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
@@ -7461,6 +7541,8 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.unique)a.unique=f.unique.checked;
  if(f.tanneur)a.tanneur=f.tanneur.checked;
  if($('recette-lignes'))a.recette=lireRecette();
+ if(f.herboriste)a.herboriste=f.herboriste.checked;
+ if(c==='potion'&&f.sousType)lisRecetteHerbo(a,f);
  for(const k of ['rendement1','rendement2'])if(f[k])a[k]=lisQte(f[k].value);
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
@@ -7479,6 +7561,8 @@ function dessineReglagesObjet(){const boite=$('objet-reglages');if(!boite)return
     ||(p.cle==='etat'&&contre!=='des')||(p.cle==='des'&&contre==='des'))
    .map(p=>p.type==='nombre'
     ?field(p.nom,'q_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
+    // v1.013 : la recette qu'un grimoire apprend, parmi les potions de l'armurerie.
+    :p.type==='recette'?sel(p.nom,'q_'+p.cle,vals[p.cle],[['','— choisir —'],...(catalog.items||[]).filter(o=>o&&o.category==='potion').map(o=>[o.id,o.name])])
     :sel(p.nom,'q_'+p.cle,vals[p.cle],p.options)).join('')+'</div>';
  // Changer « Insensible à » remonte le bon réglage sans quitter le formulaire.
  const choix=f.q_contre;if(choix)choix.onchange=()=>{itemDraft.params=lireReglagesObjet();dessineReglagesObjet()}}
@@ -7521,7 +7605,10 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'<label class="field-check"><input name="magasin" type="checkbox" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'
   +'<label class="field-check"><input name="unique" type="checkbox" '+(estUnique(a)?'checked':'')+'>Unique</label>'
   /* Le tanneur la vend, et la fabrique d'après sa recette, avec la réserve du domaine. */
-  +(a.category==='ressource'||a.category==='restes'?'':'<label class="field-check"><input name="tanneur" type="checkbox" '+(a.tanneur===true?'checked':'')+'>Tanneur — vendu et fabriqué à la tannerie</label>'
+  // v1.013 : vendu à l'herboristerie du domaine.
+  +'<label class="field-check"><input name="herboriste" type="checkbox" '+(a.herboriste===true?'checked':'')+'>Herboriste — vendu à l’herboristerie</label>'
+  +(a.category==='potion'?sectionRecetteHerbo(a):'')
+  +(a.category==='ressource'||a.category==='restes'||a.category==='potion'?'':'<label class="field-check"><input name="tanneur" type="checkbox" '+(a.tanneur===true?'checked':'')+'>Tanneur — vendu et fabriqué à la tannerie</label>'
    +'<div id="item-recette"'+(a.tanneur===true?'':' hidden')+'><p class="etiquette">Recette du tanneur, prise dans la réserve du domaine</p><div id="recette-lignes"></div>'
    +'<button type="button" id="recette-add" class="arbre-ajout">+ Ingrédient</button></div>')
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
@@ -7552,7 +7639,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  dessineBonusItem();
  ['ressource1','ressource2'].forEach(k=>{const s=$('item-form').elements[k];if(s)menuIcones(s,iconeRessource)});
  // La recette du tanneur : visible quand la coche l'est.
- dessineRecette();
+ dessineRecette();dessineIngredients();
  if($('item-form').elements.tanneur)$('item-form').elements.tanneur.onchange=e=>{$('item-recette').hidden=!e.target.checked};
  if($('recette-add'))$('recette-add').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);const prises=new Set(itemDraft.recette.map(r=>r.cle)),libre=listeRessources().find(([k])=>!prises.has(k));
   if(!libre)return;itemDraft.recette=[...itemDraft.recette,{cle:libre[0],qte:1}];dessineRecette()};
@@ -7592,6 +7679,37 @@ function dessineBonusItem(){const boite=$('item-bonus');if(!boite)return;boite.r
   const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+';
   l.append(plus,val,carac,comp,x);boite.append(l)});
  if(!boite.childElementCount){const v=document.createElement('p');v.className='muted';v.textContent='Aucun bonus : la pièce ne confère rien de plus que ses dés ou sa DEF.';boite.append(v)}}
+/* v1.013 — La recette d'herboristerie d'une potion : son sous-type ; le rang d'herboriste, le niveau de labo et le prix pour
+   l'apprendre — ou un grimoire ; puis ses ingrédients, chacun sur sa ligne : une pièce de l'armurerie, une ressource de la
+   réserve du domaine (« r: »), une gemme de la bourse (« g: »). */
+const GEMMES_RECETTE=[['brisure-citrine','Brisure de citrine'],['eclat-rubis','Éclat de rubis'],...TAILLES_GEMMES.flatMap(([t,nt])=>VARIETES_GEMMES.map(([v,nv])=>[t+'-'+v,nt+' de '+nv.toLowerCase()]))].filter(([k],i,l)=>l.findIndex(([x])=>x===k)===i);
+function lignesIngredients(a){return [...normaliseIngredients(a.ingredients).map(x=>({v:x.id,n:x.n})),...normaliseRecette(a.recette).map(r=>({v:'r:'+r.cle,n:r.qte})),
+ ...Object.entries(normaliseGemmesRecette(a.gemmes)).map(([k,n])=>({v:'g:'+k,n}))]}
+function sectionRecetteHerbo(a){const h=normaliseHerbo(a.herbo)||{rang:1,labo:1,apprentissage:0};
+ return '<h2 class="sous-titre">Recette d’herboristerie</h2><div class="edit-grid">'
+  +sel('Sous-type','sousType',SOUS_TYPES_POTION.includes(a.sousType)?a.sousType:'Potion',SOUS_TYPES_POTION.map(t=>[t,t]))
+  +sel('Rang requis','herboRang',String(h.rang),RANGS_HERBORISTE)
+  +sel('Labo requis','herboLabo',String(h.labo),[['1','Labo 1'],['2','Labo 2'],['3','Labo 3']])
+  +field('Apprentissage (or)','herboPrix',h.apprentissage,'number','min="0" max="999999"')
+  +'<label class="field-check"><input name="herboGrimoire" type="checkbox" '+(h.grimoire?'checked':'')+'>Grimoire — ne s’achète pas</label></div>'
+  +'<div id="herbo-ingredients" class="herbo-ingredients"></div><button type="button" id="herbo-ajout" class="arbre-ajout">+ Ingrédient</button>'}
+function optionsIngredient(v){const items=(catalog.items||[]).filter(o=>o&&!o.forge&&o.category!=='potion'&&o.id).sort((x,y)=>String(x.name).localeCompare(String(y.name),'fr'));
+ const grp=(t,l)=>l.length?'<optgroup label="'+esc(t)+'">'+l.map(([k,n])=>'<option value="'+esc(k)+'"'+(k===v?' selected':'')+'>'+esc(n)+'</option>').join('')+'</optgroup>':'';
+ return grp('Herboristerie',items.filter(o=>o.category==='herbe').map(o=>[o.id,o.name]))+grp('Restes',items.filter(o=>o.category==='restes').map(o=>[o.id,o.name]))
+  +grp('Réserve du domaine',listeRessources().map(([k,n])=>['r:'+k,n]))+grp('Gemmes de la bourse',GEMMES_RECETTE.map(([k,n])=>['g:'+k,n]))
+  +grp('Autres pièces',items.filter(o=>!['herbe','restes','ressource'].includes(o.category)).map(o=>[o.id,o.name]))}
+function dessineIngredients(){const boite=$('herbo-ingredients');if(!boite)return;boite.replaceChildren();
+ lignesIngredients(itemDraft).forEach((x,i)=>{const l=document.createElement('div');l.className='recette-ligne';
+  l.innerHTML='<input type="number" name="ingr_n_'+i+'" min="1" max="99" value="'+x.n+'" aria-label="Quantité"><span class="recette-fois">×</span><select name="ingr_v_'+i+'" aria-label="Ingrédient">'+optionsIngredient(x.v)+'</select><button type="button" aria-label="Retirer">✕</button>';
+  l.querySelector('button').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);const t=lignesIngredients(itemDraft);t.splice(i,1);poseIngredients(itemDraft,t);dessineIngredients()};boite.append(l)});
+ const plus=$('herbo-ajout');if(plus)plus.onclick=()=>{itemDraft=itemDepuisForm(itemDraft);const t=lignesIngredients(itemDraft);
+  const libre=(catalog.items||[]).find(o=>o&&o.category==='herbe'&&!t.some(x=>x.v===o.id));if(!libre)return;t.push({v:libre.id,n:1});poseIngredients(itemDraft,t);dessineIngredients()}}
+function poseIngredients(a,lignes){a.ingredients=normaliseIngredients(lignes.filter(x=>x.v&&!/^[rg]:/.test(x.v)).map(x=>({id:x.v,n:x.n})));
+ a.recette=normaliseRecette(lignes.filter(x=>x.v.startsWith('r:')).map(x=>({cle:x.v.slice(2),qte:x.n})));
+ const g={};lignes.filter(x=>x.v.startsWith('g:')).forEach(x=>{g[x.v.slice(2)]=(g[x.v.slice(2)]||0)+(Number(x.n)||1)});a.gemmes=normaliseGemmesRecette(g)}
+function lisRecetteHerbo(a,f){a.sousType=SOUS_TYPES_POTION.includes(f.sousType.value)?f.sousType.value:'Potion';
+ a.herbo=normaliseHerbo({rang:f.herboRang.value,labo:f.herboLabo.value,apprentissage:f.herboPrix.value,grimoire:f.herboGrimoire.checked});
+ if($('herbo-ingredients')){const l=[];for(let i=0;f['ingr_v_'+i];i++)l.push({v:f['ingr_v_'+i].value,n:Math.max(1,Math.min(99,Math.trunc(Number(f['ingr_n_'+i].value))||1))});poseIngredients(a,l)}}
 /* Les lignes de la recette : une quantité, une ressource (icône comprise), un ✕ pour la retirer.
    Elles se lisent avec le reste du formulaire. */
 function dessineRecette(){const boite=$('recette-lignes');if(!boite)return;boite.replaceChildren();

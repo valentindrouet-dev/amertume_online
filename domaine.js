@@ -506,7 +506,11 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  const fonc=document.createElement('select');fonc.className='dom-etat-choix dom-fonction-choix';fonc.setAttribute('aria-label','Fonction du bâtiment');
  FONCTIONS_BATIMENT.forEach(([k,n])=>fonc.add(new Option(n,k)));fonc.value=b.fonction||'';
  fonc.onchange=()=>{b.fonction=FONCTIONS_BATIMENT.some(([k])=>k===fonc.value)?fonc.value:'';renderDomaine();sauveDomaine()};
- tete.append(nom,et,etat,fonc,boutonConstruire(b),recul,avance);boite.append(tete);
+ // v1.013 : une Herboristerie a un laboratoire, de niveau 1 à 3 : les recettes en demandent un.
+ const labo=b.fonction==='herboristerie'?document.createElement('select'):null;
+ if(labo){labo.className='dom-etat-choix';labo.setAttribute('aria-label','Niveau du laboratoire');[1,2,3].forEach(n=>labo.add(new Option('Labo '+n,String(n))));labo.value=String(b.labo||1);
+  labo.onchange=()=>{b.labo=Math.max(1,Math.min(3,Number(labo.value)||1));renderDomaine();sauveDomaine()}}
+ tete.append(nom,et,etat,fonc,boutonConstruire(b),recul,avance);boite.append(tete);if(labo)fonc.after(labo);
  {const cartes=(typeof maps!=='undefined'?maps:[]).filter(m=>m&&m.batiment===b.id);
   if(cartes.length){const l=document.createElement('div');l.className='dom-cartes-bat';
    cartes.forEach(m=>{const x=document.createElement('button');x.type='button';x.textContent='⚔ '+(m.name||'Carte');x.title='Ouvrir cette carte de combat sur la table';
@@ -577,6 +581,7 @@ function blocFonction(b){if(!b.fonction)return null;const out=document.createEle
   p.textContent='Fermé : '+(batimentConstruit(b)?'le bâtiment est '+NOM_ETAT_BATIMENT(b.etat).toLowerCase()+'.':'le bâtiment n’est pas construit.');out.append(p);return out}
  if(b.fonction==='magasin')blocMagasin(out,b);
  if(b.fonction==='tannerie')blocTannerie(out,b);
+ if(b.fonction==='herboristerie')blocHerboristerie(out,b);
  return out}
 /* ---------- Le magasin ---------- */
 /* On y achète ce que l'armurerie met en vente, au prix de l'armurerie ; on y revend son
@@ -674,6 +679,70 @@ function blocTannerie(out,b){const client=enteteClient(out,b,'à la tannerie');c
  out.append(titre('Convertir en ressources, pour la réserve'));const gc=document.createElement('div');gc.className='dom-articles';
  convertibles.forEach(([o,n])=>{const r=rendementReste(o);gc.append(carteMagasin(o,n,null,true,'Convertir '+o.name+' en '+texteRessources(r),()=>convertirReste(client,o),'conversion',puceRessources(r)))});
  out.append(gc)}
+/* ---------- v1.013 — L'Herboristerie ----------
+   Construite et intacte, elle vend ses ingrédients (les pièces cochées « Herboriste »), enseigne ses recettes contre de l'or —
+   à qui a le rang d'herboriste qu'il faut (un talent « Herboriste Novice », « Compagnon » ou « Maître ») dans un laboratoire
+   du niveau voulu — et fabrique celles qu'on connaît. Les ingrédients se prennent dans le sac de l'aventurier, puis dans le
+   Coffre de Groupe ; les ressources dans la réserve du domaine, puis le coffre ; les gemmes dans la bourse. */
+const NOMS_RANGS_HERBO=['','Novice','Compagnon','Maître'];
+function rangHerboriste(a){let r=0;const l=typeof talentsAuPalier==='function'?talentsAuPalier(a,catalog.talents||[]):[];
+ l.forEach(t=>{const m=/herboriste\s+(novice|compagnon|ma[iî]tre)/i.exec(String(t&&t.name||''));if(m){const k=m[1][0].toLowerCase();r=Math.max(r,k==='n'?1:k==='c'?2:3)}});return r}
+const recettesDe=a=>Array.isArray(a&&a.recettes)?a.recettes:[];
+const potionsHerbo=()=>(catalog.items||[]).filter(o=>o&&o.category==='potion'&&o.herbo);
+function aLHerboristerie(a){const ici=a&&batimentDom(lieuDe(a));return !!a&&agitPour(a)&&!!ici&&ici.fonction==='herboristerie'&&fonctionActive(ici)}
+// Ce qui manque pour la fabriquer : [nom, il faut, il y a], pièce par pièce.
+function manqueHerbo(a,o){const c=coffreVue(),out=[],dansCoffre=id=>c.tabs.reduce((n,t)=>n+t.filter(x=>x===id).length,0);
+ normaliseIngredients(o.ingredients).forEach(({id,n})=>{const p=objetDe(id),a1=(a.inventaire||[]).filter(x=>x===id).length+dansCoffre(id);if(a1<n)out.push([p?p.name:id,n,a1])});
+ const r=reserveAvecCoffre();normaliseRecette(o.recette).forEach(({cle,qte})=>{const v=Number(r[cle])||0;if(v<qte)out.push([(ressourcesJeu().find(x=>x.cle===cle)||{}).nom||cle,qte,v])});
+ Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>{const v=Number((a.richesses||{})[k])||0;if(v<n)out.push([(phraseRichesses({[k]:1})[0]||k).replace(/^1 /,''),n,v])});
+ return out}
+// Sous une recette : ce qu'il faut, pièce par pièce ; ce qui manque, en rouge.
+function puceIngredients(o,manque){const w=document.createElement('span');w.className='dom-recette';const rouge=new Set(manque.map(([n])=>n));
+ const puce=(n,q)=>{const p=document.createElement('span');p.className='puce-res'+(rouge.has(n)?' manque':'');p.textContent=q+' '+n;p.title=q+' '+n;w.append(p)};
+ normaliseIngredients(o.ingredients).forEach(({id,n})=>{const p=objetDe(id);puce(p?p.name:id,n)});
+ normaliseRecette(o.recette).forEach(({cle,qte})=>puce((ressourcesJeu().find(x=>x.cle===cle)||{}).nom||cle,qte));
+ Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>puce((phraseRichesses({[k]:1})[0]||k).replace(/^1 /,''),n));return w}
+// Ce qui manque pour l'apprendre ou la fabriquer, côté rang et laboratoire : une phrase, ou rien.
+function refusHerbo(a,o,b){const h=o.herbo||{};if(rangHerboriste(a)<h.rang)return 'Il faut être Herboriste '+NOMS_RANGS_HERBO[h.rang]+'.';
+ if((b&&b.labo||1)<h.labo)return 'Il faut un laboratoire de niveau '+h.labo+'.';return ''}
+function blocHerboristerie(out,b){const client=enteteClient(out,b,'à l’herboristerie'),titre=titreFonction;
+ const vendus=(catalog.items||[]).filter(o=>o&&o.herboriste===true).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+ out.append(titre('Acheter'));
+ if(!vendus.length)texteFonction(out,mjDom()?'Rien à vendre : coche « Herboriste » sur des pièces de l’armurerie.':'L’herboriste n’a rien à vendre pour l’instant.');
+ else{const g=document.createElement('div');g.className='dom-articles';
+  vendus.forEach(o=>{const prix=prixAchat(o),ok=!!client&&orDe(client)>=prix;
+   g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à l’herboristerie pour acheter.':ok?'Acheter '+o.name+' pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.',()=>acheterHerbo(client,o),'achat',client?boutonCoffre(prix,()=>acheterHerbo(client,o,true)):null))});
+  out.append(g)}
+ const toutes=potionsHerbo().sort((x,y)=>x.herbo.rang-y.herbo.rang||x.herbo.labo-y.herbo.labo||x.name.localeCompare(y.name,'fr'));
+ const connues=client?toutes.filter(o=>recettesDe(client).includes(o.id)):[],aApprendre=toutes.filter(o=>!o.herbo.grimoire&&!(client&&recettesDe(client).includes(o.id)));
+ if(aApprendre.length){out.append(titre('Apprendre une recette'));const g=document.createElement('div');g.className='dom-articles';
+  aApprendre.forEach(o=>{const prix=o.herbo.apprentissage,refus=client?refusHerbo(client,o,b):'',ok=!!client&&!refus&&orDe(client)>=prix;
+   g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à l’herboristerie pour apprendre.':refus||(ok?'Apprendre la recette : '+o.name+', pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.'),
+    ()=>apprendreRecette(client,o,b),'achat',client&&!refus?boutonCoffre(prix,()=>apprendreRecette(client,o,b,true)):null))});
+  out.append(g)}
+ if(!client)return;
+ out.append(titre('Fabriquer'));
+ if(!connues.length){texteFonction(out,client.name+' ne connaît aucune recette.');return}
+ const g=document.createElement('div');g.className='dom-articles';
+ connues.forEach(o=>{const refus=refusHerbo(client,o,b),manque=manqueHerbo(client,o),ok=!refus&&!manque.length;
+  g.append(carteMagasin(o,1,null,ok,refus||(manque.length?'Il manque : '+manque.map(([n,q,v])=>(q-v)+' '+n).join(', ')+'.':'Fabriquer '+o.name),()=>fabriquerHerbo(client,o,b),'fabrique',puceIngredients(o,manque)))});
+ out.append(g)}
+function acheterHerbo(a,o,parCoffre){const prix=prixAchat(o);if(!aLHerboristerie(a)||o.herboriste!==true||(parCoffre?coffreVue().or:orDe(a))<prix)return;
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-prix,achat:o.id});else ajouteOr(a,-prix);ajouterInventaire(a,o);
+ log(nomNum(a)+' achète '+o.name+' à l’herboristerie'+(prix?' pour '+prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
+function apprendreRecette(a,o,b,parCoffre){const prix=o&&o.herbo?o.herbo.apprentissage:0;
+ if(!aLHerboristerie(a)||!o||!o.herbo||o.herbo.grimoire||recettesDe(a).includes(o.id)||refusHerbo(a,o,b)||(parCoffre?coffreVue().or:orDe(a))<prix)return;
+ if(parCoffre)versCoffre(a,{or:-prix});else ajouteOr(a,-prix);a.recettes=[...recettesDe(a),o.id];
+ log(nomNum(a)+' apprend la recette : '+o.name+(prix?', pour '+prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
+function fabriquerHerbo(a,o,b){if(!aLHerboristerie(a)||!o||!recettesDe(a).includes(o.id)||refusHerbo(a,o,b)||manqueHerbo(a,o).length)return;
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;
+ // Les pièces : le sac d'abord, puis le coffre de groupe, onglet par onglet.
+ normaliseIngredients(o.ingredients).forEach(({id,n})=>{const p=objetDe(id);let reste=n;
+  while(reste>0&&p&&(a.inventaire||[]).includes(id)){retirerInventaire(a,p);reste--}
+  coffreVue().tabs.forEach((t,tab)=>{if(reste<=0)return;const k=Math.min(reste,t.filter(x=>x===id).length);if(k){versCoffre(a,{item:id,tab,n:-k,fab:o.id});reste-=k}})});
+ prendRecette(a,o);
+ Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>{a.richesses={...(a.richesses||{})};a.richesses[k]=Math.max(0,(Number(a.richesses[k])||0)-n);if(!a.richesses[k])delete a.richesses[k]});
+ ajouterInventaire(a,o);log(nomNum(a)+' fabrique '+o.name+' à l’herboristerie.');apresMagasin()}
 // Sous une carte : les ressources en jeu, icône et quantité ; celles qui manquent, en rouge.
 function puceRessources(d,manque=[]){const w=document.createElement('span');w.className='dom-recette';
  Object.entries(d).forEach(([k,n])=>{const p=document.createElement('span');p.className='puce-res'+(manque.some(([m])=>m===k)?' manque':'');
