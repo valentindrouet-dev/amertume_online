@@ -3518,3 +3518,10 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .palier-ressource legend{padding:0 4px;font:700 12px system-ui;color:var(--muted)}
 .ligne-ressource{display:grid;grid-template-columns:1fr 84px auto;gap:6px;align-items:center}
 .palier-ressource>button{justify-self:start}
+/* v1.014 — Le terrain dangereux : la couleur de son type, dans l'éditeur et à la table. */
+.danger-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.danger-skin path.fond{fill:currentColor;fill-opacity:.3;stroke:none}
+.danger-skin path.bord{fill:none;stroke:currentColor;stroke-width:1.6;vector-effect:non-scaling-stroke}
+#dangers-carte{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
+#dangers-carte .danger-carte{fill:currentColor;fill-opacity:.28;fill-rule:evenodd;stroke:currentColor;stroke-width:1.5px;vector-effect:non-scaling-stroke}
+#danger-editor .coffre-cases{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0}#danger-editor .coffre-etats{display:flex;flex-wrap:wrap;gap:2px 14px;margin:6px 0}

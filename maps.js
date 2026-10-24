@@ -991,6 +991,12 @@ function renderImpraticables(){let svg=$('impraticables-mj');if(!svg){svg=docume
  svg.replaceChildren();const m=currentMap();if(!m||view!=='mj'||!impratVisible||(typeof oeilJoueur==='function'&&oeilJoueur()))return;
  impraticableDe(m).forEach(p=>{const el=document.createElementNS(nsSVG,'path');
   el.setAttribute('d',p.anneaux.map(r=>'M'+r.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z').join(''));el.setAttribute('class','imprat-mj');svg.append(el)})}
+/* v1.014 : le terrain dangereux, à la table : visible de tous, à la couleur de son type, sous les socles. */
+function renderDangers(){let svg=$('dangers-carte');if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.id='dangers-carte';svg.setAttribute('viewBox','0 0 100 100');
+  svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');$('fog').before(svg)}
+ svg.replaceChildren();const m=currentMap();if(!m)return;
+ dangersDe(m).forEach(t=>formesActives(m,t).forEach(p=>{const el=document.createElementNS(nsSVG,'path');el.setAttribute('d',p.anneaux.map(r=>'M'+r.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z').join(''));
+  el.setAttribute('class','danger-carte');el.style.color=t.couleur;svg.append(el)}))}
 /* v0.896 : le terrain difficile, à la table : visible de tous, en hachures ocre, sous les socles. */
 function renderDifficiles(){let svg=$('difficiles-carte');if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.id='difficiles-carte';svg.setAttribute('viewBox','0 0 100 100');
   svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');$('fog').before(svg)}
@@ -999,7 +1005,7 @@ function renderDifficiles(){let svg=$('difficiles-carte');if(!svg){svg=document.
  pat.setAttribute('width','1.2');pat.setAttribute('height','1.2');pat.setAttribute('patternTransform','rotate(45)');
  const ln=document.createElementNS(nsSVG,'line');ln.setAttribute('x1','0');ln.setAttribute('y1','0');ln.setAttribute('x2','0');ln.setAttribute('y2','1.2');ln.setAttribute('class','hachure');pat.append(ln);defs.append(pat);svg.append(defs);
  l.forEach(p=>{const el=document.createElementNS(nsSVG,'path');el.setAttribute('d',p.anneaux.map(r=>'M'+r.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z').join(''));el.setAttribute('class','diffi-carte');svg.append(el)})}
-function renderCoffres(){renderImpraticables();renderDifficiles();const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();
+function renderCoffres(){renderImpraticables();renderDifficiles();renderDangers();const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();
  /* Un coffre caché, pas encore trouvé, le MJ le voit toujours : un contour en pointillés, au-dessus du brouillard et du noir,
     qui couvraient jusqu'à le faire disparaître. */
  let caches=$('coffres-caches');if(!caches){caches=document.createElementNS(nsSVG,'svg');caches.id='coffres-caches';caches.setAttribute('viewBox','0 0 100 100');
@@ -1551,7 +1557,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});
+ (m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
@@ -1672,6 +1678,8 @@ mapsPage.innerHTML=
  +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
  +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
  +'<button data-tool="diffi">Difficile</button><button data-tool="diffilibre">Difficile libre</button><button data-tool="diffiligne">Ligne difficile</button><button data-tool="difficadre">Carré difficile</button><button data-tool="diffigomme">Gomme de difficile</button><span class="bar-sep"></span>'
+ +'<button data-tool="danger">Dangereux</button><button data-tool="dangerlibre">Dangereux libre</button><button data-tool="dangerligne">Ligne dangereuse</button><button data-tool="dangergomme">Gomme de dangereux</button>'
+ +'<select id="map-danger-type" aria-label="Type de terrain dangereux"></select><button id="map-danger-edit" type="button">✎ Type</button><span class="bar-sep"></span>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
@@ -1830,17 +1838,17 @@ $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 $('paysage-play').onclick=()=>{if(estPaysage(mapDraft))afficherPaysage(mapDraft.id)};
 $('paysage-new').onclick=()=>{newPaysage();renderMapList();renderCanvas();saveMaps()};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='courbe')courbe=null;if(mapTool!=='lasso')lasso=null;
- $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme';
+ $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme'&&mapTool!=='dangergomme';
  zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
- if(mapTool!=='ligne'&&mapTool!=='impratligne'&&mapTool!=='diffiligne')traitDepart=traitVise=null;
+ if(mapTool!=='ligne'&&mapTool!=='impratligne'&&mapTool!=='diffiligne'&&mapTool!=='dangerligne')traitDepart=traitVise=null;
  renderCanvas()});
 /* v0.971 : les outils rangés par familles. Une ligne de familles — Sélection, Blocage, Découpe, Obscurité, Impraticable,
    Difficile, Portes et fenêtres, Placement, Zones — puis, dessous, les outils de la famille ouverte. Annuler, Rétablir,
    l'Aimant et le zoom restent sur la première ligne. La famille ouverte se garde sur l'appareil. */
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
  ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
- ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
+ ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['danger','Dangereux',['danger','dangerlibre','dangerligne','dangergomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
  ['placement','Placement',['start','foe','pnj','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
 let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
@@ -1852,7 +1860,7 @@ let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outi
  FAMILLES_OUTILS.forEach(([k,nom,outils])=>{const b=document.createElement('button');b.type='button';b.className='famille-outil';b.dataset.famille=k;b.textContent=nom;
   b.onclick=()=>{familleOuverte=k;try{localStorage.setItem('amertume-famille-outils',familleOuverte)}catch(e){}majFamillesOutils()};tete.append(b);
   const r=document.createElement('div');r.className='outils-famille';r.dataset.famille=k;
-  outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foe'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'))});
+  outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foe'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'));if(t==='dangergomme')['map-danger-type','map-danger-edit'].forEach(id=>{if($(id))r.append($(id))})});
   corps.push(r)});
  const fin=document.createElement('span');fin.className='familles-fin';tete.append(fin);
  ['pinceau-taille','map-aimant','undo','redo','czoom-out','czoom-label','czoom-in','czoom-reset'].forEach(id=>{const x=$(id);if(x)tete.append(x)});
@@ -2032,12 +2040,14 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  {const imp=impraticableDe(m);if(imp.length)c.append(svgMatiere([imp.flatMap(p=>p.anneaux)],null,'imprat-skin'))}
  // Le terrain difficile, en hachures ocre.
  {const dif=difficileDe(m);if(dif.length)c.append(svgMatiere([dif.flatMap(p=>p.anneaux)],null,'diffi-skin'))}
+ // v1.014 : le terrain dangereux, chaque type à sa couleur.
+ dangersDe(m).forEach(t=>{if(!(t.formes||[]).length)return;const s=svgMatiere([t.formes.flatMap(p=>p.anneaux)],null,'danger-skin');s.style.color=t.couleur;c.append(s)});
  c.style.backgroundImage=m.image?'url("'+m.image+'")':'';c.classList.toggle('no-image',!m.image);
  m.doors.forEach((r,i)=>c.append(shapeEl('door',i,r)));
  m.coffres.forEach((r,i)=>c.append(shapeEl('coffre',i,r)));
  (m.pieges||[]).forEach((r,i)=>c.append(shapeEl('piege',i,r),...declencheursEl(i,r)));
  // L'aperçu du rectangle en cours — bloc ou découpe — tant que la main n'a pas lâché.
- if(cutRect){const el=shapeEl(cutRect.diffi?'diffi':cutRect.imprat?'imprat':cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect);if(cutRect.cadre)el.classList.add('cadre');c.append(el)}
+ if(cutRect){const el=shapeEl(cutRect.diffi||cutRect.danger?'diffi':cutRect.imprat?'imprat':cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect);if(cutRect.cadre)el.classList.add('cadre');c.append(el)}
  if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':lasso.mode==='blocagelibre'?' bloc':lasso.mode==='impratlibre'?' imprat':lasso.mode==='diffilibre'?' diffi':''));
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
   const forme=document.createElementNS(nsSVG,lasso.pts.length>2?'polygon':'polyline');
@@ -2232,6 +2242,7 @@ function pinceauTaille(){const sel=$('pinceau-taille');
 // Une touche : la capsule entre le pas d'avant et celui-ci — ou un rond, au premier appui.
 function coupPinceau(p){const m=mapDraft,r=pinceauTaille(),der=pinceauDernier||p;
  const forme=capsulePolygon(der,p,r,m.ratio);
+ if(mapTool==='dangergomme'){retireDanger(typeDangerCourant(false),forme);return}
  if(mapTool==='impratgomme')retireImpraticable(m,forme);else if(mapTool==='diffigomme')retireDifficile(m,forme);else if(mapTool==='gomme')retireMatiere(m,forme);else ajouteMatiere(m,forme)}
 let pinceauDernier=null;
 /* La découpe libre suit l'encre redressée : le tremblement de la main s'efface, les angles
@@ -2240,7 +2251,7 @@ function applyLasso(){const brut=lasso&&lasso.pts,mode=lasso&&lasso.mode;lasso=n
  if(!brut||brut.length<3){renderCanvas();return}
  pushUndo();const forme=encreDroite([brut])[0];
  // Le même contour fermé, selon l'outil : il creuse la matière, en pose, pose l'obscurité, ou l'efface.
- if(mode==='impratlibre')ajouteImpraticable(mapDraft,forme);else if(mode==='diffilibre')ajouteDifficile(mapDraft,forme);else if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);else retireMatiere(mapDraft,forme);
+ if(mode==='dangerlibre')ajouteDanger(typeDangerCourant(true),forme);else if(mode==='impratlibre')ajouteImpraticable(mapDraft,forme);else if(mode==='diffilibre')ajouteDifficile(mapDraft,forme);else if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);else retireMatiere(mapDraft,forme);
  mapSel=null;matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
  if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
@@ -2423,7 +2434,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
     le curseur — et Maj le redresse. */
  if(mapTool==='courbe'){e.preventDefault();
   if(!courbe)courbe={pts:[]};const der=courbe.pts[courbe.pts.length-1];if(!der||Math.hypot(der.x-p.x,der.y-p.y)>.05)courbe.pts.push({x:p.x,y:p.y});courbe.vise=p;dessineTraits();return}
- if(mapTool==='ligne'||mapTool==='impratligne'||mapTool==='diffiligne'){
+ if(mapTool==='ligne'||mapTool==='impratligne'||mapTool==='diffiligne'||mapTool==='dangerligne'){
   if(!traitDepart){const d=boutAimante(p,mapDraft.ratio)||p;
    traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
   const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio,e.shiftKey);
@@ -2431,7 +2442,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=auZoom(.5);
   // On ne choisit pas ce qu'on vient de tracer : la main est encore à l'ouvrage.
   if(pose){pushUndo();
-   (mapTool==='impratligne'?ajouteImpraticable:mapTool==='diffiligne'?ajouteDifficile:ajouteMatiere)(mapDraft,traitPolygon({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR},mapDraft.ratio))}
+   (mapTool==='dangerligne'?(m,f)=>ajouteDanger(typeDangerCourant(true),f):mapTool==='impratligne'?ajouteImpraticable:mapTool==='diffiligne'?ajouteDifficile:ajouteMatiere)(mapDraft,traitPolygon({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR},mapDraft.ratio))}
   /* Maj pose un point d'appui : le trait s'arrête là et le suivant en repart. C'est ainsi
      qu'on longe une salle entière sans relever la main. */
   if(pose&&e.shiftKey){traitDepart={x:fin.x,y:fin.y};traitVise={x:fin.x,y:fin.y}}
@@ -2441,7 +2452,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  /* Le pinceau : on appuie, on trace, on relâche. Chaque pas dépose ou gratte, et le pas
     vaut la moitié de la grosseur — assez serré pour que la trace soit continue, assez
     espacé pour ne pas empiler mille formes sur un geste. */
- if(mapTool==='pinceau'||mapTool==='gomme'||mapTool==='impratgomme'||mapTool==='diffigomme'){pushUndo();mapSel=null;
+ if(mapTool==='pinceau'||mapTool==='gomme'||mapTool==='impratgomme'||mapTool==='diffigomme'||mapTool==='dangergomme'){pushUndo();mapSel=null;
   pinceauDernier=null;coupPinceau(p);pinceauDernier={x:p.x,y:p.y};
   mapDrag={mode:'pinceau',from:p};$('map-canvas').setPointerCapture(e.pointerId);
   renderCanvas();e.preventDefault();return}
@@ -2449,7 +2460,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='obscurremplir'){pushUndo();const avant=obscuriteDe(mapDraft).length;remplitObscurite(mapDraft,[p.x,p.y]);
   if(obscuriteDe(mapDraft).length===avant&&!dansObscurite(mapDraft,[p.x,p.y]))undoStack.pop();
   mapSel=null;matiereChangee();e.preventDefault();return}
- if(mapTool==='lasso'||mapTool==='blocagelibre'||mapTool==='obscurlibre'||mapTool==='obscurgomme'||mapTool==='impratlibre'||mapTool==='diffilibre'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
+ if(mapTool==='lasso'||mapTool==='blocagelibre'||mapTool==='obscurlibre'||mapTool==='obscurgomme'||mapTool==='impratlibre'||mapTool==='diffilibre'||mapTool==='dangerlibre'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
   if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<auZoom(1.6)){applyLasso();return}
   lasso.pts.push([p.x,p.y]);mapSel=null;
@@ -2458,7 +2469,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:'cut',kind:'cut',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Le bloc se trace comme la découpe : un aperçu suit la main, l'union se fait au relâché.
  // Le carré de blocage, ou d'impraticable, se tire de même : seul son contour, de l'épaisseur d'une ligne, se pose.
- if(mapTool==='wall'||mapTool==='obscur'||mapTool==='imprat'||mapTool==='cadre'||mapTool==='impratcadre'||mapTool==='diffi'||mapTool==='difficadre'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:mapTool==='wall'||mapTool==='cadre',obscur:mapTool==='obscur',imprat:mapTool==='imprat'||mapTool==='impratcadre',diffi:mapTool==='diffi'||mapTool==='difficadre',cadre:mapTool==='cadre'||mapTool==='impratcadre'||mapTool==='difficadre'};mapSel=null;
+ if(mapTool==='wall'||mapTool==='obscur'||mapTool==='imprat'||mapTool==='cadre'||mapTool==='impratcadre'||mapTool==='diffi'||mapTool==='difficadre'||mapTool==='danger'){cutRect={x:p.x,y:p.y,w:0,h:0,danger:mapTool==='danger',bloc:mapTool==='wall'||mapTool==='cadre',obscur:mapTool==='obscur',imprat:mapTool==='imprat'||mapTool==='impratcadre',diffi:mapTool==='diffi'||mapTool==='difficadre',cadre:mapTool==='cadre'||mapTool==='impratcadre'||mapTool==='difficadre'};mapSel=null;
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  /* Un déclencheur se trace pour le piège dont la fiche l'a demandé : une zone comme un rectangle, un fil d'un bout à l'autre.
     Tracé, on repasse en Sélection. */
@@ -2554,6 +2565,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   if(gesteTrace(r)){pushUndo();const forme=rectPolygon(r);
    if(r.cadre){const formes=cadreFormes(r,mapDraft.ratio);if(r.imprat)ajouteImpraticable(mapDraft,formes);else if(r.diffi)ajouteDifficile(mapDraft,formes);else formes.forEach(f=>ajouteMatiere(mapDraft,f));mapSel=null}
    else if(r.imprat){ajouteImpraticable(mapDraft,forme);mapSel=null}
+   else if(r.danger){ajouteDanger(typeDangerCourant(true),forme);mapSel=null}
    else if(r.diffi){ajouteDifficile(mapDraft,forme);mapSel=null}
    else if(r.obscur){ajouteObscurite(mapDraft,forme);mapSel=null}
    else if(r.bloc){ajouteMatiere(mapDraft,forme);mapSel={kind:'matiere',i:matiereSous(mapDraft,[r.x+r.w/2,r.y+r.h/2])};
@@ -3261,12 +3273,13 @@ $('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target
    ses prochaines attaques (« enduit » : les états, le nombre d'attaques), et, pour toute la troupe, le répulsif des bêtes
    (« repulsif » : la carte). Le reste agit sur l'instant : relever un aventurier tombé, une couleur de dés choisie, une purge,
    un objet lancé, une recette apprise, les passages secrets de la pièce. */
-const CODES_POTION=['vision','mouvement','resurrection','fluxdes','purge','repulsif','enduit','lancer','lumiere','grimoire','revelesecrets'];
+const CODES_POTION=['boirelancer','vision','mouvement','resurrection','fluxdes','purge','repulsif','enduit','lancer','lumiere','grimoire','revelesecrets'];
 function finPotion(a,o,dit){const u=usageObjet(o);if(usageLimite(u))a.usages={...(a.usages||{}),[o.id]:u};if(usageConsomme(u))retirerInventaire(a,o);
  log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 const menuAuCentre=(titre,entrees)=>menuCarte(titre,entrees,innerWidth/2-90,innerHeight/2-60);
-const estBete=o=>!!o&&!o.hero&&((typeof normaliseFamillesMonstre==='function'&&normaliseFamillesMonstre(o.familles).includes('betes'))||/b[êe]te/i.test(String(o.family||'')));
+const estBete=o=>{if(!o||o.hero)return false;const t=o.template&&(catalog.monsters||[]).find(x=>x&&x.id===o.template);
+ return famillesDe(o).includes('betes')||/b[êe]te/i.test(String(o.family||(t&&t.family)||''))};
 const carteDuMoment=()=>String(currentMapId||'hors-carte');
 const repousse=a=>!!a&&a.hero===true&&!!a.repulsif&&a.repulsif===carteDuMoment()&&estBete(actors[selected]);
 // Ceux qui touchent la cible d'un objet lancé : ses alliés à son contact, sans mur entre eux.
@@ -3274,18 +3287,37 @@ function voisinsDuLancer(vise,a){const size=mapSize();if(!size.width)return [];c
  return actors.filter(o=>o&&o!==vise&&alive(o)&&!o.horsCarte&&hostiles(o,a)&&inContact(vise,o,size,tokenOf(vise),tokenOf(o))&&!wallsBetween(vise,o,murs))}
 function poseEtatPotion(x,etat,crans,a){let ok=false;for(let i=0;i<Math.max(1,crans|0);i++){const r=infligeEtat(x,etat);if(r===true)ok=true;else break}
  if(ok&&etat==='Charme')x.charmePar=a.id;if(ok&&typeof floatNumber==='function')floatNumber(x,'✦ '+etat+(crans>1?' '+crans:''),'perte');return ok}
+/* v1.014 — Ce qu'un objet lancé peut toucher : par famille — végétale, fongique —, par rang — un lieutenant est une créature
+   vivante organique, ni plante, ni champignon, ni méca, ni mort-vivant, qui n'est pas un boss. */
+const FAMILLES_VEGETALES=['plantes','plantesligneuses','plantescarnivores','sylvestres','gardienssylvestres','bosssylvestres'];
+// Ses familles : les siennes, sinon celles de son modèle au bestiaire — un adversaire posé ne les recopie pas.
+const famillesDe=o=>{if(!o||typeof normaliseFamillesMonstre!=='function')return [];const l=normaliseFamillesMonstre(o.familles);if(l.length)return l;
+ const t=o.template&&(catalog.monsters||[]).find(x=>x&&x.id===o.template);return t?normaliseFamillesMonstre(t.familles):[]};
+const estVegetal=o=>!!o&&!o.hero&&famillesDe(o).some(f=>FAMILLES_VEGETALES.includes(f));
+const estFongique=o=>!!o&&!o.hero&&(famillesDe(o).includes('fongiques')||(typeof porteTalent==='function'&&porteTalent(o,'sensiblefongicide')));
+const estBoss=o=>!!o&&o.type==='boss';
+const estLieutenant=o=>!!o&&!o.hero&&!estBoss(o)&&natureDe(o)==='vivant'&&!estVegetal(o)&&!estFongique(o);
+function cibleAdmise(x,p){const c=p.cibles||'';if(c==='vegetal'&&!estVegetal(x))return false;if(c==='fongique'&&!estFongique(x))return false;if(c==='vegetalfongique'&&!estVegetal(x)&&!estFongique(x))return false;
+ if(p.rangs==='sanslieutenants'&&(estLieutenant(x)||estBoss(x)))return false;if(p.rangs==='lieutenants'&&!estLieutenant(x))return false;return true}
 function lancerPotion(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la carte.',{local:true});return}
- viserCible('◈ '+o.name+' — clique l’adversaire visé',vise=>{const j=actors.indexOf(vise);
-  if(!vise||!alive(vise)||!hostiles(vise,a)||!ciblesAtteignables(a,[j],'distance').length){log(o.name+' : vise un adversaire en vue.',{local:true});return}
-  const crans=Math.max(1,p.crans|0),autres=p.zone==='tous'?actors.filter(x=>x&&alive(x)&&!x.horsCarte&&hostiles(x,a)&&(x.revealed||x.hero)):p.zone==='voisins'?[vise,...voisinsDuLancer(vise,a)]:[];
-  const poseAutres=()=>{const touches=p.etat?autres.filter(x=>(p.de&&p.zone==='voisins'&&x===vise)?false:alive(x)&&poseEtatPotion(x,p.etat,crans,a)):[];return touches};
+ const portee=p.portee==='contact'?'contact':'distance';
+ viserCible('◈ '+o.name+' — clique '+(p.detruit==='oui'?'l’adversaire ou le terrain visé':'l’adversaire visé'),(vise,q)=>{
+  // Le Sel de racine : un terrain dangereux coché « Sel », au contact du lanceur, est détruit.
+  if((!vise||!hostiles(vise,a))&&p.detruit==='oui'&&q){const z=formeDangerSous(q,t=>t.sel===true);
+   if(z&&formeAPortee(a,z.p)){detruitForme(z);finPotion(a,o,z.t.nom+' détruit');return}}
+  const j=actors.indexOf(vise);
+  if(!vise||!alive(vise)||!hostiles(vise,a)||!ciblesAtteignables(a,[j],portee).length){log(o.name+' : vise un adversaire '+(portee==='contact'?'au contact':'en vue')+'.',{local:true});return}
+  if(!cibleAdmise(vise,p)){log(o.name+' est sans effet sur '+nomNum(vise)+'.',{local:true});return}
+  const crans=Math.max(1,p.crans|0),autres=(p.zone==='tous'?actors.filter(x=>x&&alive(x)&&!x.horsCarte&&hostiles(x,a)&&(x.revealed||x.hero)):p.zone==='voisins'?[vise,...voisinsDuLancer(vise,a)]:[]).filter(x=>cibleAdmise(x,p));
+  const pose=x=>{const ok=poseEtatPotion(x,p.etat,crans,a);if(ok&&p.duree==='1'&&enCombat())x.sommeilBref={e:p.etat,r:round};return ok};
+  const poseAutres=()=>p.etat?autres.filter(x=>(p.de&&p.zone==='voisins'&&x===vise)?false:alive(x)&&pose(x)):[];
   if(p.de){if(enCombat()&&pointsRestants(a,'action')<1){log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return}
    finPotion(a,o,'lancé sur '+nomNum(vise));selected=actors.indexOf(a);
-   attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee:'distance',sansDegats:true,potion:true,
+   attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee,sansDegats:true,potion:true,
     etatsEnPlus:{etats:p.etat&&p.zone!=='tous'?Array(crans).fill(p.etat):[],touches:[]},
     apres:()=>{const t=poseAutres();if(t.length)log(o.name+' : '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', ')+'.',{ton:'talent'});render();scheduleSave()}});return}
   if(!payeAction(a))return;
-  const cibles=p.zone==='cible'?[vise]:autres,t=p.etat?cibles.filter(x=>poseEtatPotion(x,p.etat,crans,a)):[];
+  const cibles=p.zone==='cible'?[vise]:autres,t=p.etat?cibles.filter(pose):[];
   finPotion(a,o,'lancé sur '+nomNum(vise)+(t.length?', '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', '):', sans effet'))},o.name+' : geste annulé.')}
 function releverAvecPotion(a,o,h){if(estMort(h)){if(h.poussiere===true)return;h.vie=1}
  h.comaVie=false;h.states=[];h.cumuls={};h.bleed=0;if(typeof leveNecrose==='function')leveNecrose(h);if(typeof recalculerPV==='function')recalculerPV(h);h.hp=h.max;setState(h,'Coma',false);
@@ -3313,6 +3345,9 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
    if(!tombes.length){log('Aucun aventurier tombé à relever.',{local:true});return}
    menuAuCentre(o.name,tombes.map(h=>[nomNum(h),()=>releverAvecPotion(a,o,h)]));return}
   case 'lancer':lancerPotion(a,o,p);return;
+  // v1.014 : bu, il retire un état ; lancé, des dés contre une créature d'une famille.
+  case 'boirelancer':menuAuCentre(o.name,[['Boire',()=>{const avait=hasState(a,p.etat);setState(a,p.etat,false);if(a.cumuls)delete a.cumuls[p.etat];finPotion(a,o,avait?p.etat+' levée':'rien à lever')}],
+   ['Lancer',()=>lancerPotion(a,o,{de:p.de,nb:p.nb,etat:'',crans:1,zone:'cible',portee:'distance',cibles:p.cibles,rangs:'',duree:'',detruit:'non'})]]);return;
   case 'grimoire':{const r=objetDe(p.recette);if(!r){log(o.name+' : aucune recette.',{local:true});return}
    if((a.recettes||[]).includes(r.id)){log(nomNum(a)+' connaît déjà la recette : '+r.name+'.',{local:true});return}
    a.recettes=[...(a.recettes||[]),r.id];finPotion(a,o,'apprend la recette : '+r.name);return}
@@ -3330,3 +3365,64 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
 {const at=attack;attack=function(opts={}){const a=actors[selected],e=a&&a.enduit;if(!e||!(e.n>0)||!Array.isArray(e.etats)||!e.etats.length||(opts&&opts.potion))return at(opts);
  const ep=opts.etatsEnPlus||{etats:[],touches:[]},avant=ep.etats||[],ap=opts.apres;ep.etats=[...avant,...e.etats];
  return at({...opts,etatsEnPlus:ep,apres:r=>{ep.etats=avant;if(a.enduit){a.enduit.n--;if(!(a.enduit.n>0))delete a.enduit}if(ap)ap(r);else{render();scheduleSave()}}})}}
+
+/* ---------- v1.014 — Le terrain dangereux ----------
+   Dans l'éditeur, ses outils tracent dans le type choisi au menu ; « ✎ Type » ouvre sa fiche. À la table, il frappe un token
+   sensible quand un déplacement le traverse ou s'y arrête, puis en combat à chaque fin de tour passée dedans. Les Gants de
+   ronceur, portés, protègent des types cochés « Ronces » ; le Sel de racine détruit, au contact, la forme d'un type coché
+   « Sel » — pour toute la table, jusqu'à ce que la carte soit rechargée. */
+let dangerCourant=null;
+function typeDangerCourant(creer){const m=mapDraft;if(!m)return null;const l=dangersDe(m);let t=l.find(x=>x.id===dangerCourant)||l[0]||null;
+ if(!t&&creer){t=cleanDanger({id:crypto.randomUUID(),nom:'Terrain dangereux'});l.push(t)}if(t)dangerCourant=t.id;return t}
+function majTypesDanger(){const s=$('map-danger-type');if(!s||!mapDraft)return;const l=dangersDe(mapDraft),t=typeDangerCourant(false);
+ s.innerHTML=l.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nom)+'</option>').join('')+'<option value="__nouveau">+ Nouveau type…</option>';s.value=t?t.id:'__nouveau'}
+const dangerDialog=dialog('danger-editor','Terrain dangereux','<form id="danger-form"><div id="danger-fields"></div><div class="form-actions"><button type="button" id="danger-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+function openDanger(t){if(!t||view!=='mj')return;dangerDialog.querySelector('h2').textContent=t.nom;
+ $('danger-fields').innerHTML='<div class="edit-grid">'+field('Nom','nom',t.nom,'text','required maxlength="40"')
+  +'<label>Couleur<input type="color" name="couleur" value="'+esc(t.couleur)+'"></label>'
+  +field('Dégâts — 2, ou 1d6','degats',formuleDegats(t),'text','maxlength="6"')
+  +sel('Frappe','sensibles',t.sensibles,SENSIBLES_DANGER)+'</div>'
+  +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((t.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'
+  +'<div class="coffre-cases"><label class="field-check"><input type="checkbox" name="ronces"'+(t.ronces?' checked':'')+'>Ronces — les Gants de ronceur en protègent</label>'
+  +'<label class="field-check"><input type="checkbox" name="sel"'+(t.sel?' checked':'')+'>Sel — le Sel de racine le détruit</label></div>';
+ $('danger-form').onsubmit=e=>{e.preventDefault();const f=$('danger-form').elements;pushUndo();
+  t.nom=f.nom.value.trim().slice(0,40)||'Terrain dangereux';if(/^#[0-9a-fA-F]{6}$/.test(f.couleur.value))t.couleur=f.couleur.value;
+  {const d=lisFormuleDegats(f.degats.value);if(d){t.degats=d.degats;if(d.degatsDes)t.degatsDes=d.degatsDes;else delete t.degatsDes}}
+  t.sensibles=SENSIBLES_DANGER.some(([k])=>k===f.sensibles.value)?f.sensibles.value:'tous';
+  t.etats=[...dangerDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x));
+  if(f.ronces.checked)t.ronces=true;else delete t.ronces;if(f.sel.checked)t.sel=true;else delete t.sel;
+  dangerDialog.close();matiereChangee()};
+ $('danger-suppr').onclick=()=>{if(!confirm('Supprimer « '+t.nom+' » et tout son terrain ?'))return;pushUndo();const l=dangersDe(mapDraft),i=l.indexOf(t);if(i>=0)l.splice(i,1);
+  dangerCourant=null;dangerDialog.close();matiereChangee()};
+ dangerDialog.showModal()}
+if($('map-danger-type'))$('map-danger-type').onchange=e=>{if(!mapDraft)return;if(e.target.value==='__nouveau'){pushUndo();const t=cleanDanger({id:crypto.randomUUID(),nom:'Terrain dangereux'});
+  dangersDe(mapDraft).push(t);dangerCourant=t.id;majTypesDanger();openDanger(t);return}dangerCourant=e.target.value;majTypesDanger()};
+if($('map-danger-edit'))$('map-danger-edit').onclick=()=>{if(!mapDraft)return;const t=typeDangerCourant(true);majTypesDanger();if(t)openDanger(t)};
+{const rc=renderCanvas;renderCanvas=function(...x){const r=rc(...x);majTypesDanger();return r}}
+// La forme active sous un point de la carte, et son type.
+function formeDangerSous(q,garde){const m=currentMap();if(!m)return null;
+ for(const t of dangersDe(m)){if(garde&&!garde(t))continue;for(const p of formesActives(m,t)){const r=p.anneaux&&p.anneaux[0];if(r&&pointInPolygon([q.x,q.y],r))return {t,p}}}return null}
+const formeAPortee=(a,p)=>!!a&&!!p&&polyInReach(a,p.anneaux[0],mapSize(),tokenOf(a));
+function detruitForme(z){const m=currentMap();if(!m||!z)return;m.dangersDetruits=[...new Set([...(m.dangersDetruits||[]),cleFormeDanger(z.t,z.p)])];renderDangers();scheduleSave()}
+const porteGantsRonceur=h=>!!h&&(h.armures||[]).concat(h.weapons||[],[h.shieldId]).some(id=>{const it=(catalog.items||[]).find(x=>x&&x.id===id);return !!it&&/gants de ronceur/i.test(it.name)});
+const sensibleAuDanger=(o,t)=>!!o&&alive(o)&&!o.horsCarte&&!o.orbeStatique&&(t.sensibles==='tous'||(t.sensibles==='heros')===(o.hero===true))&&!(t.ronces&&porteGantsRonceur(o));
+function frappeDanger(o,t){const jet=tireDegats(t),parts=[];
+ if(jet.total>0){const {perdu:n,blinde}=encaisse(o,jet.total,null);parts.push((blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))+(jet.jets.length?' ('+formuleDegats(t)+' : '+jet.jets.join(' + ')+')':''))}
+ (t.etats||[]).forEach(e=>{if(alive(o)&&infligeEtat(o,e)===true)parts.push(e)});
+ if(!parts.length)return false;floatNumber(o,t.nom,'perte');log(t.nom+' : '+nomNum(o)+' — '+parts.join(', ')+'.',{ton:'degats'});return true}
+// Les formes d'un type, en pixels de carte.
+const formesPx=(m,t,size)=>formesActives(m,t).map(p=>p.anneaux[0].map(q=>[q[0]/100*size.width,q[1]/100*size.height]));
+function dangerAuPassage(o,chemin){const m=currentMap(),size=mapSize();if(!m||!size.width||!Array.isArray(chemin)||chemin.length<2||!dangersDe(m).length)return;
+ const pts=chemin.filter(Boolean).map(q=>[q.x/100*size.width,q.y/100*size.height]);let frappe=false;
+ dangersDe(m).forEach(t=>{if(!sensibleAuDanger(o,t))return;const polys=formesPx(m,t,size);if(!polys.length)return;
+  if(pts.some(c=>polys.some(l=>pointInPolygon(c,l)))||pts.slice(1).some((c,i)=>segmentHitsPolys(pts[i],c,polys)))frappe=frappeDanger(o,t)||frappe});
+ if(frappe){render();scheduleSave()}}
+{const pm=passeMurs;passeMurs=function(o,chemin,...x){const r=pm(o,chemin,...x);try{dangerAuPassage(o,chemin)}catch(e){}return r}}
+// La fin de chaque tour de combat : qui s'y tient encore est frappé ; puis les Sommeils d'un tour se lèvent.
+{const ts=tourSuivant;tourSuivant=function(...x){
+ try{const m=currentMap(),size=mapSize();if(enCombat()&&m&&size.width&&dangersDe(m).length){let f=false;
+  actors.forEach(o=>{dangersDe(m).forEach(t=>{if(!sensibleAuDanger(o,t))return;const c=[o.x/100*size.width,o.y/100*size.height];if(formesPx(m,t,size).some(l=>pointInPolygon(c,l)))f=frappeDanger(o,t)||f})});
+  if(f)scheduleSave()}}catch(e){}
+ const r=ts(...x);
+ try{actors.forEach(o=>{const b=o&&o.sommeilBref;if(!b)return;if(round>b.r||!enCombat()){setState(o,b.e,false);delete o.sommeilBref}});render()}catch(e){}
+ return r}}

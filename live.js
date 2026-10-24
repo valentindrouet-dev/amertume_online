@@ -57,6 +57,8 @@ CHAMPS_VIVANTS.push('ajuste');
 CHAMPS_VIVANTS.push('testsLieux');
 // v1.013 : les recettes d'herboristerie apprises, et ce que les potions laissent sur le buveur.
 CHAMPS_VIVANTS.push('recettes','pmPotion','visionPotion','lumierePotion','enduit','repulsif');
+// v1.014 : un Sommeil d'un tour, posé par la Berceuse concentrée.
+CHAMPS_VIVANTS.push('sommeilBref');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
@@ -162,6 +164,8 @@ function etatVivant(){const out={actors:{}};
   // Puis les lumières de la carte : 2 prise, 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
   ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol),
   // Enfin les pièges, chacun par son identifiant : 1 révélé, 2 déclenché, 4 désamorcé, 8 détection manquée.
+  // v1.014 : les formes de terrain dangereux détruites (le Sel de racine), chacune par sa clé.
+  ...(m.dangersDetruits||[]).map(k=>({dg:k})),
   ...(m.pieges||[]).map(p=>({t:p.id,e:drapeauxPiege(p)}))]:[];
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
@@ -413,6 +417,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   const m=typeof currentMap==='function'?currentMap():null;
   if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{const v=d.doors[i];if(typeof v==='boolean'){p.open=v;delete p.decouvert;delete p.crochetee}else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}
     else if(Number.isInteger(v)&&v>=4&&v<=7){p.open=!!(v&1);if(v&2)p.decouvert=true;else delete p.decouvert;p.crochetee=true}});
+   {const dg=d.doors.filter(v=>v&&typeof v==='object'&&typeof v.dg==='string').map(v=>v.dg.slice(0,80));if(dg.length)m.dangersDetruits=dg;else delete m.dangersDetruits}
    const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
     if(typeof v==='boolean'){montreObjet(o,v);delete o.pris}else if(v===0||v===1||v===2){montreObjet(o,v>=1);if(v===2)o.pris=true;else delete o.pris}});
    const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;

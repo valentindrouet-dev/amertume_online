@@ -1810,7 +1810,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
 /* Les effets d'équipement : une banque déclarée comme celle des talents — une clé, des
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
- assert.equal(Object.keys(codes).sort().join(),'armure,enduit,etat,fluxdes,grimoire,invulnerabilite,lancer,lumiere,mouvement,purge,repulsif,resurrection,revelesecrets,soin,vision');
+ assert.equal(Object.keys(codes).sort().join(),'armure,boirelancer,enduit,etat,fluxdes,grimoire,invulnerabilite,lancer,lumiere,mouvement,purge,repulsif,resurrection,revelesecrets,soin,vision');
  assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso']));
  assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
@@ -1860,7 +1860,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
    amulette, des bottes. Une cape et une armure se portent ensemble ; deux armures, jamais. */
 assert.equal(C.MAINS_MAX,2);
 assert.equal(JSON.stringify(C.EMPLACEMENTS),JSON.stringify([['torse','Torse',1],['dos','Dos',1],['tete','Tête',1],
- ['anneau','Anneaux',3],['amulette','Amulette',1],['bottes','Bottes',1]]));
+ ['anneau','Anneaux',3],['amulette','Amulette',1],['bottes','Bottes',1],['mains','Mains',1]]));
 assert.equal(C.placesEmplacement('anneau'),3);assert.equal(C.placesEmplacement('torse'),1);
 assert.equal(C.placesEmplacement('nulle part'),0);
 assert.equal(C.NOM_EMPLACEMENT('shield'),'Bouclier');assert.equal(C.NOM_EMPLACEMENT('bottes'),'Bottes');
@@ -3084,7 +3084,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    l'écu de DEF à la taille des dés. 99 exemplaires au plus d'une pièce ; chaque tir consomme sa munition. */
  {const ctxI={};vm.createContext(ctxI);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('function retirerInventaire('))+';this.ajouterInventaire=ajouterInventaire;',ctxI);
   const a={inventaire:Array(98).fill('f')};assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),true);assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),false);assert.equal(a.inventaire.length,99,'99 au plus');}
- assert.ok(src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}")
+ assert.ok(src.includes(" if(col==='object')ligneRiche(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}")
   &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix,achat:o.id});else ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
@@ -3092,7 +3092,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{'),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
  /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
    La Vie et les PV sous leur maximum, légèrement rouges. */
- assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")&&src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
+ assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")&&src.includes(" if(col==='object')ligneRiche(o.notes);")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
   &&page.includes("const vieEntamee=a=>(Number(a&&a.vie)||0)<(Number(a&&(a.vieMax??a.vie))||0);")&&page.includes("tuiles[0].classList.toggle('sous-max',(Number(a.hp)||0)<(Number(a.max)||0));")
   &&feuille.includes('.stat-row.en-icones .stat-tile.avec-icone.sous-max strong{color:#ffa69a}'),'bulle d’objet sans texte automatique, Vie et PV entamés en rouge');
  /* v0.481 — Une partie enregistrée qui ne se pose pas n'est jamais écrasée : l'écriture reste bloquée. */

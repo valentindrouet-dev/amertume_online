@@ -91,7 +91,7 @@ function equippedRanged(actor,items){const worn=gearOf(actor&&actor.weapons,item
    Une cape et une armure se portent donc ensemble ; deux armures, jamais. */
 const MAINS_MAX=2;
 const EMPLACEMENTS=[['torse','Torse',1],['dos','Dos',1],['tete','Tête',1],
- ['anneau','Anneaux',3],['amulette','Amulette',1],['bottes','Bottes',1]];
+ ['anneau','Anneaux',3],['amulette','Amulette',1],['bottes','Bottes',1],['mains','Mains',1]];
 const NOM_EMPLACEMENT=s=>s==='shield'?'Bouclier':(EMPLACEMENTS.find(([k])=>k===s)||[])[1]||'';
 function placesEmplacement(s){const e=EMPLACEMENTS.find(([k])=>k===s);return e?e[2]:0}
 /* Où se porte une pièce : à l'emplacement qu'elle nomme, au torse à défaut — c'est là que
@@ -534,7 +534,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
  // Le lieu qui la rassemble avec d'autres cartes — étages, grands lieux —, s'il en a un.
  return {name:texte(m&&m.name,80)||'Carte',...(m&&typeof m.lieu==='string'&&m.lieu.trim()?{lieu:texte(m.lieu.trim(),60)}:{}),...(m&&typeof m.batiment==='string'&&m.batiment?{batiment:texte(m.batiment,60)}:{}),ratio,
   fitted:!(m&&m.fitted===false),image:img,
-  matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),...(m&&Array.isArray(m.impraticable)&&m.impraticable.length?{impraticable:cleanMatiere(m.impraticable).map(p=>({anneaux:p.anneaux}))}:{}),...(m&&Array.isArray(m.difficile)&&m.difficile.length?{difficile:cleanMatiere(m.difficile).map(p=>({anneaux:p.anneaux}))}:{}),lumieres:(Array.isArray(m&&m.lumieres)?m.lumieres:[]).slice(0,100).map(cleanLumiere),doors:cleanRects(m&&m.doors,true),
+  matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),...(m&&Array.isArray(m.impraticable)&&m.impraticable.length?{impraticable:cleanMatiere(m.impraticable).map(p=>({anneaux:p.anneaux}))}:{}),...(m&&Array.isArray(m.dangers)&&m.dangers.length?{dangers:m.dangers.slice(0,24).map(cleanDanger).filter(Boolean)}:{}),...(m&&Array.isArray(m.difficile)&&m.difficile.length?{difficile:cleanMatiere(m.difficile).map(p=>({anneaux:p.anneaux}))}:{}),lumieres:(Array.isArray(m&&m.lumieres)?m.lumieres:[]).slice(0,100).map(cleanLumiere),doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
    hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),...(f&&typeof f.quete==='string'&&f.quete?{quete:texte(f.quete,60)}:{}),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
@@ -656,6 +656,26 @@ function ajouteDifficile(map,formes){const avant=difficileDe(map);
  if(!morceaux.length)return avant;
  map.difficile=depuisClip(Clipper.union(...(avant.length?[versClip(avant)]:[]),...morceaux)).map(p=>({anneaux:p.anneaux}));
  return map.difficile}
+/* v1.014 — Le terrain dangereux : des types (Ronces, Haie vivante…), chacun sa couleur, ses dégâts — fixes ou en d6, sans
+   DEF, comme un piège —, ses états, qui il frappe (aventuriers, adversaires, tous) et ses formes, qui se tracent et se gomment
+   comme le terrain difficile. Coché « ronces », les Gants de ronceur en protègent ; coché « sel », le Sel de racine en détruit
+   la forme qu'il touche. Une forme détruite en jeu se retient sur la carte (« dangersDetruits ») jusqu'à son rechargement. */
+const SENSIBLES_DANGER=[['heros','Aventuriers'],['adversaires','Adversaires'],['tous','Tous']];
+function cleanDanger(d){if(!d||typeof d!=='object')return null;const des=cleanDesDegats(d.degatsDes);
+ return {id:texte(d.id,40)||('danger-'+Math.random().toString(36).slice(2,10)),nom:texte(d.nom,40)||'Terrain dangereux',
+  couleur:/^#[0-9a-fA-F]{6}$/.test(String(d.couleur||''))?d.couleur:'#9c3b2b',degats:Math.max(0,Math.min(99,Math.trunc(Number(d.degats))||0)),...(des?{degatsDes:des}:{}),
+  etats:(Array.isArray(d.etats)?d.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,6),sensibles:SENSIBLES_DANGER.some(([k])=>k===d.sensibles)?d.sensibles:'tous',
+  ...(d.ronces===true?{ronces:true}:{}),...(d.sel===true?{sel:true}:{}),formes:cleanMatiere(d.formes).map(p=>({anneaux:p.anneaux}))}}
+function dangersDe(map){if(!map)return [];if(!Array.isArray(map.dangers))map.dangers=[];return map.dangers}
+function ajouteDanger(type,formes){if(!type)return [];const avant=Array.isArray(type.formes)?type.formes:[];
+ const morceaux=(Array.isArray(formes&&formes[0]&&formes[0][0])?formes:[formes]).filter(f=>f&&f.length>=3).map(f=>[[anneauFerme(f)]]);
+ if(!morceaux.length)return avant;type.formes=depuisClip(Clipper.union(...(avant.length?[versClip(avant)]:[]),...morceaux)).map(p=>({anneaux:p.anneaux}));return type.formes}
+function retireDanger(type,forme){if(!type)return [];const avant=Array.isArray(type.formes)?type.formes:[];if(!forme||forme.length<3||!avant.length)return avant;
+ type.formes=depuisClip(Clipper.difference(versClip(avant),[[anneauFerme(forme)]])).map(p=>({anneaux:p.anneaux}));return type.formes}
+// Une forme se nomme par son type et le coin de sa boîte : c'est ce qui voyage quand le Sel la détruit.
+function cleFormeDanger(type,p){const r=(p&&p.anneaux&&p.anneaux[0])||[];let x=Infinity,y=Infinity;r.forEach(q=>{x=Math.min(x,q[0]);y=Math.min(y,q[1])});
+ return type.id+'@'+(Number.isFinite(x)?x.toFixed(2):'0')+','+(Number.isFinite(y)?y.toFixed(2):'0')}
+function formesActives(map,type){const det=new Set(Array.isArray(map&&map.dangersDetruits)?map.dangersDetruits:[]);return (type.formes||[]).filter(p=>!det.has(cleFormeDanger(type,p)))}
 function retireDifficile(map,forme){const avant=difficileDe(map);
  if(!forme||forme.length<3||!avant.length)return avant;
  map.difficile=depuisClip(Clipper.difference(versClip(avant),[[anneauFerme(forme)]])).map(p=>({anneaux:p.anneaux}));
@@ -2331,10 +2351,23 @@ const OBJETS_CODES={
  lancer:{cle:'lancer',nom:'Objet lancé',aide:'Se lance sur un adversaire : des dés, un état, sur la cible, ses voisins ou tous les adversaires.',
   params:[{cle:'de',nom:'Dés',type:'choix',defaut:'',options:[['','— aucun —'],...DES_ORBE]},{cle:'nb',nom:'Nombre de dés',type:'nombre',defaut:2,min:1,max:9},
    {cle:'etat',nom:'État',type:'choix',defaut:'',options:[['','—'],...ETATS_JEU.map(e=>[e,e])]},{cle:'crans',nom:'Crans de l’état',type:'nombre',defaut:1,min:1,max:9},
-   {cle:'zone',nom:'L’état touche',type:'choix',defaut:'cible',options:[['cible','la cible'],['voisins','la cible et ses voisins'],['tous','tous les adversaires']]}],
+   {cle:'zone',nom:'L’état touche',type:'choix',defaut:'cible',options:[['cible','la cible'],['voisins','la cible et ses voisins'],['tous','tous les adversaires']]},
+   // v1.014 : la portée, les créatures qu'il touche — par famille, par rang —, la durée de l'état, et le terrain qu'il détruit.
+   {cle:'portee',nom:'Portée',type:'choix',defaut:'distance',options:[['distance','à distance'],['contact','au contact']]},
+   {cle:'cibles',nom:'Créatures touchées',type:'choix',defaut:'',options:[['','toutes'],['vegetal','végétales'],['fongique','fongiques'],['vegetalfongique','végétales ou fongiques']]},
+   {cle:'rangs',nom:'Rangs',type:'choix',defaut:'',options:[['','tous'],['sanslieutenants','ni lieutenant ni boss'],['lieutenants','lieutenants seulement']]},
+   {cle:'duree',nom:'Durée de l’état',type:'choix',defaut:'',options:[['','ordinaire'],['1','1 tour']]},
+   {cle:'detruit',nom:'Détruit le terrain dangereux',type:'choix',defaut:'non',options:[['non','Non'],['oui','Oui, celui coché « Sel »']]}],
   phrase(p){const de=p&&p.de?(DES_ORBE.find(([k])=>k===p.de)||[])[1]:'',nb=Math.max(1,(p&&p.nb)|0),e=p&&p.etat||'',c=Math.max(1,(p&&p.crans)|0),z=p&&p.zone||'cible';
    const ou=z==='tous'?'tous les adversaires':z==='voisins'?'la cible et ses voisins':'la cible';
    return 'Lancé'+(de?' : <b>'+nb+' dé'+(nb>1?'s':'')+' '+de+(nb>1?'s':'')+'</b>':'')+(e?(de?', ':' : ')+'<b>'+e+(c>1?' '+c:'')+'</b> sur '+ou:'')+'.'}},
+ /* v1.014 — Bu ou lancé : bu, il retire un état ; lancé, des dés contre les créatures d'une famille. */
+ boirelancer:{cle:'boirelancer',nom:'Bu ou lancé',aide:'Bu, il retire un état au buveur ; lancé, des dés contre une créature d’une famille.',
+  params:[{cle:'etat',nom:'Bu : état retiré',type:'choix',defaut:'Corruption',options:ETATS_JEU.map(e=>[e,e])},
+   {cle:'de',nom:'Lancé : dés',type:'choix',defaut:'white',options:DES_ORBE},{cle:'nb',nom:'Nombre de dés',type:'nombre',defaut:2,min:1,max:9},
+   {cle:'cibles',nom:'Contre',type:'choix',defaut:'fongique',options:[['','toute créature'],['vegetal','une créature végétale'],['fongique','une créature fongique'],['vegetalfongique','une créature végétale ou fongique']]}],
+  phrase(p){const de=(DES_ORBE.find(([k])=>k===(p&&p.de))||DES_ORBE[0])[1],nb=Math.max(1,(p&&p.nb)|0),c={vegetal:'une créature végétale',fongique:'une créature fongique',vegetalfongique:'une créature végétale ou fongique'}[p&&p.cibles]||'une créature';
+   return 'Bu : retire toute la <b>'+((p&&p.etat)||'Corruption')+'</b>. Lancé : <b>'+nb+' dé'+(nb>1?'s':'')+' '+de+(nb>1?'s':'')+'</b> contre '+c+'.'}},
  lumiere:{cle:'lumiere',nom:'Lumière portée',aide:'Jusqu’à la fin de la carte, le porteur éclaire autour de lui.',
   params:[{cle:'m',nom:'Portée (m)',type:'nombre',defaut:3,min:1,max:40}],
   phrase(p){return 'Jusqu’à la fin de la carte, le porteur <b>éclaire</b> à <b>'+Math.max(1,(p&&p.m)|0)+' m</b>.'}},
@@ -3352,7 +3385,7 @@ function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
    de la réserve (« recette »), les gemmes de la bourse (« gemmes ») ; puis le rang d'herboriste et le niveau de laboratoire
    qu'elles demandent, et leur prix d'apprentissage — un grimoire, s'il ne s'achète pas. */
 const RANGS_HERBORISTE=[['1','Novice'],['2','Compagnon'],['3','Maître']];
-const SOUS_TYPES_POTION=['Potion','Élixir','Onguent','Enduit d’arme','Poison','Gaz','Explosif','Utilitaire'];
+const SOUS_TYPES_POTION=['Potion','Élixir','Onguent','Enduit d’arme','Poison','Gaz','Explosif','Lancer','Utilitaire','Équipement'];
 function normaliseIngredients(l){const vus=new Map();(Array.isArray(l)?l:[]).forEach(x=>{if(!x||typeof x.id!=='string'||!x.id)return;
  const n=Math.max(1,Math.min(99,Math.trunc(Number(x.n))||1));vus.set(x.id.slice(0,100),(vus.get(x.id.slice(0,100))||0)+n)});
  return [...vus].slice(0,12).map(([id,n])=>({id,n}))}
@@ -3360,7 +3393,9 @@ function normaliseGemmesRecette(g){const out={};if(!g||typeof g!=='object'||Arra
  Object.entries(g).forEach(([k,v])=>{const n=Math.max(0,Math.min(99,Math.trunc(Number(v))||0));if(n&&/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k))out[k]=n});return out}
 function normaliseHerbo(h){if(!h||typeof h!=='object')return null;
  return {rang:Math.max(1,Math.min(3,Math.trunc(Number(h.rang))||1)),labo:Math.max(1,Math.min(3,Math.trunc(Number(h.labo))||1)),
-  apprentissage:Math.max(0,Math.min(999999,Math.trunc(Number(h.apprentissage))||0)),...(h.grimoire===true?{grimoire:true}:{})}}
+  apprentissage:Math.max(0,Math.min(999999,Math.trunc(Number(h.apprentissage))||0)),...(h.grimoire===true?{grimoire:true}:{}),
+  // v1.014 : combien la recette en donne, et si elle se fabrique à la Tannerie plutôt qu'à l'herboristerie.
+  ...(Math.trunc(Number(h.quantite))>1?{quantite:Math.min(20,Math.trunc(Number(h.quantite)))}:{}),...(h.tannerie===true?{tannerie:true}:{})}}
 /* ---------- Les quêtes ----------
    Données au domaine, dans un bâtiment (« lieu », son identifiant) ou pour tout le domaine (lieu vide). Le MJ les écrit et dit
    leur issue ; les joueurs les prennent, par leurs aventuriers (« quetesPrises »), et les lisent au journal. Cachée, une quête
@@ -3609,7 +3644,7 @@ const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignem
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,CARACS_AFFIXE,CARACS_POINTS,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,FORGE_TYPE_ADV,FORGE_MAX_TYPE_ADV,plafondForgeAdv,forgeAdvEffectif,clesAffixes,repetable,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
- ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,FAMILLES_AFFIXE,CASCADE_AFFIXE,familleAffixe,EFFETS_AFFIXE,NOMS_DES,rareteForge,normaliseAffixe,normaliseAffixes,normaliseReglageForge,normaliseForgeAdv,normaliseForges,phraseAffixe,groupeAffixe,affixeVaSur,tireAffixes,tireNombreAffixes,nomForge,objetForge,affixesDe,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,RANGS_HERBORISTE,SOUS_TYPES_POTION,normaliseIngredients,normaliseGemmesRecette,normaliseHerbo,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,FAMILLES_AFFIXE,CASCADE_AFFIXE,familleAffixe,EFFETS_AFFIXE,NOMS_DES,rareteForge,normaliseAffixe,normaliseAffixes,normaliseReglageForge,normaliseForgeAdv,normaliseForges,phraseAffixe,groupeAffixe,affixeVaSur,tireAffixes,tireNombreAffixes,nomForge,objetForge,affixesDe,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,SENSIBLES_DANGER,cleanDanger,dangersDe,ajouteDanger,retireDanger,cleFormeDanger,formesActives,RANGS_HERBORISTE,SOUS_TYPES_POTION,normaliseIngredients,normaliseGemmesRecette,normaliseHerbo,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,COFFRE_ONGLETS_MAX,COFFRE_ONGLETS_BASE,COFFRE_PLACES,PRIX_ONGLETS,normaliseCoffreGroupe,normaliseOpsCoffre,placesOnglet,appliqueOpCoffre,jugeOpCoffre,doorBlocksVue,LIMITES_TALENT,limiteTalent,texteLimite,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,difficileDe,ajouteDifficile,retireDifficile,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,placeLibreDeCeCote,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,usageConsomme,usageHorsCombat,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ESPECES,especeDe,bonusEspece,bonusCreation,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

@@ -316,6 +316,32 @@ const BASES_HERBORISTERIE=[['Fiole','herbe','commun',3,true,49],['Eau','herbe','
  ['Cire','herbe','commun',3,true,10],['Mèche','herbe','commun',2,true,66],['Charbon de bois','herbe','commun',1,true,23],['Soufre','herbe','commun',6,true,4],
  ['Essence arcanique','herbe','rare',30,false,34],['Glande à venin','restes','inhabituel',8,false,0],['Os','restes','commun',2,false,0]];
 const GEMMES_HERBORISTERIE={'brisure de citrine':'brisure-citrine','eclat de rubis':'eclat-rubis'};
+/* v1.014 — Les recettes du roncier : six pièces de plus, chacune dans sa catégorie. « q » : combien la recette en donne ;
+   « tannerie » : apprise à l'herboristerie, fabriquée à la Tannerie. Une pièce du même nom déjà à l'armurerie (le Fongicide
+   amer, les Gants de ronceur) reçoit sa recette sans rien perdre du reste. */
+const RECETTES_RONCIER=[
+ {name:'Sel de racine',category:'potion',sousType:'Lancer',rarete:'commun',ingr:[['Racine amère',3],['Charbon de bois',1],['Eau',1]],q:2,effet:'lancer',
+  params:{de:'red',nb:2,etat:'',crans:1,zone:'cible',portee:'contact',cibles:'vegetal',rangs:'',duree:'',detruit:'oui'},usage:'conso',notes:'Jeté au contact : 2 dés rouges contre une créature végétale, ou détruit une Haie vivante',price:7,app:15,rang:1,labo:1,ico:30},
+ {name:'Berceuse',category:'potion',sousType:'Gaz',rarete:'commun',ingr:[['Fiole',1],['Pavot des talus',2],['Algue des puits',1]],effet:'lancer',
+  params:{de:'',nb:1,etat:'Sommeil',crans:1,zone:'cible',portee:'distance',cibles:'vegetalfongique',rangs:'sanslieutenants',duree:'',detruit:'non'},usage:'conso',notes:'À distance : une créature végétale ou fongique tombe en Sommeil. Sans effet sur lieutenants et boss',price:14,app:15,rang:1,labo:1,ico:48},
+ {name:'Berceuse concentrée',category:'potion',sousType:'Gaz',rarete:'rare',ingr:[['Berceuse',2],['Racine de mandragore',1],['Pavot des talus',2]],effet:'lancer',
+  params:{de:'',nb:1,etat:'Sommeil',crans:1,zone:'cible',portee:'distance',cibles:'',rangs:'lieutenants',duree:'1',detruit:'non'},usage:'conso',notes:'Endort un lieutenant 1 tour. Usage unique',price:60,app:150,rang:2,labo:2,ico:47},
+ {name:'Résine à flamme · Lanterne',category:'potion',sousType:'Lancer',rarete:'inhabituel',ingr:[['Fiole',1],['Résine de pin noir',2],['Piment de braise',1]],effet:'lancer',
+  params:{de:'',nb:1,etat:'Feu',crans:1,zone:'cible',portee:'distance',cibles:'',rangs:'',duree:'',detruit:'non'},usage:'conso',notes:'Pose Feu sur la cible',price:24,app:50,rang:1,labo:1,ico:53},
+ {name:'Fongicide amer',category:'potion',sousType:'Potion',rarete:'inhabituel',ingr:[['Fiole',1],['Eau',1],['Racine amère',2],['Sauge des marais',1],['Ortie grise',1]],effet:'boirelancer',
+  params:{etat:'Corruption',de:'white',nb:2,cibles:'fongique'},usage:'conso',notes:'Bu : retire toute la Corruption. Lancé : 2 dés blancs contre une créature fongique',price:19,app:50,rang:1,labo:1,ico:9},
+ {name:'Gants de ronceur',category:'armor',slot:'mains',rarete:'inhabituel',ingr:[['Cuir',2],['Résine de pin noir',1],['Écorce de saule pleureur',1]],tannerie:true,effet:'',params:{},usage:'libre',
+  notes:'Le porteur ignore les ronces de décor (sauf phase 2 du boss)',price:28,app:50,rang:1,labo:1,ico:28}];
+function semeRoncier(c){const P='planches/HERBORISTERIE.webp#',parNom=n=>c.items.find(o=>o&&!o.forge&&cleNomHerbo(o.name)===cleNomHerbo(n)),materiaux=new Set(MATERIAUX.map(cleNomHerbo));
+ RECETTES_RONCIER.forEach(r=>{const ingredients=[],recette=[];
+  r.ingr.forEach(([n,q])=>{const k=cleNomHerbo(n);if(materiaux.has(k)){recette.push({cle:cleRessource(n),qte:q});return}const o=parNom(n);if(o)ingredients.push({id:o.id,n:q})});
+  const herbo={rang:r.rang,labo:r.labo,apprentissage:r.app,...(r.q>1?{quantite:r.q}:{}),...(r.tannerie?{tannerie:true}:{})},deja=parNom(r.name);
+  if(deja){Object.assign(deja,{ingredients,recette,gemmes:{},herbo});if(r.sousType&&deja.category==='object')Object.assign(deja,{category:'potion',sousType:r.sousType});
+   if(deja.category==='potion'&&!deja.sousType)deja.sousType=r.sousType||'Potion';if(r.slot&&deja.category==='armor'&&!deja.slot)deja.slot=r.slot;
+   if(!deja.logo)deja.logo=P+r.ico;if(!(Number(deja.price)>0))deja.price=r.price;if(!String(deja.notes||'').trim())deja.notes=r.notes;if(!deja.rarete)deja.rarete=r.rarete;
+   if(r.effet&&!OBJETS_CODES[deja.effet]){deja.effet=r.effet;deja.params={...r.params};deja.usage=r.usage}return}
+  c.items.push({id:(r.category==='armor'?'armure-':'potion-')+cleNomHerbo(r.name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),name:r.name,category:r.category,...(r.sousType?{sousType:r.sousType}:{}),
+   ...(r.slot?{slot:r.slot,def:0}:{}),rarete:r.rarete,price:r.price,qty:1,logo:P+r.ico,effet:r.effet,params:{...r.params},usage:r.usage,notes:r.notes,ingredients,recette,gemmes:{},herbo,magasin:false})})}
 const cleNomHerbo=n=>String(n||'').replace(/œ/g,'oe').replace(/Œ/g,'Oe').replace(/æ/g,'ae').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
 const idPotion=n=>'potion-'+cleNomHerbo(n).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 function semePotions(c){const P='planches/HERBORISTERIE.webp#',parNom=n=>c.items.find(o=>o&&!o.forge&&cleNomHerbo(o.name)===cleNomHerbo(n));
@@ -547,6 +573,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(!c.items.some(o=>o&&o.id===id))c.items.push({id,name,category:'herbe',price,qty:1,logo:'',rarete,magasin:false,drops:{...drops}})});c.semisForge.push('herboristerie')}
  // v1.013 : les potions de l'Herboristerie, leurs ingrédients et leurs recettes, une fois — après les plantes.
  if(!c.semisForge.includes('potions-herboristerie')&&Array.isArray(c.items)&&c.semisForge.includes('herboristerie')){semePotions(c);c.semisForge.push('potions-herboristerie')}
+ // v1.014 : les six recettes du roncier, une fois, après les potions.
+ if(!c.semisForge.includes('recettes-roncier')&&Array.isArray(c.items)&&c.semisForge.includes('potions-herboristerie')){semeRoncier(c);c.semisForge.push('recettes-roncier')}
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
    if(typeof t.effects!=='string'||!t.effects.trim()||/^Sur un critique, la cible est (Au sol|Entravée)\.?$/.test(t.effects.trim()))t.effects='Au contact, vous infligez Entravé et 1 dé rouge + dégâts.'});c.semisForge.push('agripper-action')}
  if(!c.semisForge.includes('agrippe-entrave')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='agrippe'&&typeof t.effects==='string'&&/Au sol\.?\s*$/.test(t.effects.trim())&&/critique/i.test(t.effects))t.effects=t.effects.trim().replace(/Au sol\.?$/,'Entravée.')});c.semisForge.push('agrippe-entrave')}
@@ -787,8 +815,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
   // v1.013 : une potion — son sous-type, sa recette d'herboristerie ; vendue à l'herboristerie, toute pièce cochée.
-  if(o.category==='potion'){o.sousType=SOUS_TYPES_POTION.includes(o.sousType)?o.sousType:'Potion';o.ingredients=normaliseIngredients(o.ingredients);o.gemmes=normaliseGemmesRecette(o.gemmes);
-   const h=normaliseHerbo(o.herbo);if(h)o.herbo=h;else delete o.herbo}else{delete o.sousType;delete o.ingredients;delete o.gemmes;delete o.herbo}
+  // v1.014 : une recette d'herboristerie peut porter sur toute pièce — les Gants de ronceur, une armure.
+  if(o.category==='potion')o.sousType=SOUS_TYPES_POTION.includes(o.sousType)?o.sousType:'Potion';else delete o.sousType;
+  {const h=normaliseHerbo(o.herbo);if(h)o.herbo=h;else delete o.herbo;
+   if(h||o.category==='potion'){o.ingredients=normaliseIngredients(o.ingredients);o.gemmes=normaliseGemmesRecette(o.gemmes)}else{delete o.ingredients;delete o.gemmes}}
   if(o.herboriste===true)o.herboriste=true;else delete o.herboriste;
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
@@ -2268,11 +2298,13 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // v1.011 : une plante d'Herboristerie, « Composant Alchimique », en italique, au-dessus de sa valeur.
  if(col==='herbe')ligne('Composant Alchimique','gear-composant');
  // v1.013 : une potion — son sous-type en italique, puis ce qu'elle fait.
- if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligne(o.notes)}
+ // v1.014 : le texte d'une pièce rend ses codes — dés, états, PA, PM — comme celui d'un talent.
+ const ligneRiche=t=>{if(!t)return;const p=document.createElement('p');texteEnrichi(p,t,null,a);d.append(p)};
+ if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligneRiche(o.notes)}
  if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='potion'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
- if(col==='object')ligne(o.notes);
+ if(col==='object')ligneRiche(o.notes);
  // Ni usage ni mode d'emploi : un objet s'utilise d'un clic sur son carré, en jeu comme sur la fiche.
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
@@ -7542,7 +7574,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.tanneur)a.tanneur=f.tanneur.checked;
  if($('recette-lignes'))a.recette=lireRecette();
  if(f.herboriste)a.herboriste=f.herboriste.checked;
- if(c==='potion'&&f.sousType)lisRecetteHerbo(a,f);
+ if(f.herboRang)lisRecetteHerbo(a,f);
  for(const k of ['rendement1','rendement2'])if(f[k])a[k]=lisQte(f[k].value);
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
@@ -7607,8 +7639,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   /* Le tanneur la vend, et la fabrique d'après sa recette, avec la réserve du domaine. */
   // v1.013 : vendu à l'herboristerie du domaine.
   +'<label class="field-check"><input name="herboriste" type="checkbox" '+(a.herboriste===true?'checked':'')+'>Herboriste — vendu à l’herboristerie</label>'
-  +(a.category==='potion'?sectionRecetteHerbo(a):'')
-  +(a.category==='ressource'||a.category==='restes'||a.category==='potion'?'':'<label class="field-check"><input name="tanneur" type="checkbox" '+(a.tanneur===true?'checked':'')+'>Tanneur — vendu et fabriqué à la tannerie</label>'
+  +(a.category==='potion'||a.herbo?sectionRecetteHerbo(a):'')
+  +(a.category==='ressource'||a.category==='restes'||a.category==='potion'||a.herbo?'':'<label class="field-check"><input name="tanneur" type="checkbox" '+(a.tanneur===true?'checked':'')+'>Tanneur — vendu et fabriqué à la tannerie</label>'
    +'<div id="item-recette"'+(a.tanneur===true?'':' hidden')+'><p class="etiquette">Recette du tanneur, prise dans la réserve du domaine</p><div id="recette-lignes"></div>'
    +'<button type="button" id="recette-add" class="arbre-ajout">+ Ingrédient</button></div>')
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
@@ -7687,17 +7719,20 @@ function lignesIngredients(a){return [...normaliseIngredients(a.ingredients).map
  ...Object.entries(normaliseGemmesRecette(a.gemmes)).map(([k,n])=>({v:'g:'+k,n}))]}
 function sectionRecetteHerbo(a){const h=normaliseHerbo(a.herbo)||{rang:1,labo:1,apprentissage:0};
  return '<h2 class="sous-titre">Recette d’herboristerie</h2><div class="edit-grid">'
-  +sel('Sous-type','sousType',SOUS_TYPES_POTION.includes(a.sousType)?a.sousType:'Potion',SOUS_TYPES_POTION.map(t=>[t,t]))
+  +(a.category==='potion'?sel('Sous-type','sousType',SOUS_TYPES_POTION.includes(a.sousType)?a.sousType:'Potion',SOUS_TYPES_POTION.map(t=>[t,t])):'')
+  +field('Pièces fabriquées','herboQte',h.quantite||1,'number','min="1" max="20"')
   +sel('Rang requis','herboRang',String(h.rang),RANGS_HERBORISTE)
   +sel('Labo requis','herboLabo',String(h.labo),[['1','Labo 1'],['2','Labo 2'],['3','Labo 3']])
   +field('Apprentissage (or)','herboPrix',h.apprentissage,'number','min="0" max="999999"')
-  +'<label class="field-check"><input name="herboGrimoire" type="checkbox" '+(h.grimoire?'checked':'')+'>Grimoire — ne s’achète pas</label></div>'
+  +'<label class="field-check"><input name="herboGrimoire" type="checkbox" '+(h.grimoire?'checked':'')+'>Grimoire — ne s’achète pas</label>'
+  +'<label class="field-check"><input name="herboTannerie" type="checkbox" '+(h.tannerie?'checked':'')+'>Fabriqué à la Tannerie</label></div>'
   +'<div id="herbo-ingredients" class="herbo-ingredients"></div><button type="button" id="herbo-ajout" class="arbre-ajout">+ Ingrédient</button>'}
-function optionsIngredient(v){const items=(catalog.items||[]).filter(o=>o&&!o.forge&&o.category!=='potion'&&o.id).sort((x,y)=>String(x.name).localeCompare(String(y.name),'fr'));
+function optionsIngredient(v){const items=(catalog.items||[]).filter(o=>o&&!o.forge&&o.id).sort((x,y)=>String(x.name).localeCompare(String(y.name),'fr'));
  const grp=(t,l)=>l.length?'<optgroup label="'+esc(t)+'">'+l.map(([k,n])=>'<option value="'+esc(k)+'"'+(k===v?' selected':'')+'>'+esc(n)+'</option>').join('')+'</optgroup>':'';
  return grp('Herboristerie',items.filter(o=>o.category==='herbe').map(o=>[o.id,o.name]))+grp('Restes',items.filter(o=>o.category==='restes').map(o=>[o.id,o.name]))
   +grp('Réserve du domaine',listeRessources().map(([k,n])=>['r:'+k,n]))+grp('Gemmes de la bourse',GEMMES_RECETTE.map(([k,n])=>['g:'+k,n]))
-  +grp('Autres pièces',items.filter(o=>!['herbe','restes','ressource'].includes(o.category)).map(o=>[o.id,o.name]))}
+  +grp('Potions',items.filter(o=>o.category==='potion').map(o=>[o.id,o.name]))
+  +grp('Autres pièces',items.filter(o=>!['herbe','restes','ressource','potion'].includes(o.category)).map(o=>[o.id,o.name]))}
 function dessineIngredients(){const boite=$('herbo-ingredients');if(!boite)return;boite.replaceChildren();
  lignesIngredients(itemDraft).forEach((x,i)=>{const l=document.createElement('div');l.className='recette-ligne';
   l.innerHTML='<input type="number" name="ingr_n_'+i+'" min="1" max="99" value="'+x.n+'" aria-label="Quantité"><span class="recette-fois">×</span><select name="ingr_v_'+i+'" aria-label="Ingrédient">'+optionsIngredient(x.v)+'</select><button type="button" aria-label="Retirer">✕</button>';
@@ -7707,8 +7742,8 @@ function dessineIngredients(){const boite=$('herbo-ingredients');if(!boite)retur
 function poseIngredients(a,lignes){a.ingredients=normaliseIngredients(lignes.filter(x=>x.v&&!/^[rg]:/.test(x.v)).map(x=>({id:x.v,n:x.n})));
  a.recette=normaliseRecette(lignes.filter(x=>x.v.startsWith('r:')).map(x=>({cle:x.v.slice(2),qte:x.n})));
  const g={};lignes.filter(x=>x.v.startsWith('g:')).forEach(x=>{g[x.v.slice(2)]=(g[x.v.slice(2)]||0)+(Number(x.n)||1)});a.gemmes=normaliseGemmesRecette(g)}
-function lisRecetteHerbo(a,f){a.sousType=SOUS_TYPES_POTION.includes(f.sousType.value)?f.sousType.value:'Potion';
- a.herbo=normaliseHerbo({rang:f.herboRang.value,labo:f.herboLabo.value,apprentissage:f.herboPrix.value,grimoire:f.herboGrimoire.checked});
+function lisRecetteHerbo(a,f){if(f.sousType)a.sousType=SOUS_TYPES_POTION.includes(f.sousType.value)?f.sousType.value:'Potion';
+ a.herbo=normaliseHerbo({rang:f.herboRang.value,labo:f.herboLabo.value,apprentissage:f.herboPrix.value,grimoire:f.herboGrimoire.checked,quantite:f.herboQte?f.herboQte.value:1,tannerie:!!(f.herboTannerie&&f.herboTannerie.checked)});
  if($('herbo-ingredients')){const l=[];for(let i=0;f['ingr_v_'+i];i++)l.push({v:f['ingr_v_'+i].value,n:Math.max(1,Math.min(99,Math.trunc(Number(f['ingr_n_'+i].value))||1))});poseIngredients(a,l)}}
 /* Les lignes de la recette : une quantité, une ressource (icône comprise), un ✕ pour la retirer.
    Elles se lisent avec le reste du formulaire. */
