@@ -703,9 +703,10 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
      dans une salle que la troupe n'a pas encore vue, pâli et cerclé de tirets. */
   const t=document.createElement('button');t.className='token objet'+(!objetVu(o)?' cachemj':!vuTroupe?' veiled':'');
   poseLogoObjet(t,o);
-  // v0.9993 : un Indice découvert, qui attend encore son examen, prend l'icône et la couleur de la compétence à tester.
-  if(o.indice&&objetVu(o)&&!o.examine&&o.examen&&o.examen.mode==='comp'){const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),ico=typeof logoCompetence==='function'?logoCompetence(k):null;
-   t.classList.add('indice-test');t.style.background='rgb('+SKILL_TINTS[k]+')';if(ico)t.replaceChildren(ico);else t.textContent=skillNames[k].slice(0,2)}
+  /* v1.017 : un Indice découvert qui attend son test garde son icône ; le test se prend au-dessus de lui, sur le Bouton
+     d'Interaction qui paraît au survol (indiceBouton). */
+  t.dataset.objet=o.id||String(i);
+  if(indiceATester(o))survolIndice(t,o);
   t.style.left=o.x+'%';t.style.top=o.y+'%';
   t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
   t.title=o.nom+(objetVu(o)?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);
@@ -713,8 +714,10 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
   /* Au survol, la bulle : la pièce qu'il contient, telle qu'à l'Armurerie, et sa description. Au
      clic, un aventurier au contact le récupère ; le MJ, lui, choisit : révéler, cacher, ou le
      donner à l'aventurier le plus proche. */
-  if(typeof surveille==='function')surveille(t,()=>ouvrirBulle(t,bulleObjetCarte(o),'bulle-gear'));
+  if(typeof surveille==='function'&&!indiceATester(o))surveille(t,()=>ouvrirBulle(t,bulleObjetCarte(o),'bulle-gear'));
   t.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();
+   // v1.017 : chez un joueur, un clic sur un Indice ne fait rien : son test se prend sur le bouton, au-dessus.
+   if(o.indice&&view!=='mj')return;
    // v1.011 : le Coffre de Groupe s'ouvre sur la fenêtre commune ; le MJ l'ouvre pour l'aventurier actif au contact, sinon le plus proche.
    if(o.groupe===true&&typeof ouvrirCoffreGroupe==='function'){const a=heroActif();
     if(view==='mj'){const h=a&&objetAPortee(a,o)?a:heroLePlusProche(o);if(h)ouvrirCoffreGroupe(h,o);return}
@@ -3426,3 +3429,50 @@ function dangerAuPassage(o,chemin){const m=currentMap(),size=mapSize();if(!m||!s
  const r=ts(...x);
  try{actors.forEach(o=>{const b=o&&o.sommeilBref;if(!b)return;if(round>b.r||!enCombat()){setState(o,b.e,false);delete o.sommeilBref}});render()}catch(e){}
  return r}}
+
+/* ---------- v1.017 — Les Boutons d'Interaction des objets et des coffres ----------
+   Au contact d'un coffre ou d'un objet que la troupe voit — pas caché —, un rond paraît en son centre, comme sur une porte :
+   Ouvrir un coffre, Inspecter un objet (Récolter une Ressource, Ouvrir un Coffre de Groupe). Le clic fait ce que faisait
+   le clic sur l'objet. Leurs icônes se choisissent avec celles des actions spéciales. */
+const ICONE_COFFRE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5V19h18v-8.5M3 10.5C3 7 5 5 8 5h8c3 0 5 2 5 5.5M3 10.5h18M10.5 10.5v3h3v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+const ICONE_INSPECTER='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5.5 5.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+function poseBoutonCarte(calque,x,y,nom,icone,svg,gris,faire,extra){const b=document.createElement('button');b.type='button';b.className='btn-action rond bouton-interaction'+(extra?' '+extra:'');
+ b.style.left=x+'%';b.style.top=y+'%';b.style.setProperty('--echelle',echelleInteraction());
+ const ic=typeof centreAction==='function'?centreAction(icone,null):null;if(ic&&typeof ic==='object')b.append(ic);else b.innerHTML=svg;
+ b.setAttribute('aria-label',nom);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
+ if(typeof inerte==='function')inerte(b,gris);b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
+ b.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();if(typeof estInerte==='function'&&estInerte(b))return;faire()};calque.append(b);return b}
+// Ce que fait le geste sur un objet, pour l'aventurier du joueur au contact.
+function agirSurObjet(a,o){if(!a||!o)return;if(o.groupe===true&&typeof ouvrirCoffreGroupe==='function'){ouvrirCoffreGroupe(a,o);return}
+ if(o.indice)return;if(o.ressource===true){recolterRessource(a,o);return}recupererObjet(a,o)}
+let objetsBoutonsCle='';
+function renderBoutonsObjets(){let calque=$('objet-boutons');if(!calque){calque=document.createElement('div');calque.id='objet-boutons';$('map-view').append(calque);objetsBoutonsCle=''}
+ const m=currentMap(),a=view==='mj'?null:actors[owner],ok=!!m&&!!a&&a.hero&&alive(a)&&!a.horsCarte&&controlled(actors.indexOf(a));
+ const coffres=ok?(m.coffres||[]).filter(c=>c&&coffreVisible(c)&&coffreEnVue(c)&&(!c.ouvert||c.groupe===true)&&coffreAPortee(a,c)):[];
+ const objets=ok&&!enCombat()?(m.objets||[]).filter(o=>o&&!o.pris&&!o.indice&&objetVu(o)&&objetAPortee(a,o)&&(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'}))):[];
+ const gris=enCombat()&&!!a&&pointsRestants(a,'action')<=0;
+ const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+coffres.map(c=>[c.x,c.y,c.w,c.h,c.ouvert?1:0].join(':')).join(',')+'|'+objets.map(o=>[o.x,o.y,o.id].join(':')).join(',');
+ if(cle===objetsBoutonsCle&&calque.isConnected)return;objetsBoutonsCle=cle;calque.replaceChildren();
+ coffres.forEach(c=>poseBoutonCarte(calque,c.x+c.w/2,c.y+c.h/2,'Ouvrir','ouvrircoffre',ICONE_COFFRE,gris,()=>ouvreCoffreJoueur(c)));
+ objets.forEach(o=>poseBoutonCarte(calque,o.x,o.y,o.ressource===true?'Récolter':o.groupe===true?'Ouvrir':'Inspecter',o.groupe===true?'ouvrircoffre':'inspecter',o.groupe===true?ICONE_COFFRE:ICONE_INSPECTER,false,()=>agirSurObjet(a,o)))}
+{const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsObjets();return r}}
+/* v1.017 — L'Indice révélé qui attend son test : au survol, au-dessus de lui, un Bouton d'Interaction à l'icône et à la couleur
+   de la compétence ; la bulle de l'indice s'y accroche. On y monte la souris — il reste —, et un clic fait le test. */
+const indiceATester=o=>!!o&&o.indice&&objetVu(o)&&!o.examine&&!!o.examen&&o.examen.mode==='comp';
+let indiceBouton=null,indiceBoutonMinuteur=0;
+function cacheIndiceBouton(){clearTimeout(indiceBoutonMinuteur);if(indiceBouton){indiceBouton.remove();indiceBouton=null;if(typeof fermerBulle==='function')fermerBulle()}}
+function cacheIndiceBientot(){clearTimeout(indiceBoutonMinuteur);indiceBoutonMinuteur=setTimeout(()=>{const b=indiceBouton;if(!b)return;
+ const t=document.querySelector('#map-view .token.objet[data-objet="'+CSS.escape(b.dataset.objet)+'"]');
+ if(b.matches(':hover')||(t&&t.matches(':hover'))||document.querySelector('.bulle:hover'))return cacheIndiceBientot();cacheIndiceBouton()},250)}
+function survolIndice(t,o){t.addEventListener('pointerenter',()=>montreIndiceBouton(t,o));t.addEventListener('pointerleave',cacheIndiceBientot)}
+function montreIndiceBouton(t,o){clearTimeout(indiceBoutonMinuteur);if(indiceBouton&&indiceBouton.dataset.objet===t.dataset.objet)return;cacheIndiceBouton();
+ let calque=$('indice-bouton');if(!calque){calque=document.createElement('div');calque.id='indice-bouton';$('map-view').append(calque)}
+ const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),size=mapSize(),haut=size.height?((tokenPx()*(SOCLE_TAILLES[o.taille]||1))/2+58*Number(echelleInteraction())/2+4)/size.height*100:4;
+ const b=poseBoutonCarte(calque,o.x,o.y-haut,'Test de '+skillNames[k],'',ICONE_INSPECTER,false,()=>{const a=heroActif();
+  if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
+  if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
+  cacheIndiceBouton();examinerIndice(a,o)},'btn-indice');
+ b.replaceChildren();const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
+ b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');b.style.color='#fff';b.dataset.objet=t.dataset.objet;
+ b.onmouseenter=()=>clearTimeout(indiceBoutonMinuteur);b.onmouseleave=cacheIndiceBientot;indiceBouton=b;
+ if(typeof ouvrirBulle==='function')ouvrirBulle(b,bulleObjetCarte(o),'bulle-gear')}

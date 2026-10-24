@@ -222,7 +222,7 @@ function migreOmbrelame(c){(c.classes||[]).forEach(k=>{if(k&&k.name==='Lamevent'
   if(t.paliers&&typeof t.paliers==='object')Object.values(t.paliers).forEach(p=>{if(p&&typeof p==='object')p.effects=ombrelame(p.effects)})})}
 /* Les actions spéciales de la barre d'action, Analyser, Repos court, Crier, Fouiller, et celles à venir : le MJ choisit leur icône
    et leur texte, qui prend ses symboles et ses couleurs comme celui d'un talent. Une ligne de plus ici, et la suivante y entre. */
-const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller'],['crocheter','Crocheter'],['echanger','Échanger un objet'],['armes','Changer d’armes'],['porte','Ouvrir une porte'],['indice','Indice']];
+const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller'],['crocheter','Crocheter'],['echanger','Échanger un objet'],['armes','Changer d’armes'],['porte','Ouvrir une porte'],['indice','Indice'],['ouvrircoffre','Ouvrir un coffre'],['inspecter','Inspecter un objet']];
 function normaliseActionsSpeciales(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
  ACTIONS_SPECIALES.forEach(([k])=>{const v=o[k];if(!v||typeof v!=='object')return;const e={};
   if(typeof v.logo==='string'&&v.logo&&v.logo.length<=120)e.logo=v.logo;

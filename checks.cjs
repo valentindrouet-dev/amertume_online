@@ -4131,7 +4131,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
   &&page.includes("debout().forEach(o=>{o.debutTour=round});")&&vif.includes("'alignementJeu','debutTour','enAventure'];"),'le début de combat et le début de tour gèlent les autres');
  assert.ok(page.includes("const mx=100*tk/sz.width,my=100*tk/sz.height,dirs={ArrowLeft:[-mx,0],ArrowRight:[mx,0],ArrowUp:[0,-my],ArrowDown:[0,my]};")
   &&page.includes(" t.onkeydown=e=>pasClavier(i,e)")&&page.includes("const a=actors[selected];if(!a||!document.querySelector('#map-view .token[data-id=\"'+CSS.escape(a.id)+'\"]'))return;pasClavier(selected,e)});"),'les flèches : un mètre par appui, même sans focus');
- assert.ok(page.includes('id="echanger" hidden>')&&page.includes('id="changer-armes" hidden>')&&page.includes("function cibleEchange(a){")&&src.includes("['echanger','Échanger un objet'],['armes','Changer d’armes'],['porte','Ouvrir une porte'],['indice','Indice']];")
+ assert.ok(page.includes('id="echanger" hidden>')&&page.includes('id="changer-armes" hidden>')&&page.includes("function cibleEchange(a){")&&src.includes("['echanger','Échanger un objet'],['armes','Changer d’armes'],['porte','Ouvrir une porte'],['indice','Indice'],['ouvrircoffre','Ouvrir un coffre'],['inspecter','Inspecter un objet']];")
   &&src.includes("function verrouEquip(a,o){")&&src.includes("&&tout&&peutEquiper&&!verrouEquip(a,o);"),'Échanger un objet, Changer d’armes, et le verrou des armes en combat');
  assert.ok(src.includes("objetGlisse={de:a.id,id:o.id}")&&src.includes("retirerInventaire(de,o);if(!ajouterInventaire(a,o)){ajouterInventaire(de,o);return}"),'un objet glissé d’une fiche à l’autre');
  assert.ok(carto.includes("function renderEnjamber(){")&&carto.includes("testPiege(a,p,'enjambement')};(dansBarre?barre:calque).append(b)}))}")&&page.includes("if(typeof renderEnjamber==='function')renderEnjamber();"),'Enjamber, au-dessus du piège');
@@ -4167,7 +4167,7 @@ assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySe
   &&page.includes("const gain=neufs.length*Math.max(1,Math.round((Math.trunc(Number(o.xp))||0)/10))")
   &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites','debutTour','avantPiege'];"),'l’Analyse par le Savoir');
  assert.ok(src.includes("function bulleCombattant(o){")&&src.includes("const sait=k=>typeof connait!=='function'||connait(o,k);")&&src.includes("'Analysez un adversaire pour en savoir davantage à son sujet !'")
-  &&page.includes("if(typeof bulleCombattant==='function'){t.removeAttribute('title');survolToken(t,a)}")&&src.includes("function oublierAnalyses(){delete catalog.analyses;")
+  &&page.includes("if(typeof bulleCombattant==='function'){t.removeAttribute('title');if(!a.hero)survolToken(t,a)}")&&src.includes("function oublierAnalyses(){delete catalog.analyses;")
   &&src.includes("id=\"bestiary-analyses\""),'la bulle du token, le Bestiaire qui oublie');
  assert.ok(carto.includes("dedans=aireMulti(Clipper.difference(D,U))<=Math.max(1,tout*.002)")&&page.includes("if(typeof zoneFouillee==='function'&&zoneFouillee(a))return;zone=zonePerception(a)}"),'Fouiller, le socle qui déborde');}
 /* v0.628 — Fouiller, en exploration seulement et sans rien coûter, est seul à fouiller : zone de fouille, objets révélés. Un rond
