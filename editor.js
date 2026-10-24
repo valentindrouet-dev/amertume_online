@@ -2567,7 +2567,9 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  const munition=a.munitionId?objetDe(a.munitionId):null;
  const places=[['dos','Dos',seul('dos')],['tete','Tête',seul('tete')],['amulette','Amulette',seul('amulette')],
   ['main','Main droite',droite],['torse','Torse',seul('torse')],['main','Main gauche',gauche],
-  ['munitions','Munitions',munition],['anneau','Anneau',anneaux[0]||null],['anneau','Anneau',anneaux[1]||null],['anneau','Anneau',anneaux[2]||null],['bottes','Bottes',seul('bottes')]];
+  ['munitions','Munitions',munition],['anneau','Anneau',anneaux[0]||null],['anneau','Anneau',anneaux[1]||null],['anneau','Anneau',anneaux[2]||null],
+  // v1.015 : les mains — des gants —, à gauche des bottes ; l'or passe dessous.
+  ['mains','Mains',seul('mains')],['bottes','Bottes',seul('bottes')]];
  const groupeAnneaux=document.createElement('div');groupeAnneaux.className='anneaux-groupe';
  places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(cle==='bottes'?' bottes':'');pl.dataset.place=cle;if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';
   const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);

@@ -3525,3 +3525,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 #dangers-carte{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
 #dangers-carte .danger-carte{fill:currentColor;fill-opacity:.28;fill-rule:evenodd;stroke:currentColor;stroke-width:1.5px;vector-effect:non-scaling-stroke}
 #danger-editor .coffre-cases{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0}#danger-editor .coffre-etats{display:flex;flex-wrap:wrap;gap:2px 14px;margin:6px 0}
+/* v1.015 — L'emplacement des mains, à gauche des bottes ; l'or du schéma passe dessous, toujours en bas à gauche. */
+.corps .place.p-mains{grid-column:1}
+.corps:has(.or-corps),.corps-sac>.corps:has(.or-corps){padding-bottom:30px}
+.corps-sac.glisse-mains .place.p-mains .vide,.corps-sac.glisse-mains .place.p-mains .gear-carre{outline:2px solid var(--green);outline-offset:2px;opacity:1}

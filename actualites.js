@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.015","d":"2026-10-24","t":"Emplacement Mains"},
 {"v":"1.014","d":"2026-10-24","t":"Terrain dangereux et recettes du roncier"},
 {"v":"1.013","d":"2026-10-24","t":"Potions et Herboristerie"},
 {"v":"1.012","d":"2026-10-24","t":"Ressources et Récolte"},
