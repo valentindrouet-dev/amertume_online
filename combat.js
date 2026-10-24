@@ -408,6 +408,8 @@ function cleanObjet(o){const t=o&&o.test||{};
   tresor:texte(o&&o.tresor,200),...(o&&typeof o.quete==='string'&&o.quete?{quete:texte(o.quete,60)}:{}),
   test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),
    reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))},
+  // v1.011 : un Coffre de Groupe posé comme un objet, et l'icône de son jeton.
+  ...(o&&o.groupe===true?{groupe:true,logo:texte(o.logo,120)}:{}),
   // v0.998 : un Indice — son icône, sa phrase au journal, et l'examen qui livre son secret (un test, ou un objet à utiliser).
   ...(o&&o.indice===true?(()=>{const x=o.examen||{},mode=['comp','objet'].includes(x.mode)?x.mode:'';
    return {indice:true,logo:texte(o.logo,120),journal:texte(o.journal,400),secret:texte(o.secret,600),...(o.examine===true?{examine:true}:{}),

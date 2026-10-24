@@ -2180,7 +2180,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(soin){const p=document.createElement('p');p.className='gear-soin';p.append('Soin');const ic=logoBonus({carac:'soin'});if(ic){ic.classList.add('soin-ico');p.append(' ',ic)}
   const n=Math.max(1,soin.quantite|0),b=document.createElement('b');b.textContent=soin.forme==='des'?n+'d6':soin.forme==='endu'?n+' + Endurance':soin.forme==='vie'?n+' + Vie':String(n);p.append(' : ',b);d.append(p)}
  // Une arme, une armure, une munition, une ressource, un reste ou un objet de soin : sa valeur, « 7 » et la pièce d'or.
- if(!o.invention&&(col==='restes'||col==='ressource'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // v1.011 : une plante d'Herboristerie, « Composant Alchimique », en italique, au-dessus de sa valeur.
+ if(col==='herbe')ligne('Composant Alchimique','gear-composant');
+ if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
  if(col==='object')ligne(o.notes);

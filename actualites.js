@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.011","d":"2026-10-24","t":"Coffre de Groupe sur la carte"},
 {"v":"1.010","d":"2026-10-24","t":"Combat et murs fiables"},
 {"v":"1.009","d":"2026-10-24","t":"Coffre de Groupe"},
 {"v":"1.008","d":"2026-10-24","t":"Herboristerie"},

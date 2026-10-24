@@ -715,6 +715,12 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
      donner à l'aventurier le plus proche. */
   if(typeof surveille==='function')surveille(t,()=>ouvrirBulle(t,bulleObjetCarte(o),'bulle-gear'));
   t.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();
+   // v1.011 : le Coffre de Groupe s'ouvre sur la fenêtre commune ; le MJ l'ouvre pour l'aventurier actif au contact, sinon le plus proche.
+   if(o.groupe===true&&typeof ouvrirCoffreGroupe==='function'){const a=heroActif();
+    if(view==='mj'){const h=a&&objetAPortee(a,o)?a:heroLePlusProche(o);if(h)ouvrirCoffreGroupe(h,o);return}
+    if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
+    if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
+    ouvrirCoffreGroupe(a,o);return}
    if(view==='mj'){menuObjetMJ(o,e.clientX,e.clientY);return}
    const a=actors[selected],mien=!!(a&&a.hero&&controlled(selected)&&alive(a));
    if(!mien){log('Sélectionne d’abord ton aventurier.',{local:true});return}
@@ -745,7 +751,7 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
  return d}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
    l'objet quitte la carte pour toute la table — jusqu'à ce que la carte soit rechargée. */
-function recupererObjet(a,o){if(!a||!o||o.pris||o.indice)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
+function recupererObjet(a,o){if(!a||!o||o.pris||o.indice||o.groupe===true)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
  prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k;if(arr[i]===2)return null;arr[i]=2;return arr},()=>recupereObjetFait(a,o))}
 function recupereObjetFait(a,o){if(o&&o.indice)return;
  const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
@@ -765,13 +771,17 @@ function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
  bouton(objetVu(o)?'Cacher à la troupe':'Révéler à la troupe',()=>{montreObjet(o,!objetVu(o));if(objetVu(o))floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(objetVu(o)?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  // v0.9991 : un Indice ne se donne ni ne se ramasse : il reste où il est.
- const h=o.indice?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
+ const h=o.indice||o.groupe===true?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
 /* Le jeton d'un objet porte l'icône de la première pièce qu'il contient — celle choisie en premier
    dans sa fiche ; sans pièce à icône, son initiale. */
 function poseLogoObjet(el,o){
+ // v1.011 : le Coffre de Groupe porte l'icône choisie dans sa fiche ; sans elle, un coffre dessiné.
+ if(o&&o.groupe===true){const im=o.logo&&typeof logoAttaque==='function'?logoAttaque(o.logo,'logo-objet'):null;el.classList.add('coffre-groupe');
+  el.classList.add('avec-logo');if(im){el.replaceChildren(im);return}
+  el.innerHTML='<svg class="logo-objet coffre-dessin" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5V19h18v-8.5M3 10.5C3 7 5 5 8 5h8c3 0 5 2 5 5.5M3 10.5h18M10.5 10.5v3h3v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';return}
  // v0.998 : un Indice porte son icône, sinon celle des Indices réglée avec les actions spéciales, sinon une loupe.
  if(o&&o.indice){const l=o.logo||(typeof actionSpeciale==='function'?actionSpeciale('indice').logo:'')||'',im=l&&typeof logoAttaque==='function'?logoAttaque(l,'logo-objet'):null;
   el.classList.add('indice');if(im){el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent='🔍';return}
@@ -985,7 +995,7 @@ function renderCoffres(){renderImpraticables();renderDifficiles();const calque=$
      troupe, on ne le voit pas —, et s'en va quand le coffre s'ouvre. */
   if(c.tente&&coffreVerrouille(c)&&!c.ouvert){const k=document.createElement('span');k.className='coffre-cadenas';k.textContent='🔒';
    k.style.left=(c.x+c.w/2)+'%';k.style.top=(c.y+c.h/2)+'%';$('fog').before(k)}
-  if(!c.ouvert){el.style.pointerEvents='all';
+  if(!c.ouvert||c.groupe===true){el.style.pointerEvents='all';
    // La bulle : son nom et sa description, au survol, quand l'aventurier choisi est au contact.
    if(typeof surveille==='function')surveille(el,()=>{if(mj?!bullesCoffresMJ:!coffreAPortee(heroActif(),c))return;ouvrirBulle(el,bulleCoffre(c),'bulle-gear')});
    // Un clic ne lui donne pas le focus : le navigateur l'entourait d'un anneau.
@@ -1061,6 +1071,8 @@ function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert||!payeAction(a))return;
 function ouvreCoffreJoueur(c){const a=heroActif();
  if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
  if(!coffreAPortee(a,c)){log('Approche '+a.name+' : il faut être au contact de '+c.nom+'.',{local:true});return}
+ // v1.011 : un coffre coché « Coffre de groupe » ouvre la fenêtre commune, chez le joueur aussi.
+ if(c.groupe===true&&typeof ouvrirCoffreGroupe==='function'){ouvrirCoffreGroupe(a,c);return}
  if(coffreVerrouille(c)&&!aLaCle(a,c.cleId)){c.tente=true;log(nomNum(a)+' tente d’ouvrir '+c.nom+' : verrouillé.',{ton:'carte'});render();saveMaps();scheduleSave();return}
  if(enCombat()&&pointsRestants(a,'action')<=0){payeAction(a);return}
  if(coffreVerrouille(c)){c.deverrouille=true;log(nomNum(a)+' déverrouille '+c.nom+' avec '+nomCle(c.cleId)+'.',{ton:'carte'})}
@@ -1071,6 +1083,8 @@ function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))
  if(h&&enCombat()&&pointsRestants(h,'action')<=0){payeAction(h);return}
  const m=currentMap(),k=m?(m.coffres||[]).indexOf(c):-1;
  prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n2+k,v=Number(arr[i])||0;if(v&8)return null;arr[i]=v|8|2;return arr},()=>ouvreCoffreFait(c,h))}
+// v1.011 : « Ouvrir pour… » sur un Coffre de Groupe : la fenêtre commune, jamais le coffre ordinaire.
+{const oc=ouvrirCoffre;ouvrirCoffre=function(c,h,parMJ){if(c&&c.groupe===true&&typeof ouvrirCoffreGroupe==='function'){if(h)ouvrirCoffreGroupe(h,c);return}return oc(c,h,parMJ)}}
 function ouvreCoffreFait(c,h){if(h&&!payeAction(h))return;
  if(coffreArme(c)){c.desamorce=true;
   // Le piège part : une gerbe de feu sur le coffre, ici et sur chaque table.
@@ -1635,7 +1649,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
- +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
+ +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="coffregroupe">Coffre de groupe</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="map-aimant" type="button" aria-pressed="false">🧲 Aimant</button><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -1801,7 +1815,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
  ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
- ['placement','Placement',['start','foe','pnj','objet','indice','coffre','coffrerond','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
+ ['placement','Placement',['start','foe','pnj','objet','indice','coffre','coffrerond','coffregroupe','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
 let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
 {const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
@@ -2367,6 +2381,10 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='indice'){pushUndo();
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Indice',desc:'',x:p.x,y:p.y,taille:'small',visible:false,indice:true,logo:'',journal:'',secret:'',examen:{mode:'',comp:3,reussites:1,item:''},items:[],tresor:'',test:{comp:3,reussites:1}});
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
+ // v1.011 : le Coffre de Groupe se pose comme un objet, un jeton à son icône ; sa fiche s'ouvre aussitôt.
+ if(mapTool==='coffregroupe'){pushUndo();
+  mapDraft.objets.push({id:crypto.randomUUID(),nom:'Coffre de groupe',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,groupe:true,logo:'',items:[],tresor:'',test:{comp:3,reussites:1}});
+  mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  if(mapTool==='objet'){pushUndo();
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Objet',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,items:[],tresor:'',test:{comp:3,reussites:1}});
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
@@ -2583,7 +2601,21 @@ function openIndice(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  objetDialog.showModal()}
-function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;if(o.indice)return openIndice(i);objetIndex=i;
+// v1.011 : la fiche d'un Coffre de Groupe posé : son nom, son icône, sa taille, sa description.
+function openCoffreGroupeCarte(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;objetIndex=i;
+ objetDialog.querySelector('h2').textContent=o.nom||'Coffre de groupe';
+ $('objet-fields').innerHTML='<div class="edit-grid">'
+  +field('Nom','nom',o.nom,'text','required maxlength="60"')
+  +(typeof selLogos==='function'?selLogos('Icône','logo',o.logo||''):'')
+  +sel('Taille','taille',o.taille,[['small','Petit'],['medium','Moyen'],['large','Grand']])+'</div>'
+  +'<label>Description lue par les joueurs<textarea name="desc" rows="3" maxlength="600">'+esc(o.desc||'')+'</textarea></label>';
+ $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
+  o.nom=f.nom.value.trim().slice(0,60)||'Coffre de groupe';o.logo=f.logo?f.logo.value:'';o.taille=f.taille.value;o.desc=f.desc.value.trim().slice(0,600);
+  objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
+  m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ objetDialog.showModal()}
+function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;if(o.indice)return openIndice(i);if(o.groupe===true)return openCoffreGroupeCarte(i);objetIndex=i;
  objetDialog.querySelector('h2').textContent=o.nom||'Objet';
  $('objet-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','nom',o.nom,'text','required maxlength="60"')
