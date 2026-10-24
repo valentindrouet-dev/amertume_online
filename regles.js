@@ -162,7 +162,8 @@ REGLES_SECTIONS.push(
  ()=>rgSection('adversaires','Les adversaires',RG.rouge,'👹','Un adversaire a ses PV, sa DEF, ses Dégâts, ses attaques, sa Vitesse et son XP.',
   rgEl('div','rg-puces',...Object.values(typeof TYPE_NOMS!=='undefined'?TYPE_NOMS:{}).map(n=>rgEl('span','rg-puce',n))),
   rgListe(['<b>Type</b> : il règle l’ordre des cibles (Standard d’abord, Boss en dernier), la Garde rapprochée (Standards) et le butin forgé : 15, 25, 40, 50 % de chances.',
-   '<b>Nature</b> : vivant, mort-vivant ou mécanique ; certains talents en dépendent.','<b>Vision</b> : un adversaire voit dans le noir.',
+   '<b>Nature</b> : vivant, mort-vivant ou mécanique ; certains talents en dépendent.',
+   '<b>Familles</b> : '+(typeof FAMILLES_MONSTRES!=='undefined'?FAMILLES_MONSTRES.map(([,n])=>n).join(', '):'')+'. Vaincu, un adversaire laisse les plantes d’Herboristerie de ses familles, chacune à sa chance.','<b>Vision</b> : un adversaire voit dans le noir.',
    '<b>Analyse</b> (1 PM, ligne de vue, une fois par combat et par modèle) : test de Savoir ; chaque réussite révèle une information parmi PV max, DEF, Dégâts, attaques, XP, talents, équipement, et rapporte XP ÷ 10 à chaque aventurier.'])),
  // 13. Les objets.
  ()=>rgSection('objets','Les objets',RG.mait,'🎒','Les objets se portent, s’emploient ou se forgent.',

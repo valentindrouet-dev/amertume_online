@@ -276,7 +276,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
  const objets=fs.readdirSync('img').filter(f=>/^item_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
- assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
+ assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
   &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:''")
   &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
@@ -2527,7 +2527,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Base','Talents','Total']),'les +2 viennent d’un talent, la base dit 0');}
-{assert.ok(src.includes("const utilisable=(o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'")
+{assert.ok(src.includes("const utilisable=(o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='herbe'&&o.category!=='cle'")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -3158,7 +3158,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);")&&css.includes('.prix-suggere{'),'le prix suggéré, en masse et au formulaire');
  // Les ressources : leur rareté à elles, ni effet, ni usage, ni bonus.
  assert.equal(C.rareteDe({category:'ressource',rarete:'epique'}),'ressource');assert.equal(C.rareteDe({category:'object',rarete:'ressource'}),'commun');assert.equal(C.NOM_RARETE('ressource'),'Ressource');
- assert.ok(src.includes("if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'||a.category==='restes'||a.category==='cle'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
+ assert.ok(src.includes("if(o.category==='ressource'||o.category==='restes'||o.category==='cle'||o.category==='herbe'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'||a.category==='restes'||a.category==='cle'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
   &&src.includes("{cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,")&&css.includes('.cat-pill.r-ressource{background:#efe2cc;'),'une ressource : ni effet, ni usage, ni bonus ; sa rareté brun clair');
  // Le magasin : l'objet se clique, plus de bouton.
  assert.ok(fief.includes("const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;")&&fief.includes(" carte.append(p,nom);if(sous)carte.append(sous);return carte}")&&!fief.includes("btn.className='dom-achat'"),'acheter ou vendre d’un clic sur l’objet');
@@ -3198,7 +3198,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(d.batiments.map(b=>b.fonction).join(','),'tannerie,','la Tannerie devient la tannerie, une fois');
  d.batiments[0].fonction='';assert.equal(C.normaliseDomaine(d).batiments[0].fonction,'','ensuite, le MJ choisit');
  assert.equal(J(C.normaliseDomaine({depotsVus:['a','mauvais id!','b']}).depotsVus),J(['a','b']));
- assert.ok(src.includes("function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];")
+ assert.ok(src.includes("function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésors']];")
   &&src.includes("o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);")
   &&src.includes("?sel('Donne','ressource1',ressourceValide(a.ressource1),")&&src.includes("function dessineRecette(){")&&src.includes("if($('recette-lignes'))a.recette=lireRecette();")
   &&src.includes("{cle:'tanneur',nom:'Tanneur',type:'case',")&&src.includes("groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);"),'les Restes et la recette du tanneur, à l’Armurerie');

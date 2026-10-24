@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.008","d":"2026-10-24","t":"Herboristerie"},
 {"v":"1.007","d":"2026-10-23","t":"Effets d'Ombrelame"},
 {"v":"1.006","d":"2026-10-23","t":"Dé de Poison"},
 {"v":"1.005","d":"2026-10-23","t":"Survol des satellites"},

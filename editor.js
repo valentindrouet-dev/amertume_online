@@ -91,8 +91,8 @@ function migreRessources(c){
    dégâts, chaque point de DEF, la deuxième main, l'état infligé, l'effet, chaque bonus, les
    ressources dont elle est faite ; la rareté multiplie ensuite le tout. L'Armurerie en tire un
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
-const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
-const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,treasure:0},
+const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésor']];
+const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,herbe:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25,purple:25},def:20,deuxMains:5,etat:15,restes:25,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
@@ -243,6 +243,30 @@ function appliqueReglages(c){if(typeof ESPECES==='undefined'||typeof COMPETENCES
   if(r.description)e.description=r.description});
  Object.keys(COMPETENCES_CLASSE).forEach(k=>delete COMPETENCES_CLASSE[k]);Object.assign(COMPETENCES_CLASSE,structuredClone(COMPS_CLASSE_ORIGINE));
  (c.classes||[]).forEach(k=>{if(!k||!k.name||!Array.isArray(k.comps))return;Object.keys(COMPETENCES_CLASSE).filter(n=>cleClasse(n)===cleClasse(k.name)).forEach(n=>delete COMPETENCES_CLASSE[n]);COMPETENCES_CLASSE[k.name]=[...k.comps]})}
+/* v1.008 — Les familles d'adversaires : ce dont ils sont faits, pour ce qui tombe d'eux. Un adversaire en a autant qu'il faut ;
+   une plante d'herboristerie dit, famille par famille, sa chance de tomber (« drops », en %). */
+const FAMILLES_MONSTRES=[['plantes','Plantes'],['plantesligneuses','Plantes ligneuses'],['plantescarnivores','Plantes carnivores'],['fongiques','Fongiques'],
+ ['mortsvivants','Morts-vivants'],['mortsvivantsmajeurs','Morts-vivants majeurs'],['constructspierre','Constructs de pierre'],['aquatiques','Créatures aquatiques'],
+ ['elementairesfeu','Élémentaires de feu'],['elementairesglace','Élémentaires de glace'],['elementairesair','Élémentaires d’air'],['charognards','Charognards'],
+ ['sylvestres','Créatures sylvestres'],['allsteiners','Allsteiners'],['celestes','Créatures célestes'],['magiques','Créatures magiques'],['tellures','Tellures'],
+ ['dryades','Dryades'],['lumiere','Créatures de lumière'],['gardienssylvestres','Gardiens sylvestres'],['bosssylvestres','Boss sylvestres']];
+const normaliseFamillesMonstre=l=>[...new Set((Array.isArray(l)?l:[]).filter(k=>FAMILLES_MONSTRES.some(([x])=>x===k)))];
+function normaliseDrops(d){const out={};if(!d||typeof d!=='object'||Array.isArray(d))return out;
+ FAMILLES_MONSTRES.forEach(([k])=>{const v=Math.max(0,Math.min(100,Math.round(Number(d[k]))||0));if(v)out[k]=v});return out}
+// Les plantes d'herboristerie d'origine : nom, rareté, prix en or, et leur chance de tomber par famille.
+const PLANTES_HERBORISTERIE=[
+ ['Herbe-à-plaie','commun',1,{plantes:40}],['Ortie grise','commun',1,{plantes:30}],['Lichen cendré','commun',1,{mortsvivants:10}],
+ ['Mousse de pierre','commun',1,{constructspierre:15}],['Racine amère','commun',2,{plantes:25}],['Pavot des talus','commun',2,{plantes:20}],
+ ['Champignon lanterne','commun',2,{fongiques:35}],['Résine de pin noir','commun',2,{plantesligneuses:30}],['Algue des puits','commun',2,{aquatiques:20}],
+ ['Sauge des marais','commun',3,{plantes:20}],['Belladone','inhabituel',6,{plantes:12}],['Spore de vesse-de-loup','inhabituel',6,{fongiques:30}],
+ ['Écorce de saule pleureur','inhabituel',7,{plantesligneuses:15}],['Aconit bleu','inhabituel',8,{plantes:8}],['Piment de braise','inhabituel',8,{elementairesfeu:15}],
+ ['Fleur de givre','inhabituel',10,{elementairesglace:15}],['Pollen d’orage','inhabituel',10,{elementairesair:12}],
+ ['Racine de mandragore','inhabituel',12,{mortsvivants:8,charognards:10}],['Gui d’argent','inhabituel',14,{sylvestres:10}],
+ ['Orchidée de sang','rare',25,{plantescarnivores:10}],['Mousse de charogne','rare',22,{charognards:20}],['Rose de vapeur','rare',28,{allsteiners:10}],
+ ['Fleur d’Hephos','rare',30,{celestes:10}],['Lotus noir','rare',40,{magiques:6}],['Racine-cristal tellurique','rare',45,{tellures:8}],
+ ['Larme de dryade','mystique',80,{dryades:5}],['Champignon d’âme','mystique',100,{mortsvivantsmajeurs:4}],['Soleil-de-nuit','mystique',120,{lumiere:3}],
+ ['Sève du flux','mystique',150,{gardienssylvestres:4}],['Graine du Premier Arbre','epique',300,{bosssylvestres:2}]];
+const idPlante=n=>'herbe-'+String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  // Les pièces forgées ne sont pas au catalogue : elles vivent chez les aventuriers, et s'y recomposent (syncForges).
  c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);
@@ -447,6 +471,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v0.999 : Coupure devient une maîtrise automatique : une réaction d'avant prend le type Maîtrise, une fois.
  if(!c.semisForge.includes('coupure-maitrise')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='lamevent'&&t.type==='reac')t.type='mait'});c.semisForge.push('coupure-maitrise')}
  // v0.987 : Agripper devient une Action ; son texte d'origine suit, une fois, s'il n'a pas été réécrit.
+ // v1.008 : les plantes de l'Herboristerie, une fois ; celles que le MJ a effacées ne reviennent pas.
+ if(!c.semisForge.includes('herboristerie')&&Array.isArray(c.items)){PLANTES_HERBORISTERIE.forEach(([name,rarete,price,drops])=>{const id=idPlante(name);
+  if(!c.items.some(o=>o&&o.id===id))c.items.push({id,name,category:'herbe',price,qty:1,logo:'',rarete,magasin:false,drops:{...drops}})});c.semisForge.push('herboristerie')}
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
    if(typeof t.effects!=='string'||!t.effects.trim()||/^Sur un critique, la cible est (Au sol|Entravée)\.?$/.test(t.effects.trim()))t.effects='Au contact, vous infligez Entravé et 1 dé rouge + dégâts.'});c.semisForge.push('agripper-action')}
  if(!c.semisForge.includes('agrippe-entrave')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='agrippe'&&typeof t.effects==='string'&&/Au sol\.?\s*$/.test(t.effects.trim())&&/critique/i.test(t.effects))t.effects=t.effects.trim().replace(/Au sol\.?$/,'Entravée.')});c.semisForge.push('agrippe-entrave')}
@@ -662,7 +689,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
   // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend. Une clé non plus.
-  if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
+  if(o.category==='ressource'||o.category==='restes'||o.category==='cle'||o.category==='herbe'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
+  // v1.008 : une plante d'herboristerie tombe des adversaires de certaines familles, à sa chance pour chacune.
+  if(o.category==='herbe'){const d=normaliseDrops(o.drops);if(Object.keys(d).length)o.drops=d;else delete o.drops}else delete o.drops;
   o.usage=usageObjet(o);o.consumable=usageConsomme(o.usage);
   o.magasin=o.magasin===true;o.unique=estUnique(o);
   // Sa lumière, en mètres ; rien d'ordinaire.
@@ -678,7 +707,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
- c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';if(!(Number.isInteger(m.defBonus)&&m.defBonus>0&&m.defBonus<=DEF_MAX))delete m.defBonus;const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
+ c.monsters.forEach(m=>{const fm=normaliseFamillesMonstre(m.familles);if(fm.length)m.familles=fm;else delete m.familles;m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';if(!(Number.isInteger(m.defBonus)&&m.defBonus>0&&m.defBonus<=DEF_MAX))delete m.defBonus;const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
  return c}
 // Le niveau d'un aventurier suit son XP, d'après les paliers de la partie.
 function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}
@@ -990,7 +1019,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
- +'<option value="armor">Armures</option><option value="object">Objets</option><option value="cle">Clés</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="treasure">Trésors</option></select>'
+ +'<option value="armor">Armures</option><option value="object">Objets</option><option value="cle">Clés</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="herbe">Herboristerie</option><option value="treasure">Trésors</option></select>'
  +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
     faire quand on se sert d'un objet, replié par défaut. */
@@ -1902,7 +1931,7 @@ function dicePips(dice,etat,place){const out=document.createElement('span');out.
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
-function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
+function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='herbe'?'herbe':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
@@ -2053,7 +2082,7 @@ function pastilleInsensible(p){let el=null,titre='';
  if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
  const w=document.createElement('span');w.className='effet-pastille barre';w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
 // Une pièce sans logo : le glyphe de sa colonne.
-function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':'⚔';return g}
+function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':col==='herbe'?'🌿':'⚔';return g}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -2307,7 +2336,7 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper&&!verrouEquip(a,o);
  // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
  // Un trésor se garde et se vend ; il ne s'utilise pas : un clic montre sa description.
- const utilisable=(o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'
+ const utilisable=(o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='herbe'&&o.category!=='cle'
   // En jeu, une pièce portée dont l'effet est actif, un état conféré, s'emploie aussi d'un clic.
   ||!tout&&EQUIPEMENTS.includes(o.category)&&!!objetCode(o)&&modeObjet(o)==='actif'&&!!portes(o))&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
@@ -2450,8 +2479,8 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  let rien=true;
  /* Trois lignes, d'elles-mêmes : l'équipement — armes, armures, munitions —, les objets, puis les
     ressources et les restes. Chaque pièce n'y montre que son icône, en petit ; sa bulle dit tout. */
- const LIGNES_SAC=[['equipement','Équipement',o=>['weapon','armor','ammo'].includes(o.category)],['objets','Objets',o=>!['weapon','armor','ammo','ressource','restes'].includes(o.category)],
-  ['matieres','Ressources et restes',o=>['ressource','restes'].includes(o.category)]];
+ const LIGNES_SAC=[['equipement','Équipement',o=>['weapon','armor','ammo'].includes(o.category)],['objets','Objets',o=>!['weapon','armor','ammo','ressource','restes','herbe'].includes(o.category)],
+  ['matieres','Ressources et restes',o=>['ressource','restes','herbe'].includes(o.category)]];
  const lignes=new Map(LIGNES_SAC.map(([k,nom])=>{const l=document.createElement('div');l.className='sac-ligne sac-'+k;
   const t=document.createElement('span');t.className='sac-ligne-titre';t.textContent=nom;l.append(t);return [k,l]}));
  const ligneDe=o=>lignes.get((LIGNES_SAC.find(([,,f])=>f(o))||LIGNES_SAC[1])[0]);
@@ -2864,7 +2893,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
-const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];
+const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -2892,8 +2921,8 @@ let masseAnnule=null;
 // Une pièce neuve, par colonne de l'Armurerie : sa catégorie, sa portée, ses mains.
 const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},ranged:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
  armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},cle:{category:'cle',name:'Nouvelle clé'},ressource:{category:'ressource',name:'Nouvelle ressource'},
- restes:{category:'restes',name:'Nouveaux restes'},treasure:{category:'treasure',name:'Nouveau trésor'}};
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
+ restes:{category:'restes',name:'Nouveaux restes'},herbe:{category:'herbe',name:'Nouvelle plante'},treasure:{category:'treasure',name:'Nouveau trésor'}};
+const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
@@ -4790,7 +4819,7 @@ const chanceButin=(chances,id)=>Object.prototype.hasOwnProperty.call(chances||{}
    une pièce l'ajoute. Munitions avec les armes, trésors avec les objets. Les restes ont leur champ
    à eux, au formulaire comme dans le tableau en masse. */
 const CATS_INV_ADV=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
- ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle'].includes(o.category)],['cles','Clés',o=>o.category==='cle'],['ressources','Ressources',o=>o.category==='ressource']];
+ ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle','herbe'].includes(o.category)],['cles','Clés',o=>o.category==='cle'],['ressources','Ressources',o=>o.category==='ressource'],['herbes','Herboristerie',o=>o.category==='herbe']];
 const estReste=o=>!!o&&o.category==='restes';
 let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='',filtreRestes='';
 /* L'inventaire d'un adversaire, au formulaire comme dans le tableau en masse, en petits carrés
@@ -5024,9 +5053,10 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
   groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
   groupe('Boucliers',filtre(o=>o.category==='armor'&&o.slot==='shield'),porte,gearPill,clic);
-  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'),porte,gearPill,clic);
+  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='herbe'),porte,gearPill,clic);
   groupe('Ressources',filtre(o=>o.category==='ressource'),porte,gearPill,clic);
   groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);
+  groupe('Herboristerie',filtre(o=>o.category==='herbe'),porte,gearPill,clic);
   groupe('Trésors',filtre(o=>o.category==='treasure'),porte,gearPill,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun objet de ce nom.':'L’armurerie est vide : crée un objet dans l’onglet Armurerie.';
@@ -6813,7 +6843,7 @@ function piecesUniques(a,soi){if(!a||!Array.isArray(a.inventaire))return;const u
  const tenue=id=>uniques.has(id)&&(typeof actors!=='undefined'?actors:[]).some(o=>o&&o!==a&&o!==soi&&(o.inventaire||[]).includes(id));
  a.inventaire=a.inventaire.filter(id=>!tenue(id));['weapons','armures'].forEach(k=>{if(Array.isArray(a[k]))a[k]=a[k].filter(id=>!tenue(id))});if(a.shieldId&&tenue(a.shieldId))a.shieldId=''}
 // v0.969 : l'Extension, la Nature et la Forge d'un adversaire passent de sa fiche au modèle, et du modèle à la table.
-function modeleEnPlus(o){return {...(typeof extensionValide==='function'&&extensionValide(o&&o.extension)?{extension:o.extension}:{}),...(o&&(o.nature==='mortvivant'||o.nature==='mecanique')?{nature:o.nature}:{}),...(o&&o.forge&&typeof o.forge==='object'?{forge:structuredClone(o.forge)}:{})}}
+function modeleEnPlus(o){return {...(typeof extensionValide==='function'&&extensionValide(o&&o.extension)?{extension:o.extension}:{}),...(o&&(o.nature==='mortvivant'||o.nature==='mecanique')?{nature:o.nature}:{}),...(normaliseFamillesMonstre(o&&o.familles).length?{familles:normaliseFamillesMonstre(o.familles)}:{}),...(o&&o.forge&&typeof o.forge==='object'?{forge:structuredClone(o.forge)}:{})}}
 function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,...(m.defBonus>0?{defBonus:m.defBonus}:{}),dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,...(m.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:m.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:m.mouvement})}:{}),notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,...modeleEnPlus(m),weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}
 function fromMonster(m,soi){const a=baseActor(false);Object.assign(a,profilDuModele(m));if(soi!==true)piecesUniques(a,soi);equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false,pnj=false){if(view!=='mj')return;
@@ -6842,7 +6872,7 @@ function renderActorForm(){const a=draft;const sien=w=>!w.forge||(a.inventaire||
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"'+(a.hero?' disabled':''))+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+champEspeceFiche(a):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any" disabled')+field('Endurance','endu',a.endu,'number','min="1" max="999" disabled')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number',a.hero?'min="1" max="20" disabled':'min="1" max="20"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']])+sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])+sel('Nature','nature',a.nature==='mortvivant'||a.nature==='mecanique'?a.nature:'vivant',[['vivant','Vivant'],['mortvivant','Mort-vivant'],['mecanique','Mécanique']]):'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"'))+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button>'+(a.hero?'':'<button type="button" id="forge-adv" class="ico plus" title="Forger une arme" aria-label="Forger une arme">⚒</button>')+'</h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']])+sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])+sel('Nature','nature',a.nature==='mortvivant'||a.nature==='mecanique'?a.nature:'vivant',[['vivant','Vivant'],['mortvivant','Mort-vivant'],['mecanique','Mécanique']])+'<fieldset class="familles-adv"><legend>Familles</legend>'+FAMILLES_MONSTRES.map(([k,n])=>'<label class="field-check"><input type="checkbox" name="famille" value="'+k+'"'+(normaliseFamillesMonstre(a.familles).includes(k)?' checked':'')+'>'+n+'</label>').join('')+'</fieldset>':'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"'))+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button>'+(a.hero?'':'<button type="button" id="forge-adv" class="ico plus" title="Forger une arme" aria-label="Forger une arme">⚒</button>')+'</h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
@@ -7000,6 +7030,7 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
   if(f.especeSavoir){delete a.savoirAnterieur;delete a.competent;a[champSavoir(c)]=f.especeSavoir.value===''?null:Number(f.especeSavoir.value)}
   if(f.especeHeritage)a.heritage=f.especeHeritage.value||null;if(f.especeAscendance)a.ascendance=f.especeAscendance.value||null;
   if(e.taille==='small')a.socle='small'}if(a.hero&&typeof majusculeInitiale==='function')a.name=majusculeInitiale(a.name);if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}if(f.nature){if(f.nature.value==='mortvivant'||f.nature.value==='mecanique')a.nature=f.nature.value;else delete a.nature}
+ if(!a.hero&&f.nature){const fm=normaliseFamillesMonstre([...document.querySelectorAll('#actor-form input[name="famille"]:checked')].map(x=>x.value));if(fm.length)a.familles=fm;else delete a.familles}
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.max=Math.max(1,a.max);if(Number.isFinite(a.def))a.def=defPlafonnee(a.def);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value;if(a.pnj&&f.alignement)a.alignement=alignementDe({pnj:true,alignement:f.alignement.value});if(a.pnj&&f.unique){if(f.unique.checked)a.unique=true;else delete a.unique}}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;else a.mouvement=Math.max(0,Math.min(99,v))}if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  // L'inventaire et l'équipement viennent du brouillon, où le formulaire les a composés ; ce qui n'est plus au catalogue s'efface.
@@ -7163,7 +7194,13 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
 // v1.007 : « pour » — Larcin : le butin va à ce seul aventurier, et quitte l'adversaire, qui reste debout.
 function butinDesRetires(partants,tirage=Math.random,pour=null){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));if(!heros.length)return;
  const vivants=heros.filter(h=>h.hp>0),parmi=vivants.length?vivants:heros,taille=typeof mapSize==='function'?mapSize():null,gains=new Map();
- partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);if(!(f.inventaire||[]).length&&!Object.keys(tire).length)return;
+ partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);
+  /* v1.008 : les plantes que sa famille donne, chacune à sa chance — la meilleure de ses familles. Larcin les prend aussi ;
+     une fois prises, elles ne tombent plus de lui. */
+  const fams=typeof normaliseFamillesMonstre==='function'?normaliseFamillesMonstre(f.familles):[],dejaVole=new Set(Array.isArray(f.plantesVolees)?f.plantesVolees:[]);
+  const plantes=fams.length?(catalog.items||[]).filter(o=>o&&o.category==='herbe'&&!dejaVole.has(o.id)).filter(o=>{const d=normaliseDrops(o.drops),ch=Math.max(0,...fams.map(k=>d[k]||0));return ch>0&&tirage()*100<ch}):[];
+  if(pour&&plantes.length)f.plantesVolees=[...dejaVole,...plantes.map(o=>o.id)];
+  if(!(f.inventaire||[]).length&&!Object.keys(tire).length&&!plantes.length)return;
   // Son loot forgé : le sien, ou celui de son modèle, sinon la chance de son type.
   const modele=(catalog.monsters||[]).find(m=>m&&m.id===f.template),forgeF=forgeAdvEffectif({type:f.type,forge:f.forge||(modele&&modele.forge)});
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
@@ -7177,6 +7214,8 @@ function butinDesRetires(partants,tirage=Math.random,pour=null){const heros=acto
    // Qui l'a laissée tomber : son modèle au Bestiaire et son nom, pour la bulle de la pièce au journal.
    if(!g.src.has(donne.id))g.src.set(donne.id,[]);g.src.get(donne.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})});
   // L'or et les gemmes de sa bourse, tirés aux dés : au même aventurier.
+  plantes.forEach(o=>{if(!ajouterInventaire(h,o))return;if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f);
+   if(!g.src.has(o.id))g.src.set(o.id,[]);g.src.get(o.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})});
   if(pour)f.bourse=[];
   Object.entries(tire).forEach(([k,v])=>{if(k==='or')ajouteOr(h,v);else{h.richesses={...(h.richesses||{})};h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v}
    if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.richesses[k]=(g.richesses[k]||0)+v;g.de.add(f)})});
@@ -7307,7 +7346,7 @@ function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
  groupes.push(['Logos',autres]);return groupes}
 function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches('artisanat'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
- const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
+ const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
  return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
@@ -7373,7 +7412,7 @@ function logoTalent(t,cls){t=logoHerite(t);const propre=logoImage(t&&t.logo,LOGO
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],
- ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor'],['misc','Divers']];
+ ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};

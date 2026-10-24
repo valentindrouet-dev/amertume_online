@@ -2534,7 +2534,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
 /* Le choix dans l'armurerie, par familles : de petits carrés, un clic prend la pièce, un autre la repose.
    « pris » : l'ensemble des identifiants choisis, que le formulaire relit à l'enregistrement. */
 function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.value||'').trim().toLowerCase();boite.replaceChildren();
-  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes']].forEach(([cat,titre])=>{
+  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie']].forEach(([cat,titre])=>{
    const lot=(catalog.items||[]).filter(it=>it&&!it.forge&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
    if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
    /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
@@ -2819,8 +2819,8 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
    allumer, un filtre, et l'armurerie ; un clic ajoute un exemplaire, le clic droit en retire un. Au-dessus,
    ce qui est déjà dedans, chaque pièce et son nombre. */
 const CATS_COFFRE=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
- ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle'].includes(o.category)],['ressources','Ressources',o=>o.category==='ressource'],
- ['cles','Clés',o=>o.category==='cle'],['restes','Restes',o=>o.category==='restes']];
+ ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle','herbe'].includes(o.category)],['ressources','Ressources',o=>o.category==='ressource'],
+ ['cles','Clés',o=>o.category==='cle'],['restes','Restes',o=>o.category==='restes'],['herbes','Herboristerie',o=>o.category==='herbe']];
 let catsCoffre=new Set(['armes','armures','objets']),filtreCoffre='';
 function contenuCoffre(boite,cible){boite.replaceChildren();boite.classList.add('inv-adv');
  const compte=id=>cible.inventaire.filter(x=>x===id).length;
