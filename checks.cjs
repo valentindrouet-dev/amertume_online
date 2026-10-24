@@ -1263,7 +1263,7 @@ assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES
  assert.ok(tv.includes('if(!m)return false;')&&!tv.includes('fogOff')&&tv.includes('if(!fogTroupe)return false;')&&tv.includes('if(!size.width)return false;'),'seule la vision réelle révèle');}
 /* Le combat commence de lui-même dès qu'un adversaire est révélé — par la vue ou à la main — et
    l'ouverture d'une carte remet la troupe en exploration. */
-assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0);")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
+assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))queueMicrotask(()=>{if(!enCombat())basculerMode('combat',true)});")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
  &&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();\n mode='exploration';"),'le combat commence à la première révélation');
 /* Glisser plusieurs socles ne coûte plus en proportion : obstacles et murs en pixels construits une
    fois par tâche, auras mémorisées par socle, redessin au plus une fois par image, contacts relevés en
@@ -1671,7 +1671,7 @@ assert.ok(page.includes("&&(!adverses||hostiles(o,a))")
  &&page.includes('if(tiennent.length)last=poserHorsDesSocles(last,tiennent,polys,r);')
  &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
  &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain,true)})}")&&page.includes("else{const g=drag.regle?borneMouvement(drag.regle,q):q;moveActor(a,g.x,g.y,view==='mj',enMain,true);")
- &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,!!traverse),tokenOf(a)/2);"),'les socles tiennent la place sur la table ; pendant le geste, les siens se traversent');
+ &&page.includes("const p0=px(a.x,a.y),cercles=soclesOccupes(a,size,ignorer,!!traverse),rr=tokenOf(a)/2,murs=obstaclesDuPas(px);let [x,y]=ecarteDesSocles(p0,cercles,rr);"),'les socles tiennent la place sur la table ; pendant le geste, les siens se traversent');
 /* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
    le bonus et son jeton, comme une attaque ; l'Onde du camp lève les états comme le bouton Soin. */
@@ -2465,7 +2465,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ctxN={actors:[{id:'h',name:'Ulfgar',hero:true},{id:'g1',name:'Gobelin',vu:true,numero:1},{id:'g2',name:'Gobelin',vu:true,numero:2},{id:'o',name:'Ogre',vu:true,numero:1}]};vm.createContext(ctxN);
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
- assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
+ assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;finCombatDepuis=0;return}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()&&!sortiDuCombat(a)?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
@@ -3085,7 +3085,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  {const ctxI={};vm.createContext(ctxI);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('function retirerInventaire('))+';this.ajouterInventaire=ajouterInventaire;',ctxI);
   const a={inventaire:Array(98).fill('f')};assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),true);assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),false);assert.equal(a.inventaire.length,99,'99 au plus');}
  assert.ok(src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}")
-  &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix});else ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
+  &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix,achat:o.id});else ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
  assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
@@ -3204,7 +3204,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("{cle:'tanneur',nom:'Tanneur',type:'case',")&&src.includes("groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);"),'les Restes et la recette du tanneur, à l’Armurerie');
  assert.ok(fief.includes("if(b.fonction==='tannerie')blocTannerie(out,b);")&&fief.includes("function versDomaine(a,delta){if(mjDom()){appliqueDelta(")
   &&fief.includes("function recueilleDepots(redessine=true){if(!mjDom())return false;")&&fief.includes("const mj=mjDom(),r=mj?(domaine.ressources||(domaine.ressources={})):reserveVue();")
-  &&vivant.includes("function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots()}"),'la tannerie, et les dépôts versés par le MJ');}
+  &&vivant.includes("function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots();"),'la tannerie, et les dépôts versés par le MJ');}
 /* v0.335 — Un lot de table : repos courts au niveau, repos long, 0 VIE hors de la carte, états
    effacés sauf le Blindage, Lamevent au contact rejoint, Provocation socle à socle, Orbes sans
    dégâts, vaincus retirés, cinq cibles, et la liste des cartes au nom seul. */
@@ -5704,11 +5704,11 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.ok(src.includes("{cle:'bourse',nom:'Or et gemmes',type:'panneau',tri:m=>normaliseBourse(m.bourse).length},")&&src.includes("else if(quoi==='bourse')corps.append(editeurBourse(m,fini));")
   &&src.includes("else if(quoi==='bourse'){const l=ligneBourse(m.bourse);if(l)b.append(l)}")&&src.includes("bourse:'Or et gemmes'"),'la colonne Or et gemmes');
  assert.ok(page.includes("()=>{a.alignementJeu=k;basculeAdverse(a);render();scheduleSave()}")&&page.includes("function basculeAdverse(a){if(campDe(a)!=='adverse'||!alive(a)||a.hidden||")
-  &&page.includes("floatNumber(a,'Révélé !','nul');log(nomNum(a)+' est révélé.',{ton:'reveal'});\n if(!enCombat())setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0)}"),'adverse en vue : révélé, et le combat');
+  &&page.includes("floatNumber(a,'Révélé !','nul');log(nomNum(a)+' est révélé.',{ton:'reveal'});\n if(!enCombat())queueMicrotask(()=>{if(!enCombat())basculerMode('combat',true)})}"),'adverse en vue : révélé, et le combat');
  // Le basculement, joué : en vue il révèle et lance le combat ; hors de vue, rien.
  const ctx={alive:a=>a.hp>0,hasState:()=>false,prochainNumero:()=>1,nomNum:a=>a.name,flots:[],floatNumber:(a,t)=>ctx.flots.push(t),journal:[],log:t=>ctx.journal.push(t),
-  combat:false,enCombat:()=>ctx.combat,basculerMode:m=>{ctx.combat=m==='combat'},setTimeout:f=>f(),vue:true,troupeVoit:()=>ctx.vue};vm.createContext(ctx);
- vm.runInContext(page.slice(page.indexOf('function basculeAdverse(a){'),page.indexOf('\n',page.indexOf('if(!enCombat())setTimeout(()=>{if(!enCombat())basculerMode(\'combat\',true)},0)}',page.indexOf('function basculeAdverse(a){'))))+';this.basculeAdverse=basculeAdverse;',ctx);
+  combat:false,enCombat:()=>ctx.combat,basculerMode:m=>{ctx.combat=m==='combat'},setTimeout:f=>f(),queueMicrotask:f=>f(),vue:true,troupeVoit:()=>ctx.vue};vm.createContext(ctx);
+ vm.runInContext(page.slice(page.indexOf('function basculeAdverse(a){'),page.indexOf('\n',page.indexOf('if(!enCombat())queueMicrotask(()=>{if(!enCombat())basculerMode(\'combat\',true)})}',page.indexOf('function basculeAdverse(a){'))))+';this.basculeAdverse=basculeAdverse;',ctx);
  const pnj={name:'Orvel',pnj:true,alignement:'neutre',alignementJeu:'adverse',hp:5};ctx.basculeAdverse(pnj);
  assert.ok(pnj.vu===true&&ctx.flots[0]==='Révélé !'&&ctx.journal[0]==='Orvel est révélé.'&&ctx.combat,'en vue : Révélé !, et le combat');
  ctx.flots.length=0;ctx.combat=false;ctx.vue=false;ctx.basculeAdverse({name:'Ysol',pnj:true,alignementJeu:'adverse',hp:5});
@@ -5891,7 +5891,8 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  const mort={hero:true,vie:0,hp:0,max:6,states:['Coma']},vif={hero:true,vie:2,hp:1,max:6,states:[]},bete={hero:false,hp:1,max:6,states:[]};
  assert.deepEqual([C.applyHeal(mort,5),mort.hp,C.applyHeal(vif,3),vif.hp,C.applyHeal(bete,2)],[0,0,3,4,2],'un mort ne gagne aucun PV');
  assert.ok(src.includes("function profilDuModele(m){return {template:m.id,")&&src.includes("gouverne.forEach(k=>{a[k]=neuf[k]});"),'le modèle ne gouverne que son profil');
- assert.ok(page.includes("// Ailleurs que sur la Table de jeu, le combat ne se juge pas : il attend qu'on y revienne.\n if([...document.body.classList].some(c=>c.startsWith('page-')))return;"),'pas de fin de combat hors de la Table');
+ // v1.010 : la fin du combat se juge sur toutes les pages de l'appareil qui tient la partie.
+ assert.ok(!page.includes("if([...document.body.classList].some(c=>c.startsWith('page-')))return;\n if(adversairesDebout()>0)")&&page.includes('setInterval(veilleCombat,1000);'),'la fin de combat se juge partout');
  assert.ok(page.includes("function hpDe(a,delta){if(delta>0&&estMort(a))return;")&&page.includes("&&!estMort(a)&&(a.hp<a.max||statesOf(a).length))")
   &&page.includes("function reposCourt(a){if(estMort(a))return;")&&page.includes(":estMort(a)?a.name+' est mort : seul le MJ le ressuscite.'"),'un mort : ni soin, ni repos');}
 /* v0.504 — En combat, un test de compétence et l'ouverture d'un coffre coûtent l'Action ; coffres fins, ronds ou tournés,

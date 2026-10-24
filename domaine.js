@@ -634,7 +634,7 @@ function carteMagasin(o,n,prix,actif,titre,faire,sens,sous){const carte=document
 function apresMagasin(){renderDomaine(true);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 // v1.009 : « parCoffre » — l'or du Coffre de Groupe paie à la place de la bourse de l'aventurier.
 function acheterPour(a,o,parCoffre){const p=peutAcheter(a,o),ici=batimentDom(lieuDe(a));if(!(parCoffre?p.enVente&&coffreVue().or>=p.prix:p.ok)||!agitPour(a)||!ici||ici.fonction!=='magasin'||!fonctionActive(ici))return;
- if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix});else ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-p.prix,achat:o.id});else ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
 async function vendrePour(a,o){if(!agitPour(a)||!(a.inventaire||[]).includes(o.id))return;const v=prixVente(o);
  const porte=[...(a.weapons||[]),...(a.armures||[]),a.shieldId,a.munitionId].includes(o.id);
  const texte='Vendre « '+o.name+' »'+(porte?', que '+a.name+' porte,':'')+' pour '+v+' or ?';
@@ -693,7 +693,7 @@ function recueilleDepots(redessine=true){if(!mjDom())return false;const vus=new 
  actors.filter(a=>a.hero).forEach(a=>normaliseDepots(a.depots).forEach(e=>{if(vus.has(e.id))return;appliqueDelta(domaine.ressources||(domaine.ressources={}),e.delta);vus.add(e.id);n++}));
  if(!n)return false;domaine.depotsVus=[...vus].slice(-500);sauveDomaine();if(redessine&&document.body.classList.contains('page-domaine'))renderDomaine(true);return true}
 function acheterTannerie(a,o,parCoffre){const prix=prixAchat(o);if(!aLaTannerie(a)||o.tanneur!==true||(parCoffre?coffreVue().or:orDe(a))<prix)return;
- if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-prix});else ajouteOr(a,-prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' à la tannerie'+(prix?' pour '+prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
+ if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;if(parCoffre)versCoffre(a,{or:-prix,achat:o.id});else ajouteOr(a,-prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' à la tannerie'+(prix?' pour '+prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
 function fabriquerTannerie(a,o){if(!aLaTannerie(a)||o.tanneur!==true||!o.recette||!o.recette.length||manqueRecette(reserveAvecCoffre(),o).length)return;
  if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;prendRecette(a,o);ajouterInventaire(a,o);log(nomNum(a)+' fait fabriquer '+o.name+' à la tannerie, avec '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])))+' de la réserve.');apresMagasin()}
 function vendreReste(a,o){if(!aLaTannerie(a)||o.category!=='restes'||!(a.inventaire||[]).includes(o.id))return;const v=prixAchat(o);
@@ -929,12 +929,32 @@ function coffreVue(){const c=normaliseCoffreGroupe(structuredClone(domaine.coffr
  actors.filter(a=>a&&a.hero).forEach(a=>normaliseOpsCoffre(a.coffreOps).forEach(op=>{if(!vus.has(op.id))ops.push(op)}));
  ops.sort((x,y)=>x.t-y.t).forEach(op=>appliqueOpCoffre(c,op));return c}
 function versCoffre(a,op){const e={...op,id:idDomaine(),t:Date.now()};
- if(mjDom()){domaine.coffre=appliqueOpCoffre(normaliseCoffreGroupe(domaine.coffre),e);sauveDomaine();return}
- const vus=new Set(domaine.coffreVus||[]);a.coffreOps=[...normaliseOpsCoffre(a.coffreOps).filter(x=>!vus.has(x.id)),e].slice(-80)}
+ if(mjDom()){const c=normaliseCoffreGroupe(domaine.coffre);resoudreOpCoffre(c,normaliseOpsCoffre([e])[0],a);domaine.coffre=c;sauveDomaine();return}
+ const vus=new Set(domaine.coffreVus||[]);a.coffreOps=[...normaliseOpsCoffre(a.coffreOps).filter(x=>!vus.has(x.id)),e].slice(-300)}
+/* v1.010 — Chez le MJ, chaque opération passe par l'arbitre (combat.js : jugeOpCoffre) ; ce que le coffre n'a pas pu faire se
+   rattrape sur l'aventurier, et le journal le dit. Deux joueurs ont pris la même dernière pièce ou le même or : le second les
+   rend. Un dépôt dans un onglet devenu plein revient dans son sac. Un onglet acheté deux fois : le second achat est remboursé.
+   Un achat que l'or du coffre ne couvrait plus : la bourse de l'acheteur paie le reste, sinon la pièce lui est reprise. */
+function resoudreOpCoffre(c,op,h){if(!op)return;const r=jugeOpCoffre(c,op),nom=h?nomNum(h):'';
+ if(!h||!Object.keys(r).length)return;
+ const o=op.item?objetDe(op.item):null,quoi=k=>o?(k>1?k+' × ':'')+o.name:'';
+ if(r.ongletRefuse){if(!(op.or<0)&&op.prix>0){ajouteOr(h,op.prix);log(nom+' : l’onglet était déjà acheté, '+op.prix+' or rendus.')}return}
+ if(r.orManque){
+  if(op.achat){const piece=objetDe(op.achat);
+   if(orDe(h)>=r.orManque){ajouteOr(h,-r.orManque);log(nom+' : le coffre de groupe n’avait plus assez d’or, '+r.orManque+' or pris dans sa bourse.')}
+   else{c.or=Math.min(99999999,c.or+(-op.or-r.orManque));if(piece&&(h.inventaire||[]).includes(piece.id))retirerInventaire(h,piece);log(nom+' : le coffre de groupe n’avait plus assez d’or, '+(piece?piece.name:'l’achat')+' est rendu.')}}
+  else{const rendu=Math.min(orDe(h),r.orManque);ajouteOr(h,-rendu);log(nom+' rend '+rendu+' or : le coffre de groupe ne les avait plus.')}}
+ if(r.depotRefuse&&o){for(let i=0;i<r.depotRefuse;i++){if(op.forge&&!(h.forges||[]).some(f=>f.id===op.forge.id))h.forges=[...(h.forges||[]),op.forge];ajouterInventaire(h,o)}
+  log(quoi(r.depotRefuse)+' revient à '+nom+' : l’onglet du coffre de groupe était plein.')}
+ if(r.itemManque){
+  if(op.fab){const piece=objetDe(op.fab);if(piece&&(h.inventaire||[]).includes(piece.id))retirerInventaire(h,piece);log(nom+' : il manquait des ressources au coffre de groupe, '+(piece?piece.name:'la fabrication')+' est rendu.')}
+  else if(o){let k=0;for(let i=0;i<r.itemManque;i++){if(!(h.inventaire||[]).includes(o.id))break;retirerInventaire(h,o);k++}
+   if(k)log(nom+' rend '+quoi(k)+' : le coffre de groupe ne l’avait plus.')}}}
 // Chez le MJ : les opérations des joueurs sur le coffre se versent avec les dépôts, une seule fois, dans l'ordre où elles ont eu lieu.
 {const r0=recueilleDepots;recueilleDepots=function(redessine=true){const fait=r0(redessine);if(!mjDom())return fait;
  const vus=new Set(domaine.coffreVus||[]),ops=[];actors.filter(h=>h&&h.hero).forEach(h=>normaliseOpsCoffre(h.coffreOps).forEach(op=>{if(!vus.has(op.id))ops.push(op)}));
- if(!ops.length)return fait;const c=normaliseCoffreGroupe(domaine.coffre);ops.sort((x,y)=>x.t-y.t).forEach(op=>{appliqueOpCoffre(c,op);vus.add(op.id)});
+ if(!ops.length)return fait;const c=normaliseCoffreGroupe(domaine.coffre),auteur=new Map();actors.filter(h=>h&&h.hero).forEach(h=>normaliseOpsCoffre(h.coffreOps).forEach(op=>auteur.set(op.id,h)));
+ ops.sort((x,y)=>x.t-y.t).forEach(op=>{resoudreOpCoffre(c,op,auteur.get(op.id));vus.add(op.id)});if(typeof syncForges==='function')syncForges();
  domaine.coffre=c;domaine.coffreVus=[...vus].slice(-800);sauveDomaine();if(coffreGroupeDialog.open)dessineCoffreGroupe();return true}}
 // Les pièces forgées du coffre gardent leur fiche : l'armurerie les connaît, comme celles des inventaires.
 {const sf=syncForges;syncForges=function(){sf();if(typeof catalog==='undefined'||!catalog||!Array.isArray(catalog.items))return;
@@ -946,7 +966,7 @@ function reserveAvecCoffre(){const r=reserveVue();coffreVue().tabs.forEach(t=>t.
 function prendRecette(a,o){const res=reserveVue(),delta={};
  normaliseRecette(o.recette).forEach(({cle,qte})=>{const pris=Math.min(qte,Number(res[cle])||0);if(pris)delta[cle]=-pris;let reste=qte-pris;
   const c=coffreVue();c.tabs.forEach((t,tab)=>{if(reste<=0)return;const ids=[...new Set(t)].filter(id=>{const x=objetDe(id);return x&&x.category==='ressource'&&x.cle===cle});
-   ids.forEach(id=>{if(reste<=0)return;const n=Math.min(reste,t.filter(y=>y===id).length);if(n){versCoffre(a,{item:id,tab,n:-n});reste-=n}})})});
+   ids.forEach(id=>{if(reste<=0)return;const n=Math.min(reste,t.filter(y=>y===id).length);if(n){versCoffre(a,{item:id,tab,n:-n,fab:o.id});reste-=n}})})});
  if(Object.keys(delta).length)versDomaine(a,delta)}
 // Sous une carte de magasin : payer avec l'or du coffre, quand il suffit.
 function boutonCoffre(prix,faire){const b=document.createElement('button');b.type='button';b.className='dom-coffre-payer';b.textContent='Payer avec le coffre';
@@ -970,7 +990,7 @@ function prendreAuCoffre(a,id,tous){const c=coffreVue(),tab=coffreGroupeOnglet,t
 function orAuCoffre(a,n,sens){n=Math.max(0,Math.trunc(Number(n))||0);if(!n||!agitPour(a))return;
  if(sens>0){n=Math.min(n,orDe(a));if(!n)return;ajouteOr(a,-n);versCoffre(a,{or:n})}else{n=Math.min(n,coffreVue().or);if(!n)return;ajouteOr(a,n);versCoffre(a,{or:-n})}apresCoffre()}
 function acheterOnglet(a,parCoffre){const c=coffreVue();if(!agitPour(a)||c.onglets>=COFFRE_ONGLETS_MAX)return;const prix=PRIX_ONGLETS[c.onglets];
- if(parCoffre){if(c.or<prix)return;versCoffre(a,{onglet:1,or:-prix})}else{if(orDe(a)<prix)return;ajouteOr(a,-prix);versCoffre(a,{onglet:1})}
+ if(parCoffre){if(c.or<prix)return;versCoffre(a,{onglet:1,pour:c.onglets,prix,or:-prix})}else{if(orDe(a)<prix)return;ajouteOr(a,-prix);versCoffre(a,{onglet:1,pour:c.onglets,prix})}
  log(nomNum(a)+' ouvre l’onglet '+(c.onglets+1)+' du coffre de groupe pour '+prix+' or'+(parCoffre?' du coffre':'')+'.');coffreGroupeAchat=false;coffreGroupeOnglet=c.onglets;apresCoffre()}
 // Une ligne d'or : le montant, un champ, et le bouton qui le fait passer de l'autre côté.
 function ligneOrCoffre(n,txt,max,faire){const l=document.createElement('div');l.className='cg-ligne-or';l.append(ligneOr(n,null));

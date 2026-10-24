@@ -32,6 +32,8 @@ CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
 CHAMPS_VIVANTS.push('charmePar','sangFeerique');
 // v1.009 : les opérations d'un aventurier sur le Coffre de Groupe, que l'appareil du MJ verse une fois.
 CHAMPS_VIVANTS.push('coffreOps');
+// v1.010 : la demande de combat d'un joueur — son coup est parti contre un adversaire révélé, hors combat : l'appareil du MJ le lance.
+CHAMPS_VIVANTS.push('demandeCombat');
 // v0.916 : la compétence de Compétent (Humain).
 CHAMPS_VIVANTS.push('competent');
 // v0.921 : l'Ascendance du Drakéide.
@@ -192,7 +194,7 @@ function diffEtat(av,ap){const maj={},SUPPR=firebase.firestore.FieldValue.delete
   if(tour&&!estMJ()&&typeof cleTour==='function')maj['actors.'+id+'.tourVu']=cleTour()});
  // Un joueur n'écrit l'état du sol que pour la carte ouverte par le MJ : jamais celui d'une carte périmée.
  // Une position écrite par un joueur porte aussi la date du tour qu'il voit : le MJ en combat écarte un pas fait hors combat.
- if(!estMJ()&&typeof cleTour==='function')Object.keys(maj).forEach(k=>{const p=/^actors\.(.+)\.[xy]$/.exec(k);if(p)maj['actors.'+p[1]+'.tourVu']=cleTour()});
+ if(!estMJ()&&typeof cleTour==='function')Object.keys(maj).forEach(k=>{const p=/^actors\.(.+)\.(?:[xy]|hp)$/.exec(k);if(p)maj['actors.'+p[1]+'.tourVu']=cleTour()});
  if(!pareil(av&&av.doors,ap.doors)&&(estMJ()||(dernierDoc&&dernierDoc.mapId&&dernierDoc.mapId===currentMapId)))maj.doors=ap.doors;
  // Le tour, la carte ouverte, le verrou et le titre appartiennent au MJ.
  if(estMJ())CHAMPS_MJ.forEach(k=>{if(!pareil(av&&av[k],ap[k]))maj[k]=ap[k]});
@@ -263,11 +265,18 @@ function instancierActeur(id,e){
    chacun redessinait toute la table. On n'applique que le dernier reçu, un instant plus
    tard : une rafale ne coûte qu'une application. */
 let applicationTimer=null;const imagesRattrapees=new WeakSet();
-function programmerApplication(){if(applicationTimer)return;
+/* v1.010 : un onglet caché ne retarde rien — le navigateur y ralentit les minuteries jusqu'à une par minute ; le document
+   s'applique alors dès qu'il arrive. C'est là que le MJ révèle, lance et termine le combat pour toute la table. */
+function programmerApplication(){if(typeof document!=='undefined'&&document.hidden){clearTimeout(applicationTimer);applicationTimer=null;if(dernierDoc){appliquerSalle(dernierDoc);majTable()}return}
+ if(applicationTimer)return;
  applicationTimer=setTimeout(()=>{applicationTimer=null;if(dernierDoc){appliquerSalle(dernierDoc);majTable()}},40)}
 /* Chez le MJ, ce que les joueurs ont déposé sur leur aventurier pour la réserve — une conversion
    à la tannerie, une fabrication — y est versé dès réception, une seule fois (recueilleDepots). */
-function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots()}
+function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots();
+ // v1.010 : chez le MJ, à chaque document reçu, le combat se juge — commencer, finir — sans attendre une minuterie.
+ if(d&&estMJ()&&typeof veilleCombat==='function')veilleCombat();
+ // v1.010 : la fenêtre du Coffre de Groupe montre aussitôt ce que les autres y font.
+ if(typeof coffreGroupeDialog!=='undefined'&&coffreGroupeDialog.open&&typeof dessineCoffreGroupe==='function')dessineCoffreGroupe()}
 function appliquerSalleSeule(d,complet){if(!d)return;
  /* Seules des positions ont bougé, ou un socle est sous le doigt ici : les socles glissent,
     le rendu complet attend la fin du geste. */
@@ -279,7 +288,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
  docPrecedent=d;clearTimeout(renduDiffere);
  // L'état d'avant, pour ne redessiner que si le document a changé quelque chose ici.
  const avant=JSON.stringify(etatVivant());
- appliquantDistant=true;let base=null,carteNeuve=false,tourChange=false;const aGlisser=[];
+ appliquantDistant=true;let base=null,carteNeuve=false,tourChange=false,combatExige=false;const aGlisser=[];
  try{
   // Ce que le joueur connaissait avant ce document : le bandeau d'un nouveau tour, ou d'un combat qui a recommencé, s'en déduit.
   const avantIci={connu:modeConnu,mode,round,cb:typeof numeroCombat!=='undefined'?numeroCombat:0};
@@ -367,6 +376,13 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
     // Le joueur d'un aventurier, chez le MJ : posé à sa création par le joueur, puis par le MJ seul ; un autre changement repart.
     if(estMJ()&&!neuf&&(k==='joueur'||k==='joueurNom')&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
+    /* v1.010 : un coup d'un joueur sur un adversaire révélé ne compte que dans le combat en cours. Porté hors combat — son écran
+       ne savait pas encore le combat commencé —, il est refusé, et le combat commence ; daté d'un autre combat, il est refusé. */
+    if(estMJ()&&!neuf&&k==='hp'&&!a.hero&&a.vu&&typeof campDe==='function'&&campDe(a)==='adverse'&&typeof e.hp==='number'&&typeof local==='number'&&e.hp<local&&!(r&&pareil(r[k],e[k]))){
+     if(mode!=='combat'){gardes.push([id,k,e.hp]);combatExige=true;return}
+     if(typeof e.tourVu==='string'&&typeof numeroCombat!=='undefined'&&!e.tourVu.startsWith('c'+numeroCombat+'.')){gardes.push([id,k,e.hp]);return}}
+    // v1.010 : la demande de combat d'un joueur, pour le combat qui suit celui qu'il connaît : une seule fois.
+    if(estMJ()&&k==='demandeCombat'&&a.hero&&e[k]&&typeof e[k]==='object'&&!pareil(local,e[k])&&typeof numeroCombat!=='undefined'&&e[k].cb===numeroCombat&&mode!=='combat')combatExige=true;
     if(pareil(local,e[k]))return;
     // Les cibles attendent que toute la scène soit en place : leur combattant peut suivre.
     if(k==='cibles'){cibles.push([a,e[k]]);return}
@@ -434,6 +450,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
   if(change){render();rafraichitFiches()}
+  // v1.010 : un coup ou une demande venus d'un joueur hors combat : le combat commence chez tous.
+  if(combatExige&&estMJ()&&mode!=='combat'&&typeof basculerMode==='function')queueMicrotask(()=>{if(!enCombat())basculerMode('combat',true)});
   // Une carte neuve ouverte par le MJ se montre toute entière, à 100 %, chez chaque joueur aussi.
   if(carteNeuve&&typeof resetMapZoom==='function')setTimeout(resetMapZoom,0);
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard();

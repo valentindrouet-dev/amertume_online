@@ -93,6 +93,8 @@ function applyRemote(){if(!remote)return;if(typeof recoitIcones==='function')rec
  if(typeof renderCatalogPages==='function')renderCatalogPages();
  // Le domaine reçu se lit tout de suite si c'est lui qu'on regarde.
  if(typeof renderDomaine==='function'&&document.body.classList.contains('page-domaine'))renderDomaine();
+ // v1.010 : le Coffre de Groupe ouvert se met à jour sur le domaine reçu.
+ if(typeof coffreGroupeDialog!=='undefined'&&coffreGroupeDialog.open&&typeof dessineCoffreGroupe==='function')dessineCoffreGroupe();
  if(typeof accueilDeSession==='function')accueilDeSession()}
 $('shared-scene').onclick=()=>{if(confirm('Charger la scène publiée à la place de la scène locale actuelle ?'))applyRemote()};
 async function publishShared(explicit=false){if(!admin||!auth?.currentUser){status('Connecte-toi avec un compte MJ autorisé pour publier.');return}if(publishing)return;const value=publicContent(),text=texteStable(value);if(!explicit&&text===lastPublishedText)return;publishing=true;$('shared-publish').disabled=true;let newRef;try{/* Les icônes de planches que le contenu emploie voyagent avec lui : les joueurs n'ouvrent jamais une planche (planches.js). */if(typeof iconesAPublier==='function')value.icones=await iconesAPublier(value);SharedData.validate(value);const envoi=await envoieImages(value);const packed=SharedData.pack(envoi.value);const revision=crypto.randomUUID();newRef=cloud.collection('amertume_online_versions').doc(revision);status('Publication du contenu et des images…');for(let offset=0;offset<packed.chunks.length;offset+=10){const batch=cloud.batch();packed.chunks.slice(offset,offset+10).forEach((data,j)=>batch.set(newRef.collection('parts').doc(String(offset+j)),{data}));await batch.commit()}

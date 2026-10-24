@@ -244,11 +244,22 @@ function segmentCoupeSocles(p,q,cercles,r,marge=.5){const seuil=(c)=>r+c.r-marge
 /* Où poser un socle pour qu'il ne couvre ni la matière ni un autre : on écarte, on remet
    hors des murs, et on recommence tant que l'un défait l'autre — trois passes suffisent,
    et dans un couloir trop étroit c'est le mur qui l'emporte. */
+/* v1.010 : jamais de l'autre côté d'un mur. Écarté d'un socle puis remis hors de la matière, un point pouvait passer une ligne
+   de blocage fine — et le socle se retrouvait dans la pièce voisine. Si le trajet de son point de départ à sa place franchit
+   la matière, il prend la place libre la plus proche de ce côté-ci ; à défaut, il reste où il est. */
 function poserHorsDesSocles(p,cercles,shapes,r){let q=p;
  for(let pass=0;pass<3;pass++){const avant=q;
   q=slideOutOfWalls(ecarteDesSocles(q,cercles,r),shapes,r);
   if(Math.abs(q[0]-avant[0])<.01&&Math.abs(q[1]-avant[1])<.01)break}
- return q}
+ if(!(shapes&&shapes.length)||!segmentHitsPolys(p,q,shapes))return q;
+ return placeLibreDeCeCote(p,cercles,shapes,r)}
+// La place libre la plus proche de « p » que l'on atteint en ligne droite sans franchir la matière : des anneaux de plus en plus larges.
+function placeLibreDeCeCote(p,cercles,shapes,r){
+ const libre=c=>{if(dansUnSocle(c,cercles,r)||segmentHitsPolys(p,c,shapes))return false;const s=slideOutOfWalls(c,shapes,r);return Math.hypot(s[0]-c[0],s[1]-c[1])<.5};
+ const pas=Math.max(2,r*.35);
+ for(let k=1;k<=30;k++){const rad=k*pas,n=Math.max(8,Math.ceil(2*Math.PI*rad/pas));
+  for(let i=0;i<n;i++){const t=i/n*2*Math.PI,c=[p[0]+Math.cos(t)*rad,p[1]+Math.sin(t)*rad];if(libre(c))return c}}
+ return p}
 function slideOutOfWalls(p,shapes,r){let x=p[0],y=p[1];
  for(let pass=0;pass<4;pass++){let touched=false;
   for(const s of shapes||[]){const contours=contoursOf(s).filter(c=>c&&c.length>=3);
@@ -3390,10 +3401,12 @@ function normaliseCoffreGroupe(c){c=c&&typeof c==='object'&&!Array.isArray(c)?c:
  const onglets=Math.max(COFFRE_ONGLETS_BASE,Math.min(COFFRE_ONGLETS_MAX,Math.trunc(Number(c.onglets))||COFFRE_ONGLETS_BASE));
  const tabs=Array.from({length:COFFRE_ONGLETS_MAX},(_,i)=>{const l=Array.isArray(c.tabs)&&Array.isArray(c.tabs[i])?c.tabs[i]:[];return l.filter(x=>typeof x==='string'&&x).slice(0,9999).map(x=>x.slice(0,60))});
  return {or:Math.max(0,Math.min(99999999,Math.trunc(Number(c.or))||0)),onglets,tabs,forges:normaliseForges(c.forges)}}
-// Les opérations d'un aventurier sur le coffre : identifiées, datées ; les quatre-vingts dernières.
-function normaliseOpsCoffre(l){return (Array.isArray(l)?l:[]).filter(e=>e&&typeof e==='object'&&typeof e.id==='string'&&ID_DEPOT.test(e.id)).slice(-80).map(e=>{
+// Les opérations d'un aventurier sur le coffre : identifiées, datées ; les trois cents dernières (v1.010, quatre-vingts avant).
+function normaliseOpsCoffre(l){return (Array.isArray(l)?l:[]).filter(e=>e&&typeof e==='object'&&typeof e.id==='string'&&ID_DEPOT.test(e.id)).slice(-300).map(e=>{
  const o={id:e.id,t:Number(e.t)||0},n=v=>Math.max(-99999999,Math.min(99999999,Math.trunc(Number(v))||0));
- if(n(e.or))o.or=n(e.or);if(e.onglet===1)o.onglet=1;
+ if(n(e.or))o.or=n(e.or);if(e.onglet===1){o.onglet=1;o.pour=Math.max(0,Math.min(COFFRE_ONGLETS_MAX,Math.trunc(Number(e.pour))||0));o.prix=Math.max(0,n(e.prix))}
+ // v1.010 : ce que l'or du coffre a payé (« achat ») et ce que ses ressources ont fabriqué (« fab ») : l'arbitre du MJ s'en sert.
+ if(typeof e.achat==='string'&&e.achat)o.achat=e.achat.slice(0,60);if(typeof e.fab==='string'&&e.fab)o.fab=e.fab.slice(0,60);
  if(typeof e.item==='string'&&e.item&&n(e.n)){o.item=e.item.slice(0,60);o.n=Math.max(-99,Math.min(99,n(e.n)));o.tab=Math.max(0,Math.min(COFFRE_ONGLETS_MAX-1,Math.trunc(Number(e.tab))||0));
   const f=normaliseForges(e.forge?[e.forge]:[])[0];if(f)o.forge=f}
  return o}).filter(o=>o.or||o.onglet||o.item)}
@@ -3409,6 +3422,20 @@ function appliqueOpCoffre(c,op){if(!c||!op)return c;
   else{for(let i=0;i<-op.n;i++){const k=t.lastIndexOf(op.item);if(k<0)break;t.splice(k,1)}
    if(!c.tabs.some(l=>l.includes(op.item)))c.forges=c.forges.filter(f=>f.id!==op.item)}}
  return c}
+/* v1.010 — L'arbitre, chez le MJ : l'opération appliquée telle que le coffre la permet, et ce qui n'a pas pu se faire — l'or
+   ou les pièces qui manquaient, un dépôt dans un onglet plein, un onglet déjà acheté. L'appareil du MJ le rattrape ensuite
+   sur l'aventurier (domaine.js : resoudreOpCoffre). */
+function jugeOpCoffre(c,op){const r={};if(!c||!op)return r;
+ if(op.onglet){if(c.onglets>=COFFRE_ONGLETS_MAX||(op.pour&&op.pour!==c.onglets)){r.ongletRefuse=true;return r}c.onglets++}
+ if(op.or>0)c.or=Math.min(99999999,c.or+op.or);
+ else if(op.or<0){const pris=Math.min(c.or,-op.or);c.or-=pris;if(pris<-op.or)r.orManque=-op.or-pris}
+ if(op.item&&op.n){const t=c.tabs[op.tab]||(c.tabs[op.tab]=[]);
+  if(op.n>0){if(!t.includes(op.item)&&placesOnglet(t)>=COFFRE_PLACES)r.depotRefuse=op.n;
+   else{for(let i=0;i<op.n;i++)t.push(op.item);if(op.forge&&!c.forges.some(f=>f.id===op.forge.id))c.forges.push(op.forge)}}
+  else{let k=0;for(let i=0;i<-op.n;i++){const j=t.lastIndexOf(op.item);if(j<0)break;t.splice(j,1);k++}
+   if(k<-op.n)r.itemManque=-op.n-k;
+   if(!c.tabs.some(l=>l.includes(op.item)))c.forges=c.forges.filter(f=>f.id!==op.item)}}
+ return r}
 /* Une fonction nouvelle se pose d'elle-même, une seule fois, sur le bâtiment sans fonction qui
    porte son nom — la Tannerie devient la tannerie ; ensuite, c'est le MJ qui choisit. */
 function fonctionsPosees(d,batiments){const vues=Array.isArray(d.fonctionsVues)?d.fonctionsVues.filter(f=>typeof f==='string'):['magasin'];
@@ -3499,6 +3526,6 @@ const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignem
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,CARACS_AFFIXE,CARACS_POINTS,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,FORGE_TYPE_ADV,FORGE_MAX_TYPE_ADV,plafondForgeAdv,forgeAdvEffectif,clesAffixes,repetable,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,FAMILLES_AFFIXE,CASCADE_AFFIXE,familleAffixe,EFFETS_AFFIXE,NOMS_DES,rareteForge,normaliseAffixe,normaliseAffixes,normaliseReglageForge,normaliseForgeAdv,normaliseForges,phraseAffixe,groupeAffixe,affixeVaSur,tireAffixes,tireNombreAffixes,nomForge,objetForge,affixesDe,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,COFFRE_ONGLETS_MAX,COFFRE_ONGLETS_BASE,COFFRE_PLACES,PRIX_ONGLETS,normaliseCoffreGroupe,normaliseOpsCoffre,placesOnglet,appliqueOpCoffre,doorBlocksVue,LIMITES_TALENT,limiteTalent,texteLimite,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,difficileDe,ajouteDifficile,retireDifficile,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,usageConsomme,usageHorsCombat,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ESPECES,especeDe,bonusEspece,bonusCreation,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,COFFRE_ONGLETS_MAX,COFFRE_ONGLETS_BASE,COFFRE_PLACES,PRIX_ONGLETS,normaliseCoffreGroupe,normaliseOpsCoffre,placesOnglet,appliqueOpCoffre,jugeOpCoffre,doorBlocksVue,LIMITES_TALENT,limiteTalent,texteLimite,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,difficileDe,ajouteDifficile,retireDifficile,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,placeLibreDeCeCote,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,usageConsomme,usageHorsCombat,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ESPECES,especeDe,bonusEspece,bonusCreation,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
