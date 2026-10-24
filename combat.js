@@ -3368,6 +3368,8 @@ const fonctionActive=b=>!!b&&!!b.fonction&&b.etape>=ETAPES_DOMAINE.length-1&&!b.
 function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);
  return {id:id||idDomaine(),nom,etape:0,etat:'',fonction:fonctionParNom(nom),zone:null,etiquette:null,couts:[0,0,0],effets:['','','',''],notes:''}}
 function fonctionParNom(nom){const n=String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+ // v1.016 : le Laboratoire est l'herboristerie du domaine.
+ if(n==='laboratoire')return 'herboristerie';
  return FONCTIONS_BATIMENT.some(([k])=>k&&k===n)?n:''}
 function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
@@ -3559,6 +3561,8 @@ function jugeOpCoffre(c,op){const r={};if(!c||!op)return r;
    porte son nom — la Tannerie devient la tannerie ; ensuite, c'est le MJ qui choisit. */
 function fonctionsPosees(d,batiments){const vues=Array.isArray(d.fonctionsVues)?d.fonctionsVues.filter(f=>typeof f==='string'):['magasin'];
  FONCTIONS_BATIMENT.forEach(([f])=>{if(!f||vues.includes(f))return;batiments.forEach(b=>{if(!b.fonction&&fonctionParNom(b.nom)===f)b.fonction=f});vues.push(f)});
+ // v1.016 : un Laboratoire sans fonction devient l'Herboristerie, une fois — l'Herboristerie était déjà passée sans lui.
+ if(!vues.includes('herboristerie-laboratoire')){batiments.forEach(b=>{if(!b.fonction&&fonctionParNom(b.nom)==='herboristerie'){b.fonction='herboristerie';b.labo=Math.max(1,Math.min(3,Math.trunc(Number(b.labo))||1))}});vues.push('herboristerie-laboratoire')}
  return vues.slice(0,40)}
 /* ---------- La tannerie ----------
    Les restes pris aux adversaires s'y vendent à leur valeur, ou s'y changent en ressources pour

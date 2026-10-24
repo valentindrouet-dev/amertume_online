@@ -1981,7 +1981,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&feuille.includes('#maps-page.mode-domaine #domaine-editeur{display:flex}')&&feuille.includes('#maps-page.mode-domaine>.maps-main:not(#domaine-editeur)'),'la carte du domaine s’édite dans Cartes : calques, tracé, déplacement, sommets');
  assert.ok(fief.includes("if(!p.ok&&!confirm('Le trésor ne suffit pas : il manque '")&&fief.includes('construire(domaine,b,true);renderDomaine();sauveDomaine()}')
   &&fief.includes("mouvementFinance(domaine,signe*m,libelle.value.trim()||(signe>0?'Recette':'Dépense'));")
-  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['route','Sur la route'],['aventure','En aventure'],['absent','Absent']]")
+  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("const groupes=[['',nomLieu('')],...domaine.batiments.filter(b=>batimentConstruit(b)&&troupe.some(a=>lieuVu(a)===b.id)).map(b=>[b.id,b.nom]),['route',nomLieu('route')],['aventure',nomLieu('aventure')],['absent',nomLieu('absent')]];")
   &&fief.includes("ta.onchange=()=>{b.effets[i]=ta.value.slice(0,600);renderDomBats();sauveDomaine()}")
   &&feuille.includes('body.page-domaine #domaine-page{display:grid;')&&feuille.includes('body.page-domaine main.layout'),'l’onglet Domaine : construire, financer, peupler, loger, conférer');}
 /* Six retouches d'écran : plus de spécialisation sur la vignette ; l'infobulle du système
@@ -2316,7 +2316,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(agitPour(a)?' — glisser vers un autre bâtiment construit':'');")
   &&feuille.includes('.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;'),'les jetons des présents sous le nom, sur le plan, sans le soulever');
  assert.ok(fief.includes(" boite.hidden=!b;if(!b)return;")&&!fief.includes('Choisis un bâtiment, dans la liste ou sur la carte')
-  &&fief.includes("if(mjDom())row.append(tete,lieu);")&&fief.includes("  boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
+  &&fief.includes("  g.append(t,l);boite.append(g)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
 }
 /* v0.262 — Seuls les bâtiments construits accueillent un aventurier ; si l'étape recule, il en sort. */
 {const fief=fs.readFileSync('domaine.js','utf8');
@@ -2329,7 +2329,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxE.evacueNonConstruits(),3);
  assert.deepEqual(ctxE.actors.map(a=>ctxE.lieuDe(a)),['','y','aventure','','','','x'],'hors d’un bâtiment non construit, ou disparu ; un adversaire n’a pas de lieu');
  assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();")&&fief.includes("function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&evacueNonConstruits())scheduleSave();")
-  &&fief.includes("...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),")&&fief.includes("batimentConstruit(batimentDom(ou))))?ou:'';"),'la liste des lieux ne propose que le construit');
+  &&fief.includes("domaine.batiments.filter(b=>batimentConstruit(b)&&")&&fief.includes("batimentConstruit(batimentDom(ou)))?ou:''};"),'la liste des lieux ne propose que le construit');
 }
 /* v0.263 — Le jeton d'un aventurier se glisse vers un bâtiment construit ; les jetons sont moitié plus
    grands ; un bonus de caractéristique n'est pas un talent, et a son propre éditeur. */
@@ -2354,7 +2354,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")
   &&fief.includes("if(!mjDom()){renderDomFicheLue(boite,b);return}")&&fief.includes("function renderDomFicheLue(boite,b){")&&!fief.includes("renderDomFicheLue(boite,b){")===false
   &&fief.includes("if(ev.button!==0||!agitPour(a))return;")&&fief.includes(" tresor.append(val);if(mjDom())tresor.append(monnaie);")&&fief.includes("if(mjDom())boite.append(form);")
-  &&fief.includes("const row=document.createElement(mjDom()?'button':'div');")&&fief.includes("if(mjDom())row.append(tete,lieu);else{const l=document.createElement('span');l.className='dom-av-lieu';l.textContent=nomLieu(ou);")
+  &&fief.includes("const row=document.createElement(mjDom()?'button':'div');")&&fief.includes("const q=document.createElement('p');q.className='muted';q.textContent=nomLieu(lieuVu(a));")
   &&fief.includes(" if(vueDomaine!==view){renderDomaine();return}")&&fief.includes(" renderDomaine(true)};"),'les joueurs lisent le domaine sans rien y changer');
  assert.ok(page.includes('<script src="./campagnes.js?v=')&&camp.includes("localStorage.setItem('amertume-campagne',id)")
   &&camp.includes("renderSettings=function(){renderSettingsSansCampagnes();$('bloc-campagnes').hidden=view!=='mj';renderCampagnes()};")
@@ -2617,7 +2617,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("const batimentChoisissable=b=>!!b&&(mjDom()||b.etape>0);")&&fief.includes(" const liste=domaine.batiments.filter(batimentChoisissable);")
   &&fief.includes("{sel:sel>=0?sel:null,jeu:true,inerte:b=>!batimentChoisissable(b),")&&fief.includes("if(b&&!batimentChoisissable(b))return;")
   &&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")&&fief.includes("plan.classList.toggle('sans-contours',!(mj&&domContours));")
-  &&fief.includes("boite.classList.toggle('en-grille',!mjDom());")&&feuille.includes('#dom-aventuriers.en-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'),'les joueurs : pas de friche, pas de contours, la troupe en deux colonnes');
+  &&fief.includes("boite.classList.remove('en-grille');boite.classList.add('en-jetons');")&&feuille.includes('#dom-aventuriers.en-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'),'les joueurs : pas de friche, pas de contours, la troupe en deux colonnes');
  assert.ok(fief.includes("v.setAttribute('class','dom-lueur');v.setAttribute('filter','url(#dom-lueur-flou)');")&&!fief.includes('dom-voile')&&feuille.includes('#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:transparent;fill:transparent}')
   &&feuille.includes('.dom-bat.sel{border-color:var(--accent);border-left-color:var(--t,var(--accent));'),'le bâtiment choisi s’allume, sur le plan et dans la liste');
  assert.ok(fief.includes("const lignes=(mjDom()?f.journal:f.journal.filter(ligneDesJoueurs))")&&fief.includes("avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};")

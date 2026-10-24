@@ -3529,3 +3529,12 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .corps .place.p-mains{grid-column:1}
 .corps:has(.or-corps),.corps-sac>.corps:has(.or-corps){padding-bottom:30px}
 .corps-sac.glisse-mains .place.p-mains .vide,.corps-sac.glisse-mains .place.p-mains .gear-carre{outline:2px solid var(--green);outline-offset:2px;opacity:1}
+/* v1.016 — La troupe du domaine en petits jetons, rangés par lieu ; la fiche d'un bâtiment, en fenêtre. */
+#dom-aventuriers.en-jetons{display:flex;flex-direction:column;gap:6px}
+.dom-av-groupe{padding:5px 6px;border:1px solid var(--line);border-radius:8px;min-height:30px}
+.dom-av-groupe.vise{border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,transparent)}
+.dom-av-groupe-nom{margin:0 0 4px;font:600 9px system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
+.dom-av-jetons{display:flex;flex-wrap:wrap;gap:4px}
+.dom-av-jeton.glissable{cursor:grab;touch-action:none}.dom-av-jeton.tire{opacity:.35}
+#dom-fiche-fenetre{width:min(980px,94vw);max-height:90vh;overflow:auto}
+#dom-fiche-fenetre .dialog-head h2:empty{display:none}#dom-fiche-fenetre .dialog-head{justify-content:flex-end}

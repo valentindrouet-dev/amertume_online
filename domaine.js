@@ -980,24 +980,46 @@ function renderDomPnj(){const boite=$('dom-pnj');boite.replaceChildren();
  const add=document.createElement('button');add.textContent='+ Personnage';add.className='dom-ajout';add.onclick=()=>openPnj(null);if(mjDom())boite.append(add)}
 /* ---------- Les aventuriers ---------- */
 // La troupe, telle qu'elle est sur la table : où chacun se trouve au domaine, et une note.
-function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceChildren();
- // Chez les joueurs, la troupe se range sur deux colonnes, chacun centré : jeton, nom, lieu.
- boite.classList.toggle('en-grille',!mjDom());
+/* v1.016 — La troupe en petits jetons, rangés par lieu : Au domaine, chaque bâtiment occupé, Sur la route, En aventure,
+   Absent. Le survol dit le nom et le lieu ; on glisse un jeton sur un intitulé, ou sur un bâtiment de la carte, pour l'y
+   envoyer. Un joueur déplace son aventurier d'un bâtiment à l'autre ; route, aventure, absence et domaine sont au MJ. */
+function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceChildren();boite.classList.remove('en-grille');boite.classList.add('en-jetons');
  const troupe=actors.filter(a=>a.hero);
  if(!troupe.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier dans la partie.';boite.append(p);return}
- troupe.forEach(a=>{const ou=lieuDe(a);
-  const row=document.createElement('div');row.className='dom-aventurier';
-  const tete=document.createElement('div');tete.className='dom-av-tete';
-  const nom=document.createElement('strong');nom.textContent=a.name;tete.append(jetonRond(a.image,a.name,'mini'),nom);
-  const lieu=document.createElement('select');lieu.setAttribute('aria-label','Où est '+a.name);
-  // Seuls les bâtiments construits accueillent quelqu'un.
-  [['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['route','Sur la route'],['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
-  lieu.value=(ou&&(ou==='aventure'||ou==='absent'||ou==='route'||batimentConstruit(batimentDom(ou))))?ou:'';
-  lieu.onchange=()=>{poseLieu(a,lieu.value);renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
-  // La note de l'aventurier reste dans les données et l'export ; elle ne s'affiche plus ici.
-  // Les joueurs lisent où est chacun ; le MJ le choisit.
-  if(mjDom())row.append(tete,lieu);else{const l=document.createElement('span');l.className='dom-av-lieu';l.textContent=nomLieu(ou);row.append(tete,l)}
-  boite.append(row)})}
+ const lieuVu=a=>{const ou=lieuDe(a);return ou&&(ou==='aventure'||ou==='absent'||ou==='route'||batimentConstruit(batimentDom(ou)))?ou:''};
+ const groupes=[['',nomLieu('')],...domaine.batiments.filter(b=>batimentConstruit(b)&&troupe.some(a=>lieuVu(a)===b.id)).map(b=>[b.id,b.nom]),['route',nomLieu('route')],['aventure',nomLieu('aventure')],['absent',nomLieu('absent')]];
+ groupes.forEach(([k,n])=>{const g=document.createElement('div');g.className='dom-av-groupe';g.dataset.lieu=k;
+  const t=document.createElement('h4');t.className='dom-av-groupe-nom';t.textContent=n;const l=document.createElement('div');l.className='dom-av-jetons';
+  troupe.filter(a=>lieuVu(a)===k).forEach(a=>{const j=jetonRond(a.image,a.name,'mini');j.classList.add('dom-av-jeton');j.setAttribute('aria-label',a.name+' — '+nomLieu(lieuVu(a)));
+   if(typeof surveille==='function')surveille(j,()=>{const d=document.createElement('div');d.className='gear-detail large';const p=document.createElement('p');p.className='gear-nom';p.textContent=a.name;
+    const q=document.createElement('p');q.className='muted';q.textContent=nomLieu(lieuVu(a));d.append(p,q);ouvrirBulle(j,d,'bulle-gear')});
+   if(agitPour(a)){j.classList.add('glissable');j.onpointerdown=ev=>glisseJetonListe(ev,a,j)}l.append(j)});
+  g.append(t,l);boite.append(g)})}
+function glisseJetonListe(ev,a,t){if(ev.button!==0||!agitPour(a))return;ev.stopPropagation();ev.preventDefault();if(typeof fermerBulle==='function')fermerBulle();
+ const plan=$('dom-plan'),id=ev.pointerId,depart={x:ev.clientX,y:ev.clientY};let fantome=null;
+ // Sous le pointeur, ce qui n'est pas le jeton qu'on porte.
+ const cible=m=>{const el=document.elementsFromPoint(m.clientX,m.clientY).find(e=>!(fantome&&fantome.contains(e))&&!e.closest('.bulle')),g=el&&el.closest('.dom-av-groupe');
+  if(g){const k=g.dataset.lieu||'';return k===''||k==='route'||k==='aventure'||k==='absent'?(mjDom()?{lieu:k,g}:null):{b:batimentDom(k),g}}
+  if(!el||!plan.contains(el))return null;const r=plan.getBoundingClientRect(),i=batimentSous(domaine,[100*(m.clientX-r.left)/r.width,100*(m.clientY-r.top)/r.height]),b=i>=0?domaine.batiments[i]:null;
+  return batimentConstruit(b)?{b}:null};
+ const allume=c=>{plan.querySelectorAll('.dom-zone.vise').forEach(z=>z.classList.remove('vise'));document.querySelectorAll('.dom-av-groupe.vise').forEach(z=>z.classList.remove('vise'));
+  if(c&&c.g)c.g.classList.add('vise');else if(c&&c.b){const z=plan.querySelector('.dom-zone[data-bat="'+domaine.batiments.indexOf(c.b)+'"]');if(z)z.classList.add('vise')}};
+ const suit=m=>{if(m.pointerId!==id)return;
+  if(!fantome){if(Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;fantome=jetonRond(a.image,a.name,'fantome-pose');document.body.append(fantome);t.classList.add('tire')}
+  fantome.style.left=m.clientX+'px';fantome.style.top=m.clientY+'px';const c=cible(m);fantome.classList.toggle('hors',!c);allume(c)};
+ const lache=m=>{if(m&&m.pointerId!==id)return;window.removeEventListener('pointermove',suit);window.removeEventListener('pointerup',lache);window.removeEventListener('pointercancel',lache);
+  try{t.releasePointerCapture(id)}catch(_){}
+  if(!fantome)return;fantome.remove();t.classList.remove('tire');const c=m&&m.type==='pointerup'?cible(m):null;allume(null);if(!c)return;
+  if(c.b){if(lieuDe(a)!==c.b.id)deplaceAventurier(a,c.b);return}
+  if(lieuDe(a)===c.lieu)return;poseLieu(a,c.lieu);renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+ try{t.setPointerCapture(id)}catch(_){}
+ window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}
+/* v1.016 — La fiche d'un bâtiment, et ce qu'il fait — magasin, tannerie, herboristerie —, s'ouvre en fenêtre : la carte
+   garde toute sa place. La fermer désélectionne le bâtiment. */
+const ficheDomDialog=dialog('dom-fiche-fenetre','','');ficheDomDialog.append($('dom-fiche'));
+ficheDomDialog.addEventListener('close',()=>{if(domPageSel!==null){domPageSel=null;renderDomaine()}});
+{const rf=renderDomFiche;renderDomFiche=function(...x){const r=rf(...x),ok=!!batimentDom(domPageSel)&&document.body.classList.contains('page-domaine');
+ if(ok&&!ficheDomDialog.open)ficheDomDialog.showModal();else if(!ok&&ficheDomDialog.open)ficheDomDialog.close();return r}}
 /* ---------- v1.009 — Le Coffre de Groupe ----------
    Un coffre de carte coché « Coffre de groupe » ouvre, au contact, la fenêtre commune : à gauche le coffre, ses onglets et son or ;
    à droite l'inventaire et la bourse de l'aventurier. Un clic range ou reprend une pièce, Maj + clic tous ses exemplaires ; l'or se
