@@ -2261,7 +2261,9 @@ function objetEl(i,o){const el=document.createElement('div');
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*(SOCLE_TAILLES[o.taille]||1));
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
  el.style.left=o.x+'%';el.style.top=o.y+'%';el.dataset.kind='objet';el.dataset.i=i;
- poseLogoObjet(el,o);el.title=o.nom+(o.visible?'':' · caché')+' — double-clic pour modifier';
+ poseLogoObjet(el,o);
+ // v1.057 : dans l'éditeur aussi, l'objet — indice, ressource, coffre de groupe — a sa bulle au survol, celle de la table, vue du MJ.
+ if(typeof surveille==='function')surveille(el,()=>{if(!mapDrag)ouvrirBulle(el,bulleObjetCarte(o),'bulle-gear')});
  el.ondblclick=e=>{e.stopPropagation();openObjet(i)};
  return el}
 function foeEl(i,f){const el=document.createElement('div');

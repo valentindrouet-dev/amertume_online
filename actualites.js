@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.057","d":"2026-10-25","t":"Bulles des objets dans l'éditeur de cartes"},
 {"v":"1.056","d":"2026-10-25","t":"Réordonner les cartes et les lieux"},
 {"v":"1.055","d":"2026-10-25","t":"Choix des pièces d'un objet comme pour un coffre"},
 {"v":"1.054","d":"2026-10-25","t":"Les Recettes, nouvelle catégorie d'objets"},
