@@ -2799,14 +2799,15 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +'<label class="field-check"><input type="checkbox" name="pierre"'+(o.pierre===true?' checked':'')+'>Dans la pierre</label>'
   +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')
   +sel('Quête débloquée','quete',o.quete||'',[['','— aucune —'],...((typeof domaine!=='undefined'&&domaine.quetes)||[]).map(q=>[q.id,q.titre])])+'</div>'
-  +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
+  // v1.055 : le choix des pièces, comme celui d'un coffre — boutons à cocher par catégorie, filtre, ce qui est dedans au-dessus.
+  +'<h2 class="sous-titre">Objets à prendre</h2><div id="objet-liste"></div>'
   +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic : elle va dans son inventaire.</p>';
- const pris=new Map();(o.items||[]).forEach(id=>pris.set(id,(pris.get(id)||0)+1));pickerArmurerie($('objet-filtre'),$('objet-liste'),pris);
+ const contenu={inventaire:[...(o.items||[])]};contenuCoffre($('objet-liste'),contenu);
  $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
   o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';
   o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);if(f.quete.value)o.quete=f.quete.value;else delete o.quete;
   o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};if(f.pierre.checked)o.pierre=true;else delete o.pierre;
-  o.items=[...pris].flatMap(([id,n])=>Array(n).fill(id)).slice(0,20);objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+  o.items=contenu.inventaire.filter(id=>objetDe(id)).slice(0,20);objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  objetDialog.showModal()}
