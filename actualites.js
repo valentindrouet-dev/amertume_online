@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.047","d":"2026-10-25","t":"Boutons d'Interaction en vue MJ"},
 {"v":"1.046","d":"2026-10-25","t":"Nom et sorte d'une pièce sur une ligne"},
 {"v":"1.045","d":"2026-10-25","t":"Sel au contact de zone ; nouvelles bulles de pièces"},
 {"v":"1.044","d":"2026-10-25","t":"Objets lancés en zone, Sel de racine qui gomme"},

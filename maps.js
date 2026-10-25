@@ -1552,8 +1552,9 @@ let portesBoutonsCle='';
 // L'échelle des Boutons d'Interaction : dessinés à 58 px, ils font 45 % du socle de la carte.
 function echelleInteraction(){return (tokenPx()*.45/58).toFixed(3)}
 function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=document.createElement('div');calque.id='porte-boutons';$('map-view').append(calque);portesBoutonsCle=''}
- const m=currentMap(),a=view==='mj'?null:actors[owner];
- const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!doorInReach(d)||!manoeuvresPorte.has(d))return false;
+ // v1.047 : le MJ voit aussi les Boutons d'Interaction, ceux de l'aventurier qu'il a sélectionné, comme son joueur.
+ const m=currentMap(),a=view==='mj'?heroActif():actors[owner];
+ const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!porteAtteinte(a,d)||!manoeuvresPorte.has(d))return false;
   const parCle=d.keyLocked&&!!d.cleId&&aLaCle(a,d.cleId)&&(!d.secret||d.open||d.decouvert);return !doorLockedFor(d,false)||parCle});
  const gris=typeof enCombat==='function'&&enCombat()&&pointsRestants(a,'mouvement')<=0;
  const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',')+'|'+verrouilleesAPortee(m,a).map(d=>[d.x,d.y].join(':')).join(',');
@@ -1575,8 +1576,10 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
   const nom=d.fenetre?'Fenêtre verrouillée':'Porte verrouillée';b.setAttribute('aria-label',nom);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=e=>e.stopPropagation();calque.append(b)})}
 const ICONE_CADENAS='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.5" fill="currentColor"/></svg>';
+// À portée de l'aventurier dont on montre les boutons : chez le MJ, le sélectionné — doorInReach, chez lui, dit toujours oui.
+function porteAtteinte(a,d){if(view!=='mj')return doorInReach(d);const size=mapSize(),m=currentMap();return !!(a&&a.hero&&alive(a)&&size.width&&polyInReach(a,doorPolygon(d,m&&m.ratio),size,tokenPx()))}
 function verrouilleesAPortee(m,a){if(!m||!a||!a.hero||!alive(a)||a.horsCarte)return [];
- return (m.doors||[]).filter(d=>d&&d.keyLocked&&!d.crochetee&&!(d.secret&&!d.open&&!d.decouvert)&&!doorHiddenFrom(d,false)&&doorSeen(d)&&doorInReach(d)&&manoeuvresPorte.has(d)&&!(d.cleId&&aLaCle(a,d.cleId)))}
+ return (m.doors||[]).filter(d=>d&&d.keyLocked&&!d.crochetee&&!(d.secret&&!d.open&&!d.decouvert)&&!doorHiddenFrom(d,false)&&doorSeen(d)&&porteAtteinte(a,d)&&manoeuvresPorte.has(d)&&!(d.cleId&&aLaCle(a,d.cleId)))}
 {const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsPortes();return r}}
 /* (v0.985 : il se refait aussi pendant le geste, quelques fois par seconde — vueEnGeste.) Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
    repeindre à chaque image — une toile de quatre mille pixels, floutée — faisait accrocher
@@ -3522,7 +3525,7 @@ function agirSurObjet(a,o){if(!a||!o)return;if(o.groupe===true&&typeof ouvrirCof
  if(o.indice)return;if(o.ressource===true){recolterRessource(a,o);return}recupererObjet(a,o)}
 let objetsBoutonsCle='';
 function renderBoutonsObjets(){let calque=$('objet-boutons');if(!calque){calque=document.createElement('div');calque.id='objet-boutons';$('map-view').append(calque);objetsBoutonsCle=''}
- const m=currentMap(),a=view==='mj'?null:actors[owner],ok=!!m&&!!a&&a.hero&&alive(a)&&!a.horsCarte&&controlled(actors.indexOf(a));
+ const m=currentMap(),a=view==='mj'?heroActif():actors[owner],ok=!!m&&!!a&&a.hero&&alive(a)&&!a.horsCarte&&controlled(actors.indexOf(a));
  const coffres=ok?(m.coffres||[]).filter(c=>c&&coffreVisible(c)&&coffreEnVue(c)&&(!c.ouvert||c.groupe===true)&&coffreAPortee(a,c)):[];
  const objets=ok&&!enCombat()?(m.objets||[]).filter(o=>o&&!o.pris&&!o.indice&&(o.groupe===true||o.ressource===true)&&objetVu(o)&&objetAPortee(a,o)&&centreVuTroupe(o.x,o.y)):[];
  const gris=enCombat()&&!!a&&pointsRestants(a,'action')<=0;
