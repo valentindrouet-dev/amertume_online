@@ -8075,7 +8075,7 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
  round=Number.isInteger(s.round)&&s.round>0?s.round:1;mode=s.mode==='exploration'?'exploration':'combat';
  owner=Number.isInteger(s.owner)&&actors[s.owner]?s.owner:Math.max(0,actors.findIndex(a=>a.hero));
  selected=Number.isInteger(s.selected)&&actors[s.selected]?s.selected:(s.selected===null?null:owner);
- mapImage=typeof s.mapImage==='string'&&s.mapImage?s.mapImage:null;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);
+ mapImage=typeof s.mapImage==='string'&&s.mapImage?s.mapImage:null;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;if(typeof rattacheCarteEditee==='function')rattacheCarteEditee();sceneTitle(s.title);
  if(typeof tokensLocked!=='undefined'&&typeof s.locked==='boolean')tokensLocked=s.locked;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);$('round').textContent=String(round).padStart(2,'0')}
 /* Ce qui vit à côté de la partie sur cet appareil part aussi dans le fichier : chaque script y ajoute le sien

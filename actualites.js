@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.059","d":"2026-10-25","t":"La carte éditée revient au rechargement"},
 {"v":"1.058","d":"2026-10-25","t":"Icône « ? » par défaut des Indices"},
 {"v":"1.057","d":"2026-10-25","t":"Bulles des objets dans l'éditeur de cartes"},
 {"v":"1.056","d":"2026-10-25","t":"Réordonner les cartes et les lieux"},

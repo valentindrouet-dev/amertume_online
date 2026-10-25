@@ -1710,7 +1710,8 @@ function showPage(p,retenir=true){if(!ongletsJoueurs().includes(p)&&view!=='mj')
  if(retenir)rememberPage(p);
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
  tabs.querySelectorAll('button[data-page]').forEach(b=>b.classList.toggle('on',b.dataset.page===p));majEnvoiOnglet();
- if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
+ // v1.059 : rechargée, la page rouvre la carte qu'on éditait — l'appareil s'en souvient —, sinon celle de la table.
+ if(p==='maps'){if(!maps.length)newMap();if(!mapDraft){let id='';try{id=localStorage.getItem('amertume-carte-editee')||''}catch(e){}mapDraft=maps.find(m=>m.id===id)||maps.find(m=>m.id===currentMapId)||maps[0]}
   // La carte du domaine, si c'est elle qu'on éditait, se rouvre à sa place.
   if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}
   else{measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}}
@@ -1975,7 +1976,13 @@ function renommeLieu(ancien){const n=prompt('Nom du lieu :',ancien);if(n===null)
  if(lieuxReplies.delete(ancien)&&l)lieuxReplies.add(l);try{localStorage.setItem('amertume-lieux-replies',JSON.stringify([...lieuxReplies]))}catch(e){}
  renderMapList();saveMaps()}
 let carteGlissee=null;
-function renderMapList(){const rangee=m=>{const b=document.createElement('button');
+/* v1.059 — Quand les cartes arrivent d'ailleurs (le contenu partagé, une sauvegarde), la carte éditée se retrouve parmi les nouvelles
+   par son identifiant : celle qu'on éditait, ou celle que l'appareil a retenue. */
+function rattacheCarteEditee(){if(mapDraft&&maps.includes(mapDraft))return;let id=mapDraft&&mapDraft.id;if(!id)try{id=localStorage.getItem('amertume-carte-editee')||''}catch(e){}
+ const avant=mapDraft,m=maps.find(x=>x&&x.id===id);if(m)mapDraft=m;else if(mapDraft)mapDraft=maps.find(x=>x&&x.id===currentMapId)||maps[0]||null;
+ if(mapDraft!==avant&&mapDraft&&document.body.classList.contains('page-maps')&&!(typeof domaineEdite!=='undefined'&&domaineEdite)){mapSel=null;measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}}
+function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amertume-carte-editee',mapDraft.id)}catch(e){}
+ const rangee=m=>{const b=document.createElement('button');
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
  const nom=document.createElement('strong');nom.textContent=m.name;ensure(m);
  b.title=m.name+(m.id===currentMapId?' — chargée sur la table':'')+'\n'+matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
