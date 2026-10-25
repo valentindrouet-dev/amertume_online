@@ -332,3 +332,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Repos court au journal** : « Remus effectue un **Repos Court** (vert `#2f8a63`) : **Soin 7 PV**. », puis, s'il en avait, « Il perd tous ses **états négatifs** (rouge `#b8352f`). ». Rien d'autre.
 
 **Terrain nommé dans une bulle de pièce** (`.mot-terrain`) : le nom d'un type de terrain dangereux — « Ronces » — s'écrit en gras, de la couleur du terrain (celle de la carte ouverte d'abord, sinon de la première carte qui le définit).
+
+**Exemplaires d'une pièce posée sur la carte** (`.quantite-bulle`) : une seule bulle par pièce ; leur nombre, s'il dépasse un, dans un rond en haut à droite (fond `--panel`, liseré `--line`, chiffre gras à l'encre).

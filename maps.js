@@ -751,7 +751,11 @@ function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine)return;
 function bulleObjetCarte(o){const d=document.createElement('div');d.className='bulle-objet-carte';
  const pieces=restantsObjet(o).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  const desc=()=>{if(!o.desc&&!o.tresor)return null;const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=[o.desc,o.tresor?'Trésor : '+o.tresor:''].filter(Boolean).join('\n');return p};
- if(pieces.length)pieces.forEach((it,k)=>{const g=gearDetail(it,null,false);g.hidden=false;g.classList.add('large');if(!k){const p=desc();if(p)g.append(p)}d.append(g)});
+ // v1.035 : plusieurs exemplaires d'une même pièce, une seule bulle, leur nombre dans un rond en haut à droite.
+ const parPiece=new Map();pieces.forEach(it=>parPiece.set(it,(parPiece.get(it)||0)+1));
+ if(pieces.length)[...parPiece].forEach(([it,n],k)=>{const g=gearDetail(it,null,false);g.hidden=false;g.classList.add('large');
+  if(n>1){const q=document.createElement('span');q.className='quantite-bulle';q.textContent=String(n);q.setAttribute('aria-label',n+' exemplaires');g.classList.add('avec-quantite');g.append(q)}
+  if(!k){const p=desc();if(p)g.append(p)}d.append(g)});
  else{const g=document.createElement('div');g.className='gear-detail large';const n=document.createElement('p');n.className='gear-nom';n.textContent=o.nom||'Objet';g.append(n);const p=desc();if(p)g.append(p);d.append(g)}
  if(o.indice&&o.examine&&o.secret){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=o.secret;(d.firstChild||d).append(p)}
  // v0.9994 : un second test reste à tenter : sa compétence, à sa couleur.

@@ -3635,3 +3635,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .gear-detail.bulle-danger{background:color-mix(in srgb,var(--teinte) 16%,#fbf3e2);border-left:4px solid var(--teinte)}
 .gear-detail.bulle-danger .gear-nom{color:var(--teinte)}
 #paysage-del[hidden]{display:none}
+/* v1.035 — Le nombre d'exemplaires d'une pièce posée sur la carte, dans un rond en haut à droite de sa bulle. */
+.gear-detail.avec-quantite{position:relative;padding-right:40px}
+.gear-detail .quantite-bulle{position:absolute;top:8px;right:8px;min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:center;
+ font:700 13px/1 system-ui;color:var(--ink);background:var(--panel);border:1px solid var(--line)}
