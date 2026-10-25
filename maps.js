@@ -2485,7 +2485,8 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Coffre de groupe',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,groupe:true,logo:'',items:[],tresor:'',test:{comp:3,reussites:1}});
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  if(mapTool==='objet'){pushUndo();
-  mapDraft.objets.push({id:crypto.randomUUID(),nom:'Objet',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,items:[],tresor:'',test:{comp:3,reussites:1}});
+  // v1.050 : un objet posé naît caché — un test le découvre ; le MJ le rend visible dans sa fiche.
+  mapDraft.objets.push({id:crypto.randomUUID(),nom:'Objet',desc:'',x:p.x,y:p.y,taille:'medium',visible:false,items:[],tresor:'',test:{comp:3,reussites:1}});
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
     le curseur — et Maj le redresse. */
