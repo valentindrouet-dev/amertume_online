@@ -2631,7 +2631,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
 /* Le choix dans l'armurerie, par familles : de petits carrés, un clic prend la pièce, un autre la repose.
    « pris » : l'ensemble des identifiants choisis, que le formulaire relit à l'enregistrement. */
 function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.value||'').trim().toLowerCase();boite.replaceChildren();
-  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie']].forEach(([cat,titre])=>{
+  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions']].forEach(([cat,titre])=>{
    const lot=(catalog.items||[]).filter(it=>it&&!it.forge&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
    if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
    /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
