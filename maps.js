@@ -3434,12 +3434,17 @@ function formeDangerSous(q,garde){const m=currentMap();if(!m)return null;
  for(const t of dangersDe(m)){if(garde&&!garde(t))continue;for(const p of formesActives(m,t)){const r=p.anneaux&&p.anneaux[0];if(r&&pointInPolygon([q.x,q.y],r))return {t,p}}}return null}
 const formeAPortee=(a,p)=>!!a&&!!p&&polyInReach(a,p.anneaux[0],mapSize(),tokenOf(a));
 function detruitForme(z){const m=currentMap();if(!m||!z)return;m.dangersDetruits=[...new Set([...(m.dangersDetruits||[]),cleFormeDanger(z.t,z.p)])];renderDangers();scheduleSave()}
-const porteGantsRonceur=h=>!!h&&(h.armures||[]).concat(h.weapons||[],[h.shieldId]).some(id=>{const it=(catalog.items||[]).find(x=>x&&x.id===id);return !!it&&/gants de ronceur/i.test(it.name)});
+// v1.028 : toute pièce portée à l'effet « Protège des ronces » ; le nom des Gants de ronceur reste en secours.
+const porteGantsRonceur=h=>!!h&&(h.armures||[]).concat(h.weapons||[],[h.shieldId,h.munitionId]).some(id=>{const it=id&&(catalog.items||[]).find(x=>x&&x.id===id);return !!it&&(it.effet==='protegeronces'||/gants de ronceur/i.test(it.name))});
 const sensibleAuDanger=(o,t)=>!!o&&alive(o)&&!o.horsCarte&&!o.orbeStatique&&(t.sensibles==='tous'||(t.sensibles==='heros')===(o.hero===true))&&!(t.ronces&&porteGantsRonceur(o));
+/* v1.028 — Au journal : « Ronces blesse Drachir : 5 dégâts + [icône] Saignée. » Le terrain en gras, de sa couleur ; les dégâts sans le détail
+   des dés ; chaque état posé, son icône et son nom, en gras et de sa couleur. */
 function frappeDanger(o,t){const jet=tireDegats(t),parts=[];
- if(jet.total>0){const {perdu:n,blinde}=encaisse(o,jet.total,null);parts.push((blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))+(jet.jets.length?' ('+formuleDegats(t)+' : '+jet.jets.join(' + ')+')':''))}
- (t.etats||[]).forEach(e=>{if(alive(o)&&infligeEtat(o,e)===true)parts.push(e)});
- if(!parts.length)return false;floatNumber(o,t.nom,'perte');log(t.nom+' : '+nomNum(o)+' — '+parts.join(', ')+'.',{ton:'degats'});return true}
+ if(jet.total>0){const {perdu:n,blinde}=encaisse(o,jet.total,null);parts.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
+ (t.etats||[]).forEach(e=>{if(alive(o)&&infligeEtat(o,e)===true)parts.push('⸢'+e+'⸣')});
+ if(!parts.length)return false;floatNumber(o,t.nom,'perte');
+ const nom=String(t.nom||'Terrain dangereux').replace(/[⁅⁆¦]/g,''),teinte=/^#[0-9a-fA-F]{3,8}$/.test(String(t.couleur||''))?'¦'+t.couleur:'';
+ log('⁅'+nom+teinte+'⁆ blesse '+nomNum(o)+' : '+parts.join(' + ')+'.',{ton:'degats'});return true}
 // Les formes d'un type, en pixels de carte.
 const formesPx=(m,t,size)=>formesActives(m,t).map(p=>p.anneaux[0].map(q=>[q[0]/100*size.width,q[1]/100*size.height]));
 function dangerAuPassage(o,chemin){const m=currentMap(),size=mapSize();if(!m||!size.width||!Array.isArray(chemin)||chemin.length<2||!dangersDe(m).length)return;
@@ -3835,3 +3840,18 @@ function renderNotesMJ(){let calque=$('notes-mj');const m=currentMap(),l=m&&view
 {const rdf=renderDifficiles;renderDifficiles=function(...x){const r=rdf(...x);const fond=$('difficiles-carte');if(!fond)return r;
  let bords=$('difficiles-bords');if(!bords){bords=document.createElementNS(nsSVG,'svg');bords.id='difficiles-bords';bords.setAttribute('viewBox','0 0 100 100');bords.setAttribute('preserveAspectRatio','none');bords.setAttribute('aria-hidden','true');fond.after(bords)}
  bords.replaceChildren(...[...fond.querySelectorAll('.diffi-carte')].map(p=>{const c=p.cloneNode(false);c.setAttribute('class','diffi-bord');return c}));return r}}
+
+/* v1.028 — Au survol de la carte, sur un terrain dangereux que la troupe voit, une bulle pleine : « Terrain Dangereux : <nom> ».
+   Un socle, un bouton, une bulle ouverte par-dessus gardent la leur. */
+let ancreDanger=null,dangerSurvole=null,dangerTache=0;
+function survolDanger(e){if(dangerTache)return;dangerTache=requestAnimationFrame(()=>{dangerTache=0;try{
+ const vue=$('map-view'),m=currentMap(),dessus=e.target&&e.target.closest&&e.target.closest('.token,button,.bulle,.door,.coffre,.note-mj');
+ const q=m&&!dessus?mapPct(e):null,z=q&&dangersDe(m).length?formeDangerSous(q):null,vu=z&&(view==='mj'||m.fogOff||(typeof seenAt==='function'&&seenAt(q.x,q.y)));
+ if(!vu){if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
+ if(!ancreDanger){ancreDanger=document.createElement('div');ancreDanger.className='ancre-danger'}if(!ancreDanger.isConnected)vue.append(ancreDanger);
+ ancreDanger.style.left=q.x+'%';ancreDanger.style.top=q.y+'%';
+ const cle=z.t.id+'|'+cleFormeDanger(z.t,z.p);if(dangerSurvole===cle&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger){if(typeof placerBulle==='function')placerBulle();return}
+ dangerSurvole=cle;const d=document.createElement('div');d.className='gear-detail large';const p=document.createElement('p');p.className='gear-nom';p.textContent='Terrain Dangereux : '+z.t.nom;d.append(p);
+ ouvrirBulle(ancreDanger,d,'bulle-gear')}catch(err){}})}
+if($('map-view')){$('map-view').addEventListener('pointermove',survolDanger);
+ $('map-view').addEventListener('pointerleave',()=>{if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}})}

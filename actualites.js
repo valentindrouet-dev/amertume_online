@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.028","d":"2026-10-25","t":"Terrain dangereux vivant, Protège des ronces, Notes des pièces"},
 {"v":"1.027","d":"2026-10-25","t":"Bords estompés des terrains, second tri de l'Armurerie"},
 {"v":"1.026","d":"2026-10-25","t":"Armurerie par mains, forge sur les pièces de base"},
 {"v":"1.025","d":"2026-10-25","t":"Hauteur de la sélection ajustée"},

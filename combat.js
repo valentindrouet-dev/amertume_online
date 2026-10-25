@@ -2445,12 +2445,16 @@ const OBJETS_CODES={
  soinpurge:{cle:'soinpurge',nom:'Soin et purge',aide:'Le porteur regagne des PV et perd un état.',
   params:[{cle:'quantite',nom:'Quantité',type:'nombre',defaut:2,min:1,max:99},{cle:'forme',nom:'Sous la forme de',type:'choix',defaut:'fixe',options:[['fixe','PV'],['des','dés (d6)']]},
    {cle:'etat',nom:'État retiré',type:'choix',defaut:'Nécrose',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){const n=Math.max(1,(p&&p.quantite)|0);return 'Soigne <b>'+(p&&p.forme==='des'?n+'d6':n)+'</b> PV et retire <b>'+((p&&p.etat)||'Nécrose')+'</b>.'}}};
+  phrase(p){const n=Math.max(1,(p&&p.quantite)|0);return 'Soigne <b>'+(p&&p.forme==='des'?n+'d6':n)+'</b> PV et retire <b>'+((p&&p.etat)||'Nécrose')+'</b>.'}},
+ // v1.028 — Protège des ronces : portée, la pièce garde des terrains dangereux cochés « Ronces » et des ronces d'une Enracinée. Toujours permanente.
+ protegeronces:{cle:'protegeronces',nom:'Protège des ronces',aide:'Portée, la pièce protège des terrains dangereux cochés « Ronces » et des ronces d’une créature Enracinée.',permanent:true,params:[],
+  phrase(){return 'Portée, protège des <b>ronces</b> : ni les terrains de ronces ni les ronces d’une créature Enracinée ne blessent.'},
+  passif(){return 'Portée, protège des <b>ronces</b> : ni les terrains de ronces ni les ronces d’une créature Enracinée ne blessent.'}}};
 /* Actif ou passif : une pièce d'équipement — arme, armure, munition — dont l'effet le permet
    peut agir d'elle-même, en permanence tant qu'elle est portée, sans bouton en combat. Un
    objet consommable reste actif : il s'emploie. */
 const EQUIPEMENTS=['weapon','armor','ammo'];
-function modeObjet(o){const code=objetCode(o);
+function modeObjet(o){const code=objetCode(o);if(code&&code.permanent)return 'passif';
  return o&&o.mode==='passif'&&code&&typeof code.passif==='function'&&EQUIPEMENTS.includes(o.category)?'passif':'actif'}
 function phraseDeObjet(o){const code=objetCode(o);if(!code)return '';const p=paramsObjet(o);
  return modeObjet(o)==='passif'?code.passif(p):code.phrase(p)}

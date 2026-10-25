@@ -330,7 +330,7 @@ const RECETTES_RONCIER=[
   params:{de:'',nb:1,etat:'Feu',crans:1,zone:'cible',portee:'distance',cibles:'',rangs:'',duree:'',detruit:'non'},usage:'conso',notes:'Pose Feu sur la cible',price:24,app:50,rang:1,labo:1,ico:53},
  {name:'Fongicide amer',category:'potion',sousType:'Potion',rarete:'inhabituel',ingr:[['Fiole',1],['Eau',1],['Racine amère',2],['Sauge des marais',1],['Ortie grise',1]],effet:'boirelancer',
   params:{etat:'Corruption',de:'white',nb:2,cibles:'fongique'},usage:'conso',notes:'Bu : retire toute la Corruption. Lancé : 2 dés blancs contre une créature fongique',price:19,app:50,rang:1,labo:1,ico:9},
- {name:'Gants de ronceur',category:'armor',slot:'mains',rarete:'inhabituel',ingr:[['Cuir',2],['Résine de pin noir',1],['Écorce de saule pleureur',1]],tannerie:true,effet:'',params:{},usage:'libre',
+ {name:'Gants de ronceur',category:'armor',slot:'mains',rarete:'inhabituel',ingr:[['Cuir',2],['Résine de pin noir',1],['Écorce de saule pleureur',1]],tannerie:true,effet:'protegeronces',params:{},usage:'libre',
   notes:'Le porteur ignore les ronces de décor (sauf phase 2 du boss)',price:28,app:50,rang:1,labo:1,ico:28}];
 /* v1.018 — Les recettes du seuil : huit pièces de plus, et deux ingrédients d'aventure, la Menthe d'Ysaure et l'Eau du Puits.
    « forge » : apprise à l'herboristerie, fabriquée à la Forge. */
@@ -604,6 +604,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('recettes-seuil')&&Array.isArray(c.items)&&c.semisForge.includes('recettes-roncier')){semeSeuil(c);c.semisForge.push('recettes-seuil')}
  // v1.026 : une arme à distance réglée « 1 main » comptait deux mains ; elle les garde, une fois — sauf une arme de lancer.
  if(!c.semisForge.includes('mains-distance')&&Array.isArray(c.items)){c.items.forEach(o=>{if(o&&o.category==='weapon'&&o.ranged===true&&!o.lancer&&Number(o.hands)!==2)o.hands=2});c.semisForge.push('mains-distance')}
+ // v1.028 : les Gants de ronceur sans effet reçoivent « Protège des ronces ».
+ if(!c.semisForge.includes('gants-ronces')&&Array.isArray(c.items)){c.items.forEach(o=>{if(o&&/gants de ronceur/i.test(String(o.name||''))&&!o.effet){o.effet='protegeronces';o.params={}}});c.semisForge.push('gants-ronces')}
  // v1.020 : les adversaires de la tour d'azur, une fois, après les recettes du seuil (import-adversaires.js).
  if(!c.semisForge.includes('adversaires-tour-azur')&&typeof semeAdversairesAzur==='function'&&Array.isArray(c.monsters)&&Array.isArray(c.talents)&&c.semisForge.includes('recettes-seuil')){semeAdversairesAzur(c);c.semisForge.push('adversaires-tour-azur')}
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
@@ -2334,6 +2336,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // v1.014 : le texte d'une pièce rend ses codes — dés, états, PA, PM — comme celui d'un talent.
  const ligneRiche=t=>{if(!t)return;const p=document.createElement('p');texteEnrichi(p,t,null,a);d.append(p)};
  if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligneRiche(o.notes)}
+ // v1.028 : une arme, une armure, un bouclier, une munition — l'effet permanent que le moteur applique, puis les Notes du MJ.
+ if(col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'){const c=objetCode(o);if(c&&c.permanent){const p=document.createElement('p');p.className='gear-effet';p.innerHTML=c.phrase(paramsObjet(o));d.append(p)}if(col!=='object')ligneRiche(o.notes)}
  if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='potion'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
