@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.030","d":"2026-10-25","t":"Bulles des pièces : les Notes seules"},
 {"v":"1.029","d":"2026-10-25","t":"Terrains sans clignotement, bulle teintée, repos court au journal"},
 {"v":"1.028","d":"2026-10-25","t":"Terrain dangereux vivant, Protège des ronces, Notes des pièces"},
 {"v":"1.027","d":"2026-10-25","t":"Bords estompés des terrains, second tri de l'Armurerie"},

@@ -2336,8 +2336,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // v1.014 : le texte d'une pièce rend ses codes — dés, états, PA, PM — comme celui d'un talent.
  const ligneRiche=t=>{if(!t)return;const p=document.createElement('p');texteEnrichi(p,t,null,a);d.append(p)};
  if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligneRiche(o.notes)}
- // v1.028 : une arme, une armure, un bouclier, une munition — l'effet permanent que le moteur applique, puis les Notes du MJ.
- if(col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'){const c=objetCode(o);if(c&&c.permanent){const p=document.createElement('p');p.className='gear-effet';p.innerHTML=c.phrase(paramsObjet(o));d.append(p)}if(col!=='object')ligneRiche(o.notes)}
+ // v1.029 : une arme, une armure, un bouclier — les Notes du MJ, et rien d'autre.
+ if(col==='melee'||col==='ranged'||col==='armor')ligneRiche(o.notes);
  if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='potion'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
