@@ -3577,7 +3577,10 @@ function tracerSeuil(a,o){const size=mapSize();if(!size.width){log(o.name+' se t
   setTimeout(()=>viserCible('◈ '+o.name+' — clique l’autre bout du seuil',(v2,q2)=>{if(!proche(q2)){loin();return}
    const m=currentMap();if(!m)return;if(enCombat()&&!payeAction(a))return;
    m.seuilsSel=[...(m.seuilsSel||[]),{a:{x:q1.x,y:q1.y},b:{x:q2.x,y:q2.y}}].slice(-20);renderDangers();finPotion(a,o,'seuil tracé')},o.name+' : geste annulé.'))},o.name+' : geste annulé.')}
-{const rd=renderDangers;renderDangers=function(...x){const r=rd(...x);const svg=$('dangers-carte'),m=currentMap();
+{const rd=renderDangers;renderDangers=function(...x){const r=rd(...x),m=currentMap();
+ // v1.025 : les seuils ont leur calque à eux — celui des terrains dangereux est flouté sur ses bords.
+ let svg=$('seuils-carte');const fond=$('dangers-carte');if(!svg&&fond){svg=document.createElementNS(nsSVG,'svg');svg.id='seuils-carte';svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');fond.after(svg)}
+ if(svg)svg.replaceChildren();
  if(svg&&m&&Array.isArray(m.seuilsSel))m.seuilsSel.forEach(s=>{const l=document.createElementNS(nsSVG,'line');l.setAttribute('class','seuil-sel');
   l.setAttribute('x1',s.a.x);l.setAttribute('y1',s.a.y);l.setAttribute('x2',s.b.x);l.setAttribute('y2',s.b.y);svg.append(l)});return r}}
 // Ce qui arrête le pas d'un Intangible : en plus des murs, les seuils de sel.
@@ -3826,3 +3829,9 @@ function renderNotesMJ(){let calque=$('notes-mj');const m=currentMap(),l=m&&view
   const fin=$('shape-delete'),noeuds=[];for(const n of [...droite.childNodes]){noeuds.push(n);if(n===fin)break}
   sel.append(...noeuds);const recal=$('recal-box');if(recal)sel.append(recal);
   const trait=document.createElement('div');trait.className='divider';gauche.prepend(sel,trait);droite.hidden=true;droite.classList.add('colonne-retiree')}}
+
+/* v1.027 — Les bords du terrain difficile s'estompent : les hachures restent nettes, leur liseré passe sur un calque flouté qui
+   s'efface vers le transparent ; celui du terrain dangereux est flouté tout entier (editor.css). */
+{const rdf=renderDifficiles;renderDifficiles=function(...x){const r=rdf(...x);const fond=$('difficiles-carte');if(!fond)return r;
+ let bords=$('difficiles-bords');if(!bords){bords=document.createElementNS(nsSVG,'svg');bords.id='difficiles-bords';bords.setAttribute('viewBox','0 0 100 100');bords.setAttribute('preserveAspectRatio','none');bords.setAttribute('aria-hidden','true');fond.after(bords)}
+ bords.replaceChildren(...[...fond.querySelectorAll('.diffi-carte')].map(p=>{const c=p.cloneNode(false);c.setAttribute('class','diffi-bord');return c}));return r}}

@@ -1166,7 +1166,9 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de Mêlée (1 main)</option><option value="melee2">Armes de Mêlée (2 mains)</option><option value="ranged">Armes à Distance (1 main)</option><option value="ranged2">Armes à Distance (2 mains)</option>'
  +'<option value="armor">Armures</option><option value="object">Objets</option><option value="cle">Clés</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="herbe">Herboristerie</option><option value="treasure">Trésors</option></select>'
- +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
+ +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select>'
+ // v1.027 : un second tri départage les pièces que le premier laisse à égalité.
+ +'<select id="armory-sort2" aria-label="Puis trier">'+[['','Puis : —'],...TRIS_ARMURERIE.filter(([k])=>k).map(([k,n])=>[k,'Puis : '+n])].map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
     faire quand on se sert d'un objet, replié par défaut. */
  +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Banque des effets d’équipement</span>'
@@ -3054,14 +3056,16 @@ const ARMORY_COLS=[['melee','Armes de Mêlée (1 main)'],['melee2','Armes de Mê
    de création. */
 const RANG_EMPLACEMENT=o=>o.category==='weapon'?0:o.category==='ammo'?1:o.category==='armor'?(emplacementDe(o)==='shield'?2:3+EMPLACEMENTS.findIndex(([k])=>k===emplacementDe(o))):20;
 const totalDes=o=>Object.values(o.dice||{}).reduce((s,n)=>s+(Number(n)||0),0);
-function trieObjets(liste,tri){const nom=(x,y)=>x[0].name.localeCompare(y[0].name,'fr');
+function trieObjets(liste,tri,tri2){const nom=(x,y)=>x[0].name.localeCompare(y[0].name,'fr');
+ // v1.027 : deux tris en chaîne — le second départage le premier — puis le nom.
  const par={nom,
-  rarete:(x,y)=>RARETES.findIndex(([k])=>k===rareteDe(x[0]))-RARETES.findIndex(([k])=>k===rareteDe(y[0]))||nom(x,y),
-  prix:(x,y)=>(x[0].price||0)-(y[0].price||0)||nom(x,y),'prix-':(x,y)=>(y[0].price||0)-(x[0].price||0)||nom(x,y),
-  emplacement:(x,y)=>RANG_EMPLACEMENT(x[0])-RANG_EMPLACEMENT(y[0])||nom(x,y),
-  mains:(x,y)=>(x[0].category==='weapon'?weaponHands(x[0]):0)-(y[0].category==='weapon'?weaponHands(y[0]):0)||nom(x,y),
-  def:(x,y)=>(Number(x[0].def)||0)-(Number(y[0].def)||0)||nom(x,y),des:(x,y)=>totalDes(x[0])-totalDes(y[0])||nom(x,y)}[tri];
- return par?[...liste].sort(par):liste}
+  rarete:(x,y)=>RARETES.findIndex(([k])=>k===rareteDe(x[0]))-RARETES.findIndex(([k])=>k===rareteDe(y[0])),
+  prix:(x,y)=>(x[0].price||0)-(y[0].price||0),'prix-':(x,y)=>(y[0].price||0)-(x[0].price||0),
+  emplacement:(x,y)=>RANG_EMPLACEMENT(x[0])-RANG_EMPLACEMENT(y[0]),
+  mains:(x,y)=>(x[0].category==='weapon'?weaponHands(x[0]):0)-(y[0].category==='weapon'?weaponHands(y[0]):0),
+  def:(x,y)=>(Number(x[0].def)||0)-(Number(y[0].def)||0),des:(x,y)=>totalDes(x[0])-totalDes(y[0])};
+ const a=par[tri],b=tri2&&tri2!==tri?par[tri2]:null;if(!a&&!b)return liste;
+ return [...liste].sort((x,y)=>(a?a(x,y):0)||(b?b(x,y):0)||nom(x,y))}
 /* Le mode en masse : toutes les pièces affichées — recherche, catégorie et tri compris — en un
    tableau, une ligne chacune, chaque valeur modifiable sur place. En tête de colonne, de quoi
    la changer pour toutes d'un coup : fixer, multiplier ou ajouter un prix, une DEF ; choisir une
@@ -3253,10 +3257,10 @@ function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix')
  const fq=groupe('Rareté','Multiplie le total : 100 % le laisse tel quel.');
  RARETES.forEach(([k,n])=>champ(fq,n,()=>G().rarete[k],v=>{G().rarete[k]=v},'%'));}
 function renderArmory(){renderBiblioObjets();renderGuidePrix();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
- const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
+ const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value,tri2=$('armory-sort2')?$('armory-sort2').value:'';
  const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
  cols.classList.toggle('en-masse',masse);
- const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>!a.forge&&colonneArmurerie(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri);
+ const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>!a.forge&&colonneArmurerie(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri,tri2);
  if(masse){barreMasse(cols,choisie);tableMasse(cols,ARMORY_COLS.filter(([k])=>!choisie||choisie===k).flatMap(([k])=>visibles(k)));bulleOrpheline();return}
  for(const [key,titre] of ARMORY_COLS){
   if(choisie&&choisie!==key)continue;
@@ -6931,7 +6935,7 @@ function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
  reglageTimer=setTimeout(()=>{n.textContent='';n.classList.remove('ok')},3200)}
 // L'Accueil suit les fiches : un contenu reçu, un aventurier arrivé d'un joueur y paraissent sans recharger la page.
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary();if(document.body.classList.contains('page-accueil'))renderAccueil()}
-$('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;
+$('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;if($('armory-sort2'))$('armory-sort2').onchange=renderArmory;
 $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
 $('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();$('armory-chambre').onclick=()=>openChambre();
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;$('bestiary-lieu').onchange=renderBestiary;
@@ -6942,12 +6946,15 @@ $('bestiary-analyses').onclick=()=>{if(view!=='mj'||!confirm('Réinitialiser tou
    mise à jour les remettait à zéro : Armurerie, Bestiaire, Talents, et le tri par colonne du
    tableau de Modifier en masse. */
 const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];
+TRIS_GARDES.push(['armory-sort2','armurerie2']);
 function gardeTris(){try{const o={};TRIS_GARDES.forEach(([id,k])=>{const s=$(id);if(s)o[k]=s.value});if(masseTri)o.masse=masseTri;if(masseTriBest)o.masseBest=masseTriBest;
  localStorage.setItem('amertume-tris',JSON.stringify(o))}catch(e){}}
 {let o={};try{o=JSON.parse(localStorage.getItem('amertume-tris')||'{}')||{}}catch(e){}
  TRIS_GARDES.forEach(([id,k])=>{const s=$(id);if(s&&typeof o[k]==='string'&&[...s.options].some(x=>x.value===o[k]))s.value=o[k];if(s)s.addEventListener('change',gardeTris)});
  if(o.masse&&typeof o.masse.cle==='string'&&(o.masse.sens===1||o.masse.sens===-1))masseTri={cle:o.masse.cle,sens:o.masse.sens};
- if(o.masseBest&&typeof o.masseBest.cle==='string'&&(o.masseBest.sens===1||o.masseBest.sens===-1))masseTriBest={cle:o.masseBest.cle,sens:o.masseBest.sens}}
+ if(o.masseBest&&typeof o.masseBest.cle==='string'&&(o.masseBest.sens===1||o.masseBest.sens===-1))masseTriBest={cle:o.masseBest.cle,sens:o.masseBest.sens}
+ // v1.027 : par défaut, l'Armurerie se trie par Rareté, puis par Prix — une fois, avant tout choix du second tri.
+ if(typeof o.armurerie2!=='string'&&$('armory-sort')&&$('armory-sort2')){$('armory-sort').value='rarete';$('armory-sort2').value='prix';gardeTris()}}
 // Depuis le bestiaire, un nouveau monstre est un modèle : il s'y range, sans entrer en scène.
 $('bestiary-add').onclick=()=>openActor(null,false,null,true);
 $('bestiary-pnj').onclick=()=>openActor(null,false,null,true,true);
