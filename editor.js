@@ -8248,3 +8248,21 @@ $('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||(view!=='mj'&
 $('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.',{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})};
 loadSession();
 {const d=dessineReglagesTalent;dessineReglagesTalent=function(...x){const r=d.apply(this,x);dessineJournalTalent();return r}}
+/* v1.045 — La bulle d'une pièce de l'Armurerie, en tête : son icône à gauche ; son nom en Killam et, dessous, en italique, ce
+   qu'elle est (le sous-type d'une potion, la sorte d'arme, l'emplacement d'une armure…) ; sa valeur en haut à droite. Un trait
+   fin, puis le reste — dés, défense, bonus, notes — comme avant. */
+function sortePiece(o){const c=o&&o.category;
+ if(c==='weapon'){const k=colonneArmurerie(o);return o.lancer?'Arme de lancer':(CATS_NEUVES.find(([x])=>x===k)||[])[1]||'Arme'}
+ if(c==='armor'){const e=emplacementDe(o);return e==='shield'?'Bouclier':NOM_EMPLACEMENT(e)||'Armure'}
+ return {ammo:'Munition',object:o.consumable?'Consommable':'Objet',cle:'Clé',ressource:'Ressource',restes:'Restes',treasure:'Trésor',potion:'Potion',herbe:'Composant Alchimique'}[c]||''}
+{const gd=gearDetail;gearDetail=function(o,a,enJeu){const d=gd(o,a,enJeu);try{if(!o||d.querySelector(':scope > .gear-tete'))return d;
+ const nom=d.querySelector(':scope > .gear-nom');if(!nom)return d;
+ const tete=document.createElement('div');tete.className='gear-tete';
+ const ico=document.createElement('span');ico.className='gear-ico';const im=typeof logoEquipement==='function'?logoEquipement(o):null;
+ if(im)ico.append(im);else ico.append(glyphePiece(itemColumn(o)));
+ const titres=document.createElement('div');titres.className='gear-titres';titres.append(nom);
+ const compo=d.querySelector(':scope > .gear-composant'),sorte=compo?compo.textContent:sortePiece(o);if(compo)compo.remove();
+ if(sorte){const p=document.createElement('p');p.className='gear-sous';p.textContent=sorte;titres.append(p)}
+ tete.append(ico,titres);
+ const val=d.querySelector(':scope > .gear-valeur');if(val){val.classList.add('gear-prix');tete.append(val)}
+ d.prepend(tete);if(d.children.length>1){const t=document.createElement('div');t.className='gear-trait';tete.after(t)}}catch(e){}return d}}

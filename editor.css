@@ -3645,3 +3645,17 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 #zone-lancer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;overflow:visible}
 #zone-lancer path{fill:#c2692a;fill-opacity:.18;stroke:#c2692a;stroke-width:2px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
 #zone-lancer path.hors{fill:#7d7a74;stroke:#7d7a74}
+/* v1.045 — La bulle d'une pièce : en tête l'icône, le nom (Killam) et sa sorte en italique, la valeur à droite ; un trait, puis le reste. */
+.gear-detail .gear-tete{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+.gear-detail .gear-ico{flex:0 0 64px;width:64px;height:64px;display:flex;align-items:center;justify-content:center}
+.gear-detail .gear-ico img{width:100%;height:100%;object-fit:contain}.gear-detail .gear-ico .glyphe{font-size:30px;line-height:1}
+.gear-detail .gear-titres{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gear-detail .gear-titres .gear-nom{margin:0;font:700 20px/1.2 'Killam',Georgia,serif}
+.gear-detail .gear-titres .gear-sous{margin:0;font:italic 14.5px/1.3 system-ui;color:var(--muted)}
+.gear-detail .gear-tete .gear-prix{align-self:flex-start;margin:0 0 0 8px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.gear-detail .gear-tete .gear-prix b{font:700 20px/1 'Killam',Georgia,serif;color:#a0761a}
+.gear-detail .gear-tete .gear-prix .piece-or{width:20px;height:20px}
+.bulle .gear-detail.large:has(.gear-tete){font-size:14px;min-width:300px}
+.gear-detail .gear-trait{border-top:1px solid var(--line);margin:0 0 8px}
+.gear-detail.avec-quantite .gear-tete{padding-right:30px}
+.gear-detail .sources-butin{position:static;justify-content:flex-end;margin-top:6px}

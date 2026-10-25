@@ -338,3 +338,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Sélecteur d'un objet de la carte** (`.objet-liste`) : le nombre d'exemplaires choisis (×2…) en pastille en bas à droite du carré, comme dans l'inventaire ; la coche reste en haut à droite.
 
 **Zone d'un objet lancé** (`#zone-lancer`) : la zone de contact de la taille réglée, coupée par les murs, qui suit le pointeur : voile et tirets orange `#c2692a` (voile à 18 %) ; grisée `#7d7a74` là où l'objet ne peut pas tomber.
+
+**Bulle d'une pièce de l'Armurerie** (`.gear-detail` dans `bulle-gear`) : en tête (`.gear-tete`), l'icône de la pièce (64 px) à gauche ; le nom en Killam gras 20 px et, dessous, sa sorte en italique `--muted` (sous-type d'une potion, sorte d'arme, emplacement d'une armure…) ; la valeur en haut à droite, chiffre en Killam doré `#a0761a` 20 px et pièce d'or ; texte du corps en 14 px. Un trait fin (`.gear-trait`), puis le reste — dés, défense, bonus, notes. Fond et liseré gauche restent ceux de la rareté.

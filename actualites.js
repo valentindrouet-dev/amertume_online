@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.045","d":"2026-10-25","t":"Sel au contact de zone ; nouvelles bulles de pièces"},
 {"v":"1.044","d":"2026-10-25","t":"Objets lancés en zone, Sel de racine qui gomme"},
 {"v":"1.043","d":"2026-10-25","t":"L'onglet ouvert suit le changement de vue"},
 {"v":"1.042","d":"2026-10-25","t":"Objets visibles seulement dans le champ de vision"},

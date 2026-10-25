@@ -3945,8 +3945,9 @@ const formesPxTrous=(m,t,size)=>formesActives(m,t).map(p=>p.anneaux.map(r=>r.map
  if(frappe){render();scheduleSave()}}}
 // Le tracé de la zone autour d'un point, en % de carte : la zone de contact d'un socle de cette taille, coupée par les murs.
 function zoneLancer(q,aire){const size=mapSize();if(!size.width)return [];return reachPolygon({x:q.x,y:q.y},walls(),contactRadius(tokenPx()*(SOCLE_TAILLES[aire]||1)),size.width,size.height,48)}
-const auContactDuLanceur=(a,q)=>{const size=mapSize();return Math.hypot((q.x-a.x)/100*size.width,(q.y-a.y)/100*size.height)<=contactRadius(tokenOf(a))};
-function zoneAtteinte(a,q,p){if(!a||!q||wallsBetween(a,q,walls()))return false;return p.portee==='contact'?auContactDuLanceur(a,q):true}
+// v1.045 : au contact, la zone doit toucher la zone de contact du lanceur — y mordre, ou la border —, pas y être centrée.
+const auContactDuLanceur=(a,q,aire)=>{const size=mapSize(),rz=aire?contactRadius(tokenPx()*(SOCLE_TAILLES[aire]||1)):0;return Math.hypot((q.x-a.x)/100*size.width,(q.y-a.y)/100*size.height)<=contactRadius(tokenOf(a))+rz+2};
+function zoneAtteinte(a,q,p){if(!a||!q||wallsBetween(a,q,walls()))return false;return p.portee==='contact'?auContactDuLanceur(a,q,aireLancer(p)):true}
 let apercuZone=null;
 function retireApercuZone(){if(!apercuZone)return;apercuZone.svg.remove();$('map').removeEventListener('pointermove',apercuZone.suit);cancelAnimationFrame(apercuZone.image);apercuZone=null}
 {const ap=annulerPlacement;annulerPlacement=function(...x){retireApercuZone();return ap(...x)}}
@@ -3970,7 +3971,7 @@ function lancerEnZone(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la c
  viserCible('◈ '+o.name+' — clique où le lancer',(vise,q)=>{if(!q)return;
   if(!zoneAtteinte(a,q,p)){log(o.name+(p.portee==='contact'?' se lance au contact de '+nomNum(a)+'.':' : '+nomNum(a)+' doit voir où il le lance.'),{local:true});return}
   const pts=zoneLancer(q,aireLancer(p));if(pts.length<3)return;
-  const portee=p.portee==='contact'?'contact':p.portee==='deux'&&auContactDuLanceur(a,q)?'contact':'distance';
+  const portee=p.portee==='contact'?'contact':p.portee==='deux'&&auContactDuLanceur(a,q,aireLancer(p))?'contact':'distance';
   const touches=touchesDeZone(a,pts,p),crans=Math.max(1,p.crans|0);
   const pose=x=>{const ok=poseEtatPotion(x,p.etat,crans,a);if(ok&&(p.duree==='1'||p.duree==='2')&&enCombat())ajouteEtatBref(x,p.etat,round+(p.duree==='2'?1:0));return ok};
   if(p.de&&touches.length){const gomme=p.detruit==='oui'?gommeTerrainSel(pts):[];
