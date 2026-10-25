@@ -193,6 +193,6 @@ REGLES_SECTIONS.push(
    '<b>Terrain dangereux</b> : ronces, haies vivantes… Chaque type a sa couleur, ses dégâts (fixes ou en d6, sans DEF) et ses états, et frappe les aventuriers, les adversaires ou tous : quand un déplacement le traverse ou s’y arrête, puis, en combat, à chaque fin de tour passée dedans. Une pièce portée à l’effet « Protège des ronces » — les Gants de ronceur — en protège ; le Sel de racine détruit une haie vivante au contact.',
    '<b>Ressources</b> : au contact, hors combat, un clic lance la Récolte, un test de la compétence réglée. N réussites donnent le premier palier ; N+1, le deuxième en plus ; N×2, le troisième en plus. Réussie ou non, la ressource quitte la carte : elle ne se récolte qu’une fois. Chacune a un type ('+(typeof typesRessources==='function'?typesRessources().join(', '):'Filon, Plante, Bête, Mystique')+') ; certains talents y ajoutent des réussites.',
    '<b>Pièges</b> : détecter (Perception ou Ruse), désamorcer (Ruse, Technique ou Force), éviter (Agilité).',
-   '<b>Coffres et portes</b> : la clé, ou un test de Ruse ou de Technique.',
+   '<b>Coffres et portes</b> : la clé, ou un test de Ruse ou de Technique. Un coffre peut aussi s’ouvrir d’un code (une case par chiffre) ou d’un mot de passe (ni casse, ni pluriel).',
    '<b>Bruit</b> : un pas s’entend à 5 m (10 m à travers une porte), une attaque au contact à 15 m, un cri à 20 m.',
    '<b>Discrétion</b> : un test de Ruse donne 50 m de pas silencieux pour 1 réussite, 100 m par réussite au-delà de la première.'])));

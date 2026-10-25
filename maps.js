@@ -1085,7 +1085,7 @@ function bulleCoffre(c){const g=document.createElement('div');g.className='gear-
   const l=document.createElement('div');l.className='coffre-contenu-bulle';comptes.forEach((n,o)=>l.append(carreInventaire(o,n)));
   if(r.or>0)l.append(ligneOr(r.or,null));const gem=ligneGemmes(r,null);if(gem)l.append(gem);const des=ligneBourse(c.bourse);if(des)l.append(des);if(l.childElementCount)g.append(l)}
  if(view==='mj'){const p=document.createElement('p');p.className='muted objet-cache-bulle';
-  p.textContent=[c.cache&&!c.revele?'Caché : Perception '+(c.perception||1):'',coffreVerrouille(c)?'Verrou '+c.verrou+(c.cleId?' ou '+nomCle(c.cleId):''):'',coffreArme(c)?'Piège '+c.piege:''].filter(Boolean).join(' · ');if(p.textContent)g.append(p)}
+  p.textContent=[c.cache&&!c.revele?'Caché : Perception '+(c.perception||1):'',coffreVerrouille(c)?'Verrou '+c.verrou+(c.cleId?' ou '+nomCle(c.cleId):'')+(c.code?' ou « '+c.code+' »':''):'',coffreArme(c)?'Piège '+c.piege:''].filter(Boolean).join(' · ');if(p.textContent)g.append(p)}
  return g}
 // Un petit menu au clic, à la place du pointeur : un titre, des entrées.
 function menuCarte(titre,entrees,x,y){fermeMenuObjet();if(!entrees.length)return;const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
@@ -1142,11 +1142,30 @@ function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert||!payeAction(a))return;
    l'ouvre — ou, quand c'est le MJ, à l'aventurier le plus proche. */
 /* Un joueur clique : son aventurier tente d'ouvrir. Verrouillé, sans la clé, rien ne se passe, sauf la ligne du journal ;
    avec elle, le verrou cède. Piégé, le piège part. */
+/* v1.053 — Un coffre verrouillé à code ou à mot de passe : qui le tente le saisit. Des chiffres : une case par chiffre ; un mot de
+   passe : une ligne, comparée sans la casse ni les pluriels. Juste, le coffre se déverrouille et s'ouvre ; faux, il reste clos. */
+const estCodeChiffres=v=>/^\d+$/.test(String(v||''));
+const motNormal=v=>String(v||'').normalize('NFC').toLowerCase().trim().split(/\s+/).filter(Boolean).map(w=>w.length>2?w.replace(/[sx]$/,''):w).join(' ');
+const codeJuste=(c,v)=>estCodeChiffres(c.code)?String(v||'')===String(c.code):motNormal(v)===motNormal(c.code);
+let codeDialog=null;
+function saisieCode(a,c){if(!codeDialog){codeDialog=dialog('code-coffre','Code','<form id="code-form"><div id="code-champs"></div><div class="form-actions"><button class="primary">Ouvrir</button></div></form>')}
+ const chiffres=estCodeChiffres(c.code),champs=$('code-champs');codeDialog.querySelector('h2').textContent=chiffres?'Code':'Mot de passe';champs.replaceChildren();
+ if(chiffres){const l=document.createElement('div');l.className='code-cases';
+  for(let i=0;i<String(c.code).length;i++){const e=document.createElement('input');e.type='text';e.inputMode='numeric';e.maxLength=1;e.autocomplete='off';e.setAttribute('aria-label','Chiffre '+(i+1));
+   e.oninput=()=>{e.value=e.value.replace(/\D/g,'').slice(-1);if(e.value&&e.nextElementSibling)e.nextElementSibling.focus()};
+   e.onkeydown=ev=>{if(ev.key==='Backspace'&&!e.value&&e.previousElementSibling){e.previousElementSibling.focus()}};l.append(e)}
+  champs.append(l)}
+ else{const e=document.createElement('input');e.type='text';e.name='mot';e.autocomplete='off';e.maxLength=40;e.className='code-mot';e.setAttribute('aria-label','Mot de passe');champs.append(e)}
+ $('code-form').onsubmit=ev=>{ev.preventDefault();const v=chiffres?[...champs.querySelectorAll('.code-cases input')].map(x=>x.value).join(''):champs.querySelector('.code-mot').value;
+  codeDialog.close();if(!codeJuste(c,v)){c.tente=true;log(nomNum(a)+' tente d’ouvrir '+c.nom+' : '+(chiffres?'mauvais code':'mauvais mot de passe')+'.',{ton:'carte'});render();saveMaps();scheduleSave();return}
+  c.deverrouille=true;log(nomNum(a)+' déverrouille '+c.nom+' '+(chiffres?'avec le code':'avec le mot de passe')+'.',{ton:'carte'});ouvrirCoffre(c,a,false)};
+ codeDialog.showModal();const f=champs.querySelector('input');if(f)f.focus()}
 function ouvreCoffreJoueur(c){const a=heroActif();
  if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
  if(!coffreAPortee(a,c)){log('Approche '+a.name+' : il faut être au contact de '+c.nom+'.',{local:true});return}
  // v1.011 : un coffre coché « Coffre de groupe » ouvre la fenêtre commune, chez le joueur aussi.
  if(c.groupe===true&&typeof ouvrirCoffreGroupe==='function'){ouvrirCoffreGroupe(a,c);return}
+ if(coffreVerrouille(c)&&!aLaCle(a,c.cleId)&&c.code){saisieCode(a,c);return}
  if(coffreVerrouille(c)&&!aLaCle(a,c.cleId)){c.tente=true;log(nomNum(a)+' tente d’ouvrir '+c.nom+' : verrouillé.',{ton:'carte'});render();saveMaps();scheduleSave();return}
  if(enCombat()&&pointsRestants(a,'action')<=0){payeAction(a);return}
  if(coffreVerrouille(c)){c.deverrouille=true;log(nomNum(a)+' déverrouille '+c.nom+' avec '+nomCle(c.cleId)+'.',{ton:'carte'})}
@@ -2977,7 +2996,9 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   +'<div class="coffre-cases">'+coche('cache','Caché',!!c.cache)+coche('ferme','Verrouillé',c.verrou>0)+coche('piege_on','Piégé',c.piege>0)+coche('groupe','Coffre de groupe',c.groupe===true)+'</div>'
   +'<div class="edit-grid coffre-si" data-si="cache">'+nb('Réussites de Perception pour le trouver','perception',c.perception||1,1,9)+coche('pierre','Dans la pierre',c.pierre===true)+'</div>'
   +'<div class="edit-grid coffre-si" data-si="ferme">'+nb('Réussites de Ruse ou Technique','verrou',Math.max(1,c.verrou||1),1,9)
-  +'<label>Clé qui l’ouvre<select name="cleId"></select></label></div>'
+  +'<label>Clé qui l’ouvre<select name="cleId"></select></label>'
+  // v1.053 : un code (des chiffres, autant de cases chez les joueurs) ou un mot de passe (ni casse, ni pluriel).
+  +field('Code ou mot de passe','code',c.code||'','text','maxlength="40" autocomplete="off"')+'</div>'
   +'<div class="coffre-si" data-si="piege_on"><div class="edit-grid">'+nb('Réussites de Ruse ou Technique pour le trouver','piege',Math.max(1,c.piege||1),1,9)+field('Dégâts du piège','degats',formuleDegats(c),'text','pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" class="degats-formule"')+'</div>'
   +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((c.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div></div>'
   +'<h2 class="sous-titre">Contenu</h2><div class="coffre-tresor" id="coffre-bourse"></div>'
@@ -2995,6 +3016,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   c.nom=f.nom.value.trim().slice(0,60)||'Coffre';c.desc=f.desc.value.trim().slice(0,600);if(f.groupe.checked)c.groupe=true;else delete c.groupe;
   if(f.cache.checked){c.cache=true;c.perception=Math.max(1,n(f.perception.value,9));if(f.pierre.checked)c.pierre=true;else delete c.pierre}else{delete c.cache;delete c.pierre}
   c.verrou=f.ferme.checked?Math.max(1,n(f.verrou.value,9)):0;if(f.ferme.checked&&f.cleId.value)c.cleId=f.cleId.value;else delete c.cleId;
+  {const cd=String(f.code.value||'').trim().slice(0,40);if(f.ferme.checked&&cd)c.code=cd;else delete c.code}
   c.piege=f.piege_on.checked?Math.max(1,n(f.piege.value,9)):0;{const d=c.piege?lisFormuleDegats(f.degats.value):null;if(!c.piege){c.degats=0;delete c.degatsDes}else if(d){c.degats=d.degats;if(d.degatsDes)c.degatsDes=d.degatsDes;else delete c.degatsDes}}
   c.etats=c.piege?[...coffreDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x)):[];
   c.richesses={};const b=normaliseBourse(bourse.bourse,false);if(b.length)c.bourse=b;else delete c.bourse;
