@@ -429,6 +429,9 @@ function visionInPixels(){const size=mapSize(),k=cleCadre(size);
  return fogPx}
 // Un adversaire hors du champ n'existe pas pour celui qui regarde. Mais il suffit
 // qu'un bout de son socle morde sur la zone éclairée pour qu'il se montre.
+/* v1.033 — Un point que la troupe voit à l'instant : dans la vue d'un aventurier, et dans sa lumière si la carte est obscure. */
+function centreVuTroupe(x,y){const m=currentMap();if(!fogVis||!m||m.fogOff)return true;const size=mapSize();if(!size.width)return true;
+ const c=[x/100*size.width,y/100*size.height],yeux=fogVisQui||[];return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,1)&&(!yeux[k]||voitSocle(yeux[k],{x,y,socle:'medium'})))}
 function partySees(a){const m=currentMap();
  if(!fogVis||!m||m.fogOff)return true;
  const size=mapSize();if(!size.width)return true;
@@ -697,7 +700,8 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
  vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m||enCombat())return;
  (m.objets||[]).forEach((o,i)=>{if(o.pris||(!objetVu(o)&&view!=='mj'))return;
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
-  const vuTroupe=seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'});
+  // v1.033 : son centre même — un bord de socle qui frôle la vue, derrière un mur, ne suffit plus.
+  const vuTroupe=seenAt(o.x,o.y)||centreVuTroupe(o.x,o.y);
   if(oeilJoueur()&&!vuTroupe)return;
   /* Chez le MJ, un objet se voile comme un adversaire : caché par lui, pâli et cerclé de violet ;
      dans une salle que la troupe n'a pas encore vue, pâli et cerclé de tirets. */
@@ -745,7 +749,7 @@ function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine)return;
  log(nomNum(a)+' - ⟬t'+k+'|'+jet.reussites+'|'+jet.des.slice(0,40).join(',')+'⟭');
  if(jet.reussites>=n){o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'})}render();saveMaps();scheduleSave()}
 function bulleObjetCarte(o){const d=document.createElement('div');d.className='bulle-objet-carte';
- const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
+ const pieces=restantsObjet(o).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  const desc=()=>{if(!o.desc&&!o.tresor)return null;const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=[o.desc,o.tresor?'Trésor : '+o.tresor:''].filter(Boolean).join('\n');return p};
  if(pieces.length)pieces.forEach((it,k)=>{const g=gearDetail(it,null,false);g.hidden=false;g.classList.add('large');if(!k){const p=desc();if(p)g.append(p)}d.append(g)});
  else{const g=document.createElement('div');g.className='gear-detail large';const n=document.createElement('p');n.className='gear-nom';n.textContent=o.nom||'Objet';g.append(n);const p=desc();if(p)g.append(p);d.append(g)}
@@ -776,13 +780,21 @@ function recolteFaite(a,o){if(!o||o.pris)return;const r=normaliseRecolte(o.recol
  render();saveMaps();scheduleSave()}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
    l'objet quitte la carte pour toute la table — jusqu'à ce que la carte soit rechargée. */
+/* v1.033 — Plusieurs exemplaires d'une pièce sur un même objet : un clic n'en prend qu'un de chaque. « prisN » compte les
+   prises déjà faites ; la dernière emporte l'objet. La table partagée retient ce compte (16 + prises), la course comprise. */
+const toursObjet=o=>{const n=new Map();(o&&o.items||[]).forEach(id=>n.set(id,(n.get(id)||0)+1));return Math.max(1,...n.values())};
+function restantsObjet(o){const r=Math.max(0,Math.trunc(Number(o&&o.prisN))||0),vus=new Map();
+ return (o&&o.items||[]).filter(id=>{const k=(vus.get(id)||0)+1;vus.set(id,k);return k>r})}
 function recupererObjet(a,o){if(!a||!o||o.pris||o.indice||o.groupe===true||o.ressource===true)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
- prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k;if(arr[i]===2)return null;arr[i]=2;return arr},()=>recupereObjetFait(a,o))}
-function recupereObjetFait(a,o){if(o&&o.indice)return;
- const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
+ let rang=null;
+ prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k,v=arr[i];if(v===2)return null;const r=Number.isInteger(v)&&v>16?v-16:0;rang=r;arr[i]=r+1>=toursObjet(o)?2:17+r;return arr},()=>recupereObjetFait(a,o,rang))}
+function recupereObjetFait(a,o,rang){if(o&&o.indice)return;
+ const r=Number.isInteger(rang)?rang:Math.max(0,Math.trunc(Number(o.prisN))||0),vus=new Map();
+ const pieces=(o.items||[]).filter(id=>{const k=(vus.get(id)||0)+1;vus.set(id,k);return k===r+1}).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
- if(o.tresor)noteInventaire(a,o.tresor);o.pris=true;
- log(nomNum(a)+' récupère '+(pieces.length?pieces.map(it=>'⟦'+it.id+'⟧').join(' '):o.nom)+(o.tresor?' et '+o.tresor:'')+'.',{ton:'butin'});
+ const tresor=r===0?o.tresor:'';if(tresor)noteInventaire(a,tresor);
+ if(r+1>=toursObjet(o)){o.pris=true;delete o.prisN}else o.prisN=r+1;
+ log(nomNum(a)+' récupère '+(pieces.length?pieces.map(it=>'⟦'+it.id+'⟧').join(' '):o.nom)+(tresor?' et '+tresor:'')+'.',{ton:'butin'});
  render();saveMaps();scheduleSave()}
 function heroLePlusProche(o){const size=mapSize(),loin=h=>Math.hypot((h.x-o.x)/100*size.width,(h.y-o.y)/100*size.height);
  const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte),vivants=heros.filter(alive),parmi=vivants.length?vivants:heros;
@@ -1570,7 +1582,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;
+ (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);

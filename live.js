@@ -161,7 +161,7 @@ function etatVivant(){const out={actors:{}};
     ne lit que les portes et ignore la suite. */
  // Un objet : 0 caché, 1 visible, 2 récupéré. Une porte : ouverte ou non ; passage secret découvert, 2 close, 3 ouverte.
  // Puis les coffres, en drapeaux : 1 révélé, 2 déverrouillé, 4 désamorcé, 8 ouvert, 16 tenté verrouillé.
- out.doors=m?[...(m.doors||[]).map(d=>d.crochetee?4+(d.decouvert?2:0)+(d.open?1:0):d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:objetVu(o)?1:0),
+ out.doors=m?[...(m.doors||[]).map(d=>d.crochetee?4+(d.decouvert?2:0)+(d.open?1:0):d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.prisN>0?16+Math.min(20,o.prisN):objetVu(o)?1:0),
   ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0)),
   // Puis les lumières de la carte : 2 prise, 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
   ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol),
@@ -425,7 +425,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    {const sl=d.doors.filter(v=>v&&typeof v==='object'&&Array.isArray(v.sl)&&v.sl.length===4&&v.sl.every(n=>Number.isFinite(Number(n)))).slice(0,20).map(v=>{const n=v.sl.map(x=>Math.max(0,Math.min(100,Number(x))));return {a:{x:n[0],y:n[1]},b:{x:n[2],y:n[3]}}});
     if(sl.length)m.seuilsSel=sl;else delete m.seuilsSel}
    const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
-    if(typeof v==='boolean'){montreObjet(o,v);delete o.pris}else if(v===0||v===1||v===2){montreObjet(o,v>=1);if(v===2)o.pris=true;else delete o.pris}});
+    if(typeof v==='boolean'){montreObjet(o,v);delete o.pris;delete o.prisN}else if(v===0||v===1||v===2){montreObjet(o,v>=1);if(v===2)o.pris=true;else delete o.pris;delete o.prisN}
+    else if(Number.isInteger(v)&&v>16&&v<=36){montreObjet(o,true);delete o.pris;o.prisN=v-16}});
    const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;
     [['revele',1],['deverrouille',2],['desamorce',4],['ouvert',8],['tente',16]].forEach(([cle,b])=>{if(v&b)c[cle]=true;else delete c[cle]})});
    const n3=n2+(m.coffres||[]).length,fixes=(m.lumieres||[]).filter(l=>l&&!l.pose);fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===2){l.eteinte=true;l.prise=true}else if(v===1){l.eteinte=true;delete l.prise}else if(v===0){delete l.eteinte;delete l.prise}});
