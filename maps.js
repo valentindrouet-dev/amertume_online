@@ -2695,7 +2695,8 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
  if(d.mode==='fil'){const f=shapeAt(d),r=Math.max(.05,Number(mapDraft.ratio)||16/9);
   if(f&&d.neuf&&Math.hypot((f.x2-f.x1)*r,f.y2-f.y1)<auZoom(1.2)){removeShape(d);mapSel=null;undoStack.pop()}else if(d.neuf)mapTool='select';
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
- const cible=d.kind==='foe'||d.kind==='objet'||d.kind==='lumiere'?null:shapeAt(d);
+ // v1.065 : une Note de MJ n'a pas de surface ; déplacée, elle reste (elle se voyait effacée comme un clic manqué).
+ const cible=d.kind==='foe'||d.kind==='objet'||d.kind==='lumiere'||d.kind==='notemj'?null:shapeAt(d);
  // Un coffre tout juste tracé ouvre sa fiche, comme un objet posé.
  if(cible&&d.mode==='create'&&d.kind==='coffre'&&gesteTrace(cible))setTimeout(()=>openCoffre(d.i));
  // Un piège tout juste tracé ouvre sa fiche ; une zone de déclenchement tracée rend la Sélection.
