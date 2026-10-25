@@ -1676,7 +1676,7 @@ const mapsPage=document.createElement('main');mapsPage.id='maps-page';
 mapsPage.innerHTML=
  '<aside class="maps-side panel"><h2>Cartes</h2><div id="map-list"></div>'
  +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div>'
- +'<div class="divider"></div><h2>Paysages</h2><div id="paysage-list"></div><div class="side-actions"><button id="paysage-new" class="primary">+ Nouveau paysage</button></div>'
+ +'<div class="divider"></div><h2>Paysages</h2><div id="paysage-list"></div><div class="side-actions"><button id="paysage-new" class="primary">+ Nouveau paysage</button><button id="paysage-del" hidden>Supprimer</button></div>'
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
@@ -1849,6 +1849,11 @@ $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;re
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 $('paysage-play').onclick=()=>{if(estPaysage(mapDraft))afficherPaysage(mapDraft.id)};
 $('paysage-new').onclick=()=>{newPaysage();renderMapList();renderCanvas();saveMaps()};
+/* v1.032 — Supprimer le paysage sélectionné. Affiché à la table, il se ferme d'abord : la carte d'avant revient. */
+$('paysage-del').onclick=()=>{const p=mapDraft;if(!estPaysage(p)||!confirm('Supprimer « '+p.name+' » ?'))return;
+ if(currentMapId===p.id)fermerPaysage();const i=maps.indexOf(p);if(i>=0)maps.splice(i,1);
+ mapDraft=maps.filter(estPaysage)[0]||maps.find(m=>!estPaysage(m))||null;mapSel=null;undoStack=[];redoStack=[];if(!maps.length)newMap();
+ renderMapList();renderCanvas();saveMaps();render()};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='courbe')courbe=null;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme'&&mapTool!=='dangergomme';
  zoneTrait=zoneVise=null;
@@ -1915,7 +1920,7 @@ function renderMapList(){const rangee=m=>{const b=document.createElement('button
  {const pl=$('paysage-list');if(pl)pl.replaceChildren(...maps.filter(estPaysage).map(m=>{const b=document.createElement('button');
   b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');const nom=document.createElement('strong');nom.textContent=m.name;b.append(nom);
   b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}))}
- mapsPage.classList.toggle('edition-paysage',estPaysage(mapDraft));if(estPaysage(mapDraft))mapTool='select';
+ mapsPage.classList.toggle('edition-paysage',estPaysage(mapDraft));if($('paysage-del'))$('paysage-del').hidden=!estPaysage(mapDraft);if(estPaysage(mapDraft))mapTool='select';
  lieuxDesCartes().forEach(l=>{const lot=maps.filter(m=>m&&!estPaysage(m)&&m.lieu&&m.lieu.trim()===l),replie=lieuxReplies.has(l);
   const g=document.createElement('div');g.className='map-lieu'+(replie?' replie':'');
   const tete=document.createElement('div');tete.className='map-lieu-tete';tete.setAttribute('role','button');tete.tabIndex=0;

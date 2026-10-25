@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.032","d":"2026-10-25","t":"Supprimer un paysage"},
 {"v":"1.031","d":"2026-10-25","t":"Terrains nommés teintés dans les bulles de pièces"},
 {"v":"1.030","d":"2026-10-25","t":"Bulles des pièces : les Notes seules"},
 {"v":"1.029","d":"2026-10-25","t":"Terrains sans clignotement, bulle teintée, repos court au journal"},
