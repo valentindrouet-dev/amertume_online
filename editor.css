@@ -3659,3 +3659,9 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .gear-detail .gear-trait{border-top:1px solid var(--line);margin:0 0 8px}
 .gear-detail.avec-quantite .gear-tete{padding-right:30px}
 .gear-detail .sources-butin{position:static;justify-content:flex-end;margin-top:6px}
+/* v1.046 — Le nom (sauf très long) et la sorte d'une pièce tiennent sur une ligne : la bulle s'élargit pour eux. */
+.bulle:has(.gear-tete){max-width:min(480px,94vw)}
+.gear-detail .gear-titres .gear-nom{white-space:nowrap}.gear-detail .gear-titres .gear-nom.nom-long{white-space:normal}
+.gear-detail .gear-titres .gear-sous{white-space:nowrap}
+/* Le corps ne pousse pas la bulle : seule la tête — nom, sorte, valeur — la fait s'élargir au-delà de 300 px. */
+.bulle .gear-detail.large:has(>.gear-tete)>:not(.gear-tete){width:0;min-width:100%;box-sizing:border-box}

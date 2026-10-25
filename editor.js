@@ -8261,6 +8261,8 @@ function sortePiece(o){const c=o&&o.category;
  const ico=document.createElement('span');ico.className='gear-ico';const im=typeof logoEquipement==='function'?logoEquipement(o):null;
  if(im)ico.append(im);else ico.append(glyphePiece(itemColumn(o)));
  const titres=document.createElement('div');titres.className='gear-titres';titres.append(nom);
+ // v1.046 : un nom tient sur une ligne, sauf s'il est vraiment long.
+ if(String(o.name||'').length>28)nom.classList.add('nom-long');
  const compo=d.querySelector(':scope > .gear-composant'),sorte=compo?compo.textContent:sortePiece(o);if(compo)compo.remove();
  if(sorte){const p=document.createElement('p');p.className='gear-sous';p.textContent=sorte;titres.append(p)}
  tete.append(ico,titres);
