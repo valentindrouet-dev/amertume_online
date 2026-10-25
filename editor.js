@@ -2303,6 +2303,17 @@ function ligneAffixeClasse(x){const p=document.createElement('p');p.className='g
  const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');
  const teinte=TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act'];
  p.append(los,b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');return p}
+/* v1.031 — Dans le texte d'une pièce, le nom d'un type de terrain dangereux — « Ronces » — s'écrit en gras, de la couleur du
+   terrain : celle de la carte ouverte d'abord, sinon celle de la première carte qui le définit. */
+function teinteTerrains(el){const parNom=new Map(),cartes=typeof maps!=='undefined'&&Array.isArray(maps)?maps:[];
+ const ici=typeof currentMap==='function'?currentMap():null;[ici,...cartes].forEach(m=>{if(!m||!Array.isArray(m.dangers))return;
+  m.dangers.forEach(t=>{const n=String(t&&t.nom||'').trim(),c=String(t&&t.couleur||'');if(n.length>1&&/^#[0-9a-fA-F]{3,8}$/.test(c)&&!parNom.has(n.toLowerCase()))parNom.set(n.toLowerCase(),c)})});
+ if(!parNom.size)return el;
+ const q=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),rx=new RegExp('(?<![\\p{L}\\p{N}])(?:'+[...parNom.keys()].sort((x,y)=>y.length-x.length).map(q).join('|')+')(?![\\p{L}\\p{N}])','giu');
+ const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),l=[];let n;while((n=w.nextNode()))if(!(n.parentElement&&n.parentElement.closest('.mot-terrain')))l.push(n);
+ l.forEach(t=>{const v=String(t.nodeValue);rx.lastIndex=0;if(!rx.test(v))return;rx.lastIndex=0;const f=document.createDocumentFragment();let last=0,m;
+  while((m=rx.exec(v))){if(m.index>last)f.append(v.slice(last,m.index));const b=document.createElement('b');b.className='mot-cle mot-terrain';b.textContent=m[0];b.style.color=parNom.get(m[0].toLowerCase());f.append(b);last=rx.lastIndex}
+  if(last<v.length)f.append(v.slice(last));t.replaceWith(f)});return el}
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  if(o.invention)d.classList.add('gear-invention');
  const titre=document.createElement('p');titre.className='gear-nom';avecTirets(titre,o.name);d.append(titre);
@@ -2334,7 +2345,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(col==='herbe')ligne('Composant Alchimique','gear-composant');
  // v1.013 : une potion — son sous-type en italique, puis ce qu'elle fait.
  // v1.014 : le texte d'une pièce rend ses codes — dés, états, PA, PM — comme celui d'un talent.
- const ligneRiche=t=>{if(!t)return;const p=document.createElement('p');texteEnrichi(p,t,null,a);d.append(p)};
+ const ligneRiche=t=>{if(!t)return;const p=document.createElement('p');texteEnrichi(p,t,null,a);teinteTerrains(p);d.append(p)};
  if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligneRiche(o.notes)}
  // v1.029 : une arme, une armure, un bouclier — les Notes du MJ, et rien d'autre.
  if(col==='melee'||col==='ranged'||col==='armor')ligneRiche(o.notes);
