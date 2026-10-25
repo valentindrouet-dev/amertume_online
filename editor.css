@@ -3631,3 +3631,6 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 @media (prefers-reduced-motion:reduce){#dangers-carte .danger-carte{animation:none}}
 .ancre-danger{position:absolute;width:2px;height:2px;margin:-1px 0 0 -1px;pointer-events:none}
 .j-etat-nomme{white-space:nowrap}
+/* v1.029 — La bulle d'un terrain dangereux prend sa couleur : le fond teinté, le nom écrit de sa teinte. */
+.gear-detail.bulle-danger{background:color-mix(in srgb,var(--teinte) 16%,#fbf3e2);border-left:4px solid var(--teinte)}
+.gear-detail.bulle-danger .gear-nom{color:var(--teinte)}

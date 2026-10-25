@@ -3852,6 +3852,17 @@ function survolDanger(e){if(dangerTache)return;dangerTache=requestAnimationFrame
  ancreDanger.style.left=q.x+'%';ancreDanger.style.top=q.y+'%';
  const cle=z.t.id+'|'+cleFormeDanger(z.t,z.p);if(dangerSurvole===cle&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger){if(typeof placerBulle==='function')placerBulle();return}
  dangerSurvole=cle;const d=document.createElement('div');d.className='gear-detail large';const p=document.createElement('p');p.className='gear-nom';p.textContent='Terrain Dangereux : '+z.t.nom;d.append(p);
- ouvrirBulle(ancreDanger,d,'bulle-gear')}catch(err){}})}
+ const teinte=/^#[0-9a-fA-F]{3,8}$/.test(String(z.t.couleur||''))?z.t.couleur:'';if(teinte){d.classList.add('bulle-danger');d.style.setProperty('--teinte',teinte)}
+ ouvrirBulle(ancreDanger,d,'bulle-gear');const bu=d.closest('.bulle');if(bu&&teinte)bu.style.setProperty('--bulle-bord','color-mix(in srgb,'+teinte+' 16%,#fbf3e2)')}catch(err){}})}
 if($('map-view')){$('map-view').addEventListener('pointermove',survolDanger);
  $('map-view').addEventListener('pointerleave',()=>{if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}})}
+
+/* v1.029 — Le terrain ne clignote plus au relâchement d'un socle : chaque rendu de la carte redessinait ses calques et relançait
+   le pouls. Tant que rien n'a changé, les calques restent ; redessinés, le pouls reprend là où il en était. */
+{const rdg=renderDangers;let cle=null;renderDangers=function(...x){const m=currentMap(),svg=$('dangers-carte');
+ const k=m?currentMapId+'|'+JSON.stringify(dangersDe(m))+'|'+JSON.stringify(m.dangersDetruits||null)+'|'+JSON.stringify(m.seuilsSel||null):'';
+ if(k&&k===cle&&svg&&svg.isConnected&&$('seuils-carte'))return;cle=k;const r=rdg(...x);
+ const phase=-(performance.now()%5200)/1000+'s';document.querySelectorAll('#dangers-carte .danger-carte').forEach(p=>p.style.animationDelay=phase);return r}}
+{const rdi=renderDifficiles;let cle=null;renderDifficiles=function(...x){const m=currentMap(),svg=$('difficiles-carte');
+ const k=m?currentMapId+'|'+JSON.stringify(difficileDe(m)):'';
+ if(k&&k===cle&&svg&&svg.isConnected&&$('difficiles-bords'))return;cle=k;return rdi(...x)}}

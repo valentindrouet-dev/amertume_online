@@ -129,7 +129,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Note de MJ** (`.shape.notemj`, `.note-mj`) : un rond sur `--panel`, liseré pointillé violet `#7a5cb8`, l'icône choisie, sinon une feuille dessinée ; chez le MJ seul, dans l'éditeur et à la table, sous les jetons, sans geste ; sa note se lit au survol dans la bulle d'objet (`bulle-gear`).
 
-**Terrain dangereux et terrain difficile à la table** (`#dangers-carte`, `#difficiles-bords`) : aucun trait dur ; le bord s'estompe vers le transparent, flouté à un quart du socle. Le dangereux rougeoie lentement dans sa couleur (voile de 18 à 42 %, 2,6 s) ; au survol, sa bulle pleine (`bulle-gear`) dit « Terrain Dangereux : nom ». Au journal : « **Ronces** blesse Drachir : 5 dégâts + [icône] **Saignée** » — le terrain en gras de sa couleur, les dégâts sans le détail des dés, chaque état avec son icône, en gras de sa couleur. Le dangereux garde sa couleur, son voile à 28 % ; le difficile garde ses hachures `#a2691f` nettes, son liseré seul est flouté. Le seuil de Sel bleu a son propre calque, net.
+**Terrain dangereux et terrain difficile à la table** (`#dangers-carte`, `#difficiles-bords`) : aucun trait dur ; le bord s'estompe vers le transparent, flouté à un quart du socle. Le dangereux rougeoie lentement dans sa couleur (voile de 18 à 42 %, 2,6 s) ; au survol, sa bulle pleine (`bulle-gear`) dit « Terrain Dangereux : nom », fond teinté à 16 % et texte de la couleur du terrain. Au journal : « **Ronces** blesse Drachir : 5 dégâts + [icône] **Saignée** » — le terrain en gras de sa couleur, les dégâts sans le détail des dés, chaque état avec son icône, en gras de sa couleur. Le dangereux garde sa couleur, son voile à 28 % ; le difficile garde ses hachures `#a2691f` nettes, son liseré seul est flouté. Le seuil de Sel bleu a son propre calque, net.
 
 **Porte à la table** (`.door`) : dessinée comme une fenêtre — sous le brouillard, et chez un joueur seulement dans sa ligne de vue directe et éclairée ; close, trait plein orange `#c98a4b` de 1,2 ; ouverte, pointillé gris `#96a3a7`. Close, son bloc n'arrête ni la vue ni les ombres — la ligne de blocage dessous tient seule (sans matière dessous, son seul rectangle la bouche) ; ouverte, elle perce le mur. Le rond qui l'ouvre (`.btn-porte`) est un Bouton d'Interaction, à l'orange d'un Mouvement `#cf9152` ; son icône se choisit avec celles des actions spéciales.
 
@@ -328,3 +328,5 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 - **Charte présente** : `CHARTE.md` et ses captures `img/charte/` existent.
 
 Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu, français du site) se relisent à la main avant chaque publication.
+
+**Repos court au journal** : « Remus effectue un **Repos Court** (vert `#2f8a63`) : **Soin 7 PV**. », puis, s'il en avait, « Il perd tous ses **états négatifs** (rouge `#b8352f`). ». Rien d'autre.
