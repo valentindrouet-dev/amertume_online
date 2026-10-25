@@ -1186,9 +1186,11 @@ function ouvreCoffreFait(c,h){if(h&&!payeAction(h))return;
   if(typeof explosionPiege==='function'){explosionPiege(centreForme(c));const m=currentMap();if(m&&typeof diffuserEffet==='function')diffuserEffet('piege',h,null,String((m.coffres||[]).indexOf(c)))}
   // Ses dégâts, fixes ou aux dés, se tirent une fois : la même gerbe frappe tous ceux qui sont là.
   const jet=tireDegats(c);
+  // v1.066 : la quantité d'un état cumulable, fixe ou aux dés, se tire une fois aussi.
+  const crans={};(c.etats||[]).forEach(e=>{if(cumulable(e)&&c.crans&&c.crans[e])crans[e]=Math.max(1,tireDegats(c.crans[e]).total)});
   const touches=actors.filter(o=>o&&o.hero&&alive(o)&&!o.horsCarte&&dansZoneCoffre(o,c)).map(o=>{const p=[];
    if(jet.total>0){const {perdu:n,blinde}=encaisse(o,jet.total,null);p.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
-   (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true)p.push(e)});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
+   (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true){const k=crans[e]||1;if(k>1)ajouteEtat(o,e,k-1);p.push(e+(k>1?' '+k:''))}});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
   log('Piège ! '+c.nom+' se déclenche'+(jet.jets.length?' ('+formuleDegats(c)+' : '+jet.jets.join(' + ')+')':'')+(touches.length?' — '+touches.join(' ; '):'')+'.',{ton:'degats'})}
  c.ouvert=true;c.deverrouille=true;
  const pieces=(c.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean),rich={...(c.richesses||{})},gains=[];
@@ -3036,12 +3038,15 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   // v1.053 : un code (des chiffres, autant de cases chez les joueurs) ou un mot de passe (ni casse, ni pluriel).
   +field('Code ou mot de passe','code',c.code||'','text','maxlength="40" autocomplete="off"')+'</div>'
   +'<div class="coffre-si" data-si="piege_on"><div class="edit-grid">'+nb('Réussites de Ruse ou Technique pour le trouver','piege',Math.max(1,c.piege||1),1,9)+field('Dégâts du piège','degats',formuleDegats(c),'text','pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" class="degats-formule"')+'</div>'
-  +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((c.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div></div>'
+  // v1.066 : un état cumulable coché prend sa quantité, « x » ou « xdy » comme les dégâts.
+  +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((c.etats||[]).includes(e)?' checked':'')+'>'+esc(e)
+   +(cumulable(e)?'<input name="crans" data-etat="'+esc(e)+'" class="etat-crans" value="'+esc(formuleDegats((c.crans||{})[e]||{degats:1}))+'" pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" aria-label="Quantité de '+esc(e)+'">':'')+'</label>').join('')+'</div></div>'
   +'<h2 class="sous-titre">Contenu</h2><div class="coffre-tresor" id="coffre-bourse"></div>'
   +'<div id="coffre-contenu"></div>';
  const f=$('coffre-form').elements;remplitCles(f.cleId,c.cleId||'');
- const montre=()=>coffreDialog.querySelectorAll('.coffre-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked});
- ['cache','ferme','piege_on'].forEach(k=>{f[k].onchange=montre});montre();
+ const montre=()=>{coffreDialog.querySelectorAll('.coffre-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked});
+  coffreDialog.querySelectorAll('.etat-crans').forEach(x=>{x.hidden=!x.closest('label').querySelector('input[name="etat"]').checked})};
+ ['cache','ferme','piege_on'].forEach(k=>{f[k].onchange=montre});coffreDialog.querySelectorAll('input[name="etat"]').forEach(x=>{x.onchange=montre});montre();
  /* L'or et les gemmes, tirés aux dés à l'ouverture : « x d y » par ligne. Ce qu'un coffre d'avant tenait
     en nombres fixes s'y lit en dés à une face, trente pièces valant 30d1. */
  const bourse={bourse:[...normaliseBourse(c.bourse,false),...CLES_RICHESSES.filter(k=>(Math.trunc(Number((c.richesses||{})[k]))||0)>0).map(k=>({k,n:Math.min(9999,Math.trunc(Number(c.richesses[k]))),f:1}))]};
@@ -3055,6 +3060,8 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   {const cd=String(f.code.value||'').trim().slice(0,40);if(f.ferme.checked&&cd)c.code=cd;else delete c.code}
   c.piege=f.piege_on.checked?Math.max(1,n(f.piege.value,9)):0;{const d=c.piege?lisFormuleDegats(f.degats.value):null;if(!c.piege){c.degats=0;delete c.degatsDes}else if(d){c.degats=d.degats;if(d.degatsDes)c.degatsDes=d.degatsDes;else delete c.degatsDes}}
   c.etats=c.piege?[...coffreDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x)):[];
+  {const cr={};coffreDialog.querySelectorAll('.etat-crans').forEach(x=>{const e=x.dataset.etat,q=lisFormuleDegats(x.value);if(!c.etats.includes(e)||!q||(!q.degatsDes&&q.degats<=1))return;cr[e]=q});
+   if(Object.keys(cr).length)c.crans=cr;else delete c.crans}
   c.richesses={};const b=normaliseBourse(bourse.bourse,false);if(b.length)c.bourse=b;else delete c.bourse;
   c.items=[...contenu.inventaire].slice(0,99);coffreDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('coffre-suppr').onclick=()=>{if(!confirm('Supprimer « '+c.nom+' » ?'))return;pushUndo();

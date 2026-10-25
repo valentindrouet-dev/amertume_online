@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.066","d":"2026-10-25","t":"Piège de coffre : quantité des états cumulables"},
 {"v":"1.065","d":"2026-10-25","t":"Note de MJ déplacée : plus supprimée"},
 {"v":"1.064","d":"2026-10-25","t":"Zone de départ haute : aventuriers en file indienne"},
 {"v":"1.063","d":"2026-10-25","t":"Ligne de points pour le terrain impraticable"},
