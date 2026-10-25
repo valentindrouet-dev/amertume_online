@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.040","d":"2026-10-25","t":"Ce qui entre dans la vue paraît pendant le geste"},
 {"v":"1.039","d":"2026-10-25","t":"Indice : un seul essai, révélation par le MJ"},
 {"v":"1.038","d":"2026-10-25","t":"Planches Anneaux, Grimoires, Parchemins, Trésors ; potions sur la carte"},
 {"v":"1.037","d":"2026-10-25","t":"Planches Restes 3, Cuisine 2, Divers 2, Outils, Fioles"},

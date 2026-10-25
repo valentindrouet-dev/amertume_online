@@ -422,7 +422,8 @@ let fogPx=null,fogPxKey='';
    taille de la carte après le premier calcul, et un polygone mis à l'échelle de l'ancien
    cadre disait la troupe aveugle jusqu'au premier pas — d'où des socles voilés et des
    adversaires non révélés sous les yeux mêmes d'un aventurier. */
-function cleCadre(size){return fogKey+'|'+Math.round(size.width)+'x'+Math.round(size.height)}
+// v1.040 : le numéro du calcul aussi — pendant un geste, la clé de la vue est remise à vide, et l'ancienne vue restait lue.
+function cleCadre(size){return fogKey+'|'+fogCalcul+'|'+Math.round(size.width)+'x'+Math.round(size.height)}
 function visionInPixels(){const size=mapSize(),k=cleCadre(size);
  if(fogPxKey!==k){fogPxKey=k;
   fogPx=(fogVis||[]).map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
@@ -3898,3 +3899,9 @@ if($('map-view')){$('map-view').addEventListener('pointermove',survolDanger);
 {const rdi=renderDifficiles;let cle=null;renderDifficiles=function(...x){const m=currentMap(),svg=$('difficiles-carte');
  const k=m?currentMapId+'|'+JSON.stringify(difficileDe(m)):'';
  if(k&&k===cle&&svg&&svg.isConnected&&$('difficiles-bords'))return;cle=k;return rdi(...x)}}
+
+/* v1.040 — Pendant le glissement d'un socle, ce qui entre dans la vue de la troupe paraît sans attendre le lâcher : objets, indices,
+   coffres, pièges découverts, lumières. Au plus une fois toutes les 120 ms ; les adversaires suivent visibilitesEnGeste. */
+let solsEnGesteT=0;
+{const veg=visibilitesEnGeste;visibilitesEnGeste=function(...x){const r=veg(...x);const t=performance.now();
+ if(t-solsEnGesteT>=120){solsEnGesteT=t;try{renderCoffres();if(typeof renderPieges==='function')renderPieges();renderObjets();renderLumieres()}catch(e){}}return r}}
