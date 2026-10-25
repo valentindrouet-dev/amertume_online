@@ -1840,7 +1840,7 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .bulle-attaque .bonus{font:700 14px 'Killam',Georgia,serif}.dmg-ico{display:inline-block;flex:none;width:22px;height:22px;object-fit:contain;vertical-align:middle}.dmg-ico svg,svg.dmg-ico{width:22px;height:22px}
 .des-combattant .dmg-ico{width:24px;height:24px}.talent-detail .bulle-des .dmg-ico{width:20px;height:20px}.attack-card .dmg-ico{width:30px;height:30px}.j-des .dmg-ico{width:15px;height:15px}
 .cat-pill.gear-carre .dmg-ico{width:19px;height:19px}.gear-detail .gear-des .dmg-ico{width:22px;height:22px;margin-left:2px}
-.gear-soin .soin-ico{display:inline-block;width:18px;height:18px;object-fit:contain;vertical-align:-4px}
+.gear-soin .soin-ico,.soin-ico.soin-texte{display:inline-block;width:18px;height:18px;object-fit:contain;vertical-align:-4px}
 /* Feu, Gel, Foudre dans la barre d'une colonne de talents : les mêmes boutons que l'arbre, en petit. */
 .cat-col h3 .elements-bloc.compact{margin:0 0 0 4px;flex-direction:row}
 .cat-col h3 .elements-bloc.compact .elements-choix{gap:4px;flex-wrap:nowrap}

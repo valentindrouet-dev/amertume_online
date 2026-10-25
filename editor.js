@@ -2380,10 +2380,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
   if(keys.includes(o.munDe))p.append(dicePips({[o.munDe]:1},o.etat));else if(o.etat)p.append(etatPastille(o.etat));
   if(a){const q=document.createElement('b');q.className='gear-quantite';q.textContent='× '+(a.inventaire||[]).filter(x=>x===o.id).length;p.append(q)}
   if(p.childNodes.length)d.append(p)}
- // Un objet de soin : « Soin », son icône, puis ce qu'il rend, en gras.
+ // Un objet de soin : sa valeur ; v1.062 — ce qu'il rend ne se lit que dans les Notes du MJ.
  const soin=objetCode(o)&&objetCode(o).cle==='soin'?paramsObjet(o):null;
- if(soin){const p=document.createElement('p');p.className='gear-soin';p.append('Soin');const ic=logoBonus({carac:'soin'});if(ic){ic.classList.add('soin-ico');p.append(' ',ic)}
-  const n=Math.max(1,soin.quantite|0),b=document.createElement('b');b.textContent=soin.forme==='des'?n+'d6':soin.forme==='endu'?n+' + Endurance':soin.forme==='vie'?n+' + Vie':String(n);p.append(' : ',b);d.append(p)}
  // Une arme, une armure, une munition, une ressource, un reste ou un objet de soin : sa valeur, « 7 » et la pièce d'or.
  // v1.011 : une plante d'Herboristerie, « Composant Alchimique », en italique, au-dessus de sa valeur.
  if(col==='herbe')ligne('Composant Alchimique','gear-composant');
@@ -2959,7 +2957,10 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
  const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12}(?: \\p{L}{1,12}){0,2})\\]|\\{(\\d+(?:[.,]\\d+)?\\s*[x×X*]\\s*\\p{L}{2,12}|\\p{L}{2,12}\\s*[x×X*]\\s*\\d+(?:[.,]\\d+)?)\\}','gu');let fin=0,d;
  while((d=rd.exec(texte))){
   if(d[3]!==undefined){const cl=calculTalent(d[3],a);if(!cl)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(cl);fin=rd.lastIndex;continue}
-  const k=d[1]!==undefined?d[1]:d[2],c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
+  const k=d[1]!==undefined?d[1]:d[2];
+  // v1.062 : {soin}, l'icône du Soin ; le dé vert s'écrit {vert}.
+  if(d[1]!==undefined&&cleAccolade(k)==='soin'){const ic=logoBonus({carac:'soin'});if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('soin-ico','soin-texte');el.append(ic);fin=rd.lastIndex;continue}}
+  const c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
   // v0.962 : {PA} et {PM}, leurs billes.
   if(pt){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);const i=document.createElement('i');i.className='pt pt-texte '+(pt==='pa'?'action':'mvt');i.setAttribute('role','img');i.setAttribute('aria-label',pt.toUpperCase());el.append(i);fin=rd.lastIndex;continue}
   const v=c<0&&!et&&!pl&&d[1]!==undefined?variableTalent(k):null;if(c<0&&!et&&!pl&&!v)continue;

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.062","d":"2026-10-25","t":"Infobulle de soin : les Notes seules ; {soin} devient l'icône du Soin"},
 {"v":"1.061","d":"2026-10-25","t":"Planche FIOLES dans les logos des objets"},
 {"v":"1.060","d":"2026-10-25","t":"Vision dans le noir des potions : jusqu'au prochain repos long"},
 {"v":"1.059","d":"2026-10-25","t":"La carte éditée revient au rechargement"},
