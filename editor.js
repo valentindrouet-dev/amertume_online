@@ -602,6 +602,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('recettes-roncier')&&Array.isArray(c.items)&&c.semisForge.includes('potions-herboristerie')){semeRoncier(c);c.semisForge.push('recettes-roncier')}
  // v1.018 : les huit recettes du seuil, une fois, après celles du roncier (le Sel bleu se fait de Sel de racine).
  if(!c.semisForge.includes('recettes-seuil')&&Array.isArray(c.items)&&c.semisForge.includes('recettes-roncier')){semeSeuil(c);c.semisForge.push('recettes-seuil')}
+ // v1.020 : les adversaires de la tour d'azur, une fois, après les recettes du seuil (import-adversaires.js).
+ if(!c.semisForge.includes('adversaires-tour-azur')&&typeof semeAdversairesAzur==='function'&&Array.isArray(c.monsters)&&Array.isArray(c.talents)&&c.semisForge.includes('recettes-seuil')){semeAdversairesAzur(c);c.semisForge.push('adversaires-tour-azur')}
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
    if(typeof t.effects!=='string'||!t.effects.trim()||/^Sur un critique, la cible est (Au sol|Entravée)\.?$/.test(t.effects.trim()))t.effects='Au contact, vous infligez Entravé et 1 dé rouge + dégâts.'});c.semisForge.push('agripper-action')}
  if(!c.semisForge.includes('agrippe-entrave')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='agrippe'&&typeof t.effects==='string'&&/Au sol\.?\s*$/.test(t.effects.trim())&&/critique/i.test(t.effects))t.effects=t.effects.trim().replace(/Au sol\.?$/,'Entravée.')});c.semisForge.push('agrippe-entrave')}

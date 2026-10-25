@@ -3321,7 +3321,11 @@ function lancerPotion(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la c
   if(p.de){if(enCombat()&&pointsRestants(a,'action')<1){log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return}
    finPotion(a,o,'lancé sur '+nomNum(vise));selected=actors.indexOf(a);
    // v1.018 : un jet qui rend Tangible (le Sel bleu) blesse aussi l'Intangible qu'il vise.
-   jetPerceSur=p.etat==='Tangible'?{b:vise,t:Date.now()}:null;attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee,sansDegats:true,potion:true,
+   jetPerceSur=p.etat==='Tangible'?{b:vise,t:Date.now(),sel:p.seuil==='oui'}:null;
+   // v1.020 : Hantise du sel — un Sel bleu lui vaut 2 dés rouges ; il coupe la Source.
+   const hante=p.seuil==='oui'&&porteTalent(vise,'hantisesel'),deJet=hante?'red':p.de,nbJet=hante?2:Math.max(1,p.nb|0);
+   if(p.seuil==='oui'&&porteTalent(vise,'source')&&enCombat()){vise.sourceCoupee={c:numeroCombat,r:round+1};log(phraseJournal(talentDe(vise,'source'),'source','coupee',{lanceur:nomNum(vise)}),{ton:'talent'})}
+   attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===deJet?nbJet:0),sansArme:true,portee,sansDegats:true,potion:true,
     etatsEnPlus:{etats:p.etat&&p.zone!=='tous'?Array(crans).fill(p.etat):[],touches:[]},
     apres:()=>{jetPerceSur=null;const t=poseAutres();if(t.length)log(o.name+' : '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', ')+'.',{ton:'talent'});render();scheduleSave()}});return}
   if(!payeAction(a))return;
@@ -3505,7 +3509,9 @@ STATES.push('Tangible');GLYPHES_ETATS['Tangible']='⚓';COULEURS_ETATS['Tangible
 // Les états d'un tour ou deux : un, ou plusieurs à la fois.
 const etatsBrefs=o=>[].concat((o&&o.sommeilBref)||[]).filter(b=>b&&typeof b.e==='string');
 function ajouteEtatBref(x,e,r){const l=etatsBrefs(x).filter(b=>b.e!==e);l.push({e,r});x.sommeilBref=l.length>1?l:l[0]}
-const estIntangible=o=>!!o&&typeof porteTalent==='function'&&porteTalent(o,'intangible')&&!hasState(o,'Tangible');
+// v1.020 : Hors d'atteinte l'est aussi, et refuse en plus les états.
+const intangibleDeNature=o=>!!o&&typeof porteTalent==='function'&&(porteTalent(o,'intangible')||porteTalent(o,'horsatteinte'));
+const estIntangible=o=>intangibleDeNature(o)&&!hasState(o,'Tangible');
 const perceDe=a=>{const p=a&&a.perceIntangible;return p&&typeof p==='object'?p:null};
 const perceLIntangible=(a,arme)=>{const p=perceDe(a);return !!p&&(p.portee==='tout'||(p.portee==='arme'&&!!arme))};
 // Les Lanternes de veille portées sur la carte, et jusqu'où elles éclairent.
@@ -3514,7 +3520,7 @@ function lanternesVeille(){const its=typeof items==='function'?items():(catalog.
   return l.length?{h,m:Math.max(...l.map(o=>Math.max(1,(paramsObjet(o)||{}).m|0)))}:null}).filter(Boolean)}
 function dansLanterne(o){const size=mapSize(),tk=tokenPx();if(!o||!size.width||!tk)return false;const murs=walls();
  return lanternesVeille().some(({h,m})=>h!==o&&hostiles(h,o)&&metres(h,o,size,tk)<=m&&!wallsBetween(h,o,murs))}
-function esquiveActive(b){const x=esquiveDe(b);return x&&!(porteTalent(b,'intangible')&&dansLanterne(b))?x:0}
+function esquiveActive(b){const x=esquiveDe(b);return x&&!(intangibleDeNature(b)&&dansLanterne(b))?x:0}
 {const lp=lumierePortee;lumierePortee=function(a,its){const v=lp(a,its),l=objetsQuiComptent(a,its||[],o=>o.effet==='veille');
  return l.length?Math.max(v,...l.map(o=>Math.max(1,(paramsObjet(o)||{}).m|0))):v}}
 // Dans la lumière d'une Lanterne de veille, l'adversaire Invisible est révélé.
@@ -3535,7 +3541,7 @@ const jetPerce=b=>!!jetPerceSur&&jetPerceSur.b===b&&Date.now()-jetPerceSur.t<100
   const x=enCombat()?esquiveActive(b):0;
   if(x){const v=d6();if(v>=x){esquiveDite={b,v};derniereEsquive=b;return {...r,failed:true,hit:false,critical:false,damage:0,bleed:0,poison:0,esquive:v}}}
   const arme=!lanceurOrbe&&typeof activeAttack==='function'&&!!activeAttack(a).gear;
-  if(estIntangible(b)&&!jetPerce(b)&&!perceLIntangible(a,arme))return {...r,hit:false,critical:false,damage:0,bleed:0,poison:0,intangible:true};
+  if(estIntangible(b)&&!jetPerce(b)&&!percePour(b,a,arme))return {...r,hit:false,critical:false,damage:0,bleed:0,poison:0,intangible:true};
   const p=perceDe(b);if(r.hit&&r.damage>0&&p&&p.malus>0&&porteTalent(a,'intangible'))r={...r,damage:r.damage+p.malus}}catch(e){}
  return r}}
 // L'Esquive se dit « Esquive ! », sur la carte et au journal, là où l'échec se dirait.
@@ -3546,7 +3552,7 @@ const jetPerce=b=>!!jetPerceSur&&jetPerceSur.b===b&&Date.now()-jetPerceSur.t<100
  if(derniereEsquive===b)actors.forEach(o=>{if(o.revanche!==avant.get(o)){if(avant.get(o))o.revanche=avant.get(o);else delete o.revanche}});return r}}
 // Ce qui ne passe pas par un jet — un état qui brûle, un terrain, un talent : l'Intangible n'en perd rien non plus.
 {const f=encaisse;encaisse=function(a,n,de,...x){const src=de===undefined?auteurCoup:de;
- if(Math.trunc(n)>0&&estIntangible(a)&&!jetPerce(a)&&!(src&&perceLIntangible(src,false))){if(typeof floatNumber==='function')floatNumber(a,'0','nul');return {perdu:0,blinde:false}}
+ if(Math.trunc(n)>0&&estIntangible(a)&&!jetPerce(a)&&!percePour(a,src,false)){if(typeof floatNumber==='function')floatNumber(a,'0','nul');return {perdu:0,blinde:false}}
  return f(a,n,de,...x)}}
 // La fin du combat : les coups percés, les états brefs, les seuils de sel s'en vont.
 {const bm=basculerMode;basculerMode=function(neuf,...x){const fin=mode==='combat'&&neuf!=='combat';const r=bm(neuf,...x);
@@ -3567,8 +3573,151 @@ function tracerSeuil(a,o){const size=mapSize();if(!size.width){log(o.name+' se t
 let bougeurPas=null;
 {const f=obstaclesDuPas;obstaclesDuPas=function(px,...x){const r=f(px,...x),m=typeof currentMap==='function'?currentMap():null;
  if(!m||!Array.isArray(m.seuilsSel)||!m.seuilsSel.length)return r;const o=bougeurPas||actors[selected];
- if(!o||!porteTalent(o,'intangible'))return r;const size=mapSize(),ratio=size.height?size.width/size.height:16/9;
+ if(!o||!(intangibleDeNature(o)||porteTalent(o,'hantisesel')))return r;const size=mapSize(),ratio=size.height?size.width/size.height:16/9;
  return [...r,...m.seuilsSel.map(s=>({contours:[capsulePolygon(s.a,s.b,.6,ratio).map(([x,y])=>px(x,y))]}))]}}
 {const f=moveActor;moveActor=function(a,...x){const av=bougeurPas;bougeurPas=a;try{return f(a,...x)}finally{bougeurPas=av}}}
 {const f=settleActor;settleActor=function(a,...x){const av=bougeurPas;bougeurPas=a;try{return f(a,...x)}finally{bougeurPas=av}}}
 {const f=cheminVersContact;cheminVersContact=function(b,...x){const av=bougeurPas;bougeurPas=b;try{return f(b,...x)}finally{bougeurPas=av}}}
+
+/* ---------- v1.020 — Les talents des spectres de la tour d'azur ----------
+   Hors d'atteinte refuse aussi les états (sauf Tangible) ; Tangible posé par une attaque (Ancrer) tient jusqu'à la fin du tour,
+   par un Sel bleu jusqu'à la fin du tour suivant. Créancier : en phase 1, tant que le Sablier tient, l'Onguent de lest ne perce
+   plus. Une attaque qui rend Tangible perce elle-même. Les attaques de la fiche se lisent : « (P1) » ou « (P2) » au nom, « 1 tour
+   sur 2 », « 1 fois par combat », « critique = Au sol » au texte. Grégaire, Reformation et Ancré restent en texte. */
+Object.assign(JOURNAL_TALENTS,{
+ source:[['source','Source','{lanceur} puise à la Source : +{n} PV.'],['coupee','Source coupée','La Source de {lanceur} est coupée.']],
+ debordementpuits:[['deborde','Débordement','Le Puits déborde : Gel sur {cibles}.']],
+ mesfilles:[['appelle','Appel des filles','{lanceur} appelle ses filles : {n} {nom}.']],
+ planetaire:[['frappe','Planétaire','Le planétaire de {lanceur} s’emballe : {cible} prend {n}.']],
+ prelevement:[['preleve','Prélèvement','{lanceur} prélève : Nécrose sur {cible}.']],
+ mortsrendues:[['frappe','Morts rendues','{lanceur} rend un mort : {cible} prend {n}.'],['soin','Le Sablier la nourrit','{lanceur} : +{n} PV.']],
+ exigible:[['phase2','Phase 2','{lanceur} passe en phase 2.'],['aubin','Aubin tombe','{lanceur} recouvre sa dette : +{n} PV.']],
+ rappel:[['appelle','Rappel','{lanceur} rappelle : {n} {nom}.']],
+ appel:[['reveille','Appel','{lanceur} réveille {n} {nom}.']],
+ dispersion:[['disperse','Dispersion','{lanceur} se disperse : Gel sur {cibles}.']],
+ serment:[['prend','Serment','{lanceur} prend le coup à la place de {cible}.']],
+ statue:[['eveil','Éveil','{lanceur} s’éveille.']]});
+const mjAppareil=()=>typeof view!=='undefined'&&view==='mj';
+const herosSurCarte=()=>actors.filter(h=>h&&h.hero&&surCarteAdv(h));
+const hasardDans=l=>l.length?l[Math.floor(Math.random()*l.length)]:null;
+// Le Sablier : un adversaire qui porte Rappel ; il tient tant qu'il vit. Aubin : un allié qui porte son nom.
+const sablierTient=o=>actors.some(x=>x&&x!==o&&surCarteAdv(x)&&porteTalent(x,'rappel'));
+const sablierBrise=o=>!sablierTient(o)&&actors.some(x=>x&&x!==o&&!x.horsCarte&&porteTalent(x,'rappel'));
+const aubinDe=()=>actors.find(o=>o&&!o.hero&&!o.horsCarte&&/\baubin\b/i.test(String(o.name||''))&&campDe(o)!=='adverse')||null;
+const creancierActif=b=>!!b&&porteTalent(b,'creancier')&&!enPhase2(b)&&sablierTient(b);
+function percePour(b,a,arme){if(!a)return false;
+ if(!lanceurOrbe&&typeof activeAttack==='function'&&a.attacks&&(activeAttack(a).etats||[]).includes('Tangible'))return true;
+ if(creancierActif(b)){const p=perceDe(a);return !!p&&p.portee==='tout'}
+ return perceLIntangible(a,arme)}
+// Hors d'atteinte : aucun état, sauf Tangible ; un coup qui le perce pose les siens.
+{const ie=infligeEtat;infligeEtat=function(o,e,...x){
+ if(o&&e!=='Tangible'&&porteTalent(o,'horsatteinte')&&!hasState(o,'Tangible')&&!jetPerce(o)&&!(auteurCoup&&percePour(o,auteurCoup,true)))return 'immunise';
+ const r=ie(o,e,...x);
+ if(r===true&&e==='Tangible'&&enCombat()){if(jetPerce(o)&&jetPerceSur&&jetPerceSur.sel)ajouteEtatBref(o,'Tangible',round+1);else if(auteurCoup&&!jetPerce(o))ajouteEtatBref(o,'Tangible',round)}
+ return r}}
+// Liens : +1 DEF par chaîne qui n'a pas encore été vaincue dans la campagne (catalog.vaincus).
+const vaincusCampagne=()=>Array.isArray(catalog.vaincus)?catalog.vaincus:[];
+function chainesIntactes(a){if(!porteTalent(a,'liens'))return 0;const p=paramsTalentDe(a,'liens');return [p.modele,p.modele2].filter(id=>id&&!vaincusCampagne().includes(id)).length}
+{const d0=defOf;defOf=function(a){const d=d0(a),n=a&&!a.hero?chainesIntactes(a):0;return n?defPlafonnee(d+n):d}}
+function retientVaincus(){if(!mjAppareil())return;const chaines=new Set();(catalog.talents||[]).forEach(t=>{if(t&&t.effet==='liens'&&t.params)[t.params.modele,t.params.modele2].forEach(id=>id&&chaines.add(id))});
+ if(!chaines.size)return;const neufs=actors.filter(o=>o&&!o.hero&&o.template&&chaines.has(o.template)&&!(Number(o.hp)>0)&&!vaincusCampagne().includes(o.template)).map(o=>o.template);
+ if(neufs.length){catalog.vaincus=[...new Set([...vaincusCampagne(),...neufs])];scheduleSave()}}
+// Orbite : le chef ne se vise pas à distance tant qu'un Orbe vit. Invisible (adversaire) : seulement après avoir attaqué ce tour, ou sous la Lanterne.
+const protegeParOrbite=b=>!!b&&porteTalent(b,'orbite')&&b.type!=='standard'&&actors.some(o=>o!==b&&surCarteAdv(o)&&o.type==='standard'&&porteTalent(o,'orbite')&&campDe(o)===campDe(b));
+const insaisissableAdv=b=>!!b&&porteTalent(b,'invisibleadv')&&b.attaqueTour!==numeroCombat+':'+round&&!dansLanterne(b);
+{const rt=reachTo;reachTo=function(a,b,rang,portee,...x){const r=rt(a,b,rang,portee,...x);if(!r||!r.ok||!a||!b||!hostiles(a,b))return r;
+ if(insaisissableAdv(b))return {ok:false,ranged:true,text:'ligne de vue bloquée : cible invisible'};
+ if(r.ranged&&protegeParOrbite(b))return {ok:false,ranged:true,text:'ligne de vue bloquée par son orbite'};return r}}
+// Les attaques de la fiche : la phase, « 1 tour sur 2 », « 1 fois par combat ».
+function refusTempsAttaque(a,at){if(!a||a.hero||!at)return '';const n=String(at.name||''),t=String(at.effectText||'').toLowerCase();
+ const ph=/\(P([12])\)/i.exec(n);if(ph&&Number(ph[1])!==(enPhase2(a)?2:1))return 'Phase '+ph[1]+' seulement.';
+ const u=(a.attaquesFaites&&a.attaquesFaites.c===numeroCombat&&a.attaquesFaites.l)||{};
+ if(/1 fois par combat/.test(t)&&u[n])return 'Une fois par combat : déjà faite.';
+ if(/1 tour sur 2/.test(t)&&u[n]&&round-u[n]<2)return 'Un tour sur deux : au tour '+(u[n]+2)+'.';return ''}
+{const ra=refusAttaque;refusAttaque=function(a,at){const r=ra(a,at);if(r)return r;return enCombat()?refusTempsAttaque(a,at||(a&&activeAttack(a))):r}}
+{const at0=attack;attack=function(opts={},...x){const a=actors[selected];let marque=null;
+ if(a&&!a.hero&&enCombat()&&!(opts&&opts.potion)){const at=activeAttack(a);if(at&&!refusAttaque(a,at))marque=at.name}
+ const r=at0(opts,...x);
+ if(marque){const l=a.attaquesFaites&&a.attaquesFaites.c===numeroCombat?a.attaquesFaites.l:{};a.attaquesFaites={c:numeroCombat,l:{...l,[marque]:round}};
+  a.attaqueTour=numeroCombat+':'+round;if(porteTalent(a,'horsetoile'))a.etoileSortie=numeroCombat}
+ return r}}
+// « critique = Au sol », « critique = Gel 1 » : l'état que pose un critique de cette attaque.
+function etatsCritiqueAttaque(a,r){if(!a||!r||!r.critical||r.failed||typeof activeAttack!=='function')return [];const t=String(activeAttack(a).effectText||'');
+ const m=/critique\s*=\s*(?:la\s+)?(?:cible\s+)?([^,;.]+)/i.exec(t);if(!m)return [];const txt=m[1].trim(),k=String(txt).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+ const e=ETATS_JEU.find(x=>k.startsWith(x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()));if(!e)return [];
+ const n=Math.max(1,Math.min(9,Number((/(\d+)\s*$/.exec(txt)||[])[1])||1));return Array(n).fill(e)}
+{const et=etatsTalentsCoup;etatsTalentsCoup=function(a,b,r,...x){return [...et(a,b,r,...x),...etatsCritiqueAttaque(a,r)]}}
+// Hors de l'étoile : 1 dé blanc de plus à sa première attaque.
+{const da=desAttaque;desAttaque=function(a,dice,...x){const d=da(a,dice,...x);if(!d||!a||a.hero||!porteTalent(a,'horsetoile')||a.etoileSortie===numeroCombat||!enCombat())return d;
+ return Array.isArray(d)?d.map((v,i)=>i===0?v+1:v):{...d,white:(Number(d.white)||0)+1}}}
+// Serment : un spectre allié à son contact est frappé — il prend le coup, une fois par tour.
+const estSpectre=o=>!!o&&!o.hero&&(porteTalent(o,'horsatteinte')||porteTalent(o,'intangible')||/spectre/i.test(String(o.family||o.role||'')));
+{const fr=frappe;frappe=function(a,b,...x){if(enCombat()&&a&&b&&!b.hero&&estSpectre(b)&&hostiles(a,b)){
+  const c=actors.find(o=>o!==b&&surCarteAdv(o)&&porteTalent(o,'serment')&&campDe(o)===campDe(b)&&o.sermentTour!==numeroCombat+':'+round&&allieAuContact(b,o));
+  if(c){const r0=reachTo(a,c,actors.indexOf(c));if(r0&&r0.ok){c.sermentTour=numeroCombat+':'+round;log(phraseJournal(talentDe(c,'serment'),'serment','prend',{lanceur:nomNum(c),cible:nomNum(b)}),{ton:'talent'});return fr(a,c,...x)}}}
+ return fr(a,b,...x)}}
+// Exigible : en phase 2, elle vise qui couvre Aubin, sinon Aubin.
+{const ci=cibleImposee;cibleImposee=function(m){const i=ci(m);if(i>=0||!m||!enCombat()||!porteTalent(m,'exigible')||!enPhase2(m))return i;
+ const au=aubinDe();if(!au||!alive(au))return i;const h=actors.find(o=>o&&o.hero&&surCarteAdv(o)&&allieAuContact(au,o));const v=h||au;return actors.indexOf(v)}}
+// Les appels : autour du porteur, ou aux étoiles fendues pour le Sablier.
+function etoilesDe(){const m=currentMap();return (m&&m.objets||[]).filter(o=>o&&o.indice&&o.examen&&o.examen.mode==='objet'&&/cire de sceau/i.test((objetDe(o.examen.item)||{}).name||''))}
+function appelle(o,code,cle,nomDefaut,n,centres){const m=modeleTalent(paramsTalentDe(o,code),nomDefaut);if(!m||n<=0)return;const l=centres&&centres.length?centres:[o];
+ for(let k=0;k<n;k++)invoqueAupres(l[k%l.length],m,1,o);log(phraseJournal(talentDe(o,code),code,cle,{lanceur:nomNum(o),n,nom:m.name+(n>1?'s':'')}),{ton:'talent'})}
+// Ce qui se lit à chaque dessin, chez le MJ : les phases, les appels à mi-PV, Aubin tombé, les dispersions, les chaînes rompues.
+{const r0=render;render=function(...x){try{if(mjAppareil()&&enCombat())actors.forEach(o=>{if(!o||o.hero||o.horsCarte)return;
+  if(alive(o)){
+   if(porteTalent(o,'exigible')){const au=aubinDe();
+    if(au&&!(Number(au.hp)>0)&&o.aubinTombe!==numeroCombat){o.aubinTombe=numeroCombat;const g=applyHeal(o,40);if(g)floatNumber(o,'+'+g,'gain');log(phraseJournal(talentDe(o,'exigible'),'exigible','aubin',{lanceur:nomNum(o),n:g}),{ton:'talent'});if(!enPhase2(o)){o.phase2=numeroCombat;log(phraseJournal(talentDe(o,'exigible'),'exigible','phase2',{lanceur:nomNum(o)}),{ton:'talent'})}}
+    else if(!enPhase2(o)&&(o.hp<=o.max/2||sablierBrise(o))){o.phase2=numeroCombat;log(phraseJournal(talentDe(o,'exigible'),'exigible','phase2',{lanceur:nomNum(o)}),{ton:'talent'})}}
+   if(porteTalent(o,'mesfilles')&&o.filles!==numeroCombat&&o.hp<=o.max/2){o.filles=numeroCombat;appelle(o,'mesfilles','appelle','pleureuse',2)}}
+  else if(porteTalent(o,'dispersion')&&o.disperse!==numeroCombat){o.disperse=numeroCombat;const size=mapSize(),l=herosSurCarte().filter(h=>inContact(o,h,size,tokenOf(o),tokenOf(h)));const t=l.filter(h=>infligeEtat(h,'Gel')===true);
+   if(t.length)log(phraseJournal(talentDe(o,'dispersion'),'dispersion','disperse',{lanceur:nomNum(o),cibles:t.map(nomNum).join(', ')}),{ton:'talent'})}});
+ retientVaincus()}catch(e){}return r0(...x)}}
+// Le début du combat : Hors de l'étoile se cache ; Appel réveille ses alliés.
+{const bm=basculerMode;basculerMode=function(neuf,...x){const avant=typeof mode!=='undefined'?mode:'';const r=bm(neuf,...x);
+ if(neuf==='combat'&&avant!=='combat'&&mjAppareil())try{actors.forEach(o=>{if(!surCarteAdv(o)||o.hero)return;
+  if(porteTalent(o,'horsetoile')&&o.etoileSortie!==numeroCombat)setState(o,'Invisible',true);
+  if(porteTalent(o,'appel')&&o.appelFait!==numeroCombat){o.appelFait=numeroCombat;appelle(o,'appel','reveille','grimoire',2)}});render();scheduleSave()}catch(e){}
+ return r}}
+// La fin de chaque tour : Source, Débordement, Planétaire, Prélèvement, Morts rendues ; au tour pair, le Rappel du Sablier.
+function deDirect(o,h,couleur,code,cle){const v=d6();rollOnBoard([{dice:[[v,DICE_KEYS.indexOf(couleur)]]}],o,h);encaisse(h,v,o);log(phraseJournal(talentDe(o,code),code,cle,{lanceur:nomNum(o),cible:nomNum(h),n:v}),{ton:'degats'})}
+function soigneVerts(o,n,code,cle){const d=Array.from({length:n},()=>d6());rollOnBoard([{dice:d.map(v=>[v,4])}],o,null);const g=applyHeal(o,d.reduce((s,v)=>s+v,0));if(g>0){floatNumber(o,'+'+g,'gain');log(phraseJournal(talentDe(o,code),code,cle,{lanceur:nomNum(o),n:g}),{ton:'soin'})}}
+function finDuTourSpectres(){if(!enCombat()||!mjAppareil())return;
+ actors.filter(o=>surCarteAdv(o)&&!o.hero).forEach(o=>{
+  if(porteTalent(o,'source')&&!(o.sourceCoupee&&o.sourceCoupee.c===numeroCombat&&round<=o.sourceCoupee.r)&&o.hp<o.max)soigneVerts(o,2,'source','source');
+  if(porteTalent(o,'debordementpuits')&&o.hp<=o.max/2){const z=zoneDe(o),t=herosSurCarte().filter(h=>!z||zoneDe(h)===z).filter(h=>infligeEtat(h,'Gel')===true);
+   if(t.length)log(phraseJournal(talentDe(o,'debordementpuits'),'debordementpuits','deborde',{lanceur:nomNum(o),cibles:t.map(nomNum).join(', ')}),{ton:'talent'})}
+  if(porteTalent(o,'planetaire')&&o.hp<=o.max/2){const h=hasardDans(herosSurCarte());if(h)deDirect(o,h,'blue','planetaire','frappe')}
+  if(porteTalent(o,'prelevement')&&!enPhase2(o)){const h=herosSurCarte().sort((u,v)=>v.hp-u.hp)[0];if(h&&!insensibleA(h,'Nécrose')&&infligeEtat(h,'Nécrose')!=='immunise'){appliqueNecrose(h,1);log(phraseJournal(talentDe(o,'prelevement'),'prelevement','preleve',{lanceur:nomNum(o),cible:nomNum(h)}),{ton:'degats'})}}
+  if(porteTalent(o,'mortsrendues')&&enPhase2(o)){const h=hasardDans(herosSurCarte());if(h)deDirect(o,h,'red','mortsrendues','frappe');if(sablierTient(o)&&o.hp<o.max)soigneVerts(o,2,'mortsrendues','soin')}})}
+function debutDuTourSpectres(){if(!enCombat()||!mjAppareil()||round%2!==0)return;
+ actors.filter(o=>surCarteAdv(o)&&!o.hero&&porteTalent(o,'rappel')).forEach(o=>{const l=etoilesDe(),fendues=l.filter(s=>!s.examine),n=Math.max(0,2-(l.length-fendues.length));
+  appelle(o,'rappel','appelle','veilleur',n,fendues.map(s=>({x:s.x,y:s.y})))})}
+{const ts=tourSuivant;tourSuivant=function(...x){try{finDuTourSpectres()}catch(e){}const r=ts(...x);try{debutDuTourSpectres();render();scheduleSave()}catch(e){}return r}}
+// Seuil : un aventurier qui entre dans sa zone de contact subit ses Dégâts d'opportunité, une fois par tour. Statue : la lumière ou la course l'éveillent.
+function metresDuChemin(c){const size=mapSize(),tk=tokenPx();let m=0;for(let i=1;i<c.length;i++)if(c[i]&&c[i-1])m+=metres(c[i-1],c[i],size,tk);return m}
+{const pm=passeMurs;passeMurs=function(o,chemin,...x){const r=pm(o,chemin,...x);try{if(o&&o.hero&&alive(o)&&Array.isArray(chemin)&&chemin.length>1){const size=mapSize(),murs=walls(),depart=chemin[0];
+  if(enCombat())actors.filter(g=>surCarteAdv(g)&&!g.hero&&hostiles(g,o)&&porteTalent(g,'seuilgardien')&&g.seuilTour!==numeroCombat+':'+round).forEach(g=>{
+   if(inContact(g,depart,size,tokenOf(g),tokenOf(o))||!inContact(g,o,size,tokenOf(g),tokenOf(o))||wallsBetween(g,o,murs))return;
+   g.seuilTour=numeroCombat+':'+round;const n=degatsDe(g),{blinde}=encaisse(o,n,g,' ⚠');logAttaque(g,o,'*degats',blinde?'Dégâts d’opportunité : Blindage consommé.':n+' Dégâts d’opportunité.',null,o.hp===0?' 💀':'')});
+  const court=metresDuChemin(chemin)>9,lumiere=lumierePortee(o,items())>0;
+  if(court||lumiere)actors.filter(g=>g&&!g.hero&&alive(g)&&!g.horsCarte&&porteTalent(g,'statue')&&g.statueInit&&!g.statueEveillee).forEach(g=>{
+   if(wallsBetween(g,o,murs)||metres(g,o,size,tokenPx())>20)return;g.statueEveillee=true;g.hidden=false;log(phraseJournal(talentDe(g,'statue'),'statue','eveil',{lanceur:nomNum(g)}),{ton:'reveal'});render();scheduleSave()})}}catch(e){}return r}}
+// La Statue dort cachée tant qu'elle n'est pas éveillée — une fois posée ; le MJ peut toujours la révéler.
+{const r0=render;render=function(...x){try{if(mjAppareil())actors.forEach(g=>{if(g&&!g.hero&&!g.statueInit&&!g.vu&&porteTalent(g,'statue')){g.statueInit=true;g.hidden=true}})}catch(e){}return r0(...x)}}
+// Les gestes d'Aubin : donner un Sel bleu, resceller une étoile.
+const selBleu=()=>(catalog.items||[]).find(o=>o&&/^sel bleu$/i.test(String(o.name||'').trim()))||null;
+const cireSceau=()=>(catalog.items||[]).find(o=>o&&/^cire de sceau$/i.test(String(o.name||'').trim()))||null;
+const herosAuContact=a=>herosSurCarte().filter(h=>allieAuContact(a,h));
+const selsDonnes=a=>a.selsDonnes&&a.selsDonnes.c===numeroCombat?a.selsDonnes.n:0;
+function donneSel(a){const s=selBleu();if(!s)return 'Aucun Sel bleu à l’Armurerie.';if(enCombat()&&selsDonnes(a)>=3)return 'Déjà 3 Sels bleus donnés ce combat.';
+ const l=herosAuContact(a);if(!l.length)return 'Aucun aventurier au contact.';
+ const donne=h=>{if(!ajouterInventaire(h,s))return;a.selsDonnes={c:numeroCombat,n:selsDonnes(a)+1};log(nomNum(a)+' donne un Sel bleu à '+nomNum(h)+'.',{ton:'talent'});render();scheduleSave()};
+ if(l.length===1){donne(l[0]);return ''}menuAuCentre('Sel bleu',l.map(h=>[nomNum(h),()=>donne(h)]));return ''}
+function etoileAuContact(a){return etoilesDe().find(s=>!s.examine&&objetAPortee(a,s))||null}
+function resceller(a){const s=etoileAuContact(a);if(!s)return 'Aucune étoile fendue au contact.';const c=cireSceau();if(!c)return 'Aucune Cire de sceau à l’Armurerie.';
+ const h=[a,...herosAuContact(a)].find(x=>(x.inventaire||[]).includes(c.id));if(!h)return 'Il faut la Cire de sceau d’un aventurier au contact.';
+ retirerInventaire(h,c);s.examine=true;if(s.secret)log(s.secret,{ton:'reveal'});saveMaps();render();scheduleSave();return nomNum(a)+' rebouche '+s.nom+' avec la Cire de sceau de '+nomNum(h)+'.'}
+Object.assign(TALENTS_EFFETS,{
+ selbleu:{fn:a=>donneSel(a),peut:a=>!!selBleu()&&!(enCombat()&&selsDonnes(a)>=3)&&herosAuContact(a).length>0,titre:a=>!selBleu()?'Aucun Sel bleu à l’Armurerie.':enCombat()&&selsDonnes(a)>=3?'Déjà 3 Sels bleus donnés ce combat.':herosAuContact(a).length?'Donner un Sel bleu à un aventurier au contact.':'Aucun aventurier au contact.'},
+ resceller:{fn:a=>resceller(a),peut:a=>!!etoileAuContact(a),titre:a=>etoileAuContact(a)?'Reboucher l’étoile fendue avec une Cire de sceau.':'Aucune étoile fendue au contact.'}});

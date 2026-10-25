@@ -22,7 +22,8 @@ const DES={blanc:'white',blancs:'white',simple:'white',simples:'white',os:'bone'
  noir:'black',noirs:'black',mortel:'black',mortels:'black',jaune:'yellow',jaunes:'yellow',phase:'yellow'};
 const ETATS=()=>(typeof ETATS_JEU!=='undefined'?ETATS_JEU:[]);
 const etatImport=v=>ETATS().find(e=>cle(e)===cle(v))||null;
-const objetImport=nom=>(catalog.items||[]).find(o=>o&&!o.forge&&cle(o.name)===cle(nom))||(catalog.items||[]).find(o=>o&&cle(o.name)===cle(nom))||null;
+let sourceObjets=null;
+const objetImport=nom=>{const l=sourceObjets||catalog.items||[];return l.find(o=>o&&!o.forge&&cle(o.name)===cle(nom))||l.find(o=>o&&cle(o.name)===cle(nom))||null};
 
 /* Le modèle : toutes les clés d'un adversaire, chacune expliquée, puis un exemple complet. */
 function modeleImport(){const ext=(typeof EXTENSIONS!=='undefined'?EXTENSIONS:[]).map(([k])=>k).join(' | ');
@@ -152,7 +153,7 @@ function construis(r){const c=r.champs,avis=r.avis,nom=(c.nom||'').trim();
  pose(r.repetes.objet,'objet',(o,l)=>{const p=l.split('|').map(x=>x.trim()),q=entier(p[1],1,99,1);for(let k=0;k<q;k++)m.inventaire.push(o.id);if(p[2]!==undefined&&p[2]!=='')m.butin[o.id]=entier(p[2],0,100,25)});
  [...m.weapons,...m.armures,m.shieldId].filter(Boolean).forEach(id=>{const besoin=[...m.weapons,...m.armures,m.shieldId].filter(x=>x===id).length;for(let k=m.inventaire.filter(x=>x===id).length;k<besoin;k++)m.inventaire.push(id)});
  m.butin=normaliseButin(m.butin,m.inventaire);
- r.repetes.bourse.forEach(l=>{const p=l.split('|').map(x=>x.trim()),k=cle(p[0]).replace(/\s+/g,'-'),d=(p[1]||'').match(/^(\d+)\s*d\s*(\d+)$/i);
+ r.repetes.bourse.forEach(l=>{const p=l.split('|').map(x=>x.trim()),k=cle(p[0]).replace(/\s+/g,'-'),d=(p[1]||'').match(/^(\d+)\s*d\s*(\d+)$/i)||((p[1]||'').match(/^(\d+)$/)?[p[1],p[1].trim(),'1']:null);
   if(!CLES_RICHESSES.includes(k)){avis.push('bourse : richesse inconnue « '+p[0]+' »');return}if(!d){avis.push('bourse : dés attendus sous la forme 2d6 pour « '+p[0]+' »');return}
   m.bourse.push({k,n:+d[1],f:+d[2],...(p[2]?{p:entier(p[2],0,100,100)}:{})})});
  m.bourse=normaliseBourse(m.bourse);
@@ -220,5 +221,588 @@ function telechargeModele(){const url=URL.createObjectURL(new Blob([modeleImport
  const i=document.createElement('button');i.type='button';i.id='bestiary-import';i.textContent='⇧ Importer';i.title='Importer des adversaires depuis un texte rempli d’après le modèle';
  i.onclick=()=>{if(view!=='mj')return;$('import-adv-form').reset();$('import-adv-doublons').replaceChildren();$('import-adv-erreur').textContent='';lu=null;dlg.showModal()};
  const avant=$('bestiary-pnj');if(avant)act.insertBefore(m,avant),act.insertBefore(i,avant);else act.append(m,i)}}
+
+/* v1.020 — Les adversaires de la tour d'azur, posés une fois au Bestiaire (semisForge « adversaires-tour-azur »), lus comme un
+   import ; un adversaire du même nom déjà au Bestiaire reste tel quel. Leurs talents se relient par leur nom à la mécanique du
+   moteur ; Grégaire, Reformation et Ancré restent en texte. Les pièces de butin qui manquent naissent en Restes ou en Trésors. */
+const TEXTE_TOUR_AZUR=`Nom : Le Geôlier d'Azur
+Famille : Ectoplasme
+Type : boss
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : grand
+PV : 90
+DEF : 4
+Bonus DEF : 0
+Dégâts : 3
+XP : 68
+Mouvement : 6
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : PV bas
+Image : 
+Notes : Lieutenant, 1er lien (niveau 2, le Puits, pièce 11). Ne quitte jamais le Puits. À la moitié de ses PV, le Puits déborde : en fin de tour, Gel 1 à tous les aventuriers dans le Puits.
+Attaque : Étreinte d'eau | contact | 3 blanc, 1 rouge | une cible | texte : critique = cible Au sol
+Attaque : Marée | distance | 1 bleu | toutes | états : Gel | texte : Gel 1
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Source | passif | Tant qu'il touche l'eau du Puits, récupère 2 verts par tour. Un Sel bleu jeté dans le bassin coupe la Source pendant 2 tours.
+Talent : Débordement | passif | À la moitié de ses PV : en fin de tour, Gel 1 à tous les aventuriers dans le Puits.
+Objet : Eau du Puits | 3 | 100
+---
+Nom : Dame Ysaure
+Famille : Spectre
+Type : boss
+PNJ : oui
+Alignement : adverse
+Unique : oui
+Sexe : femme
+Race : Humain
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 85
+DEF : 3
+Bonus DEF : 0
+Dégâts : 3
+XP : 64
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : PV haut
+Image : 
+Notes : Lieutenant, 2e lien (niveau 3, chambre, pièce 14). Option sociale : lui remettre la lettre et l'alliance du cabinet (13) et s'asseoir met fin au combat. À la moitié de ses PV, appelle 2 Pleureuses.
+Attaque : Main froide | contact | 2 blanc, 1 rouge | une cible | états : Gel | texte : Gel 1
+Attaque : Regard des années | distance | 1 blanc | une cible | sans dégâts | états : Nécrose | texte : Nécrose 2
+Attaque : Berceuse d'antan | distance | 1 blanc | une cible | sans dégâts | états : Sommeil | texte : 1 fois par combat
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Mes filles | passif | À la moitié de ses PV, appelle 2 Pleureuses.
+Objet : Alliance d'Ysaure | 1 | 100
+---
+Nom : Orfroi, l'Apprenti-Comète
+Famille : Spectre
+Type : boss
+PNJ : oui
+Alignement : adverse
+Unique : oui
+Sexe : homme
+Race : Humain
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 85
+DEF : 3
+Bonus DEF : 0
+Dégâts : 3
+XP : 64
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : DEF basse
+Image : 
+Notes : Lieutenant, 3e lien (niveau 4, le Cercle, pièce 19). +1 DEF par autre chaîne encore intacte (Geôlier, Ysaure). À la moitié de ses PV, le planétaire s'emballe. Sa mort libère Aubin si les trois chaînes sont rompues.
+Attaque : Règle de laiton | contact | 2 blanc, 1 rouge | une cible
+Attaque : Comète | distance | 2 bleu, 1 rouge | une cible
+Attaque : Pluie d'étoiles | distance | 1 bleu, 1 os | toutes | texte : 1 tour sur 2
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Orbite | passif | Tant qu'un Orbe errant vit, Orfroi ne peut pas être visé à distance.
+Talent : Liens | passif | +1 DEF pour chaque autre chaîne encore intacte (Geôlier, Ysaure).
+Talent : Planétaire emballé | passif | À la moitié de ses PV : en fin de tour, 1 bleu sur un aventurier au hasard.
+Objet : Sextant d'Orfroi | 1 | 100
+Bourse : or | 40 | 100
+---
+Nom : L'Échéance
+Famille : Spectre
+Type : boss
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : grand
+PV : 180
+DEF : 4
+Bonus DEF : 0
+Dégâts : 4
+XP : 135
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : PV haut
+Image : 
+Notes : Boss (sommet, salle des Sceaux, pièce 21). Phase 1 : tant que le Sablier tient, n'est blessée que par Sels bleus, Élixir de seuil ou si Tangible (l'Onguent de lest est sans effet). Phase 2 quand le Sablier est brisé ou à la moitié de ses PV : les armes ointes la blessent, elle fonce sur Aubin. Si Aubin tombe à 0 PV, elle regagne 40 PV et passe aussitôt en phase 2.
+Attaque : Faux du terme (P1) | contact | 3 blanc, 1 bleu | une cible
+Attaque : Dette (P1) | distance | 1 blanc | une cible | sans dégâts | états : Nécrose | texte : Nécrose 2
+Attaque : Moisson (P2) | contact | 2 blanc, 1 noir | toutes
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Créancier | passif | Tant que le Sablier tient, seuls les Sels bleus, l'Élixir de seuil ou une cible Tangible la blessent ; l'Onguent de lest est sans effet.
+Talent : Prélèvement | passif | Phase 1 : en fin de tour, Nécrose 1 sur l'aventurier aux PV les plus hauts.
+Talent : Exigible | passif | Phase 2 : elle fonce sur Aubin ; un aventurier au contact d'Aubin doit être attaqué en premier.
+Talent : Morts rendues | passif | Phase 2 : en fin de tour, 1 rouge sur un aventurier au hasard. Si le Sablier tient encore, elle regagne 2 verts par tour.
+Objet : Sable de l'Échéance | 1 | 100
+---
+Nom : Le Sablier
+Famille : Arcanique
+Type : élite
+PNJ : non
+Nature : mécanique
+Extension : 
+Socle : moyen
+PV : 45
+DEF : 2
+Bonus DEF : 0
+Dégâts : 0
+XP : 34
+Mouvement : 0
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Objectif du combat contre l'Échéance, au centre de la salle des Sceaux. N'attaque pas. Le briser fait passer l'Échéance en phase 2.
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Rappel | passif | Aux tours pairs, appelle 2 Veilleurs pâles depuis les étoiles fendues (1 de moins par étoile rescellée).
+Talent : Ancré | passif | Ancré par Aubin, il est blessé par toutes les armes jusqu'à la fin du tour.
+---
+Nom : Aubin Vantorre
+Famille : Humain
+Type : standard
+PNJ : oui
+Alignement : allié
+Unique : oui
+Sexe : homme
+Race : Humain
+Nature : vivant
+Extension : 
+Socle : moyen
+PV : 40
+DEF : 2
+Bonus DEF : 0
+Dégâts : 0
+XP : 0
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Mystique libéré au niveau 4. Ne frappe jamais. Sa présence dans la tour rend la destruction des spectres définitive. S'il tombe à 0 PV, il meurt et l'Échéance regagne 40 PV.
+Attaque : Ancrer | distance | 1 blanc | une cible | sans dégâts | états : Tangible | texte : la cible est Tangible jusqu'à la fin du tour
+Talent : Sel bleu | action | Donne 1 Sel bleu à un aventurier au contact (3 par combat).
+Talent : Resceller | action | Avec une Cire de sceau, rebouche une étoile fendue : le Sablier appelle un Veilleur de moins.
+---
+Nom : Feu-follet azur
+Famille : Arcanique
+Type : standard
+PNJ : non
+Nature : mécanique
+Extension : 
+Socle : petit
+PV : 11
+DEF : 4
+Bonus DEF : 0
+Dégâts : 1
+XP : 8
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : oui
+Menace : DEF basse
+Image : 
+Notes : Niveau 4, atelier (R12). Fuit le contact. Un coup qui touche un alambic le fait éclater : 1 blanc à tous au contact du comptoir. Perd l'Esquive dans la lumière de la Lanterne de veille.
+Attaque : Étincelle | distance | 1 bleu, 1 os | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Objet : Poussière bleue | 1 | 30
+---
+Nom : Grimoire volant
+Famille : Arcanique
+Type : standard
+PNJ : non
+Nature : mécanique
+Extension : 
+Socle : petit
+PV : 12
+DEF : 2
+Bonus DEF : 0
+Dégâts : 1
+XP : 9
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : oui
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Rez-de-chaussée, archives (R3, réveillé par le Scribe) et niveau 3, cabinet (R8).
+Attaque : Pages coupantes | contact | 1 blanc, 2 os | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Objet : Page runique | 1 | 25
+---
+Nom : Gluant d'ectoplasme
+Famille : Ectoplasme
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : petit
+PV : 16
+DEF : 1
+Bonus DEF : 0
+Dégâts : 1
+XP : 12
+Mouvement : 6
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Niveau 4, réserve (R11). Lent et collant. Un aventurier à Gel 3 ne peut plus se replier.
+Attaque : Englue | contact | 1 blanc, 1 os | une cible | états : Gel | texte : Gel 1
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Dispersion | passif | À 0 PV, Gel 1 aux aventuriers au contact.
+Objet : Ectoplasme | 1 | 50
+---
+Nom : Orbe errant
+Famille : Arcanique
+Type : standard
+PNJ : non
+Nature : mécanique
+Extension : 
+Socle : petit
+PV : 20
+DEF : 3
+Bonus DEF : 0
+Dégâts : 1
+XP : 15
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Niveau 4, le Cercle, avec Orfroi. Tant qu'un Orbe vit, Orfroi ne peut pas être visé à distance.
+Attaque : Rayon d'orbe | distance | 1 blanc, 1 bleu | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Orbite | passif | Protège Orfroi des attaques à distance tant qu'il vit.
+Objet : Éclat de laiton | 1 | 40
+---
+Nom : Dormeur creux
+Famille : Spectre
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 20
+DEF : 2
+Bonus DEF : 0
+Dégâts : 1
+XP : 15
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Rez-de-chaussée, cellules 6 et 7 (R4). Se lève si on fouille.
+Attaque : Étreinte du dormeur | contact | 2 blanc | une cible | texte : critique = Sommeil
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Objet : Poussière d'ectoplasme | 1 | 30
+---
+Nom : Veilleur pâle
+Famille : Spectre
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 22
+DEF : 2
+Bonus DEF : 0
+Dégâts : 1
+XP : 16
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Rez-de-chaussée, nef (R2), niveau 2 avec la ronde (R6), et appelé par le Sablier au sommet.
+Attaque : Toucher froid | contact | 2 blanc | une cible | texte : critique = Gel 1
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Objet : Poussière d'ectoplasme | 1 | 30
+---
+Nom : Harpie d'éther
+Famille : Spectre
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 22
+DEF : 3
+Bonus DEF : 0
+Dégâts : 1
+XP : 16
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : oui
+Esquive : oui
+Menace : PV bas
+Image : 
+Notes : Niveau 3, terrasse (R9), évitable. Vole. Un aventurier mis Au sol sur la terrasse perd son prochain mouvement.
+Attaque : Serres | contact | 2 blanc | une cible | texte : critique = cible Au sol
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Objet : Plume de brume | 1 | 40
+---
+Nom : Pleureuse
+Famille : Spectre
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 24
+DEF : 2
+Bonus DEF : 0
+Dégâts : 1
+XP : 18
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Niveau 3, galerie (R7), et appelée par Ysaure à la moitié de ses PV.
+Attaque : Main glacée | contact | 2 blanc | une cible
+Attaque : Lamentation | distance | 1 blanc | toutes | texte : 1 tour sur 2, critique = Corruption 1
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Objet : Larme bleue | 1 | 30
+---
+Nom : Ombre stellaire
+Famille : Spectre
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 26
+DEF : 3
+Bonus DEF : 0
+Dégâts : 1
+XP : 20
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : oui
+Menace : plus proche
+Image : 
+Notes : Niveau 4, couloir des étoiles (R10). Sort de sa niche quand la troupe passe entre les deux étoiles.
+Attaque : Griffes d'ombre | contact | 2 blanc, 1 rouge | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Hors de l'étoile | passif | Invisible jusqu'à sa première attaque, qui gagne 1 blanc de plus.
+Objet : Poussière d'étoile | 1 | 30
+---
+Nom : Esprit frappeur
+Famille : Spectre
+Type : standard
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : petit
+PV : 30
+DEF : 3
+Bonus DEF : 0
+Dégâts : 1
+XP : 22
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : PV bas
+Image : 
+Notes : Niveau 3, cabinet (R8). Visible dans la lumière de la Lanterne de veille.
+Attaque : Objets lancés | distance | 2 blanc, 1 os | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Invisible | passif | Ne peut être ciblé qu'après avoir attaqué ce tour, ou dans la lumière de la Lanterne de veille.
+Objet : Poussière d'ectoplasme | 1 | 40
+---
+Nom : Scribe-spectre
+Famille : Spectre
+Type : élite
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 45
+DEF : 3
+Bonus DEF : 0
+Dégâts : 2
+XP : 34
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : PV haut
+Image : 
+Notes : Rez-de-chaussée, archives (R3), évitable. Tient le registre des morts gardées depuis quarante ans.
+Attaque : Coup de registre | contact | 2 blanc | une cible
+Attaque : Rature | distance | 1 blanc | une cible | sans dégâts | états : Nécrose | texte : Nécrose 2
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Appel | passif | Au premier tour, réveille 2 Grimoires volants.
+Objet : Plume d'encre bleue | 1 | 60
+---
+Nom : Chevalier-spectre
+Famille : Spectre
+Type : élite
+PNJ : non
+Nature : mort-vivant
+Extension : 
+Socle : moyen
+PV : 50
+DEF : 4
+Bonus DEF : 0
+Dégâts : 2
+XP : 38
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Niveau 2, la ronde de la nef annulaire (R6). Grégaire à l'échelle de l'anneau : ne sort pas sur le parvis, n'entre pas dans le Puits, ne prend pas le colimaçon.
+Attaque : Épée longue | contact | 3 blanc, 1 rouge | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Reformation | passif | À 0 PV, se disperse et se reforme dans sa pièce au repos suivant, sauf si le coup final vient des Sels bleus ou si Aubin libéré est présent dans la tour.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Serment | réaction | Une fois par tour, prend un coup à la place d'un spectre allié.
+Objet : Poussière d'ectoplasme | 1 | 50
+Bourse : or | 1d6 | 30
+---
+Nom : Gardien du seuil
+Famille : Arcanique
+Type : élite
+PNJ : non
+Nature : mécanique
+Extension : 
+Socle : grand
+PV : 55
+DEF : 5
+Bonus DEF : 0
+Dégâts : 2
+XP : 41
+Mouvement : 6
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Rez-de-chaussée, vestibule (R1), évitable : répondre « ce que je dois » (phrase du linteau) à la question « Que viens-tu déposer ? » évite le combat.
+Attaque : Lance de cristal | contact | 2 blanc, 2 rouge | une cible
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Seuil | réaction | Un aventurier qui le dépasse subit une attaque d'opportunité.
+Objet : Éclat de cristal bleu | 1 | 60
+---
+Nom : Gargouille de brume
+Famille : Arcanique
+Type : solitaire
+PNJ : non
+Nature : mécanique
+Extension : 
+Socle : grand
+PV : 70
+DEF : 4
+Bonus DEF : 0
+Dégâts : 3
+XP : 52
+Mouvement : 9
+Vision dans le noir : oui
+Rapide : non
+Esquive : non
+Menace : plus proche
+Image : 
+Notes : Niveau 2, parvis (R5), évitable : ne s'éveille qu'à la lumière ou au bruit de course (un jet de discrétion par aventurier). Ne descend pas au perron.
+Attaque : Griffes de pierre | contact | 3 blanc, 1 rouge | une cible
+Attaque : Souffle de brume | distance | 1 bleu | toutes | états : Gel | texte : Gel 1, 1 tour sur 2
+Talent : Hors d'atteinte | passif | Ignore tous les dégâts et tous les états, sauf Sels bleus, arme enduite d'Onguent de lest, coups d'un aventurier sous Élixir de seuil, et toute attaque contre lui s'il est Tangible.
+Talent : Grégaire | passif | Ne quitte jamais sa pièce. Si plus aucun aventurier n'y est, le combat s'arrête et il regagne la moitié des PV perdus, sauf ceux perdus aux Sels bleus.
+Talent : Hantise du sel | passif | Un Sel bleu lui inflige 2 rouges et le rend Tangible jusqu'à la fin du tour suivant. Il ne franchit pas une ligne de sel bleu.
+Talent : Statue | passif | Ne s'éveille que si un aventurier passe avec une lumière ou en courant.
+Objet : Éclat de cristal bleu | 1 | 60
+`;
+const RESTES_AZUR=['Poussière bleue','Page runique','Ectoplasme','Éclat de laiton','Poussière d’ectoplasme','Plume de brume','Larme bleue','Poussière d’étoile','Plume d’encre bleue','Éclat de cristal bleu'];
+const TRESORS_AZUR=['Alliance d’Ysaure','Sextant d’Orfroi','Sable de l’Échéance'];
+const CODES_AZUR={'hors d\'atteinte':'horsatteinte','hantise du sel':'hantisesel',source:'source',debordement:'debordementpuits','mes filles':'mesfilles',orbite:'orbite',liens:'liens',
+ 'planetaire emballe':'planetaire',creancier:'creancier',prelevement:'prelevement',exigible:'exigible','morts rendues':'mortsrendues',rappel:'rappel','sel bleu':'selbleu',
+ resceller:'resceller',dispersion:'dispersion','hors de l\'etoile':'horsetoile',invisible:'invisibleadv',appel:'appel',serment:'serment',seuil:'seuilgardien',statue:'statue'};
+function semeAdversairesAzur(c){if(!c||!Array.isArray(c.items)||!Array.isArray(c.monsters)||!Array.isArray(c.talents))return;
+ const slug=n=>cle(n).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),aObjet=n=>c.items.some(o=>o&&!o.forge&&cle(o.name)===cle(n));
+ RESTES_AZUR.forEach(n=>{if(!aObjet(n))c.items.push({id:'restes-'+slug(n),name:n,category:'restes',price:0,qty:1,logo:'',rarete:'commun',magasin:false})});
+ TRESORS_AZUR.forEach(n=>{if(!aObjet(n))c.items.push({id:'tresor-'+slug(n),name:n,category:'treasure',price:0,qty:1,logo:'',rarete:'rare',magasin:false})});
+ sourceObjets=c.items;let lus;try{lus=lisImport(TEXTE_TOUR_AZUR)}finally{sourceObjets=null}
+ const fam=typeof ADVERSAIRES!=='undefined'?ADVERSAIRES:'Adversaires',parCode={},crees={};
+ const talentPour=(nom,ty,texte)=>{const k=cle(nom),code=CODES_AZUR[k]||'';
+  let t=c.talents.find(x=>x&&x.famille===fam&&cle(typeof nomEnClair==='function'?nomEnClair(x.name):x.name)===k);
+  if(t){if(code&&!t.effet)t.effet=code}
+  else{t={id:crypto.randomUUID(),name:nom.slice(0,120),famille:fam,type:code&&TALENTS_CODES[code]?TALENTS_CODES[code].type:(CHOIX.typeTalent[cle(ty||'passif')]||'pass'),level:1,effet:code,effects:(texte||'').slice(0,600),logo:'',params:{},couts:[0,0,0]};c.talents.push(t)}
+  if(code)parCode[code]=t;return t};
+ lus.forEach(x=>{const m=x.modele;if(!m.name||c.monsters.some(o=>o&&cle(o.name)===cle(m.name)))return;
+  x.talents.forEach(l=>{const p=l.split('|').map(s=>s.trim());if(!p[0])return;const t=talentPour(p[0],p[1],p[2]);if(!m.talents.includes(t.id))m.talents.push(t.id)});
+  const neuf={...m,id:crypto.randomUUID()};c.monsters.push(neuf);crees[cle(m.name)]=neuf});
+ // Les modèles qu'appellent les talents : par leur nom au Bestiaire.
+ const modele=n=>(c.monsters.find(o=>o&&cle(o.name)===cle(n))||{}).id||'';
+ const regle=(code,p)=>{const t=parCode[code];if(t&&!Object.values(t.params||{}).some(Boolean))t.params={...(t.params||{}),...p}};
+ regle('mesfilles',{modele:modele('Pleureuse')});regle('rappel',{modele:modele('Veilleur pâle')});regle('appel',{modele:modele('Grimoire volant')});
+ regle('liens',{modele:modele('Le Geôlier d’Azur'),modele2:modele('Dame Ysaure')})}
+window.semeAdversairesAzur=semeAdversairesAzur;
+// Une première fois au chargement, si le catalogue est déjà là ; normalizeCatalog s'en charge ensuite.
+if(typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.semisForge)&&!catalog.semisForge.includes('adversaires-tour-azur')&&catalog.semisForge.includes('recettes-seuil')){
+ semeAdversairesAzur(catalog);catalog.semisForge.push('adversaires-tour-azur');if(typeof renderCatalogPages==='function')try{renderCatalogPages()}catch(e){}}
+// Liens : la mémoire des vaincus de la campagne, que le MJ efface au Bestiaire.
+{const act=document.querySelector('#bestiary-page .cat-actions');if(act){const b=document.createElement('button');b.type='button';b.id='bestiary-vaincus';b.hidden=true;
+ b.title='Oublier les adversaires vaincus de la campagne : leurs Liens redeviennent intacts';
+ b.onclick=()=>{if(view!=='mj'||!confirm('Oublier les adversaires vaincus de la campagne ?'))return;catalog.vaincus=[];majVaincus();scheduleSave()};act.append(b)}}
+function majVaincus(){const b=$('bestiary-vaincus');if(!b)return;const n=Array.isArray(catalog.vaincus)?catalog.vaincus.length:0;b.hidden=!n||view!=='mj';b.textContent='↺ Vaincus · '+n}
+if(typeof renderCatalogPages==='function'){const rc=renderCatalogPages;renderCatalogPages=function(...x){const r=rc(...x);try{majVaincus()}catch(e){}return r}}
 Object.assign(window,{modeleImport,lisImport});
 })();
