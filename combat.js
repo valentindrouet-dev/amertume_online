@@ -2405,6 +2405,8 @@ const OBJETS_CODES={
   params:[{cle:'de',nom:'Dés',type:'choix',defaut:'',options:[['','— aucun —'],...DES_ORBE]},{cle:'nb',nom:'Nombre de dés',type:'nombre',defaut:2,min:1,max:9},
    {cle:'etat',nom:'État',type:'choix',defaut:'',options:[['','—'],...ETATS_JEU.map(e=>[e,e])]},{cle:'crans',nom:'Crans de l’état',type:'nombre',defaut:1,min:1,max:9},
    {cle:'zone',nom:'L’état touche',type:'choix',defaut:'cible',options:[['cible','la cible'],['voisins','la cible et ses voisins'],['tous','tous les adversaires']]},
+   // v1.044 : lancé sur un point, il touche toute une zone — de la taille d'une zone de contact, du socle Petit au Très grand.
+   {cle:'aire',nom:'Zone touchée',type:'choix',defaut:'',options:[['','aucune : une cible'],['small','Petite'],['medium','Moyenne'],['large','Grande'],['huge','Très grande']]},
    // v1.014 : la portée, les créatures qu'il touche — par famille, par rang —, la durée de l'état, et le terrain qu'il détruit.
    {cle:'portee',nom:'Portée',type:'choix',defaut:'distance',options:[['distance','à distance'],['contact','au contact'],['deux','au contact ou à distance']]},
    {cle:'cibles',nom:'Créatures touchées',type:'choix',defaut:'',options:[['','toutes'],['vegetal','végétales'],['fongique','fongiques'],['vegetalfongique','végétales ou fongiques']]},
@@ -2415,6 +2417,8 @@ const OBJETS_CODES={
    {cle:'seuil',nom:'Se trace sur un seuil',type:'choix',defaut:'non',options:[['non','Non'],['oui','Oui : les Intangibles ne le franchissent pas']]}],
   phrase(p){const de=p&&p.de?(DES_ORBE.find(([k])=>k===p.de)||[])[1]:'',nb=Math.max(1,(p&&p.nb)|0),e=p&&p.etat||'',c=Math.max(1,(p&&p.crans)|0),z=p&&p.zone||'cible';
    const ou=z==='tous'?'tous les adversaires':z==='voisins'?'la cible et ses voisins':'la cible';
+   const aire={small:'Petite',medium:'Moyenne',large:'Grande',huge:'Très grande'}[p&&p.aire];
+   if(aire)return 'Lancé sur une zone <b>'+aire+'</b>'+(de?' : <b>'+nb+' dé'+(nb>1?'s':'')+' '+de+(nb>1?'s':'')+'</b>':'')+(e?(de?', ':' : ')+'<b>'+e+(c>1?' '+c:'')+'</b>':'')+' sur chaque combattant qu’elle touche'+(p.detruit==='oui'?' ; elle gomme le terrain coché « Sel »':'')+'.';
    return 'Lancé'+(de?' : <b>'+nb+' dé'+(nb>1?'s':'')+' '+de+(nb>1?'s':'')+'</b>':'')+(e?(de?', ':' : ')+'<b>'+e+(c>1?' '+c:'')+'</b> sur '+ou:'')+'.'}},
  /* v1.014 — Bu ou lancé : bu, il retire un état ; lancé, des dés contre les créatures d'une famille. */
  boirelancer:{cle:'boirelancer',nom:'Bu ou lancé',aide:'Bu, il retire un état au buveur ; lancé, des dés contre une créature d’une famille.',

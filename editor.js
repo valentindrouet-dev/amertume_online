@@ -321,7 +321,7 @@ const GEMMES_HERBORISTERIE={'brisure de citrine':'brisure-citrine','eclat de rub
    amer, les Gants de ronceur) reçoit sa recette sans rien perdre du reste. */
 const RECETTES_RONCIER=[
  {name:'Sel de racine',category:'potion',sousType:'Lancer',rarete:'commun',ingr:[['Racine amère',3],['Charbon de bois',1],['Eau',1]],q:2,effet:'lancer',
-  params:{de:'red',nb:2,etat:'',crans:1,zone:'cible',portee:'contact',cibles:'vegetal',rangs:'',duree:'',detruit:'oui'},usage:'conso',notes:'Jeté au contact : 2 dés rouges contre une créature végétale, ou détruit une Haie vivante',price:7,app:15,rang:1,labo:1,ico:30},
+  params:{de:'red',nb:2,etat:'',crans:1,zone:'cible',aire:'medium',portee:'contact',cibles:'vegetal',rangs:'',duree:'',detruit:'oui'},usage:'conso',notes:'Jeté au contact : 2 dés rouges contre une créature végétale, ou détruit une Haie vivante',price:7,app:15,rang:1,labo:1,ico:30},
  {name:'Berceuse',category:'potion',sousType:'Gaz',rarete:'commun',ingr:[['Fiole',1],['Pavot des talus',2],['Algue des puits',1]],effet:'lancer',
   params:{de:'',nb:1,etat:'Sommeil',crans:1,zone:'cible',portee:'distance',cibles:'vegetalfongique',rangs:'sanslieutenants',duree:'',detruit:'non'},usage:'conso',notes:'À distance : une créature végétale ou fongique tombe en Sommeil. Sans effet sur lieutenants et boss',price:14,app:15,rang:1,labo:1,ico:48},
  {name:'Berceuse concentrée',category:'potion',sousType:'Gaz',rarete:'rare',ingr:[['Berceuse',2],['Racine de mandragore',1],['Pavot des talus',2]],effet:'lancer',
@@ -605,6 +605,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.026 : une arme à distance réglée « 1 main » comptait deux mains ; elle les garde, une fois — sauf une arme de lancer.
  if(!c.semisForge.includes('mains-distance')&&Array.isArray(c.items)){c.items.forEach(o=>{if(o&&o.category==='weapon'&&o.ranged===true&&!o.lancer&&Number(o.hands)!==2)o.hands=2});c.semisForge.push('mains-distance')}
  // v1.028 : les Gants de ronceur sans effet reçoivent « Protège des ronces ».
+ // v1.044 : le Sel de racine se lance sur une zone Moyenne.
+ if(!c.semisForge.includes('sel-racine-zone')&&Array.isArray(c.items)){c.items.forEach(o=>{if(o&&/^sel de racine$/i.test(String(o.name||'').trim())&&o.effet==='lancer'){o.params={...(o.params||{})};if(!o.params.aire)o.params.aire='medium'}});c.semisForge.push('sel-racine-zone')}
  if(!c.semisForge.includes('gants-ronces')&&Array.isArray(c.items)){c.items.forEach(o=>{if(o&&/gants de ronceur/i.test(String(o.name||''))&&!o.effet){o.effet='protegeronces';o.params={}}});c.semisForge.push('gants-ronces')}
  // v1.020 : les adversaires de la tour d'azur, une fois, après les recettes du seuil (import-adversaires.js).
  if(!c.semisForge.includes('adversaires-tour-azur')&&typeof semeAdversairesAzur==='function'&&Array.isArray(c.monsters)&&Array.isArray(c.talents)&&c.semisForge.includes('recettes-seuil')){semeAdversairesAzur(c);c.semisForge.push('adversaires-tour-azur')}

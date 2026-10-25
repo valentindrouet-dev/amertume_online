@@ -170,6 +170,8 @@ function etatVivant(){const out={actors:{}};
   ...(m.dangersDetruits||[]).map(k=>({dg:k})),
   // v1.018 : les seuils de Sel bleu tracés, chacun par ses deux bouts.
   ...(m.seuilsSel||[]).map(s=>({sl:[s.a.x,s.a.y,s.b.x,s.b.y].map(v=>Math.round(v*100)/100)})),
+  // v1.044 : les zones gommées dans le terrain coché « Sel », chacune par ses points.
+  ...(m.dangersTrous||[]).map(r=>({tr:r.flat().map(v=>Math.round(v*100)/100)})),
   ...(m.pieges||[]).map(p=>({t:p.id,e:drapeauxPiege(p)}))]:[];
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
@@ -424,6 +426,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    {const dg=d.doors.filter(v=>v&&typeof v==='object'&&typeof v.dg==='string').map(v=>v.dg.slice(0,80));if(dg.length)m.dangersDetruits=dg;else delete m.dangersDetruits}
    {const sl=d.doors.filter(v=>v&&typeof v==='object'&&Array.isArray(v.sl)&&v.sl.length===4&&v.sl.every(n=>Number.isFinite(Number(n)))).slice(0,20).map(v=>{const n=v.sl.map(x=>Math.max(0,Math.min(100,Number(x))));return {a:{x:n[0],y:n[1]},b:{x:n[2],y:n[3]}}});
     if(sl.length)m.seuilsSel=sl;else delete m.seuilsSel}
+   {const tr=d.doors.filter(v=>v&&typeof v==='object'&&Array.isArray(v.tr)&&v.tr.length>=6&&v.tr.length<=200&&v.tr.length%2===0&&v.tr.every(n=>Number.isFinite(Number(n)))).slice(0,40)
+     .map(v=>{const r=[];for(let i=0;i<v.tr.length;i+=2)r.push([Number(v.tr[i]),Number(v.tr[i+1])]);return r});
+    if(tr.length)m.dangersTrous=tr;else delete m.dangersTrous}
    const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
     if(typeof v==='boolean'){montreObjet(o,v);delete o.pris;delete o.prisN}else if(v===0||v===1||v===2){montreObjet(o,v>=1);if(v===2)o.pris=true;else delete o.pris;delete o.prisN;if(o.indice){delete o.examine;delete o.tente}}
     else if(o.indice&&(v===40||v===41)){montreObjet(o,true);if(v===41){o.examine=true;delete o.tente}else{o.tente=true;delete o.examine}}

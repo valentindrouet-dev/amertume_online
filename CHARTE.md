@@ -336,3 +336,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Exemplaires d'une pièce posée sur la carte** (`.quantite-bulle`) : une seule bulle par pièce ; leur nombre, s'il dépasse un, dans un rond en haut à droite (fond `--panel`, liseré `--line`, chiffre gras à l'encre).
 
 **Sélecteur d'un objet de la carte** (`.objet-liste`) : le nombre d'exemplaires choisis (×2…) en pastille en bas à droite du carré, comme dans l'inventaire ; la coche reste en haut à droite.
+
+**Zone d'un objet lancé** (`#zone-lancer`) : la zone de contact de la taille réglée, coupée par les murs, qui suit le pointeur : voile et tirets orange `#c2692a` (voile à 18 %) ; grisée `#7d7a74` là où l'objet ne peut pas tomber.

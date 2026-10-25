@@ -3641,3 +3641,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
  font:700 13px/1 system-ui;color:var(--ink);background:var(--panel);border:1px solid var(--line)}
 /* v1.038 — Le nombre d'exemplaires choisis, dans le sélecteur d'un objet de la carte : en bas à droite, la coche ne le cache plus. */
 .objet-liste .cat-pill.gear-carre .exemplaires{top:auto;right:-6px;bottom:-6px;left:auto;padding:0 3px;font:700 9px/13px system-ui;color:var(--ink);border-radius:6px;background:var(--panel);border:1px solid var(--line);z-index:1}
+/* v1.044 — La zone d'un objet lancé, qui suit le pointeur : orange de la palette, en tirets ; grisée là où il ne peut pas tomber. */
+#zone-lancer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;overflow:visible}
+#zone-lancer path{fill:#c2692a;fill-opacity:.18;stroke:#c2692a;stroke-width:2px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+#zone-lancer path.hors{fill:#7d7a74;stroke:#7d7a74}

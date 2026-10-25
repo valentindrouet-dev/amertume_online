@@ -1607,7 +1607,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;
+ (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;delete m.dangersTrous;
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
@@ -3498,7 +3498,7 @@ function dangerAuPassage(o,chemin){const m=currentMap(),size=mapSize();if(!m||!s
 // La fin de chaque tour de combat : qui s'y tient encore est frappé ; puis les Sommeils d'un tour se lèvent.
 {const ts=tourSuivant;tourSuivant=function(...x){
  try{const m=currentMap(),size=mapSize();if(enCombat()&&m&&size.width&&dangersDe(m).length){let f=false;
-  actors.forEach(o=>{dangersDe(m).forEach(t=>{if(!sensibleAuDanger(o,t))return;const c=[o.x/100*size.width,o.y/100*size.height];if(formesPx(m,t,size).some(l=>pointInPolygon(c,l)))f=frappeDanger(o,t)||f})});
+  actors.forEach(o=>{dangersDe(m).forEach(t=>{if(!sensibleAuDanger(o,t))return;const c=[o.x/100*size.width,o.y/100*size.height];if(formesPxTrous(m,t,size).some(fo=>dansFormePx(c,fo)))f=frappeDanger(o,t)||f})});
   if(f)scheduleSave()}}catch(e){}
  const r=ts(...x);
  try{actors.forEach(o=>{const l=etatsBrefs(o);if(!l.length)return;const reste=l.filter(b=>{if(round>b.r||!enCombat()){setState(o,b.e,false);return false}return true});
@@ -3888,6 +3888,7 @@ function renderNotesMJ(){let calque=$('notes-mj');const m=currentMap(),l=m&&view
 let ancreDanger=null,dangerSurvole=null,dangerTache=0;
 function survolDanger(e){if(dangerTache)return;dangerTache=requestAnimationFrame(()=>{dangerTache=0;try{
  const vue=$('map-view'),m=currentMap(),dessus=e.target&&e.target.closest&&e.target.closest('.token,button,.bulle,.door,.coffre,.note-mj');
+ if(document.body.classList.contains('placement')){if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
  const q=m&&!dessus?mapPct(e):null,z=q&&dangersDe(m).length?formeDangerSous(q):null,vu=z&&(view==='mj'||m.fogOff||(typeof seenAt==='function'&&seenAt(q.x,q.y)));
  if(!vu){if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
  if(!ancreDanger){ancreDanger=document.createElement('div');ancreDanger.className='ancre-danger'}if(!ancreDanger.isConnected)vue.append(ancreDanger);
@@ -3902,7 +3903,7 @@ if($('map-view')){$('map-view').addEventListener('pointermove',survolDanger);
 /* v1.029 — Le terrain ne clignote plus au relâchement d'un socle : chaque rendu de la carte redessinait ses calques et relançait
    le pouls. Tant que rien n'a changé, les calques restent ; redessinés, le pouls reprend là où il en était. */
 {const rdg=renderDangers;let cle=null;renderDangers=function(...x){const m=currentMap(),svg=$('dangers-carte');
- const k=m?currentMapId+'|'+JSON.stringify(dangersDe(m))+'|'+JSON.stringify(m.dangersDetruits||null)+'|'+JSON.stringify(m.seuilsSel||null):'';
+ const k=m?currentMapId+'|'+JSON.stringify(dangersDe(m))+'|'+JSON.stringify(m.dangersDetruits||null)+'|'+JSON.stringify(m.seuilsSel||null)+'|'+JSON.stringify(m.dangersTrous||null):'';
  if(k&&k===cle&&svg&&svg.isConnected&&$('seuils-carte'))return;cle=k;const r=rdg(...x);
  const phase=-(performance.now()%5200)/1000+'s';document.querySelectorAll('#dangers-carte .danger-carte').forEach(p=>p.style.animationDelay=phase);return r}}
 {const rdi=renderDifficiles;let cle=null;renderDifficiles=function(...x){const m=currentMap(),svg=$('difficiles-carte');
@@ -3914,3 +3915,71 @@ if($('map-view')){$('map-view').addEventListener('pointermove',survolDanger);
 let solsEnGesteT=0;
 {const veg=visibilitesEnGeste;visibilitesEnGeste=function(...x){const r=veg(...x);const t=performance.now();
  if(t-solsEnGesteT>=120){solsEnGesteT=t;try{renderCoffres();if(typeof renderPieges==='function')renderPieges();renderObjets();renderLumieres()}catch(e){}}return r}}
+
+/* ---------- v1.044 — Les objets lancés en zone ----------
+   Réglé sur une zone (Petite, Moyenne, Grande, Très grande : la zone de contact d'un socle de cette taille), l'objet se lance
+   sur un point : au clic, la zone suit le pointeur, coupée par les murs, et se grise là où il ne peut pas tomber. Ses dés et ses
+   états frappent chaque combattant qu'elle touche — le lanceur excepté — que l'objet admet (familles, rangs). Réglé pour
+   détruire le terrain coché « Sel », il y gomme un vide de la taille de la zone ; le reste du terrain demeure. */
+const AIRES_LANCER=['small','medium','large','huge'];
+const aireLancer=p=>p&&AIRES_LANCER.includes(p.aire)?p.aire:'';
+const anneauClos=r=>{const l=r.map(q=>[q[0],q[1]]);const a=l[0],b=l[l.length-1];if(a&&b&&(a[0]!==b[0]||a[1]!==b[1]))l.push([a[0],a[1]]);return l};
+const versClipZone=l=>l.map(p=>(p.anneaux||[]).filter(r=>r&&r.length>=3).map(anneauClos)).filter(p=>p.length);
+const depuisClipZone=mp=>(mp||[]).map(p=>({anneaux:p.map(r=>r.slice(0,-1)).filter(r=>r.length>=3)})).filter(p=>p.anneaux.length);
+// Le terrain coché « Sel », moins ses zones gommées ; un calcul par type, gardé tant que rien ne change.
+const trousCache=new WeakMap();
+{const fa=formesActives;formesActives=function(m,t){const l=fa(m,t),tr=t&&t.sel===true&&m&&Array.isArray(m.dangersTrous)?m.dangersTrous:null;
+ if(!tr||!tr.length||!l.length)return l;
+ const cle=JSON.stringify(tr)+'|'+JSON.stringify(m.dangersDetruits||null),c=trousCache.get(t);if(c&&c.cle===cle&&c.src===t.formes)return c.res;
+ let res=l;try{res=depuisClipZone(Clipper.difference(versClipZone(l),...tr.map(r=>[anneauClos(r)])))}catch(e){res=l}
+ trousCache.set(t,{cle,src:t.formes,res});return res}}
+// Un point dans une forme : dans son contour, hors de ses trous.
+const dansFormePx=(c,f)=>pointInPolygon(c,f[0])&&!f.slice(1).some(h=>pointInPolygon(c,h));
+{const vieux=formeDangerSous;formeDangerSous=function(q,garde){const m=currentMap();if(!m)return null;
+ for(const t of dangersDe(m)){if(garde&&!garde(t))continue;for(const p of formesActives(m,t)){const r=p.anneaux||[];if(r[0]&&pointInPolygon([q.x,q.y],r[0])&&!r.slice(1).some(h=>pointInPolygon([q.x,q.y],h)))return {t,p}}}return null}}
+const formesPxTrous=(m,t,size)=>formesActives(m,t).map(p=>p.anneaux.map(r=>r.map(q=>[q[0]/100*size.width,q[1]/100*size.height])));
+{const vieux=dangerAuPassage;dangerAuPassage=function(o,chemin){const m=currentMap(),size=mapSize();if(!m||!size.width||!Array.isArray(chemin)||chemin.length<2||!dangersDe(m).length)return;
+ const pts=chemin.filter(Boolean).map(q=>[q.x/100*size.width,q.y/100*size.height]);let frappe=false;
+ dangersDe(m).forEach(t=>{if(!sensibleAuDanger(o,t))return;const formes=formesPxTrous(m,t,size);if(!formes.length)return;const anneaux=formes.flat(1);
+  if(pts.some(c=>formes.some(f=>dansFormePx(c,f)))||pts.slice(1).some((c,i)=>segmentHitsPolys(pts[i],c,anneaux)))frappe=frappeDanger(o,t)||frappe});
+ if(frappe){render();scheduleSave()}}}
+// Le tracé de la zone autour d'un point, en % de carte : la zone de contact d'un socle de cette taille, coupée par les murs.
+function zoneLancer(q,aire){const size=mapSize();if(!size.width)return [];return reachPolygon({x:q.x,y:q.y},walls(),contactRadius(tokenPx()*(SOCLE_TAILLES[aire]||1)),size.width,size.height,48)}
+const auContactDuLanceur=(a,q)=>{const size=mapSize();return Math.hypot((q.x-a.x)/100*size.width,(q.y-a.y)/100*size.height)<=contactRadius(tokenOf(a))};
+function zoneAtteinte(a,q,p){if(!a||!q||wallsBetween(a,q,walls()))return false;return p.portee==='contact'?auContactDuLanceur(a,q):true}
+let apercuZone=null;
+function retireApercuZone(){if(!apercuZone)return;apercuZone.svg.remove();$('map').removeEventListener('pointermove',apercuZone.suit);cancelAnimationFrame(apercuZone.image);apercuZone=null}
+{const ap=annulerPlacement;annulerPlacement=function(...x){retireApercuZone();return ap(...x)}}
+function montreApercuZone(a,p){retireApercuZone();const aire=aireLancer(p),svg=document.createElementNS(nsSVG,'svg');svg.id='zone-lancer';svg.setAttribute('viewBox','0 0 100 100');
+ svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(nsSVG,'path');svg.append(path);$('map-view').append(svg);
+ const z={svg,image:0,q:null,suit:e=>{z.q=mapPct(e);if(z.image)return;z.image=requestAnimationFrame(()=>{z.image=0;const q=z.q,pts=q?zoneLancer(q,aire):[];
+  if(pts.length<3){path.removeAttribute('d');return}path.setAttribute('d','M'+pts.map(v=>v[0].toFixed(2)+' '+v[1].toFixed(2)).join('L')+'Z');path.classList.toggle('hors',!zoneAtteinte(a,q,p))})}};
+ $('map').addEventListener('pointermove',z.suit);apercuZone=z}
+// Les combattants qu'une zone touche, le lanceur excepté.
+function touchesDeZone(a,pts,p){const size=mapSize(),px=pts.map(v=>[v[0]/100*size.width,v[1]/100*size.height]);
+ return actors.filter(x=>x&&x!==a&&alive(x)&&!x.horsCarte&&!x.orbeStatique&&polyTouchesDisc(px,[x.x/100*size.width,x.y/100*size.height],tokenOf(x)/2)&&cibleAdmise(x,p))}
+// Gommer le terrain coché « Sel » sous la zone : le vide qu'elle trace, seulement là où un tel terrain la touche.
+function gommeTerrainSel(pts){const m=currentMap();if(!m||pts.length<3)return [];const z=[anneauClos(pts)],noms=[];
+ dangersDe(m).forEach(t=>{if(t.sel!==true)return;const l=formesActives(m,t);if(!l.length)return;let touche=false;try{touche=Clipper.intersection(versClipZone(l),z).length>0}catch(e){}if(touche&&!noms.includes(t.nom))noms.push(t.nom)});
+ if(noms.length){m.dangersTrous=[...(m.dangersTrous||[]),pts.map(v=>[Math.round(v[0]*100)/100,Math.round(v[1]*100)/100])].slice(-40);renderDangers();saveMaps();scheduleSave()}
+ return noms}
+let zoneLancerIds=null;
+{const ca=ciblesAtteignables;ciblesAtteignables=function(a,l,portee){if(zoneLancerIds&&Array.isArray(l)&&l.length&&l.every(j=>zoneLancerIds.has(j)))return l.slice();return ca(a,l,portee)}}
+function lancerEnZone(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la carte.',{local:true});return}
+ if(p.de&&enCombat()&&pointsRestants(a,'action')<1){log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return}
+ viserCible('◈ '+o.name+' — clique où le lancer',(vise,q)=>{if(!q)return;
+  if(!zoneAtteinte(a,q,p)){log(o.name+(p.portee==='contact'?' se lance au contact de '+nomNum(a)+'.':' : '+nomNum(a)+' doit voir où il le lance.'),{local:true});return}
+  const pts=zoneLancer(q,aireLancer(p));if(pts.length<3)return;
+  const portee=p.portee==='contact'?'contact':p.portee==='deux'&&auContactDuLanceur(a,q)?'contact':'distance';
+  const touches=touchesDeZone(a,pts,p),crans=Math.max(1,p.crans|0);
+  const pose=x=>{const ok=poseEtatPotion(x,p.etat,crans,a);if(ok&&(p.duree==='1'||p.duree==='2')&&enCombat())ajouteEtatBref(x,p.etat,round+(p.duree==='2'?1:0));return ok};
+  if(p.de&&touches.length){const gomme=p.detruit==='oui'?gommeTerrainSel(pts):[];
+   finPotion(a,o,'lancé'+(gomme.length?', '+gomme.join(', ')+' gommé':''));selected=actors.indexOf(a);
+   zoneLancerIds=new Set(touches.map(x=>actors.indexOf(x)));
+   try{attack({vises:[...zoneLancerIds],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee,sansDegats:true,potion:true,
+    etatsEnPlus:{etats:p.etat?Array(crans).fill(p.etat):[],touches:[]},apres:()=>{render();scheduleSave()}})}finally{zoneLancerIds=null}return}
+  if(!payeAction(a))return;
+  const gomme=p.detruit==='oui'?gommeTerrainSel(pts):[],t=!p.de&&p.etat?touches.filter(pose):[];
+  finPotion(a,o,'lancé'+(gomme.length?', '+gomme.join(', ')+' gommé':'')+(t.length?', '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', '):'')+(!gomme.length&&!t.length?', sans effet':''))},o.name+' : geste annulé.');
+ montreApercuZone(a,p)}
+{const lp=lancerPotion;lancerPotion=function(a,o,p){if(p&&aireLancer(p)&&p.seuil!=='oui')return lancerEnZone(a,o,p);return lp(a,o,p)}}
