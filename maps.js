@@ -1519,7 +1519,7 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
  const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!doorInReach(d)||!manoeuvresPorte.has(d))return false;
   const parCle=d.keyLocked&&!!d.cleId&&aLaCle(a,d.cleId)&&(!d.secret||d.open||d.decouvert);return !doorLockedFor(d,false)||parCle});
  const gris=typeof enCombat==='function'&&enCombat()&&pointsRestants(a,'mouvement')<=0;
- const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',');
+ const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',')+'|'+verrouilleesAPortee(m,a).map(d=>[d.x,d.y].join(':')).join(',');
  if(cle===portesBoutonsCle&&calque.isConnected)return;portesBoutonsCle=cle;calque.replaceChildren();
  montres.forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action rond btn-porte bouton-interaction'+(d.open?' ouverte':'');
   b.style.left=(d.x+d.w/2)+'%';b.style.top=(d.y+d.h/2)+'%';
@@ -1531,7 +1531,15 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
   if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
   if(typeof inerte==='function')inerte(b,gris);
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
-  b.onclick=e=>{e.stopPropagation();if(typeof estInerte==='function'&&estInerte(b))return;const f=manoeuvresPorte.get(d);if(f)f()};calque.append(b)})}
+  b.onclick=e=>{e.stopPropagation();if(typeof estInerte==='function'&&estInerte(b))return;const f=manoeuvresPorte.get(d);if(f)f()};calque.append(b)})
+ /* v1.022 : une porte ou une fenêtre verrouillée, à portée, porte un cadenas à la place du rond : sa bulle le dit, il n'agit pas. */
+ verrouilleesAPortee(m,a).forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action rond btn-porte bouton-interaction verrouillee';
+  b.style.left=(d.x+d.w/2)+'%';b.style.top=(d.y+d.h/2)+'%';b.style.setProperty('--echelle',echelleInteraction());b.innerHTML=ICONE_CADENAS;
+  const nom=d.fenetre?'Fenêtre verrouillée':'Porte verrouillée';b.setAttribute('aria-label',nom);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
+  b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=e=>e.stopPropagation();calque.append(b)})}
+const ICONE_CADENAS='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.5" fill="currentColor"/></svg>';
+function verrouilleesAPortee(m,a){if(!m||!a||!a.hero||!alive(a)||a.horsCarte)return [];
+ return (m.doors||[]).filter(d=>d&&d.keyLocked&&!d.crochetee&&!(d.secret&&!d.open&&!d.decouvert)&&!doorHiddenFrom(d,false)&&doorSeen(d)&&doorInReach(d)&&manoeuvresPorte.has(d)&&!(d.cleId&&aLaCle(a,d.cleId)))}
 {const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsPortes();return r}}
 /* (v0.985 : il se refait aussi pendant le geste, quelques fois par seconde — vueEnGeste.) Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
    repeindre à chaque image — une toile de quatre mille pixels, floutée — faisait accrocher

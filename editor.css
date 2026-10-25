@@ -3609,3 +3609,6 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .shape.notemj{position:absolute;cursor:grab}.shape.notemj.selected{outline:2px solid #7a5cb8;outline-offset:2px}
 .shape.notemj .logo-objet,.note-mj .logo-objet{width:72%;height:72%;object-fit:contain}
 #notes-mj{position:absolute;inset:0;z-index:1;pointer-events:none}.note-mj{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:help;opacity:.92}
+/* v1.022 — Ouvrir un coffre, Inspecter, Récolter : la couleur du rond des portes. Une porte verrouillée : son cadenas. */
+#objet-boutons button.btn-action.rond.bouton-interaction{--fond:#cf9152;color:#fff}
+#porte-boutons button.btn-action.rond.bouton-interaction.verrouillee{cursor:default}
