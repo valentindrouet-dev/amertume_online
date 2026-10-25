@@ -807,7 +807,15 @@ function recupereObjetFait(a,o,rang){if(o&&o.indice)return;
  pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
  const tresor=r===0?o.tresor:'';if(tresor)noteInventaire(a,tresor);
  if(r+1>=toursObjet(o)){o.pris=true;delete o.prisN}else o.prisN=r+1;
- log(nomNum(a)+' récupère '+(pieces.length?pieces.map(it=>'⟦'+it.id+'⟧').join(' '):o.nom)+(tresor?' et '+tresor:'')+'.',{ton:'butin'});
+ /* v1.041 — Prises répétées sur un même objet, l'une après l'autre : une seule ligne au journal, le nombre de chaque pièce
+    qui grandit (l'icône, puis ×2, ×3…). */
+ const nb=new Map();pieces.forEach(it=>nb.set(it.id,(nb.get(it.id)||0)+1));
+ {const der=$('journal')&&$('journal').lastElementChild,r=der&&der._rec,pre=nomNum(a)+' récupère ';
+  if(!tresor&&pieces.length&&r&&r.ton==='butin'&&typeof r.texte==='string'&&r.texte.startsWith(pre)&&r.texte.endsWith('.')&&der._objetSol===o.id){
+   const avant=new Map(),reste=r.texte.slice(pre.length,-1).replace(/⟦([^⟧]{1,80})⟧(?: ×(\d+))?/g,(m,id,n)=>{avant.set(id,(avant.get(id)||0)+(Number(n)||1));return ''}).trim();
+   if(!reste&&avant.size){avant.forEach((n,id)=>nb.set(id,(nb.get(id)||0)+n));der.remove()}}}
+ log(nomNum(a)+' récupère '+(pieces.length?[...nb].map(([id,n])=>'⟦'+id+'⟧'+(n>1?' ×'+n:'')).join(' '):o.nom)+(tresor?' et '+tresor:'')+'.',{ton:'butin'});
+ {const li=$('journal')&&$('journal').lastElementChild;if(li)li._objetSol=o.id}
  render();saveMaps();scheduleSave()}
 function heroLePlusProche(o){const size=mapSize(),loin=h=>Math.hypot((h.x-o.x)/100*size.width,(h.y-o.y)/100*size.height);
  const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte),vivants=heros.filter(alive),parmi=vivants.length?vivants:heros;
