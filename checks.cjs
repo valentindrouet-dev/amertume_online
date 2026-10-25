@@ -2855,7 +2855,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();")
   &&src.includes("window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;")&&src.includes("if(document.visibilityState==='visible'&&ongletPerime)relireSession()"),'une fenêtre périmée n’écrase plus la partie');
  assert.ok(cartes2.includes("Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;")&&cartes2.includes("Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine")
-  &&cartes2.includes('Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.'),'l’import des cartes reconnaît les autres fichiers');
+  &&!cartes2.includes('Un fichier qui contient toutes tes cartes'),'l’import des cartes reconnaît les autres fichiers ; v1.024 : plus de texte au-dessus d’Exporter et d’Importer');
  assert.ok(cartes2.includes("Array.isArray(o.actors)?'Ce fichier est une sauvegarde globale de la partie, sans carte à importer ici."),'une sauvegarde globale sans carte le dit');}
 /* v0.293 — Retirer un talent de l'arbre ne l'efface plus : il reste au catalogue, dans la
    réserve sous l'arbre, d'où il se replace d'un glisser. La suppression définitive se fait

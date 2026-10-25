@@ -1678,7 +1678,6 @@ mapsPage.innerHTML=
  +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div>'
  +'<div class="divider"></div><h2>Paysages</h2><div id="paysage-list"></div><div class="side-actions"><button id="paysage-new" class="primary">+ Nouveau paysage</button></div>'
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
- +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><span class="map-xp" id="map-xp"></span>'

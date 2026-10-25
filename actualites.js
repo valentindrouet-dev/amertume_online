@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.024","d":"2026-10-25","t":"Colonne de gauche stable, texte de sauvegarde retiré"},
 {"v":"1.023","d":"2026-10-25","t":"Éditeur de cartes sur deux colonnes"},
 {"v":"1.022","d":"2026-10-25","t":"Cadenas des portes verrouillées, ronds couleur porte"},
 {"v":"1.021","d":"2026-10-25","t":"Dupliquer, Notes de MJ, quantités d'objets"},
