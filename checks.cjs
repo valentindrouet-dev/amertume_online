@@ -3199,7 +3199,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(d.batiments.map(b=>b.fonction).join(','),'tannerie,','la Tannerie devient la tannerie, une fois');
  d.batiments[0].fonction='';assert.equal(C.normaliseDomaine(d).batiments[0].fonction,'','ensuite, le MJ choisit');
  assert.equal(J(C.normaliseDomaine({depotsVus:['a','mauvais id!','b']}).depotsVus),J(['a','b']));
- assert.ok(src.includes("function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésors']];")
+ assert.ok(src.includes("function itemColumn(a){return a.category==='recette'?'recette':a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['recette','Recettes'],['treasure','Trésors']];")
   &&src.includes("o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);")
   &&src.includes("?sel('Donne','ressource1',ressourceValide(a.ressource1),")&&src.includes("function dessineRecette(){")&&src.includes("if($('recette-lignes'))a.recette=lireRecette();")
   &&src.includes("{cle:'tanneur',nom:'Tanneur',type:'case',")&&src.includes("groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);"),'les Restes et la recette du tanneur, à l’Armurerie');

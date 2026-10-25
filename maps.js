@@ -2674,7 +2674,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
 /* Le choix dans l'armurerie, par familles : de petits carrés, un clic prend la pièce, un autre la repose.
    « pris » : l'ensemble des identifiants choisis, que le formulaire relit à l'enregistrement. */
 function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.value||'').trim().toLowerCase();boite.replaceChildren();
-  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions']].forEach(([cat,titre])=>{
+  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['recette','Recettes']].forEach(([cat,titre])=>{
    const lot=(catalog.items||[]).filter(it=>it&&!it.forge&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
    if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
    /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
@@ -3028,8 +3028,8 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
    allumer, un filtre, et l'armurerie ; un clic ajoute un exemplaire, le clic droit en retire un. Au-dessus,
    ce qui est déjà dedans, chaque pièce et son nombre. */
 const CATS_COFFRE=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
- ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle','herbe'].includes(o.category)],['ressources','Ressources',o=>o.category==='ressource'],
- ['cles','Clés',o=>o.category==='cle'],['restes','Restes',o=>o.category==='restes'],['herbes','Herboristerie',o=>o.category==='herbe']];
+ ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle','herbe','recette'].includes(o.category)],['ressources','Ressources',o=>o.category==='ressource'],
+ ['cles','Clés',o=>o.category==='cle'],['restes','Restes',o=>o.category==='restes'],['herbes','Herboristerie',o=>o.category==='herbe'],['recettes','Recettes',o=>o.category==='recette']];
 let catsCoffre=new Set(['armes','armures','objets']),filtreCoffre='';
 function contenuCoffre(boite,cible){boite.replaceChildren();boite.classList.add('inv-adv');
  const compte=id=>cible.inventaire.filter(x=>x===id).length;
@@ -3452,6 +3452,8 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
    ['Lancer',()=>lancerPotion(a,o,{de:p.de,nb:p.nb,etat:'',crans:1,zone:'cible',portee:'distance',cibles:p.cibles,rangs:'',duree:'',detruit:'non'})]]);return;
   case 'grimoire':{const r=objetDe(p.recette);if(!r){log(o.name+' : aucune recette.',{local:true});return}
    if((a.recettes||[]).includes(r.id)){log(nomNum(a)+' connaît déjà la recette : '+r.name+'.',{local:true});return}
+   // v1.055 : une Recette ne s'apprend qu'au rang d'herboriste qu'elle demande.
+   if(o.category==='recette'&&typeof refusHerbo==='function'&&r.herbo){const refus=refusHerbo(a,r,null);if(refus){log(nomNum(a)+' ne peut pas apprendre '+r.name+' : '+refus.charAt(0).toLowerCase()+refus.slice(1),{local:true});return}}
    a.recettes=[...(a.recettes||[]),r.id];finPotion(a,o,'apprend la recette : '+r.name);return}
   case 'revelesecrets':{const n=revelePassages(a);finPotion(a,o,n?n+' passage'+(n>1?'s secrets révélés':' secret révélé'):'aucun passage secret');return}}}}
 // Les PM de la potion, jusqu'à la fin du combat.

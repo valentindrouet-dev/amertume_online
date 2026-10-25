@@ -91,7 +91,7 @@ function migreRessources(c){
    dégâts, chaque point de DEF, la deuxième main, l'état infligé, l'effet, chaque bonus, les
    ressources dont elle est faite ; la rareté multiplie ensuite le tout. L'Armurerie en tire un
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
-const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor']];
+const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['recette','Recette'],['treasure','Trésor']];
 const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,herbe:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25,purple:25},def:20,deuxMains:5,etat:15,restes:25,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
@@ -881,6 +881,17 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    if(h||o.category==='potion'){o.ingredients=normaliseIngredients(o.ingredients);o.gemmes=normaliseGemmesRecette(o.gemmes)}else{delete o.ingredients;delete o.gemmes}}
   if(o.herboriste===true)o.herboriste=true;else delete o.herboriste;
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
+ /* v1.055 — Les Recettes : chaque pièce qui se fabrique (une recette d'herboristerie, de tannerie ou de forge) a son objet Recette,
+    qui se trouve, se porte, s'échange, se range au coffre et se vend ; lu par qui a le rang voulu, il apprend la recette et
+    s'efface. Sa rareté est celle de la pièce qu'il fait ; son icône, celle des recettes de son métier (Paramètres d'icônes). */
+ {const parId=new Map(c.items.filter(Boolean).map(o=>[o.id,o]));
+  c.items=c.items.filter(o=>!o||o.category!=='recette'||(parId.get(o.recetteDe)&&parId.get(o.recetteDe).herbo));
+  c.items.filter(o=>o&&o.category!=='recette'&&o.herbo).forEach(o=>{const id='recette-'+o.id;let r=parId.get(id);
+   if(!r){r={id,category:'recette',recetteDe:o.id,price:o.herbo.apprentissage||0,qty:1,logo:'',notes:'',magasin:false};c.items.push(r);parId.set(id,r)}});
+  c.items.forEach(r=>{if(!r||r.category!=='recette')return;const o=parId.get(r.recetteDe);r.name='Recette : '+o.name;r.rarete=rareteDe(o);
+   r.effet='grimoire';r.params={recette:o.id};r.usage='conso';r.consumable=true;r.bonus=[];delete r.mode;delete r.herbo;delete r.ingredients;delete r.gemmes;delete r.sousType});
+  const lr=c.logosRecettes&&typeof c.logosRecettes==='object'&&!Array.isArray(c.logosRecettes)?c.logosRecettes:{};
+  c.logosRecettes={};['herboristerie','tannerie','forge'].forEach(k=>{if(typeof lr[k]==='string'&&lr[k]&&lr[k].length<=120)c.logosRecettes[k]=lr[k]})}
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{const fm=normaliseFamillesMonstre(m.familles);if(fm.length)m.familles=fm;else delete m.familles;m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';if(!(Number.isInteger(m.defBonus)&&m.defBonus>0&&m.defBonus<=DEF_MAX))delete m.defBonus;const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
  return c}
@@ -2039,11 +2050,13 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))+selGrille(selGroupes('Rage','etat-rage',(catalog.logosEtats||{})['Rage']||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes))
+  +'<h3 class="reglage-titre icones-titre">Recettes</h3>'+[['herboristerie','Herboristerie'],['tannerie','Tannerie'],['forge','Forge']].map(([k,n])=>selGrille(selGroupes(n,'recette-'+k,(catalog.logosRecettes||{})[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))
   +ACTIONS_SPECIALES.map(([k,n])=>selGrille(selGroupes(esc(n),'action-'+k,actionSpeciale(k).logo||'',groupes))+'<label class="action-texte">Texte · '+esc(n)+'<textarea name="actiontexte-'+k+'" rows="2">'+esc(actionSpeciale(k).texte||'')+'</textarea></label>').join('');
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
   if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
   else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
+  else if(/^recette-(herboristerie|tannerie|forge)$/.test(nom)){const k=nom.slice(8),o={...(catalog.logosRecettes||{})};if(e.target.value)o[k]=e.target.value;else delete o[k];catalog.logosRecettes=o}
   else if(nom==='etat-garde'||nom==='etat-furie'||nom==='etat-rage'){const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
   else if(/^action(texte)?-[a-z]+$/.test(nom)){const r=/^action(texte)?-([a-z]+)$/.exec(nom),o=normaliseActionsSpeciales(catalog.actionsSpeciales),x={...(o[r[2]]||{})},v=e.target.value;
    if(r[1]){if(v.trim())x.texte=v;else delete x.texte}else if(v)x.logo=v;else delete x.logo;
@@ -2108,7 +2121,7 @@ function dicePips(dice,etat,place){const out=document.createElement('span');out.
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
-function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='herbe'?'herbe':a.category==='potion'?'potion':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
+function itemColumn(a){return a.category==='recette'?'recette':a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='herbe'?'herbe':a.category==='potion'?'potion':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
@@ -2259,7 +2272,7 @@ function pastilleInsensible(p){let el=null,titre='';
  if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
  const w=document.createElement('span');w.className='effet-pastille barre';w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
 // Une pièce sans logo : le glyphe de sa colonne.
-function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':col==='herbe'?'🌿':col==='potion'?'⚗':'⚔';return g}
+function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':col==='herbe'?'🌿':col==='potion'?'⚗':col==='recette'?'📜':'⚔';return g}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -2380,7 +2393,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligneRiche(o.notes)}
  // v1.029 : une arme, une armure, un bouclier — les Notes du MJ, et rien d'autre.
  if(col==='melee'||col==='ranged'||col==='armor')ligneRiche(o.notes);
- if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='potion'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ if(!o.invention&&(col==='restes'||col==='ressource'||col==='herbe'||col==='potion'||col==='recette'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
  if(col==='object')ligneRiche(o.notes);
@@ -3096,7 +3109,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
 // v1.026 : les armes se rangent aussi par leurs mains — une, ou deux.
-const ARMORY_COLS=[['melee','Armes de Mêlée (1 main)'],['melee2','Armes de Mêlée (2 mains)'],['ranged','Armes à Distance (1 main)'],['ranged2','Armes à Distance (2 mains)'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésors']];
+const ARMORY_COLS=[['melee','Armes de Mêlée (1 main)'],['melee2','Armes de Mêlée (2 mains)'],['ranged','Armes à Distance (1 main)'],['ranged2','Armes à Distance (2 mains)'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['recette','Recettes'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -5030,7 +5043,7 @@ const chanceButin=(chances,id)=>Object.prototype.hasOwnProperty.call(chances||{}
    une pièce l'ajoute. Munitions avec les armes, trésors avec les objets. Les restes ont leur champ
    à eux, au formulaire comme dans le tableau en masse. */
 const CATS_INV_ADV=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
- ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle','herbe'].includes(o.category)],['cles','Clés',o=>o.category==='cle'],['ressources','Ressources',o=>o.category==='ressource'],['herbes','Herboristerie',o=>o.category==='herbe']];
+ ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle','herbe','recette'].includes(o.category)],['cles','Clés',o=>o.category==='cle'],['ressources','Ressources',o=>o.category==='ressource'],['herbes','Herboristerie',o=>o.category==='herbe'],['recettes','Recettes',o=>o.category==='recette']];
 const estReste=o=>!!o&&o.category==='restes';
 let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='',filtreRestes='';
 /* L'inventaire d'un adversaire, au formulaire comme dans le tableau en masse, en petits carrés
@@ -7629,7 +7642,7 @@ function logoTalent(t,cls){t=logoHerite(t);const propre=logoImage(t&&t.logo,LOGO
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],
- ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor'],['misc','Divers']];
+ ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['recette','Recette'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
@@ -7684,7 +7697,7 @@ function dessineReglagesObjet(){const boite=$('objet-reglages');if(!boite)return
    .map(p=>p.type==='nombre'
     ?field(p.nom,'q_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
     // v1.013 : la recette qu'un grimoire apprend, parmi les potions de l'armurerie.
-    :p.type==='recette'?sel(p.nom,'q_'+p.cle,vals[p.cle],[['','— choisir —'],...(catalog.items||[]).filter(o=>o&&o.category==='potion').map(o=>[o.id,o.name])])
+    :p.type==='recette'?sel(p.nom,'q_'+p.cle,vals[p.cle],[['','— choisir —'],...(catalog.items||[]).filter(o=>o&&o.category!=='recette'&&(o.category==='potion'||o.herbo)).map(o=>[o.id,o.name])])
     :sel(p.nom,'q_'+p.cle,vals[p.cle],p.options)).join('')+'</div>';
  // Changer « Insensible à » remonte le bon réglage sans quitter le formulaire.
  const choix=f.q_contre;if(choix)choix.onchange=()=>{itemDraft.params=lireReglagesObjet();dessineReglagesObjet()}}
@@ -8258,6 +8271,7 @@ loadSession();
 function sortePiece(o){const c=o&&o.category;
  if(c==='weapon'){const k=colonneArmurerie(o);return o.lancer?'Arme de lancer':(CATS_NEUVES.find(([x])=>x===k)||[])[1]||'Arme'}
  if(c==='armor'){const e=emplacementDe(o);return e==='shield'?'Bouclier':NOM_EMPLACEMENT(e)||'Armure'}
+ if(c==='recette'){const m=typeof metierRecette==='function'?metierRecette(o):'herboristerie';return m==='forge'?'Recette de forge':m==='tannerie'?'Recette de tannerie':'Recette d’herboristerie'}
  return {ammo:'Munition',object:o.consumable?'Consommable':'Objet',cle:'Clé',ressource:'Ressource',restes:'Restes',treasure:'Trésor',potion:'Potion',herbe:'Composant Alchimique'}[c]||''}
 {const gd=gearDetail;gearDetail=function(o,a,enJeu){const d=gd(o,a,enJeu);try{if(!o||d.querySelector(':scope > .gear-tete'))return d;
  const nom=d.querySelector(':scope > .gear-nom');if(!nom)return d;
@@ -8272,3 +8286,7 @@ function sortePiece(o){const c=o&&o.category;
  tete.append(ico,titres);
  const val=d.querySelector(':scope > .gear-valeur');if(val){val.classList.add('gear-prix');tete.append(val)}
  d.prepend(tete);if(d.children.length>1){const t=document.createElement('div');t.className='gear-trait';tete.after(t)}}catch(e){}return d}}
+/* v1.055 — Le métier d'une Recette, celui de la pièce qu'elle fait : la forge, la tannerie, sinon l'herboristerie. Sans icône à
+   elle, la Recette prend celle des recettes de son métier. */
+function metierRecette(r){const o=r&&(catalog.items||[]).find(x=>x&&x.id===r.recetteDe),h=o&&o.herbo||{};return h.forge?'forge':h.tannerie?'tannerie':'herboristerie'}
+{const le=logoEquipement;logoEquipement=function(o,cls){if(o&&o.category==='recette'&&!o.logo){const l=(catalog.logosRecettes||{})[metierRecette(o)];if(l)return logoImage(l,LOGOS_TOUS,cls)}return le(o,cls)}}

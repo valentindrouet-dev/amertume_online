@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.054","d":"2026-10-25","t":"Les Recettes, nouvelle catégorie d'objets"},
 {"v":"1.053","d":"2026-10-25","t":"Codes et mots de passe des coffres ; journal sans répétition"},
 {"v":"1.052","d":"2026-10-25","t":"Zoom Largeur ; puces alignées"},
 {"v":"1.051","d":"2026-10-25","t":"Lignes et puces dans les Notes des pièces"},

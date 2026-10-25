@@ -344,3 +344,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Texte d'une pièce** (Notes) : chaque retour à la ligne ouvre une ligne ; une ligne qui commence par « - », « • » ou « * » devient une puce (`.gear-puce`), au losange des affixes.
 
 **Code d'un coffre** (`#code-coffre`) : la fenêtre ordinaire, titrée « Code » ou « Mot de passe » ; un code se saisit en autant de cases que de chiffres (`.code-cases`, chiffres gras à chasse fixe, le curseur passe seul à la suivante) ; un mot de passe, sur une ligne ; un seul bouton plein, « Ouvrir ».
+
+**Recette** (catégorie `recette`, colonne « Recettes » de l'Armurerie) : nommée « Recette : <pièce> », de la couleur de rareté de la pièce qu'elle fabrique ; son icône est celle des recettes de son métier (Herboristerie, Tannerie, Forge), choisie dans les icônes communes, section « Recettes » ; à défaut 📜. Sa sorte, sous le nom : « Recette d'herboristerie », « de tannerie », « de forge ».
