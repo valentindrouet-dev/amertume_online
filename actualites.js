@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.021","d":"2026-10-25","t":"Dupliquer, Notes de MJ, quantités d'objets"},
 {"v":"1.020","d":"2026-10-25","t":"Adversaires de la tour d'azur"},
 {"v":"1.019","d":"2026-10-25","t":"Vitrine des bâtiments du domaine"},
 {"v":"1.018","d":"2026-10-25","t":"Recettes du seuil : Intangibles, Tangible, Esquive, Forge"},

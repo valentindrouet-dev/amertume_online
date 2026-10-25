@@ -1688,7 +1688,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
- +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="ressource">Ressource</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="coffregroupe">Coffre de groupe</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button>'
+ +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="ressource">Ressource</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="coffregroupe">Coffre de groupe</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button><button data-tool="notemj">Note de MJ</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="map-aimant" type="button" aria-pressed="false">🧲 Aimant</button><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -1708,7 +1708,7 @@ mapsPage.innerHTML=
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
   +'<button id="piege-edit" hidden>✎ Modifier le piège</button><button id="piege-double" hidden>⧉ Dupliquer le piège</button>'
- +'<button id="objet-edit" hidden>✎ Modifier l’objet</button><button id="lumiere-edit" hidden>✎ Modifier la lumière</button><button id="lumiere-double" hidden>⧉ Dupliquer la lumière</button>'
+ +'<button id="objet-edit" hidden>✎ Modifier l’objet</button><button id="lumiere-edit" hidden>✎ Modifier la lumière</button><button id="lumiere-double" hidden>⧉ Dupliquer la lumière</button><button id="notemj-edit" hidden>✎ Modifier la note</button><button id="shape-double" hidden>⧉ Dupliquer</button>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2 id="echelle-titre">Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
@@ -1854,7 +1854,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
  ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['danger','Dangereux',['danger','dangerlibre','dangerligne','dangergomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
- ['placement','Placement',['start','foe','pnj','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege']],['zones','Zones',['zones','separer','regrouper']]];
+ ['placement','Placement',['start','foe','pnj','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege','notemj']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
 let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
 {const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
@@ -2547,7 +2547,7 @@ $('map-canvas').addEventListener('pointermove',e=>{
  if(d.mode==='tourne'){cible.a=anglePoignee(d.centre,p,mapDraft.ratio,e.shiftKey);renderCanvas();return}
  if(d.kind==='lumiere'&&d.grip==='rayon'){const r=$('map-canvas').getBoundingClientRect(),socle=Math.max(8,r.width*echelleSocle(mapDraft)/100);
   cible.rayon=Math.max(.5,Math.min(40,Math.round(Math.hypot((p.x-cible.x)/100*r.width,(p.y-cible.y)/100*r.height)/socle*2)/2));renderCanvas();return}
- if(d.kind==='foe'||d.kind==='objet'||d.kind==='lumiere'){cible.x=p.x;cible.y=p.y}
+ if(d.kind==='foe'||d.kind==='objet'||d.kind==='lumiere'||d.kind==='notemj'){cible.x=p.x;cible.y=p.y}
  else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
 }
  else if(d.mode==='move'){cible.x=Math.max(0,Math.min(100-d.orig.w,d.orig.x+p.x-d.from.x));cible.y=Math.max(0,Math.min(100-d.orig.h,d.orig.y+p.y-d.from.y))}
@@ -2609,8 +2609,12 @@ function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.val
       clic prend la pièce, un autre la repose. */
    const rang=document.createElement('div');rang.className='objet-rang';
    lot.forEach(it=>{const p=gearCarre(it,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
-    const maj=()=>{p.classList.toggle('pris',pris.has(it.id));p.setAttribute('aria-pressed',String(pris.has(it.id)))};
-    const bascule=()=>{if(pris.has(it.id))pris.delete(it.id);else pris.add(it.id);maj()};
+    const maj=()=>{p.classList.toggle('pris',pris.has(it.id));p.setAttribute('aria-pressed',String(pris.has(it.id)));
+     // v1.021 : compté (une Map), la pièce dit combien d'exemplaires attendent.
+     if(pris instanceof Map){let b=p.querySelector('.exemplaires');const n=pris.get(it.id)||0;if(n>1){if(!b){b=document.createElement('span');b.className='exemplaires';p.append(b)}b.textContent='×'+n}else if(b)b.remove()}};
+    const total=()=>[...pris.values()].reduce((s,v)=>s+v,0);
+    const bascule=()=>{if(pris instanceof Map){if(total()<20)pris.set(it.id,(pris.get(it.id)||0)+1)}else if(pris.has(it.id))pris.delete(it.id);else pris.add(it.id);maj()};
+    if(pris instanceof Map)p.oncontextmenu=e=>{e.preventDefault();const n=(pris.get(it.id)||0)-1;if(n>0)pris.set(it.id,n);else pris.delete(it.id);maj()};
     p.setAttribute('aria-label',it.name);p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};maj();
     if(typeof surveille==='function')surveille(p,()=>{const d=gearDetail(it,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
     rang.append(p)});
@@ -2725,12 +2729,12 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +sel('Quête débloquée','quete',o.quete||'',[['','— aucune —'],...((typeof domaine!=='undefined'&&domaine.quetes)||[]).map(q=>[q.id,q.titre])])+'</div>'
   +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
   +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic : elle va dans son inventaire.</p>';
- const pris=new Set(o.items||[]);pickerArmurerie($('objet-filtre'),$('objet-liste'),pris);
+ const pris=new Map();(o.items||[]).forEach(id=>pris.set(id,(pris.get(id)||0)+1));pickerArmurerie($('objet-filtre'),$('objet-liste'),pris);
  $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
   o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';
   o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);if(f.quete.value)o.quete=f.quete.value;else delete o.quete;
   o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};if(f.pierre.checked)o.pierre=true;else delete o.pierre;
-  o.items=[...pris];objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+  o.items=[...pris].flatMap(([id,n])=>Array(n).fill(id)).slice(0,20);objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  objetDialog.showModal()}
@@ -3466,7 +3470,7 @@ let objetsBoutonsCle='';
 function renderBoutonsObjets(){let calque=$('objet-boutons');if(!calque){calque=document.createElement('div');calque.id='objet-boutons';$('map-view').append(calque);objetsBoutonsCle=''}
  const m=currentMap(),a=view==='mj'?null:actors[owner],ok=!!m&&!!a&&a.hero&&alive(a)&&!a.horsCarte&&controlled(actors.indexOf(a));
  const coffres=ok?(m.coffres||[]).filter(c=>c&&coffreVisible(c)&&coffreEnVue(c)&&(!c.ouvert||c.groupe===true)&&coffreAPortee(a,c)):[];
- const objets=ok&&!enCombat()?(m.objets||[]).filter(o=>o&&!o.pris&&!o.indice&&objetVu(o)&&objetAPortee(a,o)&&(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'}))):[];
+ const objets=ok&&!enCombat()?(m.objets||[]).filter(o=>o&&!o.pris&&!o.indice&&(o.groupe===true||o.ressource===true)&&objetVu(o)&&objetAPortee(a,o)&&(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'}))):[];
  const gris=enCombat()&&!!a&&pointsRestants(a,'action')<=0;
  const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+coffres.map(c=>[c.x,c.y,c.w,c.h,c.ouvert?1:0].join(':')).join(',')+'|'+objets.map(o=>[o.x,o.y,o.id].join(':')).join(',');
  if(cle===objetsBoutonsCle&&calque.isConnected)return;objetsBoutonsCle=cle;calque.replaceChildren();
@@ -3721,3 +3725,88 @@ function resceller(a){const s=etoileAuContact(a);if(!s)return 'Aucune étoile fe
 Object.assign(TALENTS_EFFETS,{
  selbleu:{fn:a=>donneSel(a),peut:a=>!!selBleu()&&!(enCombat()&&selsDonnes(a)>=3)&&herosAuContact(a).length>0,titre:a=>!selBleu()?'Aucun Sel bleu à l’Armurerie.':enCombat()&&selsDonnes(a)>=3?'Déjà 3 Sels bleus donnés ce combat.':herosAuContact(a).length?'Donner un Sel bleu à un aventurier au contact.':'Aucun aventurier au contact.'},
  resceller:{fn:a=>resceller(a),peut:a=>!!etoileAuContact(a),titre:a=>etoileAuContact(a)?'Reboucher l’étoile fendue avec une Cire de sceau.':'Aucune étoile fendue au contact.'}});
+
+/* ---------- v1.021 — Dupliquer, et la Note de MJ ----------
+   Dupliquer : la forme choisie — objet, indice, ressource, coffre, porte, fenêtre, adversaire, lumière, piège, note — est copiée,
+   puis le clic suivant sur la carte pose la copie, centrée là. Échap la laisse où elle est née, un peu plus loin. */
+let copieAPlacer=null;
+function centrePlace(s,p){if(!s||!p)return;
+ if(Number.isFinite(s.w)&&Number.isFinite(s.h)){const dx=Math.max(-s.x,Math.min(100-s.x-s.w,p.x-(s.x+s.w/2))),dy=Math.max(-s.y,Math.min(100-s.y-s.h,p.y-(s.y+s.h/2)));s.x+=dx;s.y+=dy;
+  (s.declencheurs||[]).forEach(d=>{const b=v=>Math.max(0,Math.min(100,v));if(d.type==='fil'){d.x1=b(d.x1+dx);d.x2=b(d.x2+dx);d.y1=b(d.y1+dy);d.y2=b(d.y2+dy)}else{d.x=b(d.x+dx);d.y=b(d.y+dy)}});return}
+ s.x=Math.max(0,Math.min(100,p.x));s.y=Math.max(0,Math.min(100,p.y))}
+function commencePlacement(){if(!mapSel)return;copieAPlacer={...mapSel};$('shape-label').textContent='Clique sur la carte, là où poser la copie.'}
+$('map-canvas').addEventListener('pointerdown',e=>{if(!copieAPlacer||!mapDraft)return;e.preventDefault();e.stopImmediatePropagation();
+ const s=shapeAt(copieAPlacer);if(e.button===0&&s){centrePlace(s,pct(e));mapSel=copieAPlacer}copieAPlacer=null;
+ renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()},{capture:true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&copieAPlacer){copieAPlacer=null;renderCanvas()}});
+['lumiere-double','coffre-double','piege-double'].forEach(id=>{const b=$(id);if(!b)return;const f=b.onclick;b.onclick=e=>{const avant=mapSel;f&&f(e);if(mapSel&&mapSel!==avant)commencePlacement()}});
+$('shape-double').onclick=()=>{const m=mapDraft,d=mapSel;if(!m||!d)return;const s=shapeAt(d);if(!s)return;pushUndo();const c=structuredClone(s);if(c.id)c.id=crypto.randomUUID();c.locked=false;
+ ['pris','revele','voile','examine','open','decouvert','crochetee','eteinte','prise'].forEach(k=>delete c[k]);
+ if(d.kind==='notemj'){const l=notesDe(m.id);c.id=crypto.randomUUID();l.push(c);mapSel={kind:'notemj',i:l.length-1};sauveNotesMJ()}
+ else{const l=d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='foe'?m.foes:null;if(!l)return;
+  if(Number.isFinite(c.w)){c.x=Math.min(100-c.w,c.x+2);c.y=Math.min(100-c.h,c.y+2)}else{c.x=Math.min(100,c.x+2);c.y=Math.min(100,c.y+2)}
+  l.push(c);mapSel={kind:d.kind,i:l.length-1}}
+ renderCanvas();commencePlacement()};
+/* La Note de MJ : une icône au choix et un texte, que seul le MJ voit — dans l'éditeur, et à la table au survol, sans geste. Elle
+   ne vit jamais dans les cartes : ni la publication, ni la table en ligne ne l'emportent. Elle se garde dans ce navigateur
+   (« amertume-notes-mj ») et, MJ connecté, dans un document Firebase que seul un compte MJ peut lire (amertume_online_mj/notes). */
+const NOTES_MJ_CLE='amertume-notes-mj';
+function normaliseNotesMJ(d){const out={at:Math.max(0,Number(d&&d.at)||0),cartes:{}},c=d&&d.cartes&&typeof d.cartes==='object'?d.cartes:{};
+ Object.keys(c).slice(0,200).forEach(k=>{const l=(Array.isArray(c[k])?c[k]:[]).filter(n=>n&&typeof n==='object').slice(0,200).map(n=>({id:typeof n.id==='string'&&n.id?n.id.slice(0,60):crypto.randomUUID(),
+  x:Math.max(0,Math.min(100,Number(n.x)||0)),y:Math.max(0,Math.min(100,Number(n.y)||0)),logo:typeof n.logo==='string'?n.logo.slice(0,300):'',texte:String(n.texte||'').slice(0,4000),...(n.locked===true?{locked:true}:{})}));
+  if(l.length)out.cartes[String(k).slice(0,80)]=l});return out}
+let notesMJ=(()=>{try{return normaliseNotesMJ(JSON.parse(localStorage.getItem(NOTES_MJ_CLE)||'{}'))}catch(e){return normaliseNotesMJ({})}})();
+function notesDe(id){const k=String(id||'');if(!notesMJ.cartes[k])notesMJ.cartes[k]=[];return notesMJ.cartes[k]}
+let notesNuage=0;
+function sauveNotesMJ(){Object.keys(notesMJ.cartes).forEach(k=>{if(!notesMJ.cartes[k].length)delete notesMJ.cartes[k]});notesMJ.at=Date.now();
+ try{localStorage.setItem(NOTES_MJ_CLE,JSON.stringify(notesMJ))}catch(e){}
+ clearTimeout(notesNuage);notesNuage=setTimeout(envoieNotesMJ,1500)}
+const notesMJRef=()=>typeof cloud!=='undefined'&&cloud&&typeof admin!=='undefined'&&admin&&typeof auth!=='undefined'&&auth&&auth.currentUser?cloud.doc('amertume_online_mj/notes'):null;
+async function envoieNotesMJ(){const r=notesMJRef();if(!r)return;try{await r.set({notes:JSON.stringify(notesMJ),at:notesMJ.at,author:auth.currentUser.uid})}catch(e){console.warn('Notes de MJ : envoi refusé',e&&e.message)}}
+async function recoitNotesMJ(){const r=notesMJRef();if(!r)return;try{const d=await r.get();
+ if(!d.exists){if(notesMJ.at)envoieNotesMJ();return}const v=normaliseNotesMJ(JSON.parse(d.data().notes||'{}'));
+ if(v.at>notesMJ.at){notesMJ=v;try{localStorage.setItem(NOTES_MJ_CLE,JSON.stringify(notesMJ))}catch(e){}if(typeof renderCanvas==='function'&&mapDraft)renderCanvas();render()}
+ else if(notesMJ.at>v.at)envoieNotesMJ()}catch(e){console.warn('Notes de MJ : lecture refusée',e&&e.message)}}
+document.addEventListener('amertume-mj-change',()=>{if(typeof admin!=='undefined'&&admin)recoitNotesMJ()});
+KINDS.notemj='Note de MJ';
+HINTS.notemj='Un clic pose une Note de MJ et ouvre sa fiche. Seul le MJ la voit ; à la table, elle se lit au survol.';
+{const sa=shapeAt;shapeAt=function(d){if(d&&d.kind==='notemj')return mapDraft?notesDe(mapDraft.id)[d.i]||null:null;return sa(d)}}
+{const rs=removeShape;removeShape=function(d){if(d&&d.kind==='notemj'){if(mapDraft){notesDe(mapDraft.id).splice(d.i,1);sauveNotesMJ()}return}return rs(d)}}
+{const sm=saveMaps;saveMaps=function(...x){const r=sm(...x);if(mapDraft&&notesMJ.cartes[String(mapDraft.id)])sauveNotesMJ();return r}}
+const ICONE_NOTE_MJ='<svg class="logo-objet" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z M15 3v4h4 M9 11h7 M9 14h7 M9 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+function logoNoteMJ(el,n){const im=n.logo&&typeof logoAttaque==='function'?logoAttaque(n.logo,'logo-objet'):null;if(im)el.replaceChildren(im);else el.innerHTML=ICONE_NOTE_MJ}
+function bulleNoteMJ(n){const d=document.createElement('div');d.className='gear-detail large note-mj-bulle';const p=document.createElement('p');p.className='objet-desc-bulle';
+ if(typeof texteEnrichi==='function')texteEnrichi(p,n.texte||'',null);else p.textContent=n.texte||'';d.append(p);return d}
+let clicNote=null;
+{const rc=renderCanvas;renderCanvas=function(...x){const r=rc(...x);try{const c=$('map-canvas'),m=mapDraft;if(!c||!m)return r;
+  notesDe(m.id).forEach((n,i)=>{const el=document.createElement('div');el.className='shape notemj'+(n.locked?' locked':'')+(mapSel&&mapSel.kind==='notemj'&&mapSel.i===i?' selected':'');
+   const t=Math.max(10,c.clientWidth*echelleSocle(m)/100*.8);el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';
+   el.style.left=n.x+'%';el.style.top=n.y+'%';el.dataset.kind='notemj';el.dataset.i=i;logoNoteMJ(el,n);
+   if(typeof surveille==='function')surveille(el,()=>ouvrirBulle(el,bulleNoteMJ(n),'bulle-gear'));c.append(el)});
+  if(!notesDe(m.id).length)delete notesMJ.cartes[String(m.id)];
+  const sel=mapSel&&mapSel.kind==='notemj';$('notemj-edit').hidden=!sel;
+  $('shape-double').hidden=!(mapSel&&['objet','door','foe','notemj'].includes(mapSel.kind)&&shapeAt(mapSel));
+  if(copieAPlacer)$('shape-label').textContent='Clique sur la carte, là où poser la copie.'}catch(e){}return r}}
+// L'outil Note de MJ : un clic pose une note ; sur une note, il la rouvre. Deux clics rapprochés la rouvrent aussi avec la Sélection.
+$('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft||copieAPlacer||e.button!==0)return;const sous=e.target.closest('[data-kind="notemj"]');
+ if(sous){const i=Number(sous.dataset.i),t=performance.now(),deux=clicNote&&clicNote.i===i&&t-clicNote.t<450;clicNote=deux?null:{i,t};
+  if(deux||mapTool==='notemj'){e.preventDefault();e.stopImmediatePropagation();mapSel={kind:'notemj',i};renderCanvas();openNoteMJ(i)}return}
+ if(mapTool!=='notemj')return;e.preventDefault();e.stopImmediatePropagation();const p=pct(e),l=notesDe(mapDraft.id);
+ l.push({id:crypto.randomUUID(),x:p.x,y:p.y,logo:'',texte:''});mapSel={kind:'notemj',i:l.length-1};sauveNotesMJ();renderCanvas();openNoteMJ(mapSel.i)},{capture:true});
+const noteMJDialog=dialog('notemj-editor','Note de MJ','<form id="notemj-form"><div id="notemj-fields"></div><div class="form-actions"><button type="button" id="notemj-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+function openNoteMJ(i){const m=mapDraft,n=m&&notesDe(m.id)[i];if(!n||view!=='mj')return;
+ $('notemj-fields').innerHTML='<label>Note<textarea name="texte" rows="6" maxlength="4000">'+esc(n.texte||'')+'</textarea></label>'+(typeof selLogos==='function'?selLogos('Icône','logo',n.logo||''):'');
+ $('notemj-form').onsubmit=e=>{e.preventDefault();const f=$('notemj-form').elements;n.texte=f.texte.value.slice(0,4000);if(f.logo)n.logo=String(f.logo.value||'').slice(0,300);
+  sauveNotesMJ();noteMJDialog.close();renderCanvas();if(m.id===currentMapId)render()};
+ $('notemj-suppr').onclick=()=>{if(!confirm('Supprimer cette note ?'))return;notesDe(m.id).splice(i,1);mapSel=null;sauveNotesMJ();noteMJDialog.close();renderCanvas();if(m.id===currentMapId)render()};
+ noteMJDialog.showModal()}
+$('notemj-edit').onclick=()=>{if(mapSel&&mapSel.kind==='notemj')openNoteMJ(mapSel.i)};
+// À la table : chez le MJ seul, sous les jetons, sans geste ; le survol montre la note.
+function renderNotesMJ(){let calque=$('notes-mj');const m=currentMap(),l=m&&view==='mj'&&!(typeof spectateur==='function'&&spectateur())?notesDe(m.id):[];
+ if(!l.length){if(calque)calque.remove();if(m&&!notesDe(m.id).length)delete notesMJ.cartes[String(m.id)];return}
+ if(!calque){calque=document.createElement('div');calque.id='notes-mj';calque.setAttribute('aria-hidden','true');$('map-view').append(calque)}calque.replaceChildren();
+ const t=Math.max(14,tokenPx()*.8);
+ l.forEach(n=>{const el=document.createElement('div');el.className='note-mj';el.style.left=n.x+'%';el.style.top=n.y+'%';el.style.width=el.style.height=t+'px';logoNoteMJ(el,n);
+  el.onpointerdown=e=>e.stopPropagation();el.onclick=e=>e.stopPropagation();
+  if(typeof surveille==='function')surveille(el,()=>ouvrirBulle(el,bulleNoteMJ(n),'bulle-gear'));calque.append(el)})}
+{const rc=renderCoffres;renderCoffres=function(...x){const r=rc(...x);try{renderNotesMJ()}catch(e){}return r}}
