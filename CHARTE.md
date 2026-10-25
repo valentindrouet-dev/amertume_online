@@ -333,7 +333,7 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 
 **Terrain nommé dans une bulle de pièce** (`.mot-terrain`) : le nom d'un type de terrain dangereux — « Ronces » — s'écrit en gras, de la couleur du terrain (celle de la carte ouverte d'abord, sinon de la première carte qui le définit).
 
-**Exemplaires d'une pièce posée sur la carte** (`.quantite-bulle`) : une seule bulle par pièce ; leur nombre, s'il dépasse un, dans un rond en haut à droite (fond `--panel`, liseré `--line`, chiffre gras à l'encre).
+**Exemplaires d'une pièce posée sur la carte** (`.quantite-bulle`) : une seule bulle par pièce ; leur nombre, s'il dépasse un, dans un rond de 26 px à cheval sur le coin supérieur droit de la bulle (fond `--panel`, liseré `--line`, chiffre gras à l'encre).
 
 **Sélecteur d'un objet de la carte** (`.objet-liste`) : le nombre d'exemplaires choisis (×2…) en pastille en bas à droite du carré, comme dans l'inventaire ; la coche reste en haut à droite.
 
