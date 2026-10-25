@@ -3388,8 +3388,8 @@ $('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target
 {const ps=partySees,tv=troupeVoit;partySees=function(a){return ps(a)||(typeof troupeVoitParGage==='function'&&troupeVoitParGage(a))};troupeVoit=function(a){return tv(a)||(typeof troupeVoitParGage==='function'&&troupeVoitParGage(a))}}
 
 /* ---------- v1.013 — Les effets des potions d'herboristerie ----------
-   Ce que l'emploi d'une potion laisse sur le buveur : une vision dans le noir ou une lumière jusqu'à la fin de la carte
-   (« visionPotion », « lumierePotion » : la carte, les mètres), des PM jusqu'à la fin du combat (« pmPotion »), un enduit sur
+   Ce que l'emploi d'une potion laisse sur le buveur : une vision dans le noir jusqu'au prochain repos long (« visionPotion » :
+   les mètres), une lumière jusqu'à la fin de la carte (« lumierePotion » : la carte, les mètres), des PM jusqu'à la fin du combat (« pmPotion »), un enduit sur
    ses prochaines attaques (« enduit » : les états, le nombre d'attaques), et, pour toute la troupe, le répulsif des bêtes
    (« repulsif » : la carte). Le reste agit sur l'instant : relever un aventurier tombé, une couleur de dés choisie, une purge,
    un objet lancé, une recette apprise, les passages secrets de la pièce. */
@@ -3458,7 +3458,7 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
  if(!objetDisponible(a,o)){log(o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',{local:true});return}
  const p=paramsObjet(o)||{},carte=carteDuMoment();
  switch(code.cle){
-  case 'vision':a.visionPotion={carte,m:Math.max(1,p.portee|0)};finPotion(a,o,'voit dans le noir à '+a.visionPotion.m+' m');return;
+  case 'vision':a.visionPotion={m:Math.max(1,p.portee|0)};finPotion(a,o,'voit dans le noir à '+a.visionPotion.m+' m');return;
   case 'lumiere':a.lumierePotion={carte,m:Math.max(1,p.m|0)};finPotion(a,o,'éclaire à '+a.lumierePotion.m+' m');return;
   case 'mouvement':a.pmPotion=Math.min(3,(Math.trunc(Number(a.pmPotion))||0)+Math.max(1,p.n|0));finPotion(a,o,'+'+Math.max(1,p.n|0)+' PM jusqu’à la fin du combat');return;
   case 'enduit':{const etats=[p.etat,p.etat2].filter((e,i,l)=>e&&l.indexOf(e)===i),n=Math.max(1,p.n|0);a.enduit={etats,n};
@@ -3491,8 +3491,8 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
 // Les PM de la potion, jusqu'à la fin du combat.
 {const pt=pointsDeTalents;pointsDeTalents=function(a,quoi){return pt(a,quoi)+(quoi==='mouvement'&&a&&a.pmPotion>0?Math.min(3,Math.trunc(a.pmPotion)):0)}}
 {const bm=basculerMode;basculerMode=function(neuf,...x){const fin=mode==='combat'&&neuf!=='combat';const r=bm(neuf,...x);if(fin)actors.forEach(a=>{if(a&&a.pmPotion)delete a.pmPotion});return r}}
-// La vision et la lumière de la potion, sur la carte où elle a été bue.
-{const vn=visionNoirDe;visionNoirDe=function(a){const v=vn(a),p=a&&a.visionPotion;return p&&p.carte===carteDuMoment()?Math.max(v,Number(p.m)||0):v}}
+// La lumière de la potion, sur la carte où elle a été bue ; sa vision dans le noir, jusqu'au prochain repos long (v1.060).
+{const vn=visionNoirDe;visionNoirDe=function(a){const v=vn(a),p=a&&a.visionPotion;return p&&(!p.carte||p.carte===carteDuMoment())?Math.max(v,Number(p.m)||0):v}}
 {const lp=lumierePortee;lumierePortee=function(a,items){const v=lp(a,items),p=a&&a.lumierePotion;return p&&p.carte===carteDuMoment()?Math.max(v,Number(p.m)||0):v}}
 // Le répulsif : une bête ne surprend plus la troupe.
 {const ia=insensibleA;insensibleA=function(a,etat){return ia(a,etat)||(etat==='Surpris'&&repousse(a))}}

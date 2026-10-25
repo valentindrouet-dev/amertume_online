@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.060","d":"2026-10-25","t":"Vision dans le noir des potions : jusqu'au prochain repos long"},
 {"v":"1.059","d":"2026-10-25","t":"La carte éditée revient au rechargement"},
 {"v":"1.058","d":"2026-10-25","t":"Icône « ? » par défaut des Indices"},
 {"v":"1.057","d":"2026-10-25","t":"Bulles des objets dans l'éditeur de cartes"},

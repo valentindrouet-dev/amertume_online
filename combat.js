@@ -2379,9 +2379,9 @@ const OBJETS_CODES={
     :'à <b>'+((p&&p.etat)||'Feu')+'</b>';
    return 'Tant qu’il porte la pièce, le porteur est <b>insensible</b> '+quoi+'.'}},
  /* v1.013 — Les effets des potions d'herboristerie. */
- vision:{cle:'vision',nom:'Vision dans le noir',aide:'Jusqu’à la fin de la carte, le porteur voit dans l’obscurité.',
+ vision:{cle:'vision',nom:'Vision dans le noir',aide:'Jusqu’au prochain repos long, le porteur voit dans l’obscurité.',
   params:[{cle:'portee',nom:'Portée (m)',type:'nombre',defaut:6,min:1,max:40}],
-  phrase(p){return 'Jusqu’à la fin de la carte, le porteur <b>voit dans le noir</b> à <b>'+Math.max(1,(p&&p.portee)|0)+' m</b>.'}},
+  phrase(p){return 'Jusqu’au prochain <b>repos long</b>, le porteur <b>voit dans le noir</b> à <b>'+Math.max(1,(p&&p.portee)|0)+' m</b>.'}},
  mouvement:{cle:'mouvement',nom:'Points de Mouvement',aide:'Le porteur gagne des PM jusqu’à la fin du combat.',
   params:[{cle:'n',nom:'PM en plus',type:'nombre',defaut:1,min:1,max:3}],
   phrase(p){return 'Jusqu’à la fin du combat, le porteur a <b>+'+Math.max(1,(p&&p.n)|0)+' PM</b>.'}},
