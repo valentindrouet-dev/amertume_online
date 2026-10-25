@@ -1956,8 +1956,18 @@ majFamillesOutils();
 /* Les lieux : des cartes rassemblées sous un même nom — les étages d'une tour, les salles d'un grand lieu. Une carte sans lieu
    reste en tête, comme avant ; chaque lieu a son bandeau, qui se replie, se renomme, et reçoit la carte qu'on y dépose. */
 let lieuxReplies=new Set();try{lieuxReplies=new Set(JSON.parse(localStorage.getItem('amertume-lieux-replies')||'[]'))}catch(e){}
-const lieuxDesCartes=()=>[...new Set(maps.filter(m=>!estPaysage(m)).map(m=>m&&typeof m.lieu==='string'?m.lieu.trim():'').filter(Boolean))].sort((x,y)=>x.localeCompare(y,'fr',{numeric:true}));
-function poseLieuCarte(m,lieu){if(!m)return;const l=String(lieu||'').trim().slice(0,60);if(l)m.lieu=l;else delete m.lieu;renderMapList();saveMaps()}
+/* v1.056 — L'ordre des lieux : le rang que le MJ leur a donné en les glissant (« lieuRang », porté par leurs cartes), puis l'alphabet
+   pour ceux qui n'en ont pas. L'ordre des cartes, dans un lieu comme hors des lieux, est celui de la liste des cartes. */
+const rangLieu=l=>{const m=maps.find(x=>x&&typeof x.lieu==='string'&&x.lieu.trim()===l&&Number.isFinite(x.lieuRang));return m?m.lieuRang:Infinity};
+const lieuxDesCartes=()=>[...new Set(maps.filter(m=>!estPaysage(m)).map(m=>m&&typeof m.lieu==='string'?m.lieu.trim():'').filter(Boolean))].sort((x,y)=>rangLieu(x)-rangLieu(y)||x.localeCompare(y,'fr',{numeric:true}));
+function poseLieuCarte(m,lieu){if(!m)return;const l=String(lieu||'').trim().slice(0,60);if(l){m.lieu=l;const r=rangLieu(l);if(Number.isFinite(r))m.lieuRang=r;else delete m.lieuRang}else{delete m.lieu;delete m.lieuRang}renderMapList();saveMaps()}
+// Une carte lâchée sur une autre : elle se place juste avant elle, dans son lieu.
+function placeCarteAvant(m,cible){if(!m||!cible||m===cible)return;const i=maps.indexOf(m);if(i<0)return;maps.splice(i,1);maps.splice(maps.indexOf(cible),0,m);
+ poseLieuCarte(m,cible.lieu||'')}
+// Un lieu lâché sur un autre : il passe juste avant lui ; chaque lieu reçoit son rang.
+let lieuGlisse=null;
+function placeLieuAvant(l,cible){if(!l||!cible||l===cible)return;const ordre=lieuxDesCartes().filter(x=>x!==l);ordre.splice(Math.max(0,ordre.indexOf(cible)),0,l);
+ ordre.forEach((x,k)=>maps.forEach(m=>{if(m&&typeof m.lieu==='string'&&m.lieu.trim()===x)m.lieuRang=k}));renderMapList();saveMaps()}
 function renommeLieu(ancien){const n=prompt('Nom du lieu :',ancien);if(n===null)return;const l=n.trim().slice(0,60);
  maps.forEach(m=>{if(m&&m.lieu===ancien){if(l)m.lieu=l;else delete m.lieu}});
  if(lieuxReplies.delete(ancien)&&l)lieuxReplies.add(l);try{localStorage.setItem('amertume-lieux-replies',JSON.stringify([...lieuxReplies]))}catch(e){}
@@ -1970,7 +1980,11 @@ function renderMapList(){const rangee=m=>{const b=document.createElement('button
  b.append(nom);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};
   // Elle se glisse sur le bandeau d'un lieu, ou sur la liste hors des lieux pour l'en sortir.
   b.draggable=true;b.addEventListener('dragstart',e=>{carteGlissee=m;try{e.dataTransfer.setData('text/plain',m.id||'');e.dataTransfer.effectAllowed='move'}catch(_){}});
-  b.addEventListener('dragend',()=>{carteGlissee=null});return b};
+  b.addEventListener('dragend',()=>{carteGlissee=null;document.querySelectorAll('.map-row.avant').forEach(x=>x.classList.remove('avant'))});
+  // v1.056 : lâchée sur une autre carte, elle prend sa place, juste avant elle.
+  b.addEventListener('dragover',e=>{if(!carteGlissee||carteGlissee===m)return;e.preventDefault();e.stopPropagation();b.classList.add('avant')});
+  b.addEventListener('dragleave',()=>b.classList.remove('avant'));
+  b.addEventListener('drop',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();b.classList.remove('avant');const g=carteGlissee;carteGlissee=null;placeCarteAvant(g,m)});return b};
  const recoit=(el,lieu)=>{el.addEventListener('dragover',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();el.classList.add('survol')});
   el.addEventListener('dragleave',()=>el.classList.remove('survol'));
   el.addEventListener('drop',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();el.classList.remove('survol');const m=carteGlissee;carteGlissee=null;poseLieuCarte(m,lieu)})};
@@ -1987,6 +2001,12 @@ function renderMapList(){const rangee=m=>{const b=document.createElement('button
   const ren=document.createElement('button');ren.type='button';ren.className='ico';ren.textContent='✎';ren.title='Renommer le lieu';ren.setAttribute('aria-label','Renommer le lieu '+l);
   ren.onclick=e=>{e.stopPropagation();renommeLieu(l)};tete.append(nom,n,ren);
   tete.onclick=()=>{if(lieuxReplies.has(l))lieuxReplies.delete(l);else lieuxReplies.add(l);try{localStorage.setItem('amertume-lieux-replies',JSON.stringify([...lieuxReplies]))}catch(e){}renderMapList()};
+  // v1.056 : le bandeau se glisse sur celui d'un autre lieu, et passe juste avant lui.
+  tete.draggable=true;tete.addEventListener('dragstart',e=>{lieuGlisse=l;try{e.dataTransfer.setData('text/plain',l);e.dataTransfer.effectAllowed='move'}catch(_){}});
+  tete.addEventListener('dragend',()=>{lieuGlisse=null;document.querySelectorAll('.map-lieu-tete.avant').forEach(x=>x.classList.remove('avant'))});
+  tete.addEventListener('dragover',e=>{if(!lieuGlisse||lieuGlisse===l)return;e.preventDefault();e.stopPropagation();tete.classList.add('avant')});
+  tete.addEventListener('dragleave',()=>tete.classList.remove('avant'));
+  tete.addEventListener('drop',e=>{if(!lieuGlisse)return;e.preventDefault();e.stopPropagation();tete.classList.remove('avant');const x=lieuGlisse;lieuGlisse=null;placeLieuAvant(x,l)});
   recoit(g,l);g.append(tete);if(!replie)lot.forEach(m=>g.append(rangee(m)));liste.append(g)});
  // Le lieu de la carte ouverte : aucun, un lieu existant, ou un nouveau.
  // Le bâtiment du domaine dont c'est une carte de combat, s'il en a un.
