@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.037","d":"2026-10-25","t":"Planches Restes 3, Cuisine 2, Divers 2, Outils, Fioles"},
 {"v":"1.036","d":"2026-10-25","t":"Planches Alchimie, Champignons, Herboristerie 2-4"},
 {"v":"1.035","d":"2026-10-25","t":"Une bulle par pièce, quantité en rond"},
 {"v":"1.034","d":"2026-10-25","t":"Description d'un coffre après ouverture"},
