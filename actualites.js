@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.043","d":"2026-10-25","t":"L'onglet ouvert suit le changement de vue"},
 {"v":"1.042","d":"2026-10-25","t":"Objets visibles seulement dans le champ de vision"},
 {"v":"1.041","d":"2026-10-25","t":"Prises répétées en une ligne au journal"},
 {"v":"1.040","d":"2026-10-25","t":"Ce qui entre dans la vue paraît pendant le geste"},
