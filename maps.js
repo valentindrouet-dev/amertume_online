@@ -3813,7 +3813,7 @@ $('shape-double').onclick=()=>{const m=mapDraft,d=mapSel;if(!m||!d)return;const 
 const NOTES_MJ_CLE='amertume-notes-mj';
 function normaliseNotesMJ(d){const out={at:Math.max(0,Number(d&&d.at)||0),cartes:{}},c=d&&d.cartes&&typeof d.cartes==='object'?d.cartes:{};
  Object.keys(c).slice(0,200).forEach(k=>{const l=(Array.isArray(c[k])?c[k]:[]).filter(n=>n&&typeof n==='object').slice(0,200).map(n=>({id:typeof n.id==='string'&&n.id?n.id.slice(0,60):crypto.randomUUID(),
-  x:Math.max(0,Math.min(100,Number(n.x)||0)),y:Math.max(0,Math.min(100,Number(n.y)||0)),logo:typeof n.logo==='string'?n.logo.slice(0,300):'',texte:String(n.texte||'').slice(0,4000),...(n.locked===true?{locked:true}:{})}));
+  x:Math.max(0,Math.min(100,Number(n.x)||0)),y:Math.max(0,Math.min(100,Number(n.y)||0)),logo:typeof n.logo==='string'?n.logo.slice(0,300):'',titre:String(n.titre||'').slice(0,120),texte:String(n.texte||'').slice(0,4000),...(n.locked===true?{locked:true}:{})}));
   if(l.length)out.cartes[String(k).slice(0,80)]=l});return out}
 let notesMJ=(()=>{try{return normaliseNotesMJ(JSON.parse(localStorage.getItem(NOTES_MJ_CLE)||'{}'))}catch(e){return normaliseNotesMJ({})}})();
 function notesDe(id){const k=String(id||'');if(!notesMJ.cartes[k])notesMJ.cartes[k]=[];return notesMJ.cartes[k]}
@@ -3834,8 +3834,13 @@ HINTS.notemj='Un clic pose une Note de MJ et ouvre sa fiche. Seul le MJ la voit 
 {const rs=removeShape;removeShape=function(d){if(d&&d.kind==='notemj'){if(mapDraft){notesDe(mapDraft.id).splice(d.i,1);sauveNotesMJ()}return}return rs(d)}}
 {const sm=saveMaps;saveMaps=function(...x){const r=sm(...x);if(mapDraft&&notesMJ.cartes[String(mapDraft.id)])sauveNotesMJ();return r}}
 const ICONE_NOTE_MJ='<svg class="logo-objet" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z M15 3v4h4 M9 11h7 M9 14h7 M9 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
-function logoNoteMJ(el,n){const im=n.logo&&typeof logoAttaque==='function'?logoAttaque(n.logo,'logo-objet'):null;if(im)el.replaceChildren(im);else el.innerHTML=ICONE_NOTE_MJ}
-function bulleNoteMJ(n){const d=document.createElement('div');d.className='gear-detail large note-mj-bulle';const p=document.createElement('p');p.className='objet-desc-bulle';
+// v1.049 : toutes les Notes de MJ portent la même icône — le parchemin n° 39 de la planche PARCHEMINS ; à défaut, la feuille dessinée.
+const LOGO_NOTE_MJ='planches/PARCHEMINS.webp#39';
+function logoNoteMJ(el,n){const im=typeof logoAttaque==='function'?logoAttaque(LOGO_NOTE_MJ,'logo-objet'):null;if(im)el.replaceChildren(im);else el.innerHTML=ICONE_NOTE_MJ}
+function bulleNoteMJ(n){const d=document.createElement('div');d.className='gear-detail large note-mj-bulle';
+ // v1.049 : son titre, au-dessus de la note.
+ if(n.titre){const t=document.createElement('p');t.className='gear-nom note-mj-titre';t.textContent=n.titre;d.append(t)}
+ const p=document.createElement('p');p.className='objet-desc-bulle';
  if(typeof texteEnrichi==='function')texteEnrichi(p,n.texte||'',null);else p.textContent=n.texte||'';d.append(p);return d}
 let clicNote=null;
 {const rc=renderCanvas;renderCanvas=function(...x){const r=rc(...x);try{const c=$('map-canvas'),m=mapDraft;if(!c||!m)return r;
@@ -3855,14 +3860,20 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft||copieAPlacer||e
  l.push({id:crypto.randomUUID(),x:p.x,y:p.y,logo:'',texte:''});mapSel={kind:'notemj',i:l.length-1};sauveNotesMJ();renderCanvas();openNoteMJ(mapSel.i)},{capture:true});
 const noteMJDialog=dialog('notemj-editor','Note de MJ','<form id="notemj-form"><div id="notemj-fields"></div><div class="form-actions"><button type="button" id="notemj-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 function openNoteMJ(i){const m=mapDraft,n=m&&notesDe(m.id)[i];if(!n||view!=='mj')return;
- $('notemj-fields').innerHTML='<label>Note<textarea name="texte" rows="6" maxlength="4000">'+esc(n.texte||'')+'</textarea></label>'+(typeof selLogos==='function'?selLogos('Icône','logo',n.logo||''):'');
- $('notemj-form').onsubmit=e=>{e.preventDefault();const f=$('notemj-form').elements;n.texte=f.texte.value.slice(0,4000);if(f.logo)n.logo=String(f.logo.value||'').slice(0,300);
+ $('notemj-fields').innerHTML='<label>Titre<input name="titre" maxlength="120" value="'+esc(n.titre||'')+'"></label><label>Note<textarea name="texte" rows="6" maxlength="4000">'+esc(n.texte||'')+'</textarea></label>';
+ $('notemj-form').onsubmit=e=>{e.preventDefault();const f=$('notemj-form').elements;n.titre=f.titre.value.trim().slice(0,120);n.texte=f.texte.value.slice(0,4000);
   sauveNotesMJ();noteMJDialog.close();renderCanvas();if(m.id===currentMapId)render()};
  $('notemj-suppr').onclick=()=>{if(!confirm('Supprimer cette note ?'))return;notesDe(m.id).splice(i,1);mapSel=null;sauveNotesMJ();noteMJDialog.close();renderCanvas();if(m.id===currentMapId)render()};
  noteMJDialog.showModal()}
 $('notemj-edit').onclick=()=>{if(mapSel&&mapSel.kind==='notemj')openNoteMJ(mapSel.i)};
 // À la table : chez le MJ seul, sous les jetons, sans geste ; le survol montre la note.
-function renderNotesMJ(){let calque=$('notes-mj');const m=currentMap(),l=m&&view==='mj'&&!(typeof spectateur==='function'&&spectateur())?notesDe(m.id):[];
+// v1.049 : un bouton de la barre du MJ les montre ou les cache, à la table seulement ; l'appareil s'en souvient.
+let notesMJVisibles=(()=>{try{return localStorage.getItem('amertume-notes-mj-table')!=='0'}catch(e){return true}})();
+const notesBtn=icone('notes-mj-vue','📜','Cacher les Notes de MJ');fogBar.append(notesBtn);
+notesBtn.onclick=()=>{notesMJVisibles=!notesMJVisibles;try{localStorage.setItem('amertume-notes-mj-table',notesMJVisibles?'1':'0')}catch(e){}renderNotesMJ()};
+function majBoutonNotesMJ(){const m=currentMap();notesBtn.hidden=!m||view!=='mj'||!notesDe(m.id).length;notesBtn.classList.toggle('on',!notesMJVisibles);
+ notesBtn.title=notesMJVisibles?'Cacher les Notes de MJ':'Montrer les Notes de MJ';notesBtn.setAttribute('aria-label',notesBtn.title)}
+function renderNotesMJ(){majBoutonNotesMJ();let calque=$('notes-mj');const m=currentMap(),l=m&&view==='mj'&&notesMJVisibles&&!(typeof spectateur==='function'&&spectateur())?notesDe(m.id):[];
  if(!l.length){if(calque)calque.remove();if(m&&!notesDe(m.id).length)delete notesMJ.cartes[String(m.id)];return}
  if(!calque){calque=document.createElement('div');calque.id='notes-mj';calque.setAttribute('aria-hidden','true');$('map-view').append(calque)}calque.replaceChildren();
  const t=Math.max(14,tokenPx()*.8);
@@ -3950,7 +3961,9 @@ const formesPxTrous=(m,t,size)=>formesActives(m,t).map(p=>p.anneaux.map(r=>r.map
 function zoneLancer(q,aire){const size=mapSize();if(!size.width)return [];return reachPolygon({x:q.x,y:q.y},walls(),contactRadius(tokenPx()*(SOCLE_TAILLES[aire]||1)),size.width,size.height,48)}
 // v1.045 : au contact, la zone doit toucher la zone de contact du lanceur — y mordre, ou la border —, pas y être centrée.
 const auContactDuLanceur=(a,q,aire)=>{const size=mapSize(),rz=aire?contactRadius(tokenPx()*(SOCLE_TAILLES[aire]||1)):0;return Math.hypot((q.x-a.x)/100*size.width,(q.y-a.y)/100*size.height)<=contactRadius(tokenOf(a))+rz+2};
-function zoneAtteinte(a,q,p){if(!a||!q||wallsBetween(a,q,walls()))return false;return p.portee==='contact'?auContactDuLanceur(a,q,aireLancer(p)):true}
+// v1.049 : un objet lancé en zone (bombe, gaz…) part jusqu'à 10 m — du centre du lanceur au centre de la zone —, sans mur entre eux.
+const PORTEE_LANCER_ZONE=10;
+function zoneAtteinte(a,q,p){if(!a||!q||wallsBetween(a,q,walls()))return false;return metres(a,q,mapSize(),tokenPx())<=PORTEE_LANCER_ZONE}
 let apercuZone=null;
 function retireApercuZone(){if(!apercuZone)return;apercuZone.svg.remove();$('map').removeEventListener('pointermove',apercuZone.suit);cancelAnimationFrame(apercuZone.image);apercuZone=null}
 {const ap=annulerPlacement;annulerPlacement=function(...x){retireApercuZone();return ap(...x)}}
@@ -3972,9 +3985,9 @@ let zoneLancerIds=null;
 function lancerEnZone(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la carte.',{local:true});return}
  if(p.de&&enCombat()&&pointsRestants(a,'action')<1){log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return}
  viserCible('◈ '+o.name+' — clique où le lancer',(vise,q)=>{if(!q)return;
-  if(!zoneAtteinte(a,q,p)){log(o.name+(p.portee==='contact'?' se lance au contact de '+nomNum(a)+'.':' : '+nomNum(a)+' doit voir où il le lance.'),{local:true});return}
+  if(!zoneAtteinte(a,q,p)){log(o.name+' se lance jusqu’à '+PORTEE_LANCER_ZONE+' m, sans mur entre '+nomNum(a)+' et la zone.',{local:true});return}
   const pts=zoneLancer(q,aireLancer(p));if(pts.length<3)return;
-  const portee=p.portee==='contact'?'contact':p.portee==='deux'&&auContactDuLanceur(a,q,aireLancer(p))?'contact':'distance';
+  const portee=auContactDuLanceur(a,q,aireLancer(p))?'contact':'distance';
   const touches=touchesDeZone(a,pts,p),crans=Math.max(1,p.crans|0);
   const pose=x=>{const ok=poseEtatPotion(x,p.etat,crans,a);if(ok&&(p.duree==='1'||p.duree==='2')&&enCombat())ajouteEtatBref(x,p.etat,round+(p.duree==='2'?1:0));return ok};
   if(p.de&&touches.length){const gomme=p.detruit==='oui'?gommeTerrainSel(pts):[];
