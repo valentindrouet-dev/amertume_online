@@ -840,6 +840,7 @@ function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
 /* Le jeton d'un objet porte l'icône de la première pièce qu'il contient — celle choisie en premier
    dans sa fiche ; sans pièce à icône, son initiale. */
+function logoIndiceDefaut(){for(const pl of (typeof catalog!=='undefined'&&catalog.planches)||[]){const k=(pl&&pl.icones||[]).findIndex(ic=>ic&&String(ic.nom||'').trim()==='?');if(k>=0)return pl.fichier+'#'+(k+1)}return ''}
 function poseLogoObjet(el,o){
  // v1.012 : une Ressource porte l'icône choisie dans sa fiche ; sans elle, celle de la première pièce qu'elle donne.
  if(o&&o.ressource===true){const prem=(((o.recolte||{}).paliers)||[]).flat().map(x=>(catalog.items||[]).find(it=>it&&it.id===x.id)).find(Boolean);
@@ -850,7 +851,8 @@ function poseLogoObjet(el,o){
   el.classList.add('avec-logo');if(im){el.replaceChildren(im);return}
   el.innerHTML='<svg class="logo-objet coffre-dessin" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5V19h18v-8.5M3 10.5C3 7 5 5 8 5h8c3 0 5 2 5 5.5M3 10.5h18M10.5 10.5v3h3v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';return}
  // v0.998 : un Indice porte son icône, sinon celle des Indices réglée avec les actions spéciales, sinon une loupe.
- if(o&&o.indice){const l=o.logo||(typeof actionSpeciale==='function'?actionSpeciale('indice').logo:'')||'',im=l&&typeof logoAttaque==='function'?logoAttaque(l,'logo-objet'):null;
+ // v1.058 : sans icône choisie, un Indice prend l'icône nommée « ? » dans l'onglet Icônes ; à défaut, celle des Indices des actions spéciales.
+ if(o&&o.indice){const l=o.logo||logoIndiceDefaut()||(typeof actionSpeciale==='function'?actionSpeciale('indice').logo:'')||'',im=l&&typeof logoAttaque==='function'?logoAttaque(l,'logo-objet'):null;
   el.classList.add('indice');if(im){el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent='🔍';return}
  let im=null,piece=null;const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  for(const it of pieces){im=typeof logoEquipement==='function'?logoEquipement(it):null;if(im){piece=it;break}}
