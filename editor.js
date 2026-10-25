@@ -7568,7 +7568,7 @@ function selLogos(label,key,value,sansElementaires,enTete){const familles=[...fa
    une ressource (peaux, os, écailles…), les Armes pour une arme ou une munition, les Armures pour
    une armure, puis Armes 06, qui en porte aussi. Les motifs se suivent dans l'ordre donné ; sous
    un même motif, les planches dans l'ordre de leurs noms. */
-const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i],herbe:[/herboristerie/i],potion:[/herboristerie/i]};
+const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i],herbe:[/herboristerie/i],potion:[/fioles|potions/i,/herboristerie/i]};
 function planchesEnTete(o){const motifs=PLANCHES_EN_TETE[o&&o.category];if(!motifs)return [];const fichiers=planchesDuCatalogue().map(p=>p.fichier),vues=new Set();
  return motifs.flatMap(re=>{const l=fichiers.filter(f=>!vues.has(f)&&(re.test(nomPlanche(f))||re.test(f)))
   .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}));l.forEach(f=>vues.add(f));return l})}
@@ -7578,7 +7578,7 @@ function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
  const reste=l.filter(x=>!vus.has(x)),planches=reste.filter(estIconePlanche),autres=reste.filter(x=>!estIconePlanche(x));
  if(planches.length)groupes.push([groupes.length?'Autres icônes des planches':'Icônes des planches',planches]);
  groupes.push(['Logos',autres]);return groupes}
-function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches('artisanat'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...LOGOS_DOSSIERS.equipement];
+function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches('artisanat'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...iconesPlanches('herboristerie'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
  const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'||c==='herbe'||c==='potion'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.

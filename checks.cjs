@@ -3028,7 +3028,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['equipement/hache_runes.png','objets/potion.webp','attaques/morsure.png','talents/x.png','autre/x.png','equipement/a/b.png'].map(ctxD.e),[true,false,false,true,false,false],'v0.311 : les deux dossiers, talents et équipement, rien d’autre');
  assert.ok(!fs.existsSync('img/objets')&&!fs.existsSync('img/attaques'),'ni dossier objets, ni dossier attaques');
  assert.ok(src.includes("const familles=[...famillesPlanches(),...FAMILLES_LOGOS],garde=value&&!familles.some(([,l])=>l.includes(value));")&&src.includes("return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}")
-  &&src.includes("function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches('artisanat'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...LOGOS_DOSSIERS.equipement];")
+  &&src.includes("function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches('artisanat'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...iconesPlanches('herboristerie'),...LOGOS_DOSSIERS.equipement];")
   &&src.includes(".filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/'));")&&src.includes("const liste=arbre.map(f=>String(f.path).slice(4))"),'chaque menu prend son dossier, et garde le logo en place');}
 /* v0.312 — L'aperçu du logo dans le formulaire de l'Armurerie ajoutait « .png » au nom : une
    icône de img/equipement, qui porte déjà son extension, devenait « x.png.png », introuvable.
@@ -3228,7 +3228,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    menu et de la grille, chacune sous son nom. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i],potion:[/herboristerie/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i],potion:[/fioles|potions/i,/herboristerie/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
   &&src.includes("+selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
 /* v0.337 — Un « + » à l'en-tête de chaque colonne de l'Armurerie ouvre l'éditeur sur une pièce
    neuve de cette catégorie. La famille de talents « Génériques » disparaît : un talent resté sans
@@ -3257,7 +3257,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const peau={category:'restes',ressource1:'cuir',rendement1:3,ressource2:'corde',rendement2:1,rarete:'rare'};
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({})).total,3,'3 Cuir à 4 + 1 Corde à 2 = 14 ; 25 %, arrondi en dessous : 3 — ni base, ni rareté');
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({restes:50})).total,7,'la part se règle au guide');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i],potion:[/herboristerie/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i],herbe:[/herboristerie/i],potion:[/fioles|potions/i,/herboristerie/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
 /* v0.340 — Les tris restent d'une session à l'autre ; plus de pointillés entre les rangées de talents. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];")&&src.includes("localStorage.setItem('amertume-tris',JSON.stringify(o))")
