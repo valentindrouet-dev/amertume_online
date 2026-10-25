@@ -1054,7 +1054,8 @@ function renderCoffres(){renderImpraticables();renderDifficiles();renderDangers(
   calque.append(el)})}
 function bulleCoffre(c){const g=document.createElement('div');g.className='gear-detail large';
  const n=document.createElement('p');n.className='gear-nom';n.textContent=c.nom||'Coffre';g.append(n);
- if(c.desc){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=c.desc;g.append(p)}
+ // v1.034 : sa description dit ce qu'il contient — la troupe ne la lit qu'une fois le coffre ouvert ; le MJ, toujours.
+ if(c.desc&&(c.ouvert||c.groupe===true||(view==='mj'&&!oeilJoueur()))){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=c.desc;g.append(p)}
  // Ce qu'il contient, le MJ seul le voit : l'icône de chaque pièce et son nombre, l'or, les gemmes.
  if(view==='mj'){const comptes=new Map();(c.items||[]).forEach(id=>{const o=objetDe(id);if(o)comptes.set(o,(comptes.get(o)||0)+1)});const r=c.richesses||{};
   const l=document.createElement('div');l.className='coffre-contenu-bulle';comptes.forEach((n,o)=>l.append(carreInventaire(o,n)));
