@@ -3818,3 +3818,12 @@ function renderNotesMJ(){let calque=$('notes-mj');const m=currentMap(),l=m&&view
   el.onpointerdown=e=>e.stopPropagation();el.onclick=e=>e.stopPropagation();
   if(typeof surveille==='function')surveille(el,()=>ouvrirBulle(el,bulleNoteMJ(n),'bulle-gear'));calque.append(el)})}
 {const rc=renderCoffres;renderCoffres=function(...x){const r=rc(...x);try{renderNotesMJ()}catch(e){}return r}}
+
+/* ---------- v1.023 — L'éditeur de cartes sur deux colonnes ----------
+   Le bloc Forme sélectionnée passe en tête de la colonne de gauche, avec l'invite de recalage ; la colonne de droite — Échelle,
+   Légende, compte des formes — se retire, et la carte prend la place. Rien n'est ôté : ses éléments restent, cachés. */
+{const droite=document.querySelector('#maps-page>.maps-props:not(#domaine-props)'),gauche=document.querySelector('#maps-page>.maps-side');
+ if(droite&&gauche){const sel=document.createElement('section');sel.className='maps-props maps-selection';
+  const fin=$('shape-delete'),noeuds=[];for(const n of [...droite.childNodes]){noeuds.push(n);if(n===fin)break}
+  sel.append(...noeuds);const recal=$('recal-box');if(recal)sel.append(recal);
+  const trait=document.createElement('div');trait.className='divider';gauche.prepend(sel,trait);droite.hidden=true;droite.classList.add('colonne-retiree')}}

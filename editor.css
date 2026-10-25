@@ -3612,3 +3612,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 /* v1.022 — Ouvrir un coffre, Inspecter, Récolter : la couleur du rond des portes. Une porte verrouillée : son cadenas. */
 #objet-boutons button.btn-action.rond.bouton-interaction{--fond:#cf9152;color:#fff}
 #porte-boutons button.btn-action.rond.bouton-interaction.verrouillee{cursor:default}
+/* v1.023 — L'éditeur de cartes sur deux colonnes : la sélection à gauche, la carte élargie. Le Domaine garde ses trois colonnes. */
+@media(min-width:1151px){body.page-maps #maps-page{grid-template-columns:260px minmax(0,1fr)}body.page-maps #maps-page.mode-domaine{grid-template-columns:230px minmax(0,1fr) 270px}}
+.maps-side .maps-selection{position:static}#maps-page.mode-domaine .maps-selection,#maps-page.mode-domaine .maps-selection+.divider{display:none}
+.maps-selection>button{width:100%;margin:0 0 6px}
