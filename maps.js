@@ -1750,7 +1750,7 @@ mapsPage.innerHTML=
  +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="gomme">Pinceau de découpe</button>'
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
- +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
+ +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcourbe">Ligne de points</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
  +'<button data-tool="diffi">Difficile</button><button data-tool="diffilibre">Difficile libre</button><button data-tool="diffiligne">Ligne difficile</button><button data-tool="difficadre">Carré difficile</button><button data-tool="diffigomme">Gomme de difficile</button><span class="bar-sep"></span>'
  +'<button data-tool="danger">Dangereux</button><button data-tool="dangerlibre">Dangereux libre</button><button data-tool="dangerligne">Ligne dangereuse</button><button data-tool="dangergomme">Gomme de dangereux</button>'
  +'<select id="map-danger-type" aria-label="Type de terrain dangereux"></select><button id="map-danger-edit" type="button">✎ Type</button><span class="bar-sep"></span>'
@@ -1916,7 +1916,7 @@ $('paysage-del').onclick=()=>{const p=mapDraft;if(!estPaysage(p)||!confirm('Supp
  if(currentMapId===p.id)fermerPaysage();const i=maps.indexOf(p);if(i>=0)maps.splice(i,1);
  mapDraft=maps.filter(estPaysage)[0]||maps.find(m=>!estPaysage(m))||null;mapSel=null;undoStack=[];redoStack=[];if(!maps.length)newMap();
  renderMapList();renderCanvas();saveMaps();render()};
-document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='courbe')courbe=null;if(mapTool!=='lasso')lasso=null;
+document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(courbe&&courbe.outil!==mapTool)courbe=null;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme'&&mapTool!=='dangergomme';
  zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
@@ -1926,7 +1926,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
    Difficile, Portes et fenêtres, Placement, Zones — puis, dessous, les outils de la famille ouverte. Annuler, Rétablir,
    l'Aimant et le zoom restent sur la première ligne. La famille ouverte se garde sur l'appareil. */
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
- ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcadre','impratgomme']],
+ ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcourbe','impratcadre','impratgomme']],
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['danger','Dangereux',['danger','dangerlibre','dangerligne','dangergomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
  ['placement','Placement',['start','foe','pnj','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege','notemj']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
@@ -2078,11 +2078,14 @@ function courbeLissee(pts,ratio){if(pts.length<3)return pts.slice();const r=Math
   return R};
  morceaux.forEach(Q=>lisse(Q).forEach(q=>out.push({x:q.x/r,y:q.y})));
  out.push(pts[pts.length-1]);return out}
-function appliqueCourbe(){if(!courbe||!mapDraft)return;const pts=courbeLissee(courbe.pts,mapDraft.ratio);courbe=null;
- if(pts.length<2){renderCanvas();return}pushUndo();
- for(let i=1;i<pts.length;i++){const f=capsulePolygon(pts[i-1],pts[i],TRAIT_EPAISSEUR,mapDraft.ratio,6);if(f)ajouteMatiere(mapDraft,f)}
+// v1.063 : la même, en terrain impraticable (« impratcourbe »).
+function appliqueCourbe(){if(!courbe||!mapDraft)return;const pts=courbeLissee(courbe.pts,mapDraft.ratio),imprat=courbe.outil==='impratcourbe';courbe=null;
+ if(pts.length<2){renderCanvas();return}pushUndo();const formes=[];
+ for(let i=1;i<pts.length;i++){const f=capsulePolygon(pts[i-1],pts[i],TRAIT_EPAISSEUR,mapDraft.ratio,6);if(f)formes.push(f)}
+ if(imprat){if(formes.length)ajouteImpraticable(mapDraft,formes)}else formes.forEach(f=>ajouteMatiere(mapDraft,f));
  matiereChangee()}
 const HINTS={courbe:'Chaque clic pose un point : la ligne de blocage passe par tous et s’arrondit. Double-clic ou Entrée la termine, Échap l’abandonne.',
+ impratcourbe:'Chaque clic pose un point : la ligne impraticable passe par tous et s’arrondit. Double-clic ou Entrée la termine, Échap l’abandonne.',
  fenetre:'Glisse pour poser une fenêtre sur un mur, comme une porte. Elle ne se traverse pas et on ne tire pas à travers ; ouverte, elle laisse voir et fait entrer la lumière dans l’obscurité. Son état se choisit à droite.',
  select:'Clique une zone de blocage, une porte ou un adversaire pour le sélectionner, glisse pour le déplacer, tire un coin pour le redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle de blocage : il coupe la vue et le passage, et fond avec la matière qu’il touche. Suppr efface la sélection.',
@@ -2540,8 +2543,8 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
     le curseur — et Maj le redresse. */
- if(mapTool==='courbe'){e.preventDefault();
-  if(!courbe)courbe={pts:[]};const der=courbe.pts[courbe.pts.length-1];if(!der||Math.hypot(der.x-p.x,der.y-p.y)>.05)courbe.pts.push({x:p.x,y:p.y});courbe.vise=p;dessineTraits();return}
+ if(mapTool==='courbe'||mapTool==='impratcourbe'){e.preventDefault();
+  if(!courbe)courbe={pts:[],outil:mapTool};const der=courbe.pts[courbe.pts.length-1];if(!der||Math.hypot(der.x-p.x,der.y-p.y)>.05)courbe.pts.push({x:p.x,y:p.y});courbe.vise=p;dessineTraits();return}
  if(mapTool==='ligne'||mapTool==='impratligne'||mapTool==='diffiligne'||mapTool==='dangerligne'){
   if(!traitDepart){const d=boutAimante(p,mapDraft.ratio)||p;
    traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
@@ -2604,7 +2607,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDraft.pieges??=[];mapDraft.pieges.push(rect);mapSel={kind:'piege',i:mapDraft.pieges.length-1}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 // Un double-clic termine la Ligne de points.
-$('map-canvas').addEventListener('dblclick',e=>{if(mapTool==='courbe'&&courbe){e.preventDefault();appliqueCourbe()}});
+$('map-canvas').addEventListener('dblclick',e=>{if((mapTool==='courbe'||mapTool==='impratcourbe')&&courbe){e.preventDefault();appliqueCourbe()}});
 $('map-canvas').addEventListener('pointermove',e=>{
  if(enZones()&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
  if(courbe&&!mapDrag){courbe.vise=pct(e);dessineTraits();return}
