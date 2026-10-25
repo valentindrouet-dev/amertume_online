@@ -1810,7 +1810,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
 /* Les effets d'équipement : une banque déclarée comme celle des talents — une clé, des
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
- assert.equal(Object.keys(codes).sort().join(),'armure,boirelancer,enduit,etat,fluxdes,grimoire,invulnerabilite,lancer,lumiere,mouvement,purge,repulsif,resurrection,revelesecrets,soin,vision');
+ assert.equal(Object.keys(codes).sort().join(),'armure,boirelancer,enduit,etat,fluxdes,grimoire,invulnerabilite,lancer,lumiere,mouvement,perceintangible,purge,repulsif,resurrection,revelesecrets,soin,soinpurge,veille,vision');
  assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso']));
  assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
@@ -2712,7 +2712,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const B=(etape,etat,fonction)=>({etape,etat,fonction});
  assert.equal(C.fonctionActive(B(3,'','magasin')),true);
  assert.deepEqual([B(2,'','magasin'),B(0,'','magasin'),B(3,'feu','magasin'),B(3,'abandonne','magasin'),B(3,'',''),null].map(C.fonctionActive),[false,false,false,false,false,false],'construit et intact, sinon rien');
- assert.equal(C.fonctionParNom('Magasin'),'magasin');assert.equal(C.fonctionParNom('Forge'),'');
+ assert.equal(C.fonctionParNom('Magasin'),'magasin');assert.equal(C.fonctionParNom('Forge'),'forge');assert.equal(C.fonctionParNom('Écurie'),'');
  const D=C.normaliseDomaine({batiments:[{nom:'Magasin'},{nom:'Magasin',fonction:''},{nom:'Échoppe',fonction:'magasin'},{nom:'X',fonction:'bidule'}]});
  assert.deepEqual(D.batiments.map(b=>b.fonction),['magasin','','magasin',''],'un Magasin d’avant le devient une fois ; ensuite le MJ choisit');
  assert.equal(C.normaliseDomaine(null).batiments.find(b=>b.nom==='Magasin').fonction,'magasin');

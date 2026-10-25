@@ -582,6 +582,7 @@ function blocFonction(b){if(!b.fonction)return null;const out=document.createEle
  if(b.fonction==='magasin')blocMagasin(out,b);
  if(b.fonction==='tannerie')blocTannerie(out,b);
  if(b.fonction==='herboristerie')blocHerboristerie(out,b);
+ if(b.fonction==='forge')blocForge(out,b);
  return out}
 /* ---------- Le magasin ---------- */
 /* On y achète ce que l'armurerie met en vente, au prix de l'armurerie ; on y revend son
@@ -721,7 +722,7 @@ function blocHerboristerie(out,b){const client=enteteClient(out,b,'à l’herbor
    g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à l’herboristerie pour acheter.':ok?'Acheter '+o.name+' pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.',()=>acheterHerbo(client,o),'achat',client?boutonCoffre(prix,()=>acheterHerbo(client,o,true)):null))});
   out.append(g)}
  const toutes=potionsHerbo().sort((x,y)=>x.herbo.rang-y.herbo.rang||x.herbo.labo-y.herbo.labo||x.name.localeCompare(y.name,'fr'));
- const connues=client?toutes.filter(o=>recettesDe(client).includes(o.id)&&!o.herbo.tannerie):[],aApprendre=toutes.filter(o=>!o.herbo.grimoire&&!(client&&recettesDe(client).includes(o.id)));
+ const connues=client?toutes.filter(o=>recettesDe(client).includes(o.id)&&!o.herbo.tannerie&&!o.herbo.forge):[],aApprendre=toutes.filter(o=>!o.herbo.grimoire&&!(client&&recettesDe(client).includes(o.id)));
  if(aApprendre.length){out.append(titre('Apprendre une recette'));const g=document.createElement('div');g.className='dom-articles';
   aApprendre.forEach(o=>{const prix=o.herbo.apprentissage,refus=client?refusHerbo(client,o,b):'',ok=!!client&&!refus&&orDe(client)>=prix;
    g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à l’herboristerie pour apprendre.':refus||(ok?'Apprendre la recette : '+o.name+', pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.'),
@@ -741,7 +742,7 @@ function apprendreRecette(a,o,b,parCoffre){const prix=o&&o.herbo?o.herbo.apprent
  if(!aLHerboristerie(a)||!o||!o.herbo||o.herbo.grimoire||recettesDe(a).includes(o.id)||refusHerbo(a,o,b)||(parCoffre?coffreVue().or:orDe(a))<prix)return;
  if(parCoffre)versCoffre(a,{or:-prix});else ajouteOr(a,-prix);a.recettes=[...recettesDe(a),o.id];
  log(nomNum(a)+' apprend la recette : '+o.name+(prix?', pour '+prix+' or'+(parCoffre?' du coffre de groupe':''):'')+'.');apresMagasin()}
-function fabriquerHerbo(a,o,b){if(!o||!o.herbo||!(o.herbo.tannerie?aLaTannerie(a):aLHerboristerie(a))||!recettesDe(a).includes(o.id)||refusHerbo(a,o,b)||manqueHerbo(a,o).length)return;
+function fabriquerHerbo(a,o,b){if(!o||!o.herbo||!(o.herbo.forge?aLaForge(a):o.herbo.tannerie?aLaTannerie(a):aLHerboristerie(a))||!recettesDe(a).includes(o.id)||refusHerbo(a,o,b)||manqueHerbo(a,o).length)return;
  if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;
  // Les pièces : le sac d'abord, puis le coffre de groupe, onglet par onglet.
  normaliseIngredients(o.ingredients).forEach(({id,n})=>{const p=objetDe(id);let reste=n;
@@ -751,7 +752,15 @@ function fabriquerHerbo(a,o,b){if(!o||!o.herbo||!(o.herbo.tannerie?aLaTannerie(a
  Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>{a.richesses={...(a.richesses||{})};a.richesses[k]=Math.max(0,(Number(a.richesses[k])||0)-n);if(!a.richesses[k])delete a.richesses[k]});
  // v1.014 : une recette peut en donner plusieurs.
  const q=o.herbo.quantite||1;let n=0;for(let i=0;i<q;i++){if(!ajouterInventaire(a,o))break;n++}
- log(nomNum(a)+' fabrique '+(n>1?n+' × ':'')+o.name+(o.herbo.tannerie?' à la tannerie.':' à l’herboristerie.'));apresMagasin()}
+ log(nomNum(a)+' fabrique '+(n>1?n+' × ':'')+o.name+(o.herbo.forge?' à la forge.':o.herbo.tannerie?' à la tannerie.':' à l’herboristerie.'));apresMagasin()}
+/* v1.018 — La Forge : on y fabrique les recettes d'herboristerie cochées « Fabriqué à la Forge », apprises à l'herboristerie. */
+function aLaForge(a){const ici=a&&batimentDom(lieuDe(a));return !!a&&agitPour(a)&&!!ici&&ici.fonction==='forge'&&fonctionActive(ici)}
+function blocForge(out,b){const client=enteteClient(out,b,'à la forge');if(!client)return;
+ const l=potionsHerbo().filter(o=>o.herbo.forge&&recettesDe(client).includes(o.id));if(!l.length)return;
+ out.append(titreFonction('Fabriquer, recettes d’herboristerie'));const g=document.createElement('div');g.className='dom-articles';
+ l.forEach(o=>{const refus=refusHerbo(client,o,b),manque=manqueHerbo(client,o),ok=!refus&&!manque.length;
+  g.append(carteMagasin(o,o.herbo.quantite||1,null,ok,refus||(manque.length?'Il manque : '+manque.map(([n,q,v])=>(q-v)+' '+n).join(', ')+'.':'Fabriquer '+o.name),()=>fabriquerHerbo(client,o,b),'fabrique',puceIngredients(o,manque)))});
+ out.append(g)}
 // Sous une carte : les ressources en jeu, icône et quantité ; celles qui manquent, en rouge.
 function puceRessources(d,manque=[]){const w=document.createElement('span');w.className='dom-recette';
  Object.entries(d).forEach(([k,n])=>{const p=document.createElement('span');p.className='puce-res'+(manque.some(([m])=>m===k)?' manque':'');

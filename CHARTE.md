@@ -123,6 +123,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Boutons d'Interaction** (`.bouton-interaction` : rond Enjamber d'un piège, porte, fenêtre, coffre et objet au contact — Ouvrir, Inspecter —, test d'un Indice au survol, et tout bouton posé sur la carte) : un seul dessin, celui du rond Enjamber, dessiné à 58 px et mis à l'échelle de la carte (45 % du socle, `echelleInteraction()`) ; seule la couleur change avec l'usage — la compétence du test, l'orange `#cf9152` d'un Mouvement (PM). Ils passent sous les tokens des combattants, qui se prennent toujours.
 
+**Seuil de Sel bleu** (`.seuil-sel`) : sur la carte, la ligne tracée en deux clics, trait bleu verre `#3f7bc0` pointillé, épaisseur fixe à tout zoom ; il s'efface à la fin du combat.
+
 **Porte à la table** (`.door`) : dessinée comme une fenêtre — sous le brouillard, et chez un joueur seulement dans sa ligne de vue directe et éclairée ; close, trait plein orange `#c98a4b` de 1,2 ; ouverte, pointillé gris `#96a3a7`. Close, son bloc n'arrête ni la vue ni les ombres — la ligne de blocage dessous tient seule (sans matière dessous, son seul rectangle la bouche) ; ouverte, elle perce le mur. Le rond qui l'ouvre (`.btn-porte`) est un Bouton d'Interaction, à l'orange d'un Mouvement `#cf9152` ; son icône se choisit avec celles des actions spéciales.
 
 **Talent allumé** (`.talent-allume`) : un talent qui s'allume et s'éteint (Éclat Vivant) garde, allumé, un halo fixe `#ffe08a` / `#ffcf5a`, même grisé.
@@ -157,6 +159,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 | Charme | `#cd1d81` | gras |
 | Caché | `#6e6a66` | gras |
 | Entravé | `#7a5a2b` | gras |
+| Tangible | `#4f6a86` | gras |
 | Autres états | `#a2691f` | gras |
 
 Chaque état prend la **couleur dominante de son icône** (planche ETATS), foncée pour se lire sur fond clair. Le mot **Vie** garde la couleur de la caractéristique VIE.

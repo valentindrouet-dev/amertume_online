@@ -737,6 +737,8 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
 function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine)return;
  if(x.mode==='objet'){const it=(catalog.items||[]).find(i=>i&&i.id===x.item);if(!it)return;
   if(!(a.inventaire||[]).includes(it.id)){log('Il faut ⟦'+it.id+'⟧.',{local:true});return}
+  // v1.018 : une pièce consommable s'use à l'emploi.
+  if(usageConsomme(usageObjet(it)))retirerInventaire(a,it);
   o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'});render();saveMaps();scheduleSave();return}
  const k=Math.max(0,Math.min(7,Number(x.comp)||0)),n=Math.max(1,Number(x.reussites)||1),jet=skillRoll(valeurCompetence(a,k)-1,d6);
  if(typeof rollOnBoard==='function')rollOnBoard([{dice:jet.des.slice(0,40).map(v=>[v,0])}],a,null);
@@ -1560,7 +1562,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;
+ (m.objets||[]).forEach(o=>{delete o.pris;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
@@ -3276,7 +3278,7 @@ $('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target
    ses prochaines attaques (« enduit » : les états, le nombre d'attaques), et, pour toute la troupe, le répulsif des bêtes
    (« repulsif » : la carte). Le reste agit sur l'instant : relever un aventurier tombé, une couleur de dés choisie, une purge,
    un objet lancé, une recette apprise, les passages secrets de la pièce. */
-const CODES_POTION=['boirelancer','vision','mouvement','resurrection','fluxdes','purge','repulsif','enduit','lancer','lumiere','grimoire','revelesecrets'];
+const CODES_POTION=['boirelancer','vision','mouvement','resurrection','fluxdes','purge','repulsif','enduit','lancer','lumiere','grimoire','revelesecrets','perceintangible','veille','soinpurge'];
 function finPotion(a,o,dit){const u=usageObjet(o);if(usageLimite(u))a.usages={...(a.usages||{}),[o.id]:u};if(usageConsomme(u))retirerInventaire(a,o);
  log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -3303,22 +3305,25 @@ const estLieutenant=o=>!!o&&!o.hero&&!estBoss(o)&&natureDe(o)==='vivant'&&!estVe
 function cibleAdmise(x,p){const c=p.cibles||'';if(c==='vegetal'&&!estVegetal(x))return false;if(c==='fongique'&&!estFongique(x))return false;if(c==='vegetalfongique'&&!estVegetal(x)&&!estFongique(x))return false;
  if(p.rangs==='sanslieutenants'&&(estLieutenant(x)||estBoss(x)))return false;if(p.rangs==='lieutenants'&&!estLieutenant(x))return false;return true}
 function lancerPotion(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la carte.',{local:true});return}
- const portee=p.portee==='contact'?'contact':'distance';
+ let portee=p.portee==='contact'?'contact':'distance';
  viserCible('◈ '+o.name+' — clique '+(p.detruit==='oui'?'l’adversaire ou le terrain visé':'l’adversaire visé'),(vise,q)=>{
   // Le Sel de racine : un terrain dangereux coché « Sel », au contact du lanceur, est détruit.
   if((!vise||!hostiles(vise,a))&&p.detruit==='oui'&&q){const z=formeDangerSous(q,t=>t.sel===true);
    if(z&&formeAPortee(a,z.p)){detruitForme(z);finPotion(a,o,z.t.nom+' détruit');return}}
   const j=actors.indexOf(vise);
+  // v1.018 : « au contact ou à distance » — au contact du lanceur, le jet part au contact, sans opportunité.
+  if(p.portee==='deux')portee=vise&&contactsDe(a).includes(vise)?'contact':'distance';
   if(!vise||!alive(vise)||!hostiles(vise,a)||!ciblesAtteignables(a,[j],portee).length){log(o.name+' : vise un adversaire '+(portee==='contact'?'au contact':'en vue')+'.',{local:true});return}
   if(!cibleAdmise(vise,p)){log(o.name+' est sans effet sur '+nomNum(vise)+'.',{local:true});return}
   const crans=Math.max(1,p.crans|0),autres=(p.zone==='tous'?actors.filter(x=>x&&alive(x)&&!x.horsCarte&&hostiles(x,a)&&(x.revealed||x.hero)):p.zone==='voisins'?[vise,...voisinsDuLancer(vise,a)]:[]).filter(x=>cibleAdmise(x,p));
-  const pose=x=>{const ok=poseEtatPotion(x,p.etat,crans,a);if(ok&&p.duree==='1'&&enCombat())x.sommeilBref={e:p.etat,r:round};return ok};
+  const pose=x=>{const ok=poseEtatPotion(x,p.etat,crans,a);if(ok&&(p.duree==='1'||p.duree==='2')&&enCombat())ajouteEtatBref(x,p.etat,round+(p.duree==='2'?1:0));return ok};
   const poseAutres=()=>p.etat?autres.filter(x=>(p.de&&p.zone==='voisins'&&x===vise)?false:alive(x)&&pose(x)):[];
   if(p.de){if(enCombat()&&pointsRestants(a,'action')<1){log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return}
    finPotion(a,o,'lancé sur '+nomNum(vise));selected=actors.indexOf(a);
-   attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee,sansDegats:true,potion:true,
+   // v1.018 : un jet qui rend Tangible (le Sel bleu) blesse aussi l'Intangible qu'il vise.
+   jetPerceSur=p.etat==='Tangible'?{b:vise,t:Date.now()}:null;attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c===p.de?Math.max(1,p.nb|0):0),sansArme:true,portee,sansDegats:true,potion:true,
     etatsEnPlus:{etats:p.etat&&p.zone!=='tous'?Array(crans).fill(p.etat):[],touches:[]},
-    apres:()=>{const t=poseAutres();if(t.length)log(o.name+' : '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', ')+'.',{ton:'talent'});render();scheduleSave()}});return}
+    apres:()=>{jetPerceSur=null;const t=poseAutres();if(t.length)log(o.name+' : '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', ')+'.',{ton:'talent'});render();scheduleSave()}});return}
   if(!payeAction(a))return;
   const cibles=p.zone==='cible'?[vise]:autres,t=p.etat?cibles.filter(pose):[];
   finPotion(a,o,'lancé sur '+nomNum(vise)+(t.length?', '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', '):', sans effet'))},o.name+' : geste annulé.')}
@@ -3347,7 +3352,14 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
   case 'resurrection':{const tombes=actors.filter(h=>h&&h.hero&&h!==a&&h.poussiere!==true&&(estMort(h)||Number(h.hp)<=0));
    if(!tombes.length){log('Aucun aventurier tombé à relever.',{local:true});return}
    menuAuCentre(o.name,tombes.map(h=>[nomNum(h),()=>releverAvecPotion(a,o,h)]));return}
-  case 'lancer':lancerPotion(a,o,p);return;
+  case 'lancer':if(p.seuil==='oui'){menuAuCentre(o.name,[['Lancer',()=>lancerPotion(a,o,p)],['Tracer un seuil',()=>tracerSeuil(a,o)]]);return}lancerPotion(a,o,p);return;
+  // v1.018 : percer les Intangibles jusqu'à la fin du prochain combat ; la lanterne agit portée ; soigner et purger.
+  case 'perceintangible':a.perceIntangible={portee:p.portee==='tout'?'tout':'arme',malus:Math.max(0,p.malus|0)};finPotion(a,o,a.perceIntangible.portee==='tout'?'ses coups et sorts blessent les Intangibles':'son arme blesse les Intangibles');return;
+  case 'veille':log(o.name+' agit tant qu’elle est portée.',{local:true});return;
+  case 'soinpurge':{const n=Math.max(1,p.quantite|0),jets=p.forme==='des'?Array.from({length:n},()=>d6()):[],gagne=applyHeal(a,jets.length?jets.reduce((s,v)=>s+v,0):n);
+   if(jets.length&&typeof rollOnBoard==='function')rollOnBoard(jets.map(v=>[v,4]),a,a);if(gagne&&typeof floatNumber==='function')floatNumber(a,'+'+gagne,'gain');
+   const avait=hasState(a,p.etat)||(p.etat==='Nécrose'&&Number(a.necrose)>0);if(p.etat==='Nécrose'&&typeof leveNecrose==='function')leveNecrose(a);setState(a,p.etat,false);if(a.cumuls)delete a.cumuls[p.etat];
+   finPotion(a,o,'+'+gagne+' PV'+(avait?', '+p.etat+' levée':''));return}
   // v1.014 : bu, il retire un état ; lancé, des dés contre une créature d'une famille.
   case 'boirelancer':menuAuCentre(o.name,[['Boire',()=>{const avait=hasState(a,p.etat);setState(a,p.etat,false);if(a.cumuls)delete a.cumuls[p.etat];finPotion(a,o,avait?p.etat+' levée':'rien à lever')}],
    ['Lancer',()=>lancerPotion(a,o,{de:p.de,nb:p.nb,etat:'',crans:1,zone:'cible',portee:'distance',cibles:p.cibles,rangs:'',duree:'',detruit:'non'})]]);return;
@@ -3427,7 +3439,8 @@ function dangerAuPassage(o,chemin){const m=currentMap(),size=mapSize();if(!m||!s
   actors.forEach(o=>{dangersDe(m).forEach(t=>{if(!sensibleAuDanger(o,t))return;const c=[o.x/100*size.width,o.y/100*size.height];if(formesPx(m,t,size).some(l=>pointInPolygon(c,l)))f=frappeDanger(o,t)||f})});
   if(f)scheduleSave()}}catch(e){}
  const r=ts(...x);
- try{actors.forEach(o=>{const b=o&&o.sommeilBref;if(!b)return;if(round>b.r||!enCombat()){setState(o,b.e,false);delete o.sommeilBref}});render()}catch(e){}
+ try{actors.forEach(o=>{const l=etatsBrefs(o);if(!l.length)return;const reste=l.filter(b=>{if(round>b.r||!enCombat()){setState(o,b.e,false);return false}return true});
+  if(reste.length)o.sommeilBref=reste.length>1?reste:reste[0];else delete o.sommeilBref});render()}catch(e){}
  return r}}
 
 /* ---------- v1.017 — Les Boutons d'Interaction des objets et des coffres ----------
@@ -3458,7 +3471,7 @@ function renderBoutonsObjets(){let calque=$('objet-boutons');if(!calque){calque=
 {const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsObjets();return r}}
 /* v1.017 — L'Indice révélé qui attend son test : au survol, au-dessus de lui, un Bouton d'Interaction à l'icône et à la couleur
    de la compétence ; la bulle de l'indice s'y accroche. On y monte la souris — il reste —, et un clic fait le test. */
-const indiceATester=o=>!!o&&o.indice&&objetVu(o)&&!o.examine&&!!o.examen&&o.examen.mode==='comp';
+const indiceATester=o=>!!o&&o.indice&&objetVu(o)&&!o.examine&&!!o.examen&&(o.examen.mode==='comp'||(o.examen.mode==='objet'&&!!objetDe(o.examen.item)));
 let indiceBouton=null,indiceBoutonMinuteur=0;
 function cacheIndiceBouton(){clearTimeout(indiceBoutonMinuteur);if(indiceBouton){indiceBouton.remove();indiceBouton=null;if(typeof fermerBulle==='function')fermerBulle()}}
 function cacheIndiceBientot(){clearTimeout(indiceBoutonMinuteur);indiceBoutonMinuteur=setTimeout(()=>{const b=indiceBouton;if(!b)return;
@@ -3468,11 +3481,94 @@ function survolIndice(t,o){t.addEventListener('pointerenter',()=>montreIndiceBou
 function montreIndiceBouton(t,o){clearTimeout(indiceBoutonMinuteur);if(indiceBouton&&indiceBouton.dataset.objet===t.dataset.objet)return;cacheIndiceBouton();
  let calque=$('indice-bouton');if(!calque){calque=document.createElement('div');calque.id='indice-bouton';$('map-view').append(calque)}
  const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),size=mapSize(),haut=size.height?((tokenPx()*(SOCLE_TAILLES[o.taille]||1))/2+58*Number(echelleInteraction())/2+4)/size.height*100:4;
- const b=poseBoutonCarte(calque,o.x,o.y-haut,'Test de '+skillNames[k],'',ICONE_INSPECTER,false,()=>{const a=heroActif();
+ const piece=o.examen.mode==='objet'?objetDe(o.examen.item):null;
+ const b=poseBoutonCarte(calque,o.x,o.y-haut,piece?piece.name:'Test de '+skillNames[k],'',ICONE_INSPECTER,false,()=>{const a=heroActif();
   if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
   if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
   cacheIndiceBouton();examinerIndice(a,o)},'btn-indice');
- b.replaceChildren();const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
- b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');b.style.color='#fff';b.dataset.objet=t.dataset.objet;
+ b.replaceChildren();
+ // v1.018 : l'Indice qui veut un objet porte l'icône de la pièce, sur le fond ordinaire des boutons.
+ if(piece){const im=typeof logoEquipement==='function'?logoEquipement(piece):null;if(im)b.append(im);else b.textContent=piece.name.slice(0,2)}
+ else{const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
+  b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');b.style.color='#fff'}b.dataset.objet=t.dataset.objet;
  b.onmouseenter=()=>clearTimeout(indiceBoutonMinuteur);b.onmouseleave=cacheIndiceBientot;indiceBouton=b;
  if(typeof ouvrirBulle==='function')ouvrirBulle(b,bulleObjetCarte(o),'bulle-gear')}
+
+/* ---------- v1.018 — Intangibles, Tangible, Esquive x+, Lanterne de veille, seuil de Sel bleu ----------
+   Un combattant Intangible (talent) ne perd rien des coups qu'il reçoit, à moins d'être Tangible, ou que son agresseur ne le
+   perce (« perceIntangible » : ses coups d'arme, ou tous ses coups et sorts, jusqu'à la fin du prochain combat ; « malus » :
+   ce que chaque coup d'un Intangible lui fait de plus). Esquive x+ : sur un d6 de x ou plus, le combattant ignore tout d'une
+   attaque — dégâts et états ; un Intangible dans la lumière d'une Lanterne de veille n'esquive plus, et un adversaire
+   Invisible y est révélé. Le Sel bleu tracé sur un seuil : une ligne que nul Intangible ne franchit, jusqu'à la fin du combat. */
+STATES.push('Tangible');GLYPHES_ETATS['Tangible']='⚓';COULEURS_ETATS['Tangible']='#4f6a86';
+{const de0=descriptionEtat;descriptionEtat=function(o,etat){if(etat==='Tangible')return 'Les coups le blessent, même Intangible.';return de0(o,etat)}}
+// Les états d'un tour ou deux : un, ou plusieurs à la fois.
+const etatsBrefs=o=>[].concat((o&&o.sommeilBref)||[]).filter(b=>b&&typeof b.e==='string');
+function ajouteEtatBref(x,e,r){const l=etatsBrefs(x).filter(b=>b.e!==e);l.push({e,r});x.sommeilBref=l.length>1?l:l[0]}
+const estIntangible=o=>!!o&&typeof porteTalent==='function'&&porteTalent(o,'intangible')&&!hasState(o,'Tangible');
+const perceDe=a=>{const p=a&&a.perceIntangible;return p&&typeof p==='object'?p:null};
+const perceLIntangible=(a,arme)=>{const p=perceDe(a);return !!p&&(p.portee==='tout'||(p.portee==='arme'&&!!arme))};
+// Les Lanternes de veille portées sur la carte, et jusqu'où elles éclairent.
+function lanternesVeille(){const its=typeof items==='function'?items():(catalog.items||[]);
+ return actors.filter(h=>h&&alive(h)&&!h.horsCarte).map(h=>{const l=objetsQuiComptent(h,its,o=>o.effet==='veille');
+  return l.length?{h,m:Math.max(...l.map(o=>Math.max(1,(paramsObjet(o)||{}).m|0)))}:null}).filter(Boolean)}
+function dansLanterne(o){const size=mapSize(),tk=tokenPx();if(!o||!size.width||!tk)return false;const murs=walls();
+ return lanternesVeille().some(({h,m})=>h!==o&&hostiles(h,o)&&metres(h,o,size,tk)<=m&&!wallsBetween(h,o,murs))}
+function esquiveActive(b){const x=esquiveDe(b);return x&&!(porteTalent(b,'intangible')&&dansLanterne(b))?x:0}
+{const lp=lumierePortee;lumierePortee=function(a,its){const v=lp(a,its),l=objetsQuiComptent(a,its||[],o=>o.effet==='veille');
+ return l.length?Math.max(v,...l.map(o=>Math.max(1,(paramsObjet(o)||{}).m|0))):v}}
+// Dans la lumière d'une Lanterne de veille, l'adversaire Invisible est révélé.
+function reveleParLanterne(){if(!lanternesVeille().length)return;let n=0;
+ actors.forEach(o=>{if(o&&alive(o)&&!o.horsCarte&&hasState(o,'Invisible')&&dansLanterne(o)){setState(o,'Invisible',false);if(typeof floatNumber==='function')floatNumber(o,'Révélé !','nul');n++}});
+ if(n){render();scheduleSave()}}
+{const pm=passeMurs;passeMurs=function(...x){const r=pm(...x);try{reveleParLanterne()}catch(e){}return r}}
+{const ts=tourSuivant;tourSuivant=function(...x){const r=ts(...x);try{reveleParLanterne()}catch(e){}return r}}
+/* Le jet d'une attaque : la cible est celle dont les dés viennent d'être reçus (desRecus) ; l'agresseur, le lanceur de l'orbe
+   en cours ou l'auteur du coup. L'Esquive passe d'abord : réussie, l'attaque échoue sans être un échec — ni relance, ni
+   Revanche. Puis l'Intangible ne perd rien, à moins d'être percé ; un Intangible qui frappe un buveur d'Élixir lui fait plus. */
+let cibleDuJet=null,lanceurOrbe=null,jetPerceSur=null,esquiveDite=null,derniereEsquive=null;
+const jetPerce=b=>!!jetPerceSur&&jetPerceSur.b===b&&Date.now()-jetPerceSur.t<10000;
+{const f=desRecus;desRecus=function(b,...x){cibleDuJet=b;return f(b,...x)}}
+{const f=orbe;orbe=function(a,...x){const av=lanceurOrbe;lanceurOrbe=a;try{return f(a,...x)}finally{lanceurOrbe=av}}}
+{const f=resolveAttack;resolveAttack=function(o,...x){const b=cibleDuJet;cibleDuJet=null;derniereEsquive=null;let r=f(o,...x);
+ try{const a=lanceurOrbe||auteurCoup;if(!b||!r||!a||!hostiles(a,b)||r.failed)return r;
+  const x=enCombat()?esquiveActive(b):0;
+  if(x){const v=d6();if(v>=x){esquiveDite={b,v};derniereEsquive=b;return {...r,failed:true,hit:false,critical:false,damage:0,bleed:0,poison:0,esquive:v}}}
+  const arme=!lanceurOrbe&&typeof activeAttack==='function'&&!!activeAttack(a).gear;
+  if(estIntangible(b)&&!jetPerce(b)&&!perceLIntangible(a,arme))return {...r,hit:false,critical:false,damage:0,bleed:0,poison:0,intangible:true};
+  const p=perceDe(b);if(r.hit&&r.damage>0&&p&&p.malus>0&&porteTalent(a,'intangible'))r={...r,damage:r.damage+p.malus}}catch(e){}
+ return r}}
+// L'Esquive se dit « Esquive ! », sur la carte et au journal, là où l'échec se dirait.
+{const f=floatNumber;floatNumber=function(c,t,g,...x){if(esquiveDite&&c===esquiveDite.b&&t==='Échec'){t='Esquive !';g='gain'}return f(c,t,g,...x)}}
+{const f=logAttaque;logAttaque=function(a,b,logo,corps,...x){if(esquiveDite&&b===esquiveDite.b&&/^Échec/.test(String(corps))){corps='Esquive !';esquiveDite=null}return f(a,b,logo,corps,...x)}}
+{const f=debrouillardDispo;debrouillardDispo=function(...x){return derniereEsquive?null:f(...x)}}
+{const f=frappe;frappe=function(a,b,...x){const avant=new Map(actors.map(o=>[o,o.revanche]));derniereEsquive=null;const r=f(a,b,...x);
+ if(derniereEsquive===b)actors.forEach(o=>{if(o.revanche!==avant.get(o)){if(avant.get(o))o.revanche=avant.get(o);else delete o.revanche}});return r}}
+// Ce qui ne passe pas par un jet — un état qui brûle, un terrain, un talent : l'Intangible n'en perd rien non plus.
+{const f=encaisse;encaisse=function(a,n,de,...x){const src=de===undefined?auteurCoup:de;
+ if(Math.trunc(n)>0&&estIntangible(a)&&!jetPerce(a)&&!(src&&perceLIntangible(src,false))){if(typeof floatNumber==='function')floatNumber(a,'0','nul');return {perdu:0,blinde:false}}
+ return f(a,n,de,...x)}}
+// La fin du combat : les coups percés, les états brefs, les seuils de sel s'en vont.
+{const bm=basculerMode;basculerMode=function(neuf,...x){const fin=mode==='combat'&&neuf!=='combat';const r=bm(neuf,...x);
+ if(fin){actors.forEach(a=>{if(!a)return;delete a.perceIntangible;etatsBrefs(a).forEach(b=>setState(a,b.e,false));delete a.sommeilBref});
+  const m=currentMap();if(m&&m.seuilsSel){delete m.seuilsSel;renderDangers()}}return r}}
+/* Le seuil de Sel bleu : deux clics, ses deux bouts, chacun à 3 m au plus du lanceur. Il se dessine sur la carte, en bleu. */
+const PORTEE_SEUIL=3;
+function tracerSeuil(a,o){const size=mapSize();if(!size.width){log(o.name+' se trace sur la carte.',{local:true});return}
+ const proche=q=>!!q&&metres(a,q,mapSize(),tokenPx())<=PORTEE_SEUIL,loin=()=>log(o.name+' : trace le seuil à '+PORTEE_SEUIL+' m au plus de '+nomNum(a)+'.',{local:true});
+ viserCible('◈ '+o.name+' — clique un bout du seuil',(v1,q1)=>{if(!proche(q1)){loin();return}
+  setTimeout(()=>viserCible('◈ '+o.name+' — clique l’autre bout du seuil',(v2,q2)=>{if(!proche(q2)){loin();return}
+   const m=currentMap();if(!m)return;if(enCombat()&&!payeAction(a))return;
+   m.seuilsSel=[...(m.seuilsSel||[]),{a:{x:q1.x,y:q1.y},b:{x:q2.x,y:q2.y}}].slice(-20);renderDangers();finPotion(a,o,'seuil tracé')},o.name+' : geste annulé.'))},o.name+' : geste annulé.')}
+{const rd=renderDangers;renderDangers=function(...x){const r=rd(...x);const svg=$('dangers-carte'),m=currentMap();
+ if(svg&&m&&Array.isArray(m.seuilsSel))m.seuilsSel.forEach(s=>{const l=document.createElementNS(nsSVG,'line');l.setAttribute('class','seuil-sel');
+  l.setAttribute('x1',s.a.x);l.setAttribute('y1',s.a.y);l.setAttribute('x2',s.b.x);l.setAttribute('y2',s.b.y);svg.append(l)});return r}}
+// Ce qui arrête le pas d'un Intangible : en plus des murs, les seuils de sel.
+let bougeurPas=null;
+{const f=obstaclesDuPas;obstaclesDuPas=function(px,...x){const r=f(px,...x),m=typeof currentMap==='function'?currentMap():null;
+ if(!m||!Array.isArray(m.seuilsSel)||!m.seuilsSel.length)return r;const o=bougeurPas||actors[selected];
+ if(!o||!porteTalent(o,'intangible'))return r;const size=mapSize(),ratio=size.height?size.width/size.height:16/9;
+ return [...r,...m.seuilsSel.map(s=>({contours:[capsulePolygon(s.a,s.b,.6,ratio).map(([x,y])=>px(x,y))]}))]}}
+{const f=moveActor;moveActor=function(a,...x){const av=bougeurPas;bougeurPas=a;try{return f(a,...x)}finally{bougeurPas=av}}}
+{const f=settleActor;settleActor=function(a,...x){const av=bougeurPas;bougeurPas=a;try{return f(a,...x)}finally{bougeurPas=av}}}
+{const f=cheminVersContact;cheminVersContact=function(b,...x){const av=bougeurPas;bougeurPas=b;try{return f(b,...x)}finally{bougeurPas=av}}}

@@ -375,7 +375,7 @@ function cleanMonster(t){const dés={};
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
-  menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),...(t&&t.nyctalope===false?{nyctalope:false}:{}),
+  menace:texte(t&&t.menace,30)||'closest',esquive:esquiveDe(t),rapide:!!(t&&t.rapide),...(t&&t.nyctalope===false?{nyctalope:false}:{}),
   ...(t&&t.mouvement!=null&&t.mouvement!==''&&Number.isFinite(Number(t.mouvement))&&Number(t.mouvement)!==DISTANCE_MOUVEMENT?{mouvement:Math.max(0,Math.min(99,Math.round(Number(t.mouvement)*2)/2))}:{}),
   ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement}),...(t.unique===true?{unique:true}:{})}:{}),...(normaliseBourse(t&&t.bourse).length?{bourse:normaliseBourse(t.bourse)}:{}),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
@@ -1115,7 +1115,9 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché','Entravé'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché','Entravé','Tangible'];
+// v1.018 : Esquive x+ — sur un d6 de x ou plus, le combattant ignore tout d'une attaque ; 0, il n'esquive pas. L'ancienne case cochée vaut 6+.
+function esquiveDe(o){const v=o&&o.esquive;if(v===true)return 6;const n=Math.trunc(Number(v));return n>=2&&n<=6?n:0}
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1645,6 +1647,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[],phrase(){return 'S’il commence son tour à distance, il passe au contact et met la cible <b>Au sol</b>.'}},
  centyeux:{cle:'centyeux',nom:'Cent yeux',type:'pass',monstre:true,aide:'Passif : ne peut jamais être Surpris.',
   params:[],phrase(){return 'Ne peut jamais être <b>Surpris</b>.'}},
+ /* v1.018 — Intangible : spectres, ectoplasmes, arcaniques. Les coups ne lui font aucun dégât, à moins qu'il ne soit Tangible ou
+    que son agresseur ne le perce (Onguent de lest, Élixir de seuil). */
+ intangible:{cle:'intangible',nom:'Intangible',type:'pass',monstre:true,aide:'Passif : les coups ne lui font aucun dégât, à moins qu’il ne soit Tangible ou que l’arme ou le sort ne le perce.',
+  params:[],phrase(){return 'Les coups ne lui font <b>aucun dégât</b>, sauf s’il est <b>Tangible</b>.'}},
  enlacer:{cle:'enlacer',nom:'Enlacer',type:'pass',monstre:true,aide:'Passif : sur un critique au contact, la cible est Entravée et subit Nécrose 1. Se libérer : 1 PM et un test de Force.',
   params:[{cle:'reussites',nom:'Réussites de Force pour se libérer',type:'nombre',defaut:2,min:1,max:6}],
   phrase(p){return 'Sur un <b>critique</b> au contact, la cible est <b>Entravée</b> et subit <b>Nécrose 1</b>. Se libérer : <b>1 PM</b>, test de <b>Force '+((p&&p.reussites)||2)+'</b>.'}},
@@ -2353,11 +2359,13 @@ const OBJETS_CODES={
    {cle:'etat',nom:'État',type:'choix',defaut:'',options:[['','—'],...ETATS_JEU.map(e=>[e,e])]},{cle:'crans',nom:'Crans de l’état',type:'nombre',defaut:1,min:1,max:9},
    {cle:'zone',nom:'L’état touche',type:'choix',defaut:'cible',options:[['cible','la cible'],['voisins','la cible et ses voisins'],['tous','tous les adversaires']]},
    // v1.014 : la portée, les créatures qu'il touche — par famille, par rang —, la durée de l'état, et le terrain qu'il détruit.
-   {cle:'portee',nom:'Portée',type:'choix',defaut:'distance',options:[['distance','à distance'],['contact','au contact']]},
+   {cle:'portee',nom:'Portée',type:'choix',defaut:'distance',options:[['distance','à distance'],['contact','au contact'],['deux','au contact ou à distance']]},
    {cle:'cibles',nom:'Créatures touchées',type:'choix',defaut:'',options:[['','toutes'],['vegetal','végétales'],['fongique','fongiques'],['vegetalfongique','végétales ou fongiques']]},
    {cle:'rangs',nom:'Rangs',type:'choix',defaut:'',options:[['','tous'],['sanslieutenants','ni lieutenant ni boss'],['lieutenants','lieutenants seulement']]},
-   {cle:'duree',nom:'Durée de l’état',type:'choix',defaut:'',options:[['','ordinaire'],['1','1 tour']]},
-   {cle:'detruit',nom:'Détruit le terrain dangereux',type:'choix',defaut:'non',options:[['non','Non'],['oui','Oui, celui coché « Sel »']]}],
+   {cle:'duree',nom:'Durée de l’état',type:'choix',defaut:'',options:[['','ordinaire'],['1','1 tour'],['2','2 tours']]},
+   {cle:'detruit',nom:'Détruit le terrain dangereux',type:'choix',defaut:'non',options:[['non','Non'],['oui','Oui, celui coché « Sel »']]},
+   // v1.018 : ou tracé sur un seuil — deux clics, une ligne que les Intangibles ne franchissent pas du combat.
+   {cle:'seuil',nom:'Se trace sur un seuil',type:'choix',defaut:'non',options:[['non','Non'],['oui','Oui : les Intangibles ne le franchissent pas']]}],
   phrase(p){const de=p&&p.de?(DES_ORBE.find(([k])=>k===p.de)||[])[1]:'',nb=Math.max(1,(p&&p.nb)|0),e=p&&p.etat||'',c=Math.max(1,(p&&p.crans)|0),z=p&&p.zone||'cible';
    const ou=z==='tous'?'tous les adversaires':z==='voisins'?'la cible et ses voisins':'la cible';
    return 'Lancé'+(de?' : <b>'+nb+' dé'+(nb>1?'s':'')+' '+de+(nb>1?'s':'')+'</b>':'')+(e?(de?', ':' : ')+'<b>'+e+(c>1?' '+c:'')+'</b> sur '+ou:'')+'.'}},
@@ -2375,7 +2383,22 @@ const OBJETS_CODES={
   params:[{cle:'recette',nom:'Recette apprise',type:'recette',defaut:''}],
   phrase(){return 'Apprend une <b>recette d’herboristerie</b> à qui le lit.'}},
  revelesecrets:{cle:'revelesecrets',nom:'Révéler les passages secrets',aide:'Révèle les passages secrets de la pièce où se tient le porteur.',params:[],
-  phrase(){return 'Révèle les <b>passages secrets</b> de la pièce où se tient le porteur.'}}};
+  phrase(){return 'Révèle les <b>passages secrets</b> de la pièce où se tient le porteur.'}},
+ /* v1.018 — Blesser les Intangibles, jusqu'à la fin du prochain combat : les coups d'arme du porteur, ou tous ses coups et
+    sorts ; « malus » : ce que chaque coup d'un Intangible lui fait de plus. */
+ perceintangible:{cle:'perceintangible',nom:'Blesse les Intangibles',aide:'Jusqu’à la fin du prochain combat, les coups du porteur blessent les créatures Intangibles.',
+  params:[{cle:'portee',nom:'Ce qui blesse',type:'choix',defaut:'arme',options:[['arme','ses coups d’arme'],['tout','tous ses coups et sorts']]},
+   {cle:'malus',nom:'Dégâts subis en plus des Intangibles',type:'nombre',defaut:0,min:0,max:9}],
+  phrase(p){const n=Math.max(0,(p&&p.malus)|0);return 'Pour le combat, '+((p&&p.portee)==='tout'?'tous les coups et sorts':'les coups d’arme')+' du porteur blessent les <b>Intangibles</b>'+(n?' ; il subit <b>+'+n+'</b> dégât'+(n>1?'s':'')+' à chaque coup reçu d’eux':'')+'.'}},
+ // v1.018 — La Lanterne de veille : portée, elle éclaire ; dans sa lumière, les Invisibles sont révélés et les Intangibles n'esquivent plus.
+ veille:{cle:'veille',nom:'Lanterne de veille',aide:'Portée, elle éclaire ; dans sa lumière, les adversaires Invisibles sont révélés et les Intangibles perdent leur Esquive.',
+  params:[{cle:'m',nom:'Portée (m)',type:'nombre',defaut:6,min:1,max:40}],
+  phrase(p){return 'Portée, elle <b>éclaire</b> à <b>'+Math.max(1,(p&&p.m)|0)+' m</b> : dans sa lumière, les <b>Invisibles</b> sont révélés et les <b>Intangibles</b> perdent leur <b>Esquive</b>.'}},
+ // v1.018 — Soin et purge, d'un même geste.
+ soinpurge:{cle:'soinpurge',nom:'Soin et purge',aide:'Le porteur regagne des PV et perd un état.',
+  params:[{cle:'quantite',nom:'Quantité',type:'nombre',defaut:2,min:1,max:99},{cle:'forme',nom:'Sous la forme de',type:'choix',defaut:'fixe',options:[['fixe','PV'],['des','dés (d6)']]},
+   {cle:'etat',nom:'État retiré',type:'choix',defaut:'Nécrose',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){const n=Math.max(1,(p&&p.quantite)|0);return 'Soigne <b>'+(p&&p.forme==='des'?n+'d6':n)+'</b> PV et retire <b>'+((p&&p.etat)||'Nécrose')+'</b>.'}}};
 /* Actif ou passif : une pièce d'équipement — arme, armure, munition — dont l'effet le permet
    peut agir d'elle-même, en permanence tant qu'elle est portée, sans bouton en combat. Un
    objet consommable reste actif : il s'emploie. */
@@ -3362,7 +3385,7 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
 /* Ce qu'un bâtiment fait pour la troupe. Il ne le fait que construit et intact : toute autre
    étape, tout autre état, et sa fonction s'arrête. Un bâtiment d'avant les fonctions qui
    s'appelle Magasin devient le magasin, une fois ; ensuite c'est le MJ qui choisit. */
-const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie'],['herboristerie','Herboristerie']];
+const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie'],['herboristerie','Herboristerie'],['forge','Forge']];
 const NOM_FONCTION=f=>(FONCTIONS_BATIMENT.find(([k])=>k===f)||FONCTIONS_BATIMENT[0])[1];
 const fonctionActive=b=>!!b&&!!b.fonction&&b.etape>=ETAPES_DOMAINE.length-1&&!b.etat;
 function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);
@@ -3387,7 +3410,7 @@ function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
    de la réserve (« recette »), les gemmes de la bourse (« gemmes ») ; puis le rang d'herboriste et le niveau de laboratoire
    qu'elles demandent, et leur prix d'apprentissage — un grimoire, s'il ne s'achète pas. */
 const RANGS_HERBORISTE=[['1','Novice'],['2','Compagnon'],['3','Maître']];
-const SOUS_TYPES_POTION=['Potion','Élixir','Onguent','Enduit d’arme','Poison','Gaz','Explosif','Lancer','Utilitaire','Équipement'];
+const SOUS_TYPES_POTION=['Potion','Élixir','Onguent','Enduit d’arme','Poison','Gaz','Explosif','Lancer','Utilitaire','Équipement','Plante préparée'];
 function normaliseIngredients(l){const vus=new Map();(Array.isArray(l)?l:[]).forEach(x=>{if(!x||typeof x.id!=='string'||!x.id)return;
  const n=Math.max(1,Math.min(99,Math.trunc(Number(x.n))||1));vus.set(x.id.slice(0,100),(vus.get(x.id.slice(0,100))||0)+n)});
  return [...vus].slice(0,12).map(([id,n])=>({id,n}))}
@@ -3397,7 +3420,9 @@ function normaliseHerbo(h){if(!h||typeof h!=='object')return null;
  return {rang:Math.max(1,Math.min(3,Math.trunc(Number(h.rang))||1)),labo:Math.max(1,Math.min(3,Math.trunc(Number(h.labo))||1)),
   apprentissage:Math.max(0,Math.min(999999,Math.trunc(Number(h.apprentissage))||0)),...(h.grimoire===true?{grimoire:true}:{}),
   // v1.014 : combien la recette en donne, et si elle se fabrique à la Tannerie plutôt qu'à l'herboristerie.
-  ...(Math.trunc(Number(h.quantite))>1?{quantite:Math.min(20,Math.trunc(Number(h.quantite)))}:{}),...(h.tannerie===true?{tannerie:true}:{})}}
+  ...(Math.trunc(Number(h.quantite))>1?{quantite:Math.min(20,Math.trunc(Number(h.quantite)))}:{}),...(h.tannerie===true?{tannerie:true}:{}),
+  // v1.018 : ou à la Forge.
+  ...(h.forge===true?{forge:true}:{})}}
 /* ---------- Les quêtes ----------
    Données au domaine, dans un bâtiment (« lieu », son identifiant) ou pour tout le domaine (lieu vide). Le MJ les écrit et dit
    leur issue ; les joueurs les prennent, par leurs aventuriers (« quetesPrises »), et les lisent au journal. Cachée, une quête
@@ -3649,6 +3674,6 @@ const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignem
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,CARACS_AFFIXE,CARACS_POINTS,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,FORGE_TYPE_ADV,FORGE_MAX_TYPE_ADV,plafondForgeAdv,forgeAdvEffectif,clesAffixes,repetable,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,FAMILLES_AFFIXE,CASCADE_AFFIXE,familleAffixe,EFFETS_AFFIXE,NOMS_DES,rareteForge,normaliseAffixe,normaliseAffixes,normaliseReglageForge,normaliseForgeAdv,normaliseForges,phraseAffixe,groupeAffixe,affixeVaSur,tireAffixes,tireNombreAffixes,nomForge,objetForge,affixesDe,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,SENSIBLES_DANGER,cleanDanger,dangersDe,ajouteDanger,retireDanger,cleFormeDanger,formesActives,RANGS_HERBORISTE,SOUS_TYPES_POTION,normaliseIngredients,normaliseGemmesRecette,normaliseHerbo,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,COFFRE_ONGLETS_MAX,COFFRE_ONGLETS_BASE,COFFRE_PLACES,PRIX_ONGLETS,normaliseCoffreGroupe,normaliseOpsCoffre,placesOnglet,appliqueOpCoffre,jugeOpCoffre,doorBlocksVue,LIMITES_TALENT,limiteTalent,texteLimite,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,difficileDe,ajouteDifficile,retireDifficile,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,placeLibreDeCeCote,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,usageConsomme,usageHorsCombat,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ESPECES,especeDe,bonusEspece,bonusCreation,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,COFFRE_ONGLETS_MAX,COFFRE_ONGLETS_BASE,COFFRE_PLACES,PRIX_ONGLETS,normaliseCoffreGroupe,normaliseOpsCoffre,placesOnglet,appliqueOpCoffre,jugeOpCoffre,doorBlocksVue,LIMITES_TALENT,limiteTalent,texteLimite,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,difficileDe,ajouteDifficile,retireDifficile,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,placeLibreDeCeCote,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,usageConsomme,usageHorsCombat,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ESPECES,especeDe,bonusEspece,bonusCreation,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,esquiveDe,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

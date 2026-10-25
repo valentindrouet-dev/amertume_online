@@ -59,6 +59,8 @@ CHAMPS_VIVANTS.push('testsLieux');
 CHAMPS_VIVANTS.push('recettes','pmPotion','visionPotion','lumierePotion','enduit','repulsif');
 // v1.014 : un Sommeil d'un tour, posé par la Berceuse concentrée.
 CHAMPS_VIVANTS.push('sommeilBref');
+// v1.018 : l'Onguent de lest, l'Élixir de seuil — ce qu'ils percent des Intangibles, jusqu'à la fin du prochain combat.
+CHAMPS_VIVANTS.push('perceIntangible');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
@@ -166,6 +168,8 @@ function etatVivant(){const out={actors:{}};
   // Enfin les pièges, chacun par son identifiant : 1 révélé, 2 déclenché, 4 désamorcé, 8 détection manquée.
   // v1.014 : les formes de terrain dangereux détruites (le Sel de racine), chacune par sa clé.
   ...(m.dangersDetruits||[]).map(k=>({dg:k})),
+  // v1.018 : les seuils de Sel bleu tracés, chacun par ses deux bouts.
+  ...(m.seuilsSel||[]).map(s=>({sl:[s.a.x,s.a.y,s.b.x,s.b.y].map(v=>Math.round(v*100)/100)})),
   ...(m.pieges||[]).map(p=>({t:p.id,e:drapeauxPiege(p)}))]:[];
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
@@ -418,6 +422,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{const v=d.doors[i];if(typeof v==='boolean'){p.open=v;delete p.decouvert;delete p.crochetee}else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}
     else if(Number.isInteger(v)&&v>=4&&v<=7){p.open=!!(v&1);if(v&2)p.decouvert=true;else delete p.decouvert;p.crochetee=true}});
    {const dg=d.doors.filter(v=>v&&typeof v==='object'&&typeof v.dg==='string').map(v=>v.dg.slice(0,80));if(dg.length)m.dangersDetruits=dg;else delete m.dangersDetruits}
+   {const sl=d.doors.filter(v=>v&&typeof v==='object'&&Array.isArray(v.sl)&&v.sl.length===4&&v.sl.every(n=>Number.isFinite(Number(n)))).slice(0,20).map(v=>{const n=v.sl.map(x=>Math.max(0,Math.min(100,Number(x))));return {a:{x:n[0],y:n[1]},b:{x:n[2],y:n[3]}}});
+    if(sl.length)m.seuilsSel=sl;else delete m.seuilsSel}
    const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
     if(typeof v==='boolean'){montreObjet(o,v);delete o.pris}else if(v===0||v===1||v===2){montreObjet(o,v>=1);if(v===2)o.pris=true;else delete o.pris}});
    const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;

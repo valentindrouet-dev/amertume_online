@@ -3544,3 +3544,5 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 :is(#objet-boutons,#indice-bouton) button.btn-action.rond.bouton-interaction:hover:not(:disabled){transform:translate(-50%,-50%) scale(var(--echelle,1)) translateY(-1px)}
 :is(#objet-boutons,#indice-bouton) .bouton-interaction img{width:38px;height:38px;object-fit:contain}:is(#objet-boutons,#indice-bouton) .bouton-interaction svg{width:30px;height:30px}
 #indice-bouton{z-index:6}
+/* v1.018 — Le seuil de Sel bleu, sur la carte : trait bleu verre, pointillé. */
+#dangers-carte .seuil-sel{stroke:#3f7bc0;stroke-width:5px;stroke-linecap:round;stroke-dasharray:3 7;vector-effect:non-scaling-stroke}

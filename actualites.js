@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.018","d":"2026-10-25","t":"Recettes du seuil : Intangibles, Tangible, Esquive, Forge"},
 {"v":"1.017","d":"2026-10-24","t":"Boutons d'interaction des objets"},
 {"v":"1.016","d":"2026-10-24","t":"Domaine en fenêtres et jetons"},
 {"v":"1.015","d":"2026-10-24","t":"Emplacement Mains"},
