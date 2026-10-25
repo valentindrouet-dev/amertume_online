@@ -112,3 +112,15 @@ match /amertume_online_live/{table} {
     allow delete: if isOnlineMJ();
   }
 }
+
+// v1.021 — Les Notes de MJ : un seul document, lu et écrit par un compte MJ seulement. Aucun joueur ne le lit.
+match /amertume_online_mj/{doc} {
+  allow get: if isOnlineMJ() && doc == 'notes';
+  allow create, update: if isOnlineMJ() && doc == 'notes'
+    && request.resource.data.keys().hasOnly(['notes','at','author'])
+    && request.resource.data.notes is string
+    && request.resource.data.notes.size() <= 900000
+    && request.resource.data.at is int
+    && request.resource.data.author == request.auth.uid;
+  allow list, delete: if false;
+}
