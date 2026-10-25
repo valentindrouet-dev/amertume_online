@@ -3617,4 +3617,4 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .maps-side .maps-selection{position:static}#maps-page.mode-domaine .maps-selection,#maps-page.mode-domaine .maps-selection+.divider{display:none}
 .maps-selection>button{width:100%;margin:0 0 6px}
 /* v1.024 — La sélection garde toujours la même hauteur : la colonne ne monte ni ne descend ; un contenu plus long défile dedans. */
-.maps-side .maps-selection{height:560px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding-right:4px}
+.maps-side .maps-selection{height:285px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding-right:4px}
