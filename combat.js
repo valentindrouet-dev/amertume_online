@@ -126,7 +126,8 @@ function equippedDef(actor,items){const worn=gearOf(actor&&[...armuresDe(actor),
    dit deux. Sans précision, une main — comme l'affichent le formulaire et la bulle : l'écart
    faisait passer pour une arme à deux mains une épée qu'on lisait « 1 main », et elle chassait
    le bouclier. */
-function weaponHands(w){return w&&w.ranged===true?2:(Number(w&&w.hands)===2?2:1)}
+// v1.026 : une arme à distance tient à deux mains, sauf réglée à une main (les armes de lancer) ; une arme de mêlée, à une, sauf réglée à deux.
+function weaponHands(w){const h=Number(w&&w.hands);return w&&w.ranged===true?(h===1?1:2):(h===2?2:1)}
 function poolOfWeapons(armes){const dice={};
  DICE_KEYS.forEach(k=>dice[k]=Math.min(12,armes.reduce((somme,w)=>somme+(Number(w.dice&&w.dice[k])||0),0)));
  return dice}

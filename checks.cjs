@@ -64,7 +64,8 @@ assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[1].dice.r
 assert.deepEqual(gearApi.attackChoices({weapons:['rap','dag'],attacks:[]},PANOPLIE)
  .map(x=>x.name),['Rapière + Dague']);                       // Deux mains libres : une seule attaque.
 assert.equal(gearApi.gearAttacks({weapons:['hache','hache']},PANOPLIE)[0].dice.black,6); // Deux exemplaires cumulent.
-assert.equal(gearApi.weaponHands({ranged:true,hands:1}),2);  // Une arme à distance tient toujours à deux mains.
+assert.equal(gearApi.weaponHands({ranged:true,hands:1}),1);  // v1.026 : une arme à distance réglée à une main tient à une main.
+assert.equal(gearApi.weaponHands({ranged:true}),2);          // Sans précision, une arme à distance tient à deux mains.
 assert.equal(gearApi.weaponHands({hands:1}),1);
 assert.equal(gearApi.weaponHands({}),1);                     // Sans précision, une main — comme l'affichent le formulaire et la bulle.
 // Un passage secret : un mur pour la troupe tant qu'il est clos, une porte une fois ouvert.

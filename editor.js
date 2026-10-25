@@ -602,6 +602,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('recettes-roncier')&&Array.isArray(c.items)&&c.semisForge.includes('potions-herboristerie')){semeRoncier(c);c.semisForge.push('recettes-roncier')}
  // v1.018 : les huit recettes du seuil, une fois, après celles du roncier (le Sel bleu se fait de Sel de racine).
  if(!c.semisForge.includes('recettes-seuil')&&Array.isArray(c.items)&&c.semisForge.includes('recettes-roncier')){semeSeuil(c);c.semisForge.push('recettes-seuil')}
+ // v1.026 : une arme à distance réglée « 1 main » comptait deux mains ; elle les garde, une fois — sauf une arme de lancer.
+ if(!c.semisForge.includes('mains-distance')&&Array.isArray(c.items)){c.items.forEach(o=>{if(o&&o.category==='weapon'&&o.ranged===true&&!o.lancer&&Number(o.hands)!==2)o.hands=2});c.semisForge.push('mains-distance')}
  // v1.020 : les adversaires de la tour d'azur, une fois, après les recettes du seuil (import-adversaires.js).
  if(!c.semisForge.includes('adversaires-tour-azur')&&typeof semeAdversairesAzur==='function'&&Array.isArray(c.monsters)&&Array.isArray(c.talents)&&c.semisForge.includes('recettes-seuil')){semeAdversairesAzur(c);c.semisForge.push('adversaires-tour-azur')}
  if(!c.semisForge.includes('agripper-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(!t||t.effet!=='agrippe')return;if(t.type==='pass')t.type='act';
@@ -1162,7 +1164,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
- +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
+ +'<option value="melee">Armes de Mêlée (1 main)</option><option value="melee2">Armes de Mêlée (2 mains)</option><option value="ranged">Armes à Distance (1 main)</option><option value="ranged2">Armes à Distance (2 mains)</option>'
  +'<option value="armor">Armures</option><option value="object">Objets</option><option value="cle">Clés</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="herbe">Herboristerie</option><option value="treasure">Trésors</option></select>'
  +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
@@ -3045,7 +3047,8 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
-const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésors']];
+// v1.026 : les armes se rangent aussi par leurs mains — une, ou deux.
+const ARMORY_COLS=[['melee','Armes de Mêlée (1 main)'],['melee2','Armes de Mêlée (2 mains)'],['ranged','Armes à Distance (1 main)'],['ranged2','Armes à Distance (2 mains)'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -3071,15 +3074,17 @@ let masseAnnule=null;
 /* Créer une pièce sans quitter le tableau : sa catégorie, puis une ligne neuve, son nom prêt à
    écrire. La catégorie proposée est celle qu'on filtre. */
 // Une pièce neuve, par colonne de l'Armurerie : sa catégorie, sa portée, ses mains.
-const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},ranged:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
+const colonneArmurerie=a=>{const c=itemColumn(a);return (c==='melee'||c==='ranged')&&weaponHands(a)===2?c+'2':c};
+const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},melee2:{category:'weapon',ranged:false,hands:2,name:'Nouvelle arme'},
+ ranged:{category:'weapon',ranged:true,hands:1,name:'Nouvelle arme à distance'},ranged2:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
  armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},cle:{category:'cle',name:'Nouvelle clé'},ressource:{category:'ressource',name:'Nouvelle ressource'},
  restes:{category:'restes',name:'Nouveaux restes'},herbe:{category:'herbe',name:'Nouvelle plante'},potion:{category:'potion',name:'Nouvelle potion',sousType:'Potion',usage:'conso'},treasure:{category:'treasure',name:'Nouveau trésor'}};
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor']];
+const CATS_NEUVES=[['melee','Arme de Mêlée (1 main)'],['melee2','Arme de Mêlée (2 mains)'],['ranged','Arme à Distance (1 main)'],['ranged2','Arme à Distance (2 mains)'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['herbe','Herboristerie'],['potion','Potions'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
  const b=document.createElement('button');b.type='button';b.className='primary';b.textContent='+ Nouvelle pièce';
- b.onclick=()=>{const c=cat.value,o={id:crypto.randomUUID(),name:'Nouvelle pièce',category:c==='melee'||c==='ranged'||c==='lancer'?'weapon':c,ranged:c==='ranged'||c==='lancer',...(c==='lancer'?{lancer:true}:{}),hands:c==='ranged'?2:1,
+ b.onclick=()=>{const c=cat.value,o={id:crypto.randomUUID(),name:'Nouvelle pièce',category:['melee','melee2','ranged','ranged2','lancer'].includes(c)?'weapon':c,ranged:c==='ranged'||c==='ranged2'||c==='lancer',...(c==='lancer'?{lancer:true}:{}),hands:c==='melee2'||c==='ranged2'?2:1,
    qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[]};
   catalog.items.push(o);normalizeCatalog(catalog);armoryNeuf=o.id;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderArmory()};
  const std=document.createElement('button');std.type='button';std.className='masse-standard';std.textContent='↺ Tri standard';std.disabled=!masseTri;
@@ -3114,7 +3119,7 @@ function tableMasse(boite,liste){
   {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource2),lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
   {cle:'magasin',nom:'Magasin',type:'case',dits:['Mettre en vente au magasin','Retirer du magasin'],lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
   {cle:'tanneur',nom:'Tanneur',type:'case',pour:o=>o.category!=='ressource'&&o.category!=='restes',dits:['Rendre vendu et fabriqué par le tanneur','Retirer de la tannerie'],lit:o=>o.tanneur===true,ecrit:(o,v)=>{o.tanneur=!!v}},
-  {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.ranged,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}}];
+  {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.lancer,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}}];
  const vaut=(c,o)=>!c.pour||c.pour(o);
  /* Trié par une colonne : les pièces qu'elle ne concerne pas, ou vides, restent en bas ; à valeur
     égale, l'ordre de l'Armurerie. */
@@ -3251,7 +3256,7 @@ function renderArmory(){renderBiblioObjets();renderGuidePrix();const cols=$('arm
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
  const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
  cols.classList.toggle('en-masse',masse);
- const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>!a.forge&&itemColumn(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri);
+ const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>!a.forge&&colonneArmurerie(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri);
  if(masse){barreMasse(cols,choisie);tableMasse(cols,ARMORY_COLS.filter(([k])=>!choisie||choisie===k).flatMap(([k])=>visibles(k)));bulleOrpheline();return}
  for(const [key,titre] of ARMORY_COLS){
   if(choisie&&choisie!==key)continue;
@@ -4409,7 +4414,8 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
   const add=document.createElement('button');add.type='button';add.className='dom-ajout';add.textContent='+ Affixe';add.onclick=()=>openAffixe(null);s.append(add)}
  // Le générateur : une base, un nombre d'affixes, un niveau ; la pièce, pour la voir, puis la donner.
  {const s=bloc('Générateur'),ligne=document.createElement('div');ligne.className='forge-reglages';
-  const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+  // v1.026 : seules les pièces de base, grises (Communes), se forgent.
+  const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')&&rareteDe(o)==='commun').sort((x,y)=>x.name.localeCompare(y.name,'fr'));
   const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base');base.replaceChildren(new Option('Tirage au sort',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=forgeBase;base.onchange=()=>{forgeBase=base.value};
   const nombre=document.createElement('select');nombre.setAttribute('aria-label','Nombre d’affixes');[['','Tirage au sort'],['1','1 · Inhabituel'],['2','2 · Rare'],['3','3 · Épique'],['4','4 · Légendaire']].forEach(([v,t])=>nombre.add(new Option(t,v)));nombre.value=forgeNombre;nombre.onchange=()=>{forgeNombre=nombre.value};
   const niveau=document.createElement('input');niveau.type='number';niveau.min='1';niveau.max='20';niveau.value=String(forgeNiveau);niveau.title='Niveau : les affixes d’un niveau plus haut ne tombent pas';niveau.setAttribute('aria-label','Niveau');niveau.onchange=()=>{forgeNiveau=Math.max(1,Math.min(20,Math.trunc(Number(niveau.value))||1))};
@@ -4433,7 +4439,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
  {const s=bloc('Sur mesure');s.append(...blocMesure(mesureForge,{rerender:renderForge,apres:()=>{mesureForge={id:'forge-'+crypto.randomUUID(),base:mesureForge.base,affixes:['','','',''],valeurs:{}};syncForges();sauveForge();renderForge();openChambre()}}))}}
 /* Forger sur mesure : une base, jusqu'à trois affixes et un de classe, leurs valeurs ; « apres » reçoit la pièce, déjà
    rangée à la Chambre forte. */
-function blocMesure(m,{rerender,armesSeules=false,apres}){const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||(!armesSeules&&o.category==='armor'))).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+function blocMesure(m,{rerender,armesSeules=false,apres}){const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||(!armesSeules&&o.category==='armor'))&&rareteDe(o)==='commun').sort((x,y)=>x.name.localeCompare(y.name,'fr'));
   const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base, sur mesure');base.replaceChildren(new Option('— pièce de base —',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=m.base;
   const b=bases.find(o=>o.id===m.base),tous=normaliseAffixes(catalog.affixes),vaSur=b?tous.filter(x=>affixeVaSur(x,b,0)):[];
   // Un affixe qui ne va pas sur la nouvelle base s'en va ; deux affixes d'un même groupe, non plus.
@@ -4718,7 +4724,7 @@ function openReglagesEspece(id){const e=especeDe(id);if(!e)return;
   catalog.extensionsEspeces={...(catalog.extensionsEspeces||{}),[e.id]:extensionValide(f.get('extension'))}})}
 /* L'objet inhabituel : un genre au hasard parmi ceux de la classe qui ont une base, une base de ce genre, un affixe. Il ne se
    tire qu'une fois, en créant l'aventurier : rien ne le relance. */
-function tirePieceDepart(role,tirage=Math.random){const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')&&(catalog.affixes||[]).some(x=>!x.classe&&affixeVaSur(x,o,1)));
+function tirePieceDepart(role,tirage=Math.random){const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')&&rareteDe(o)==='commun'&&(catalog.affixes||[]).some(x=>!x.classe&&affixeVaSur(x,o,1)));
  const genres=genresAleatoires(role).map(g=>bases.filter(GENRES_OBJET_ALEATOIRE[g])).filter(l=>l.length);if(!genres.length)return null;
  const l=genres[Math.floor(tirage()*genres.length)],b=l[Math.floor(tirage()*l.length)],affixes=tireAffixes(b,1,catalog.affixes,1,tirage);
  return affixes.length?{id:'forge-'+crypto.randomUUID(),base:b.id,affixes}:null}
@@ -7363,7 +7369,7 @@ function butinDesRetires(partants,tirage=Math.random,pour=null){const heros=acto
   const h=pour||parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
   [...(f.inventaire||[])].forEach(id=>{const o=objetDe(id),ch=chanceButin(chances,id);if(!o||!ch||tirage()*100>=ch)return;if(pour)retirerInventaire(f,o);
    // Une arme ou une armure qui tombe peut sortir forgée : de tant à tant d'affixes, au niveau de qui la reçoit.
-   let donne=o;if((o.category==='weapon'||o.category==='armor')&&!o.forge){const n=tireNombreAffixes(catalog.forge,forgeF,tirage);
+   let donne=o;if((o.category==='weapon'||o.category==='armor')&&!o.forge&&!['inhabituel','rare','mystique','epique'].includes(o.rarete)){const n=tireNombreAffixes(catalog.forge,forgeF,tirage);
     if(n>0){const aff=tireAffixes(o,n,catalog.affixes||[],Number(h.level)||1,tirage);if(aff.length){const rec={id:'forge-'+crypto.randomUUID(),base:o.id,affixes:aff};
      h.forges=[...(h.forges||[]),rec];h.inventaire=[...(h.inventaire||[]),rec.id];syncForges();donne=objetDe(rec.id)||o}}}
    if(donne===o)ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(donne.id,(g.objets.get(donne.id)||0)+1);g.de.add(f);
@@ -7639,7 +7645,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +sel('Catégorie','category',cat,ITEM_CATS)
   +selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
-  +(arme&&!a.lancer?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
+  +(arme&&!a.lancer?sel('Mains','hands',weaponHands(a),[[1,'1 main'],[2,'2 mains']]):'')
   +(arme?sel('Type d’arme','typeArme',typeArmeDe(a),[...(a.ranged?[]:[['','—']]),...TYPES_ARME.filter(t=>t[2]===(a.ranged?'ranged':'melee')).map(([k,n])=>[k,n])]):'')
   +(arme&&a.ranged&&!a.lancer?'<label class="field-check"><input name="armeFeu" type="checkbox" '+(a.armeFeu?'checked':'')+'>Arme à feu</label>':'')
   +(arme||armure?sel('Genre','accord',accordDe(a),ACCORDS):'')
