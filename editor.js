@@ -2431,7 +2431,7 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
   if(a.horsCarte&&!a.retire&&prendPartAventure(a)){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
  const m=typeof currentMap==='function'?currentMap():null;
- if(revenus.length&&m&&m.start&&typeof spreadInZone==='function')spreadInZone(revenus.length,m.start).forEach((p,i)=>moveActor(revenus[i],p.x,p.y,true));
+ if(revenus.length&&m&&m.start&&typeof spreadInZone==='function')spreadInZone(revenus.length,m.start,m.ratio).forEach((p,i)=>moveActor(revenus[i],p.x,p.y,true));
  log('🌙 Repos long : '+troupe.map(a=>a.name).join(', ')+' retrouvent VIE, PV, repos courts et charges.'
   +(revenus.length?' '+revenus.map(a=>a.name).join(', ')+(revenus.length>1?' reviennent':' revient')+' sur la carte.':''),{ton:'soin'});
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}

@@ -1633,7 +1633,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Et ses objets récupérés reviennent à leur place.
  (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;delete m.dangersTrous;
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
- if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
+ if(m.start)spreadInZone(heros.length,m.start,m.ratio).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
  (m.doors||[]).forEach(d=>{d.open=!!d.fenetre&&etatFenetre(d)==='ouverte';delete d.decouvert;delete d.crochetee});const grille=fogDims(m);

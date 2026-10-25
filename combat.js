@@ -888,8 +888,11 @@ function polyInReach(actor,poly,size,token){if(!poly||poly.length<3)return false
   best=Math.min(best,Math.hypot(ax-q[0],ay-q[1]))}
  return best<=contactRadius(token)}
 // Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
-function spreadInZone(n,zone){if(!zone||n<1)return [];
- const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
+/* v1.064 : une zone nettement plus haute que large (à l'écran, selon le ratio largeur / hauteur de la carte) les met en file
+   indienne, de haut en bas ; une zone à peu près carrée garde sa grille. */
+function spreadInZone(n,zone,ratio){if(!zone||n<1)return [];
+ const r=Number(ratio)>0?Number(ratio):16/9,enFile=zone.h>=1.5*zone.w*r;
+ const cols=enFile?1:Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
  for(let i=0;i<n;i++){const c=i%cols,r=Math.floor(i/cols);
   out.push({x:zone.x+zone.w*(c+.5)/cols,y:zone.y+zone.h*(r+.5)/rows})}
  return out}
