@@ -738,16 +738,24 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
   vue.append(t)})}
 /* v0.998 — Examiner un Indice découvert, au contact : le test réglé par le MJ (sa compétence, ses réussites), ou l'objet
    qu'il faut porter. Réussi, son secret s'écrit au journal et se lit ensuite dans sa bulle. */
-function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine)return;
+/* v1.039 — Le test d'un Indice ne se tente qu'une fois, pour toute la troupe : la table partagée le réserve (40 : tenté, 41 : percé),
+   si bien que deux aventuriers qui cliquent ensemble n'en lancent qu'un. Raté, rien de plus : le secret reste caché, sauf si le
+   MJ le révèle (« Révéler l'indice complet »). */
+const rangIndice=o=>{const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;return k<0?-1:rangsSol(m).n+k};
+function perceIndice(o){const i=rangIndice(o);o.examine=true;delete o.tente;if(o.secret)log(o.secret,{ton:'reveal'});
+ if(i>=0&&typeof reserveSurTable==='function'&&typeof enLigne!=='undefined'&&enLigne)reserveSurTable(arr=>{arr[i]=41;return arr});render();saveMaps();scheduleSave()}
+function examinerIndice(a,o){const x=o.examen||{};if(!x.mode||o.examine||o.tente)return;
  if(x.mode==='objet'){const it=(catalog.items||[]).find(i=>i&&i.id===x.item);if(!it)return;
   if(!(a.inventaire||[]).includes(it.id)){log('Il faut ⟦'+it.id+'⟧.',{local:true});return}
   // v1.018 : une pièce consommable s'use à l'emploi.
   if(usageConsomme(usageObjet(it)))retirerInventaire(a,it);
-  o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'});render();saveMaps();scheduleSave();return}
- const k=Math.max(0,Math.min(7,Number(x.comp)||0)),n=Math.max(1,Number(x.reussites)||1),jet=skillRoll(valeurCompetence(a,k)-1,d6);
- if(typeof rollOnBoard==='function')rollOnBoard([{dice:jet.des.slice(0,40).map(v=>[v,0])}],a,null);
- log(nomNum(a)+' - ⟬t'+k+'|'+jet.reussites+'|'+jet.des.slice(0,40).join(',')+'⟭');
- if(jet.reussites>=n){o.examine=true;if(o.secret)log(o.secret,{ton:'reveal'})}render();saveMaps();scheduleSave()}
+  perceIndice(o);return}
+ const i=rangIndice(o);
+ prisSurTable(i<0?null:arr=>{if(arr[i]===40||arr[i]===41)return null;arr[i]=40;return arr},()=>{if(o.examine)return;o.tente=true;
+  const k=Math.max(0,Math.min(7,Number(x.comp)||0)),n=Math.max(1,Number(x.reussites)||1),jet=skillRoll(valeurCompetence(a,k)-1,d6);
+  if(typeof rollOnBoard==='function')rollOnBoard([{dice:jet.des.slice(0,40).map(v=>[v,0])}],a,null);
+  log(nomNum(a)+' - ⟬t'+k+'|'+jet.reussites+'|'+jet.des.slice(0,40).join(',')+'⟭');
+  if(jet.reussites>=n){perceIndice(o);return}render();saveMaps();scheduleSave()})}
 function bulleObjetCarte(o){const d=document.createElement('div');d.className='bulle-objet-carte';
  const pieces=restantsObjet(o).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  const desc=()=>{if(!o.desc&&!o.tresor)return null;const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=[o.desc,o.tresor?'Trésor : '+o.tresor:''].filter(Boolean).join('\n');return p};
@@ -759,7 +767,7 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
  else{const g=document.createElement('div');g.className='gear-detail large';const n=document.createElement('p');n.className='gear-nom';n.textContent=o.nom||'Objet';g.append(n);const p=desc();if(p)g.append(p);d.append(g)}
  if(o.indice&&o.examine&&o.secret){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=o.secret;(d.firstChild||d).append(p)}
  // v0.9994 : un second test reste à tenter : sa compétence, à sa couleur.
- if(o.indice&&objetVu(o)&&!o.examine&&o.examen&&o.examen.mode==='comp'){const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),p=document.createElement('p'),b=document.createElement('b');
+ if(o.indice&&objetVu(o)&&!o.examine&&!o.tente&&o.examen&&o.examen.mode==='comp'){const k=Math.max(0,Math.min(7,Number(o.examen.comp)||0)),p=document.createElement('p'),b=document.createElement('b');
   p.className='indice-examen-bulle';b.textContent=skillNames[k];if(SKILL_TINTS[k])b.style.color='rgb('+SKILL_TINTS[k]+')';const t=document.createElement('b');t.textContent='Test de ';p.append(t,b,' pour en découvrir davantage.');(d.firstChild||d).append(p)}
  if(view==='mj'&&!objetVu(o)){const c=document.createElement('p');c.className='muted objet-cache-bulle';c.textContent='Caché : '+skillNames[o.test.comp]+', '+o.test.reussites+' réussite'+(o.test.reussites>1?'s':'');(d.firstChild||d).append(c)}
  return d}
@@ -813,6 +821,8 @@ function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div
  bouton(objetVu(o)?'Cacher à la troupe':'Révéler à la troupe',()=>{montreObjet(o,!objetVu(o));if(objetVu(o))floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(objetVu(o)?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  // v0.9991 : un Indice ne se donne ni ne se ramasse : il reste où il est.
  const h=o.indice||o.groupe===true||o.ressource===true?null:heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
+ // v1.039 : le MJ livre le secret d'un Indice, test raté ou pas tenté.
+ if(o.indice&&o.secret&&!o.examine)bouton('Révéler l’indice complet',()=>{if(!objetVu(o))montreObjet(o,true);perceIndice(o)});
  // v1.012 : une Ressource, le MJ la fait récolter par l'aventurier actif au contact, sinon par le plus proche.
  if(o.ressource===true){const a=heroActif(),r=a&&objetAPortee(a,o)?a:heroLePlusProche(o);if(r)bouton('Récolte · '+nomNum(r),()=>recolterRessource(r,o))}
  document.body.append(m);const r=m.getBoundingClientRect();
@@ -1587,7 +1597,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;
+ (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
@@ -3513,7 +3523,7 @@ function renderBoutonsObjets(){let calque=$('objet-boutons');if(!calque){calque=
 {const f=renderEnjamber;renderEnjamber=function(...x){const r=f.apply(this,x);renderBoutonsObjets();return r}}
 /* v1.017 — L'Indice révélé qui attend son test : au survol, au-dessus de lui, un Bouton d'Interaction à l'icône et à la couleur
    de la compétence ; la bulle de l'indice s'y accroche. On y monte la souris — il reste —, et un clic fait le test. */
-const indiceATester=o=>!!o&&o.indice&&objetVu(o)&&!o.examine&&!!o.examen&&(o.examen.mode==='comp'||(o.examen.mode==='objet'&&!!objetDe(o.examen.item)));
+const indiceATester=o=>!!o&&o.indice&&objetVu(o)&&!o.examine&&!o.tente&&!!o.examen&&(o.examen.mode==='comp'||(o.examen.mode==='objet'&&!!objetDe(o.examen.item)));
 let indiceBouton=null,indiceBoutonMinuteur=0;
 function cacheIndiceBouton(){clearTimeout(indiceBoutonMinuteur);if(indiceBouton){indiceBouton.remove();indiceBouton=null;if(typeof fermerBulle==='function')fermerBulle()}}
 function cacheIndiceBientot(){clearTimeout(indiceBoutonMinuteur);indiceBoutonMinuteur=setTimeout(()=>{const b=indiceBouton;if(!b)return;
@@ -3778,7 +3788,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!copieAPlacer||!mapDraft)r
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&copieAPlacer){copieAPlacer=null;renderCanvas()}});
 ['lumiere-double','coffre-double','piege-double'].forEach(id=>{const b=$(id);if(!b)return;const f=b.onclick;b.onclick=e=>{const avant=mapSel;f&&f(e);if(mapSel&&mapSel!==avant)commencePlacement()}});
 $('shape-double').onclick=()=>{const m=mapDraft,d=mapSel;if(!m||!d)return;const s=shapeAt(d);if(!s)return;pushUndo();const c=structuredClone(s);if(c.id)c.id=crypto.randomUUID();c.locked=false;
- ['pris','revele','voile','examine','open','decouvert','crochetee','eteinte','prise'].forEach(k=>delete c[k]);
+ ['pris','revele','voile','examine','tente','open','decouvert','crochetee','eteinte','prise'].forEach(k=>delete c[k]);
  if(d.kind==='notemj'){const l=notesDe(m.id);c.id=crypto.randomUUID();l.push(c);mapSel={kind:'notemj',i:l.length-1};sauveNotesMJ()}
  else{const l=d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='foe'?m.foes:null;if(!l)return;
   if(Number.isFinite(c.w)){c.x=Math.min(100-c.w,c.x+2);c.y=Math.min(100-c.h,c.y+2)}else{c.x=Math.min(100,c.x+2);c.y=Math.min(100,c.y+2)}

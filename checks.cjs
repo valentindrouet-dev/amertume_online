@@ -4690,7 +4690,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(carto.includes("function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;")&&carto.includes(" else{l.eteinte=true;l.prise=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}")
   &&carto.includes("bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte){delete l.eteinte;delete l.prise}else l.eteinte=true;")
   &&carto.includes(" vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;")&&carto.includes(" renderPortes();renderCoffres();renderPieges();renderObjets();renderLumieres()}")
-  &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});"),'la prise, le menu, la carte rouverte');
+  &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});"),'la prise, le menu, la carte rouverte');
  assert.ok(vivant.includes("...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),")&&vivant.includes("fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===2){l.eteinte=true;l.prise=true}else if(v===1){l.eteinte=true;delete l.prise}else if(v===0){delete l.eteinte;delete l.prise}});"),'éteinte, en ligne');}
 /* v0.591 — L'obscurité et la vision dans le noir. Sur une carte, une seconde matière, dessinée au rectangle, au contour libre,
    au remplissage d'une pièce, effacée à la gomme : dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, et
