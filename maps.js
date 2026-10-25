@@ -702,7 +702,8 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
  (m.objets||[]).forEach((o,i)=>{if(o.pris||(!objetVu(o)&&view!=='mj'))return;
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
   // v1.033 : son centre même — un bord de socle qui frôle la vue, derrière un mur, ne suffit plus.
-  const vuTroupe=seenAt(o.x,o.y)||centreVuTroupe(o.x,o.y);
+  // v1.042 : dans le champ de vision de la troupe, à l'instant — une zone seulement explorée ne le montre plus.
+  const vuTroupe=centreVuTroupe(o.x,o.y);
   if(oeilJoueur()&&!vuTroupe)return;
   /* Chez le MJ, un objet se voile comme un adversaire : caché par lui, pâli et cerclé de violet ;
      dans une salle que la troupe n'a pas encore vue, pâli et cerclé de tirets. */
@@ -3523,7 +3524,7 @@ let objetsBoutonsCle='';
 function renderBoutonsObjets(){let calque=$('objet-boutons');if(!calque){calque=document.createElement('div');calque.id='objet-boutons';$('map-view').append(calque);objetsBoutonsCle=''}
  const m=currentMap(),a=view==='mj'?null:actors[owner],ok=!!m&&!!a&&a.hero&&alive(a)&&!a.horsCarte&&controlled(actors.indexOf(a));
  const coffres=ok?(m.coffres||[]).filter(c=>c&&coffreVisible(c)&&coffreEnVue(c)&&(!c.ouvert||c.groupe===true)&&coffreAPortee(a,c)):[];
- const objets=ok&&!enCombat()?(m.objets||[]).filter(o=>o&&!o.pris&&!o.indice&&(o.groupe===true||o.ressource===true)&&objetVu(o)&&objetAPortee(a,o)&&(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'}))):[];
+ const objets=ok&&!enCombat()?(m.objets||[]).filter(o=>o&&!o.pris&&!o.indice&&(o.groupe===true||o.ressource===true)&&objetVu(o)&&objetAPortee(a,o)&&centreVuTroupe(o.x,o.y)):[];
  const gris=enCombat()&&!!a&&pointsRestants(a,'action')<=0;
  const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+coffres.map(c=>[c.x,c.y,c.w,c.h,c.ouvert?1:0].join(':')).join(',')+'|'+objets.map(o=>[o.x,o.y,o.id].join(':')).join(',');
  if(cle===objetsBoutonsCle&&calque.isConnected)return;objetsBoutonsCle=cle;calque.replaceChildren();

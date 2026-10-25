@@ -186,7 +186,7 @@ REGLES_SECTIONS.push(
  // 14. L'exploration.
  ()=>rgSection('exploration','L’exploration',RG.pass,'🗺','Hors combat, on se déplace librement, on fouille, on crochète et on évite les pièges.',
   rgListe(['<b>Obscurité</b> : on ne voit que sa zone de contact, plus loin avec la Vision dans le noir ; une zone éclairée se voit de loin.',
-   '<b>Objets au sol</b> : visibles seulement là où la troupe voit ou a vu. Un clic au contact prend un exemplaire de chaque pièce ; s’il en reste, l’objet reste au sol.',
+   '<b>Objets au sol</b> : visibles seulement dans le champ de vision de la troupe, à l’instant. Un clic au contact prend un exemplaire de chaque pièce ; s’il en reste, l’objet reste au sol.',
    '<b>Fouiller</b> : un test de Perception sur la zone de contact pas encore fouillée révèle objets, coffres, passages et pièges cachés.',
    '<b>Indices</b> : cachés comme des objets, un test les repère. Au contact, un second test, ou l’objet qu’il faut, livre leur secret ; ce test ne se tente qu’une fois pour toute la troupe, et raté, le secret reste caché, sauf si le MJ le révèle ; au survol, un bouton porte l’icône de la compétence ou de la pièce. Une pièce consommable s’use à l’emploi.',
    '<b>Terrain dangereux</b> : ronces, haies vivantes… Chaque type a sa couleur, ses dégâts (fixes ou en d6, sans DEF) et ses états, et frappe les aventuriers, les adversaires ou tous : quand un déplacement le traverse ou s’y arrête, puis, en combat, à chaque fin de tour passée dedans. Une pièce portée à l’effet « Protège des ronces » — les Gants de ronceur — en protège ; le Sel de racine détruit une haie vivante au contact.',
