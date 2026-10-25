@@ -1128,3 +1128,153 @@ function dessineCoffreGroupe(){const a=actors.find(x=>x&&x.id===coffreGroupeDe);
  const gs=$('cg-sac');gs.replaceChildren();const sac=new Map();(a.inventaire||[]).forEach(id=>sac.set(id,(sac.get(id)||0)+1));
  sac.forEach((n,id)=>{const o=objetDe(id);if(o)gs.append(carreCoffre(o,n,'Ranger '+o.name,tous=>deposerAuCoffre(a,o,tous)))})}
 coffreGroupeDialog.addEventListener('close',()=>{clearInterval(coffreGroupeMinuterie);coffreGroupeDe=null});
+
+/* ---------- v1.019 — La vitrine des bâtiments ----------
+   Un bâtiment ouvert, construit et intact, à fonction — Magasin, Tannerie, Herboristerie (le Laboratoire), Forge — se présente
+   en vitrine : en tête son nom et qui agit ici, avec son or ; puis ses onglets. Acheter, Apprendre une recette, Vendre,
+   Convertir : une grille paginée, cherchable, verte pour ce qui se fait tout de suite, grise sinon ; la case choisie se lit à
+   droite, avec son bouton. Fabriquer : l'établi, la recette choisie, ses ingrédients, ce qu'on en a. L'onglet Bâtiment garde
+   la fiche, les déplacements et les quêtes. Rien ne change des achats, des ventes, des fabrications : ce sont les mêmes gestes. */
+const ONGLETS_VITRINE={magasin:[['acheter','Acheter'],['vendre','Vendre']],
+ tannerie:[['acheter','Acheter'],['fabriquer','Fabriquer'],['vendre','Vendre'],['convertir','Convertir']],
+ herboristerie:[['acheter','Acheter'],['apprendre','Apprendre une recette'],['fabriquer','Fabriquer']],forge:[['fabriquer','Fabriquer']]};
+const ICI_VITRINE={magasin:'au magasin',tannerie:'à la tannerie',herboristerie:'à l’herboristerie',forge:'à la forge'};
+const ICONES_VITRINE={herboristerie:'<path d="M5 19c0-8 5-14 14-14 0 9-6 14-14 14zm0 0 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+ magasin:'<path d="M4 9h16l-1.5 10h-13zM8 9a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+ tannerie:'<path d="M7 4h10l2 5-3 2 1 9H7l1-9-3-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+ forge:'<path d="M3 8h13c0 3 2 4 5 4v2h-6l1 3h3v3H6v-3h3l1-3c-4 0-7-3-7-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'};
+const PAR_PAGE_VITRINE=16;
+const vitrine={bat:'',onglet:'',sel:{},page:{},cherche:{},payer:'bourse'};
+const vitEl=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const vitCle=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function vitLogo(o,cls){const im=o?logoEquipement(o):null;if(im){if(cls)im.classList.add(cls);return im}
+ const g=typeof glyphePiece==='function'?glyphePiece(itemColumn(o)):vitEl('span','glyphe','?');if(cls)g.classList.add(cls);return g}
+function vitPrix(n){const l=vitEl('span','vit-prix');l.append(vitEl('i','piece-or'),vitEl('b','',(Number(n)||0).toLocaleString('fr-FR')));return l}
+function vitBulle(el,o,dit){if(!BULLES||typeof surveille!=='function')return;
+ surveille(el,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');if(dit){const a=vitEl('p','bulle-action non',dit);d.append(a)}ouvrirBulle(el,d,'bulle-gear')})}
+// Un bouton refusé dit pourquoi au survol, dans la bulle ordinaire des boutons.
+function vitRefus(btn,raison){if(!raison||typeof surveille!=='function'||typeof bulleAction!=='function')return;surveille(btn,()=>bulleAction(btn,{nom:raison}))}
+function vitPayer(client,avecCoffre){if(!avecCoffre||!client)return null;const l=vitEl('label','vit-payer');l.append(vitEl('span','','Payer avec :'));
+ const s=vitEl('select');s.add(new Option('Sa bourse','bourse'));s.add(new Option('Le coffre','coffre'));s.value=vitrine.payer;
+ s.onchange=()=>{vitrine.payer=s.value==='coffre'?'coffre':'bourse';vitRendCorps()};l.append(s);return l}
+const parCoffreVitrine=()=>vitrine.payer==='coffre';
+// Ce qu'un onglet à grille propose : la pièce, son nombre, son prix, si l'on peut, pourquoi pas, et le geste.
+function articlesVitrine(b,client,onglet){const f=b.fonction,inv=new Map();
+ if(client)(client.inventaire||[]).forEach(id=>{const o=objetDe(id);if(o)inv.set(o,(inv.get(o)||0)+1)});
+ const achat=(o,prix,faire,ici)=>{const coffre=parCoffreVitrine(),or=coffre?coffreVue().or:client?orDe(client):0,ok=!!client&&or>=prix;
+  return {o,n:1,prix,ok,raison:!client?'Il faut être '+ici+' pour acheter.':ok?'':'Il manque '+(prix-or)+' or'+(coffre?' dans le coffre de groupe.':'.'),action:'Acheter',coffre:true,faire:()=>faire(coffre)}};
+ const alpha=(x,y)=>x.name.localeCompare(y.name,'fr'),rang=o=>['melee','ranged','armor','object','cle','ressource','restes','herbe','treasure'].indexOf(itemColumn(o));
+ if(onglet==='acheter'){
+  if(f==='magasin')return (catalog.items||[]).filter(o=>o&&o.magasin===true).sort((x,y)=>rang(x)-rang(y)||alpha(x,y)).map(o=>{const r=achat(o,prixAchat(o),c=>acheterPour(client,o,c),'au magasin');
+   if(client&&!parCoffreVitrine()){const p=peutAcheter(client,o);r.ok=p.ok;if(!p.ok)r.raison='Il manque '+p.manque+' or.'}return r});
+  if(f==='tannerie')return (catalog.items||[]).filter(o=>o&&o.tanneur===true).sort((x,y)=>rang(x)-rang(y)||alpha(x,y)).map(o=>achat(o,prixAchat(o),c=>acheterTannerie(client,o,c),'à la tannerie'));
+  if(f==='herboristerie')return (catalog.items||[]).filter(o=>o&&o.herboriste===true).sort(alpha).map(o=>achat(o,prixAchat(o),c=>acheterHerbo(client,o,c),'à l’herboristerie'))}
+ if(onglet==='apprendre')return potionsHerbo().filter(o=>!o.herbo.grimoire&&!(client&&recettesDe(client).includes(o.id))).sort(alpha).map(o=>{const prix=o.herbo.apprentissage,refus=client?refusHerbo(client,o,b):'';
+  const r=achat(o,prix,c=>apprendreRecette(client,o,b,c),'à l’herboristerie');r.action='Apprendre la recette';if(!client)r.raison='Il faut être à l’herboristerie pour apprendre.';else if(refus){r.ok=false;r.raison=refus}return r});
+ if(!client)return [];
+ if(onglet==='vendre'){
+  if(f==='magasin')return [...inv.entries()].sort(([x],[y])=>rang(x)-rang(y)||alpha(x,y)).map(([o,n])=>({o,n,prix:prixVente(o),ok:true,raison:'',action:'Vendre',faire:()=>vendrePour(client,o)}));
+  if(f==='tannerie')return [...inv.entries()].filter(([o])=>o.category==='restes').sort(([x],[y])=>alpha(x,y)).map(([o,n])=>({o,n,prix:prixAchat(o),ok:true,raison:'',action:'Vendre',faire:()=>vendreReste(client,o)}))}
+ if(onglet==='convertir')return [...inv.entries()].filter(([o])=>o.category==='restes'&&Object.keys(rendementReste(o)).length).sort(([x],[y])=>alpha(x,y))
+  .map(([o,n])=>({o,n,prix:null,ok:true,raison:'',action:'Convertir',sous:puceRessources(rendementReste(o)),faire:()=>convertirReste(client,o)}));
+ return []}
+// Les ingrédients d'une recette, un par ligne : ce qu'il faut, ce qu'on en a — le sac et le coffre, la réserve, la bourse.
+function besoinsVitrine(a,o,herbo){const out=[];
+ if(herbo){const c=coffreVue(),dansCoffre=id=>c.tabs.reduce((n,t)=>n+t.filter(x=>x===id).length,0);
+  normaliseIngredients(o.ingredients).forEach(({id,n})=>{const p=objetDe(id);out.push({icone:p?vitLogo(p):null,nom:p?p.name:id,q:n,v:a?(a.inventaire||[]).filter(x=>x===id).length+dansCoffre(id):0})})}
+ const r=reserveAvecCoffre();normaliseRecette(o.recette).forEach(({cle,qte})=>out.push({icone:iconeRessource(cle),nom:(ressourcesJeu().find(x=>x.cle===cle)||{}).nom||cle,q:qte,v:Number(r[cle])||0}));
+ if(herbo)Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>out.push({icone:null,nom:(phraseRichesses({[k]:1})[0]||k).replace(/^1 /,''),q:n,v:a?Number((a.richesses||{})[k])||0:0}));
+ return out}
+function recettesVitrine(b,client){if(!client)return [];const f=b.fonction,out=[];
+ if(f==='tannerie')(catalog.items||[]).filter(o=>o&&o.tanneur===true&&o.recette&&o.recette.length).sort((x,y)=>x.name.localeCompare(y.name,'fr')).forEach(o=>{const manque=manqueRecette(reserveAvecCoffre(),o);
+  out.push({o,q:1,besoins:besoinsVitrine(client,o,false),ok:!manque.length,raison:manque.length?'Il manque '+texteRessources(Object.fromEntries(manque))+' dans la réserve.':'',faire:()=>fabriquerTannerie(client,o)})});
+ const ici=o=>f==='forge'?o.herbo.forge:f==='tannerie'?o.herbo.tannerie&&!o.herbo.forge:!o.herbo.tannerie&&!o.herbo.forge;
+ potionsHerbo().filter(o=>ici(o)&&recettesDe(client).includes(o.id)).forEach(o=>{const refus=refusHerbo(client,o,b),manque=manqueHerbo(client,o);
+  out.push({o,q:o.herbo.quantite||1,besoins:besoinsVitrine(client,o,true),ok:!refus&&!manque.length,raison:refus||(manque.length?'Il manque : '+manque.map(([n,q,v])=>(q-v)+' '+n).join(', ')+'.':''),faire:()=>fabriquerHerbo(client,o,b)})});
+ return out}
+// L'habit : la fiche ordinaire, sa fonction ôtée, passe dans l'onglet Bâtiment ; la vitrine se pose devant.
+let vitBoite=null,vitBat=null,vitClient=null,vitFiche=null;
+function habilleVitrine(){const boite=$('dom-fiche'),b=batimentDom(domPageSel);if(!boite||!b||!fonctionActive(b)||!ONGLETS_VITRINE[b.fonction])return;
+ const cherchait=document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains('vit-recherche');
+ const ancienne=boite.querySelector(':scope>.dom-fonction');if(ancienne)ancienne.remove();
+ const fiche=vitEl('div','vit-batiment');fiche.append(...boite.childNodes);
+ if(vitrine.bat!==b.id){vitrine.bat=b.id;vitrine.onglet=ONGLETS_VITRINE[b.fonction][0][0]}
+ const v=vitEl('div','vitrine f-'+b.fonction),tete=vitEl('div','vit-tete'),titre=vitEl('h2','vit-titre');
+ const ic=document.createElementNS('http://www.w3.org/2000/svg','svg');ic.setAttribute('viewBox','0 0 24 24');ic.setAttribute('aria-hidden','true');ic.innerHTML=ICONES_VITRINE[b.fonction]||'';
+ titre.append(ic,vitEl('span','',b.nom));const qui=vitEl('div','vit-qui');tete.append(titre,qui);
+ vitClient=enteteClient(qui,b,ICI_VITRINE[b.fonction]||'ici');
+ const onglets=vitEl('div','vit-onglets');onglets.setAttribute('role','tablist');
+ [...ONGLETS_VITRINE[b.fonction],['batiment','Bâtiment']].forEach(([k,n])=>{const t=vitEl('button','vit-onglet'+(vitrine.onglet===k?' actif':''),n);t.type='button';t.setAttribute('role','tab');
+  t.onclick=()=>{vitrine.onglet=k;onglets.querySelectorAll('.vit-onglet').forEach(x=>x.classList.toggle('actif',x===t));vitRendCorps()};onglets.append(t)});
+ const corps=vitEl('div','vit-corps');v.append(tete,onglets,corps);boite.append(v);
+ vitBoite=corps;vitBat=b;vitFiche=fiche;vitRendCorps();
+ if(cherchait){const s=corps.querySelector('.vit-recherche');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}}}
+function vitRendCorps(){const corps=vitBoite,b=vitBat,client=vitClient;if(!corps||!b)return;corps.replaceChildren();
+ if(vitrine.onglet==='batiment'){corps.append(vitFiche);return}
+ if(vitrine.onglet==='fabriquer'){vitEtabli(corps,b,client);return}
+ vitGrille(corps,b,client,vitrine.onglet)}
+// Grille, recherche, pages ; à droite, la case choisie et les autres.
+function vitGrille(corps,b,client,onglet){const cle=b.id+'|'+onglet,tous=articlesVitrine(b,client,onglet),q=vitCle(vitrine.cherche[cle]);
+ const liste=q?tous.filter(x=>vitCle(x.o.name).includes(q)):tous;
+ const gauche=vitEl('div','vit-gauche'),droite=vitEl('aside','vit-fiche');corps.append(gauche,droite);corps.className='vit-corps vit-a-grille';
+ const rech=vitEl('label','vit-recherche-zone'),s=vitEl('input','vit-recherche');s.type='search';s.value=vitrine.cherche[cle]||'';
+ s.placeholder=onglet==='apprendre'?'Rechercher une recette…':'Rechercher un objet…';s.setAttribute('aria-label',s.placeholder);
+ s.oninput=()=>{vitrine.cherche[cle]=s.value;vitrine.page[cle]=0;vitRendCorps();const n=vitBoite.querySelector('.vit-recherche');if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}};
+ {const loupe=document.createElementNS('http://www.w3.org/2000/svg','svg');loupe.setAttribute('viewBox','0 0 24 24');loupe.setAttribute('aria-hidden','true');
+  loupe.innerHTML='<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>';rech.append(loupe)}
+ rech.append(s);gauche.append(rech);
+ if(!tous.length){const vide=onglet==='acheter'?(b.fonction==='magasin'?(mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.')
+   :b.fonction==='tannerie'?(mjDom()?'Rien à vendre : coche « Tanneur » sur des pièces de l’armurerie.':'Le tanneur n’a rien à vendre pour l’instant.'):(mjDom()?'Rien à vendre : coche « Herboriste » sur des pièces de l’armurerie.':'L’herboriste n’a rien à vendre pour l’instant.'))
+   :!client?'':onglet==='vendre'?(b.fonction==='tannerie'?client.name+' n’a pas de restes.':client.name+' n’a rien à vendre.'):'';
+  rech.remove();if(vide)gauche.append(vitEl('p','muted vit-vide',vide));droite.remove();corps.className='vit-corps';return}
+ const pages=Math.max(1,Math.ceil(liste.length/PAR_PAGE_VITRINE)),page=Math.max(0,Math.min(pages-1,vitrine.page[cle]||0));vitrine.page[cle]=page;
+ let choisi=liste.find(x=>x.o.id===vitrine.sel[cle])||tous.find(x=>x.o.id===vitrine.sel[cle])||liste[page*PAR_PAGE_VITRINE]||liste[0]||tous[0];
+ const grille=vitEl('div','vit-grille');
+ liste.slice(page*PAR_PAGE_VITRINE,(page+1)*PAR_PAGE_VITRINE).forEach(x=>{const c=vitEl('button','vit-case'+(x.ok?' ok':' non')+(x===choisi?' choisie':''));c.type='button';
+  c.append(vitLogo(x.o,'vit-case-logo'));if(x.n>1)c.append(vitEl('span','vit-nombre','×'+x.n));c.append(vitEl('span','vit-case-nom',x.o.name));if(x.prix!==null)c.append(vitPrix(x.prix));
+  c.onclick=()=>{vitrine.sel[cle]=x.o.id;vitRendCorps()};vitBulle(c,x.o);grille.append(c)});
+ gauche.append(grille);
+ if(pages>1){const nav=vitEl('div','vit-pages'),av=vitEl('button','vit-page','‹'),ap=vitEl('button','vit-page','›');av.type=ap.type='button';av.setAttribute('aria-label','Page précédente');ap.setAttribute('aria-label','Page suivante');
+  av.disabled=page===0;ap.disabled=page>=pages-1;av.onclick=()=>{vitrine.page[cle]=page-1;vitRendCorps()};ap.onclick=()=>{vitrine.page[cle]=page+1;vitRendCorps()};
+  nav.append(av,vitEl('span','vit-page-num',(page+1)+' / '+pages),ap);gauche.append(nav)}
+ // La fiche de droite.
+ droite.append(vitEl('h3','vit-fiche-nom',choisi.o.name));const grand=vitEl('div','vit-fiche-logo');grand.append(vitLogo(choisi.o));if(choisi.n>1)grand.append(vitEl('span','vit-nombre','×'+choisi.n));droite.append(grand);
+ vitBulle(grand,choisi.o);
+ if(choisi.prix!==null){const p=vitPrix(choisi.prix);p.classList.add('grand');droite.append(p)}
+ if(choisi.o.notes){const d=vitEl('p','vit-fiche-texte');texteEnrichi(d,choisi.o.notes,null);droite.append(d)}
+ if(choisi.sous)droite.append(choisi.sous);
+ droite.append(vitEl('hr','vit-trait'));
+ const pay=vitPayer(client,choisi.coffre);if(pay)droite.append(pay);
+ const agir=vitEl('button','vit-agir',choisi.action);agir.type='button';if(!choisi.ok){agir.classList.add('inactif');agir.setAttribute('aria-disabled','true')}vitRefus(agir,choisi.ok?'':choisi.raison);agir.onclick=()=>{if(choisi.ok)choisi.faire()};droite.append(agir);
+ const autres=tous.filter(x=>x!==choisi);
+ if(autres.length){droite.append(vitEl('h4','vit-autres-titre',onglet==='apprendre'?'Autres recettes':'Autres articles'));const l=vitEl('div','vit-autres');
+  autres.forEach(x=>{const r=vitEl('button','vit-autre'+(x.ok?'':' non'));r.type='button';r.append(vitLogo(x.o,'vit-autre-logo'),vitEl('span','vit-autre-nom',x.o.name));if(x.prix!==null)r.append(vitPrix(x.prix));
+   r.onclick=()=>{vitrine.sel[cle]=x.o.id;const i=liste.indexOf(x);if(i>=0)vitrine.page[cle]=Math.floor(i/PAR_PAGE_VITRINE);vitRendCorps()};l.append(r)});droite.append(l)}}
+// L'établi : à gauche les recettes, à droite la choisie et ses ingrédients ; au Laboratoire, les matériaux en vente et les recettes à apprendre.
+function vitEtabli(corps,b,client){corps.className='vit-corps vit-a-etabli';const cle=b.id+'|fabriquer',liste=recettesVitrine(b,client);
+ const haut=vitEl('div','vit-etabli');corps.append(haut);
+ if(client){const g=vitEl('aside','vit-recettes');g.append(vitEl('h4','vit-section',b.fonction==='tannerie'?'Recettes de fabrication':'Mes recettes de fabrication'));haut.append(g);
+  if(!liste.length)g.append(vitEl('p','muted vit-vide',client.name+' ne connaît aucune recette.'));
+  const choisi=liste.find(x=>x.o.id===vitrine.sel[cle])||liste[0];
+  liste.forEach(x=>{const r=vitEl('button','vit-recette'+(x===choisi?' choisie':'')+(x.ok?' ok':''));r.type='button';r.append(vitLogo(x.o,'vit-autre-logo'),vitEl('span','',x.o.name));
+   r.onclick=()=>{vitrine.sel[cle]=x.o.id;vitRendCorps()};vitBulle(r,x.o);g.append(r)});
+  if(choisi){const d=vitEl('div','vit-atelier'),t=vitEl('div','vit-atelier-tete'),lg=vitEl('div','vit-atelier-logo');lg.append(vitLogo(choisi.o));if(choisi.q>1)lg.append(vitEl('span','vit-nombre','×'+choisi.q));vitBulle(lg,choisi.o);
+   const txt=vitEl('div');txt.append(vitEl('h3','vit-fiche-nom',choisi.o.name));if(choisi.o.notes){const p=vitEl('p','vit-fiche-texte');texteEnrichi(p,choisi.o.notes,null);txt.append(p)}t.append(lg,txt);d.append(t);
+   d.append(vitEl('h4','vit-section','Ingrédients requis'));const ing=vitEl('div','vit-ingredients');
+   choisi.besoins.forEach(x=>{const l=vitEl('div','vit-ingredient'+(x.v>=x.q?' ok':' manque')),ic=vitEl('span','vit-ing-logo');if(x.icone)ic.append(x.icone);
+    const c=vitEl('span','vit-compte',Math.min(x.v,999)+' / '+x.q);c.append(vitEl('b','',x.v>=x.q?'✓':'✕'));l.append(ic,vitEl('span','vit-ing-nom',x.q+' '+x.nom),c);ing.append(l)});
+   d.append(ing);const f=vitEl('button','vit-agir','Fabriquer');f.type='button';if(!choisi.ok){f.classList.add('inactif');f.setAttribute('aria-disabled','true')}vitRefus(f,choisi.ok?'':choisi.raison);f.onclick=()=>{if(choisi.ok)choisi.faire()};d.append(f);haut.append(d)}}
+ if(b.fonction!=='herboristerie')return;
+ // Au Laboratoire : les matériaux de l'herboriste, d'un clic, et les recettes qu'on peut y apprendre.
+ const vendus=articlesVitrine(b,client,'acheter');
+ if(vendus.length){const t=vitEl('div','vit-bandeau-tete');t.append(vitEl('h4','vit-section','Matériaux en vente'));const pay=vitPayer(client,true);if(pay)t.append(pay);corps.append(t);
+  const l=vitEl('div','vit-materiaux');vendus.forEach(x=>{const c=vitEl('button','vit-mini'+(x.ok?' ok':' non'));c.type='button';c.append(vitLogo(x.o,'vit-mini-logo'),vitEl('span','vit-mini-nom',x.o.name),vitPrix(x.prix));
+   c.onclick=()=>{if(x.ok)x.faire()};vitBulle(c,x.o,x.ok?'':x.raison);l.append(c)});corps.append(l)}
+ const app=articlesVitrine(b,client,'apprendre');
+ if(app.length){corps.append(vitEl('h4','vit-section','Recettes à apprendre'));const l=vitEl('div','vit-materiaux');
+  app.slice(0,5).forEach(x=>{const c=vitEl('button','vit-mini'+(x.ok?' ok':' non'));c.type='button';c.append(vitLogo(x.o,'vit-mini-logo'),vitEl('span','vit-mini-nom',x.o.name),vitPrix(x.prix));
+   c.onclick=()=>{vitrine.onglet='apprendre';vitrine.sel[b.id+'|apprendre']=x.o.id;const i=app.indexOf(x);vitrine.page[b.id+'|apprendre']=Math.floor(i/PAR_PAGE_VITRINE);vitrine.cherche[b.id+'|apprendre']='';
+    document.querySelectorAll('.vit-onglet').forEach(o=>o.classList.toggle('actif',o.textContent==='Apprendre une recette'));vitRendCorps()};vitBulle(c,x.o);l.append(c)});
+  const tout=vitEl('button','vit-tout-voir','Tout voir →');tout.type='button';tout.onclick=()=>{vitrine.onglet='apprendre';document.querySelectorAll('.vit-onglet').forEach(o=>o.classList.toggle('actif',o.textContent==='Apprendre une recette'));vitRendCorps()};
+  l.append(tout);corps.append(l)}}
+{const rf=renderDomFiche;renderDomFiche=function(...x){const r=rf(...x);try{habilleVitrine()}catch(e){console.error(e)}return r}}

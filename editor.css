@@ -3546,3 +3546,61 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 #indice-bouton{z-index:6}
 /* v1.018 — Le seuil de Sel bleu, sur la carte : trait bleu verre, pointillé. */
 #dangers-carte .seuil-sel{stroke:#3f7bc0;stroke-width:5px;stroke-linecap:round;stroke-dasharray:3 7;vector-effect:non-scaling-stroke}
+/* v1.019 — La vitrine des bâtiments du domaine (Magasin, Tannerie, Laboratoire, Forge) : en-tête, onglets, grille, fiche, établi. */
+#dom-fiche-fenetre:has(.vitrine){width:min(1120px,96vw)}
+.vitrine{display:flex;flex-direction:column;gap:12px}
+.vit-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:0 2px 10px;border-bottom:1px solid var(--line)}
+.vit-titre{display:flex;align-items:center;gap:10px;margin:0;font:700 24px 'Killam',Georgia,serif;color:var(--ink)}.vit-titre svg{width:26px;height:26px;color:var(--green)}
+.vit-qui .dom-magasin-client{margin:0;font:700 17px 'Killam',Georgia,serif}.vit-qui .dom-magasin-client .richesse-or{font:700 19px 'Killam',Georgia,serif;color:var(--accent)}
+.vit-qui .dom-magasin-client .richesse-or .piece{width:18px;height:18px}.vit-qui .dom-magasin-client p{margin:0}
+.vit-onglets{display:flex;gap:6px;flex-wrap:wrap}
+.vit-onglet{flex:1 1 140px;margin:0;padding:10px 14px;border:1px solid var(--line);border-radius:10px 10px 4px 4px;background:var(--panel-2);font:600 15px 'Killam',Georgia,serif;color:var(--ink);cursor:pointer}
+.vit-onglet:hover{background:var(--hover)}.vit-onglet.actif{background:var(--green);border-color:var(--green);color:#fff}
+.vit-corps.vit-a-grille{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,1fr);gap:16px;align-items:start}
+.vit-recherche-zone{position:relative;display:block;margin:0 0 12px}.vit-recherche-zone svg{position:absolute;left:11px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.vit-recherche{width:100%;box-sizing:border-box;margin:0;padding:10px 12px 10px 38px;border:1px solid var(--line-strong);border-radius:10px;background:var(--field);font-size:15px}
+.vit-grille{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.vit-case{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;margin:0;min-height:132px;padding:10px 6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);
+ font:600 14px/1.15 'Killam',Georgia,serif;color:var(--ink);text-align:center;cursor:pointer;transition:transform .1s}
+.vit-case:hover{transform:translateY(-2px);box-shadow:0 3px 8px #0003}
+.vit-case.ok,.vit-mini.ok,.vit-recette.ok{background:color-mix(in srgb,var(--green) 13%,var(--panel));border-color:color-mix(in srgb,var(--green) 40%,var(--line))}
+.vit-case.choisie{border:2px solid var(--green);box-shadow:0 0 0 1px var(--green)}
+.vit-case-logo{width:58px;height:58px;object-fit:contain;flex:none}.vit-case .glyphe{font-size:34px}.vit-case-nom{flex:1;display:grid;place-items:center}
+.vit-prix{display:inline-flex;align-items:center;gap:5px;font:700 15px 'Killam',Georgia,serif;color:var(--ink)}.vit-prix .piece-or{width:15px;height:15px}
+.vit-prix.grand{align-self:center;gap:9px;font-size:30px}.vit-prix.grand .piece-or{width:26px;height:26px}
+.vit-nombre{position:absolute;top:5px;right:8px;font:700 12px system-ui;color:var(--muted)}
+.vit-pages{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:14px}.vit-page{width:40px;height:34px;margin:0;padding:0;font-size:20px;font-weight:700}.vit-page-num{color:var(--muted);font-size:15px}
+.vit-fiche{position:sticky;top:0;display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.vit-fiche-nom{margin:0;font:700 22px 'Killam',Georgia,serif;color:var(--ink)}
+.vit-fiche-logo{position:relative;display:grid;place-items:center;min-height:120px}.vit-fiche-logo img{width:128px;height:128px;object-fit:contain}.vit-fiche-logo .glyphe{font-size:64px}
+.vit-fiche-texte{margin:0;font-size:15px;line-height:1.4}
+.vit-trait{width:100%;margin:2px 0;border:0;border-top:1px solid var(--line)}
+.vit-payer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0;font-size:15px}.vit-payer select{width:auto;min-width:130px;margin:0}
+.vit-agir{width:100%;margin:0;padding:12px;border:0;border-radius:10px;background:var(--green);color:#fff;font:700 18px 'Killam',Georgia,serif;cursor:pointer;box-shadow:0 2px 0 color-mix(in srgb,var(--green) 70%,#000)}
+.vit-agir:hover{filter:brightness(1.08)}.vit-agir.inactif{background:var(--hover);color:var(--muted);box-shadow:none;cursor:not-allowed;filter:none}
+.vit-autres-titre{margin:4px 0 0;font:700 16px 'Killam',Georgia,serif;color:var(--ink)}
+.vit-autres{display:flex;flex-direction:column;max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.vit-autre{display:flex;align-items:center;gap:10px;margin:0;padding:6px 10px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:var(--panel);text-align:left;font:500 14px system-ui;color:var(--ink);cursor:pointer}
+.vit-autre:hover{background:var(--panel-2)}.vit-autre.non{color:var(--muted)}.vit-autre-nom{flex:1}.vit-autre-logo{width:30px;height:30px;object-fit:contain;flex:none}.vit-autre .glyphe{font-size:20px}
+.vit-vide{margin:6px 2px}
+.vit-etabli{display:grid;grid-template-columns:minmax(200px,.8fr) minmax(0,2fr);gap:16px;align-items:start}
+.vit-recettes{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.vit-section{margin:0 0 6px;font:700 17px 'Killam',Georgia,serif;color:var(--ink)}
+.vit-recette{display:flex;align-items:center;gap:10px;margin:0;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);text-align:left;font:500 14px system-ui;color:var(--ink);cursor:pointer}
+.vit-recette.choisie{border:2px solid var(--green);padding:6px 9px}
+.vit-atelier{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.vit-atelier-tete{display:flex;align-items:center;gap:16px}.vit-atelier-logo{position:relative;flex:none}.vit-atelier-logo img{width:92px;height:92px;object-fit:contain}
+.vit-ingredients{display:flex;flex-direction:column;gap:6px}
+.vit-ingredient{display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2)}
+.vit-ing-logo{display:grid;place-items:center;width:28px;height:28px;flex:none}.vit-ing-logo img{width:28px;height:28px;object-fit:contain}
+.vit-ing-nom{flex:1;font-size:15px}
+.vit-compte{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;min-width:104px;padding:4px 10px;border-radius:6px;font:700 14px system-ui}
+.vit-ingredient.manque .vit-compte{background:color-mix(in srgb,var(--red-mat) 15%,var(--panel));color:var(--red-mat)}
+.vit-ingredient.ok .vit-compte{background:color-mix(in srgb,var(--green) 15%,var(--panel));color:var(--green)}
+.vit-bandeau-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px}.vit-bandeau-tete .vit-section{margin:0}
+.vit-materiaux{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.vit-mini{display:flex;flex-direction:column;align-items:center;gap:3px;width:82px;margin:0;padding:6px 4px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);font:500 12px/1.15 system-ui;color:var(--ink);text-align:center;cursor:pointer}
+.vit-mini.non{cursor:default}.vit-mini-logo{width:40px;height:40px;object-fit:contain}.vit-mini-nom{flex:1;display:grid;place-items:center}.vit-mini .vit-prix{font-size:13px}.vit-mini .vit-prix .piece-or{width:12px;height:12px}
+.vit-tout-voir{align-self:center;margin:0 0 0 auto;padding:10px 16px;font:600 15px 'Killam',Georgia,serif}
+@media (max-width:860px){.vit-corps.vit-a-grille,.vit-etabli{grid-template-columns:1fr}.vit-grille{grid-template-columns:repeat(3,minmax(0,1fr))}.vit-fiche{position:static}}
+.vitrine .vit-recherche-zone input.vit-recherche{padding-left:40px}.vit-corps>.vit-section{margin-top:10px}
