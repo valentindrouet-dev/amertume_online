@@ -1739,7 +1739,7 @@ mapsPage.innerHTML=
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="map-aimant" type="button" aria-pressed="false">🧲 Aimant</button><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
- +'<button id="czoom-in" aria-label="Zoomer">+</button><button id="czoom-reset">Ajuster</button></div>'
+ +'<button id="czoom-in" aria-label="Zoomer">+</button><button id="czoom-reset">Ajuster</button><button id="czoom-largeur">Largeur</button></div>'
  +'<div class="canvas-wrap"><div id="map-canvas"></div></div><p class="muted" id="map-hint"></p></section>'
  +'<aside class="maps-props panel"><h2>Forme sélectionnée</h2><p class="muted" id="shape-label">Aucune sélection.</p>'
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
@@ -1920,7 +1920,7 @@ let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outi
   outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foe'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'));if(t==='dangergomme')['map-danger-type','map-danger-edit'].forEach(id=>{if($(id))r.append($(id))})});
   corps.push(r)});
  const fin=document.createElement('span');fin.className='familles-fin';tete.append(fin);
- ['pinceau-taille','map-aimant','undo','redo','czoom-out','czoom-label','czoom-in','czoom-reset'].forEach(id=>{const x=$(id);if(x)tete.append(x)});
+ ['pinceau-taille','map-aimant','undo','redo','czoom-out','czoom-label','czoom-in','czoom-reset','czoom-largeur'].forEach(id=>{const x=$(id);if(x)tete.append(x)});
  barre.querySelectorAll('.bar-sep').forEach(x=>x.remove());
  [...barre.children].forEach(x=>{if(x!==tete)tete.append(x)});
  const pile=document.createElement('div');pile.className='outils-familles';pile.append(...corps);
@@ -3047,6 +3047,10 @@ function zoomCanvasAt(facteur,cx,cy){const z=Math.min(8,Math.max(.4,zoomC*facteu
 $('czoom-in').onclick=()=>{const c=$('map-canvas');zoomCanvasAt(1.25,c.clientWidth/2,c.clientHeight/2)};
 $('czoom-out').onclick=()=>{const c=$('map-canvas');zoomCanvasAt(1/1.25,c.clientWidth/2,c.clientHeight/2)};
 $('czoom-reset').onclick=()=>{zoomC=1;panCX=panCY=0;applyCanvasZoom()};
+// v1.052 : « Largeur » — la carte touche les deux bords du cadre, à gauche et à droite ; on la voit depuis son haut.
+$('czoom-largeur').onclick=()=>{const c=$('map-canvas'),w=$('map-canvas').parentElement,cw=c.offsetWidth||1,ch=c.offsetHeight||1,W=w.clientWidth||cw,H=w.clientHeight||ch;
+ const z=Math.min(8,Math.max(1,W/cw));if(z<=1.001){zoomC=1;panCX=panCY=0;applyCanvasZoom();return}
+ zoomC=z;panCX=-(W-cw)/2;panCY=-(H-ch)/2;applyCanvasZoom()};
 const wrap=document.querySelector('.canvas-wrap');
 wrap.addEventListener('wheel',e=>{if(estPaysage(mapDraft))return;const r=$('map-canvas').getBoundingClientRect();
  // Le pincement du trackpad arrive en molette avec ctrlKey : c'est le zoom du système.
