@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.051","d":"2026-10-25","t":"Lignes et puces dans les Notes des pièces"},
 {"v":"1.050","d":"2026-10-25","t":"Objet posé caché par défaut"},
 {"v":"1.049","d":"2026-10-25","t":"Lancer en zone à 10 m ; titre, icône et bouton des Notes de MJ"},
 {"v":"1.048","d":"2026-10-25","t":"Rond des exemplaires à cheval sur le coin"},

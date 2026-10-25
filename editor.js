@@ -2372,7 +2372,11 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(col==='herbe')ligne('Composant Alchimique','gear-composant');
  // v1.013 : une potion — son sous-type en italique, puis ce qu'elle fait.
  // v1.014 : le texte d'une pièce rend ses codes — dés, états, PA, PM — comme celui d'un talent.
- const ligneRiche=t=>{if(!t)return;const p=document.createElement('p');texteEnrichi(p,t,null,a);teinteTerrains(p);d.append(p)};
+ /* v1.051 — Le texte d'une pièce, ligne par ligne : chaque retour à la ligne en ouvre une ; une ligne qui commence par « - », « • »
+    ou « * » devient une puce, au losange des affixes. */
+ const ligneRiche=t=>{if(!t)return;String(t).split(/\r?\n/).forEach(l=>{if(!l.trim())return;const puce=/^\s*[-•*]\s+/.exec(l),p=document.createElement('p');
+  if(puce){p.className='gear-puce';const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');const c=document.createElement('span');
+   texteEnrichi(c,l.slice(puce[0].length),null,a);p.append(los,c)}else texteEnrichi(p,l,null,a);teinteTerrains(p);d.append(p)})};
  if(col==='potion'){ligne(o.sousType||'Potion','gear-composant');ligneRiche(o.notes)}
  // v1.029 : une arme, une armure, un bouclier — les Notes du MJ, et rien d'autre.
  if(col==='melee'||col==='ranged'||col==='armor')ligneRiche(o.notes);
