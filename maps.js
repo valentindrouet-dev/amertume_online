@@ -1547,6 +1547,7 @@ function calqueFenetres(){let f=$('map-fenetres');if(!f){const doors=$('map-door
   fog.before(f)}return f}
 /* v0.976 : ce qui manœuvre chaque porte dessinée, pour le rond qui l'ouvre (renderBoutonsPortes). */
 const manoeuvresPorte=new Map();
+const porteManoeuvree=a=>!!a&&Array.isArray(a.talentsJoues)&&a.talentsJoues.includes('__porte');
 function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fenetres=calqueFenetres(),m=currentMap();portes.replaceChildren();if(fenetres&&fenetres!==portes)fenetres.replaceChildren();if(!m)return;
  (m.doors||[]).forEach((d,i)=>{
   const mj=view==='mj';
@@ -1568,12 +1569,12 @@ function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fene
     ?'Rien ici qu’un mur : ce passage n’existe pas pour la troupe.'
     :d.fenetre?'Cette fenêtre est verrouillée : seul le MJ peut l’ouvrir.':'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
    if(!doorInReach(d)){log(d.fenetre?'Trop loin de la fenêtre : approche ton aventurier pour manœuvrer ses volets.':'Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
-   /* En combat, ouvrir ou fermer coûte un point de Mouvement à qui manœuvre ; sans point,
-      la porte ne bouge pas. En exploration, c'est gratuit. */
+   /* v1.072 — En combat, ouvrir ou fermer est une Action bonus : sans coût, une fois par tour pour qui manœuvre (noté dans
+      « talentsJoues », que chaque nouveau tour vide). En exploration, c'est libre. */
    const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;
-   if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
-     if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul',true);return}
-    depensePoint(qui,'mouvement')}
+   if(qui){if(porteManoeuvree(qui)){log(nomNum(qui)+' a déjà manœuvré une porte ce tour.',{local:true});
+     if(typeof floatNumber==='function')floatNumber(qui,'Déjà fait ce tour','nul',true);return}
+    qui.talentsJoues=[...(Array.isArray(qui.talentsJoues)?qui.talentsJoues:[]),'__porte']}
    d.open=!d.open;
    render();scheduleSave()};
   manoeuvresPorte.set(d,el.onclick);
@@ -1589,7 +1590,7 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
  const m=currentMap(),a=view==='mj'?heroActif():actors[owner];
  const montres=!m||!a||!a.hero||!alive(a)||a.horsCarte?[]:(m.doors||[]).filter(d=>{if(!d||doorHiddenFrom(d,false)||!doorSeen(d)||!porteAtteinte(a,d)||!manoeuvresPorte.has(d))return false;
   const parCle=d.keyLocked&&!!d.cleId&&aLaCle(a,d.cleId)&&(!d.secret||d.open||d.decouvert);return !doorLockedFor(d,false)||parCle});
- const gris=typeof enCombat==='function'&&enCombat()&&pointsRestants(a,'mouvement')<=0;
+ const gris=typeof enCombat==='function'&&enCombat()&&porteManoeuvree(a);
  const cle=(a?a.id:'')+'|'+gris+'|'+Math.round(tokenPx())+'|'+montres.map(d=>[d.x,d.y,d.w,d.h,d.open?1:0].join(':')).join(',')+'|'+verrouilleesAPortee(m,a).map(d=>[d.x,d.y].join(':')).join(',');
  if(cle===portesBoutonsCle&&calque.isConnected)return;portesBoutonsCle=cle;calque.replaceChildren();
  montres.forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action rond btn-porte bouton-interaction'+(d.open?' ouverte':'');
