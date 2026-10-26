@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.071","d":"2026-10-26","t":"PA et PM d'un adversaire dans sa fiche"},
 {"v":"1.070","d":"2026-10-26","t":"Éditeur de cartes : famille Tokens, un outil par Type"},
 {"v":"1.069","d":"2026-10-26","t":"Case PNJ dans la fiche d'un adversaire"},
 {"v":"1.068","d":"2026-10-26","t":"Types de terrain dangereux communs à toutes les cartes"},

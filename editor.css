@@ -3379,6 +3379,8 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 i.pt.pt-texte{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.18em;margin:0 1px}
 i.pt.pt-texte.action{background:url(img/points/pa.webp) center/contain no-repeat}
 i.pt.pt-texte.mvt{background:url(img/points/pm.webp) center/contain no-repeat}
+/* v1.071 : les PA et PM d'un adversaire, dans sa fiche : l'icône pour titre. */
+#actor-form label>i.pt.pt-texte{width:22px;height:22px;vertical-align:-6px;margin:0}
 /* v0.968 : {3×Niveau} — le résultat, en chiffre ; Maj tenue, le calcul. */
 .calcul-talent .calcul-formule{display:none}
 body.maj-calcul .calcul-talent .calcul-resultat{display:none}
