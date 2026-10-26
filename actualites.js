@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.099","d":"2026-10-26","t":"Armure : l’icône nommée « Armure », aussi dans les Règles"},
 {"v":"1.098","d":"2026-10-26","t":"Arbre : arcs des bonus masqués"},
 {"v":"1.097","d":"2026-10-26","t":"{armure} : l’icône des PV d’Armure"},
 {"v":"1.096","d":"2026-10-26","t":"Onglet Talents : lignes par nature, petits ronds pour Actions bonus et Passifs"},

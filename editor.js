@@ -5502,7 +5502,10 @@ const estVide=t=>!!t&&t.vide===true;
 const estRemplissage=t=>estVide(t)&&t.remplissage===true;
 const COULEURS_REMPLISSAGE=['act','abon','mvt','reac','pass','crit','mait','ame'];
 /* v1.097 — L'icône des PV d'Armure : celle que le MJ a choisie dans les Icônes, sinon un bouclier au bleu des PV d'Armure. */
-function iconeArmure(){const l=typeof catalog!=='undefined'&&catalog.logoArmure,im=l&&logoImage(l,LOGOS_TOUS);if(im){im.classList.add('armure-ico');im.alt='Armure';return im}
+// v1.099 : à défaut d'un choix dans les Icônes, l'icône des planches nommée « Armure » (rangée dans les États d'abord).
+function iconeNommee(nom,cat){const k=cleTalent(nom),l=typeof planchesDuCatalogue==='function'?planchesDuCatalogue():[];let trouve='';
+ [cat,null].some(c=>l.some(p=>(p.icones||[]).some((i,n)=>{if(i&&cleTalent(i.nom||'')===k&&(!c||i.cat===c)){trouve=p.fichier+'#'+(n+1);return true}return false})));return trouve}
+function iconeArmure(){const l=typeof catalog!=='undefined'&&(catalog.logoArmure||iconeNommee('Armure','etats')),im=l&&logoImage(l,LOGOS_TOUS);if(im){im.classList.add('armure-ico');im.alt='Armure';return im}
  const el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.setAttribute('class','armure-ico');el.setAttribute('role','img');el.setAttribute('aria-label','Armure');
  el.innerHTML='<path d="M12 2.5l7.5 3v5.6c0 4.6-3.1 8.4-7.5 10.4C7.6 19.5 4.5 15.7 4.5 11.1V5.5z" fill="#4fd8ff" stroke="#1d6f8a" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 5.4v13.4" stroke="#b8f2ff" stroke-width="1.5" stroke-linecap="round"/>';return el}
 function iconeRemplissage(){const l=typeof catalog!=='undefined'&&catalog.logoRemplissage,im=l&&logoImage(l,LOGOS_TOUS);return im||document.createTextNode('?')}

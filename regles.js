@@ -143,7 +143,8 @@ REGLES_SECTIONS.push(
  ()=>rgSection('etats','Les états',RG.reac,'✦','<b>n</b> est le nombre de crans d’un état <b>cumulable</b> : chaque nouvelle fois en ajoute un. Les autres se posent une fois. L’<b>Onde</b> absorbe le prochain état ; <b>Feu et Gel</b> s’annulent.',
   rgEtats(),
   rgEl('div','rg-grille',
-   rgCarte(RG.pass,'Armure',rgEl('p','','Des points pris après le Blindage et avant les PV. Tombe à la fin du combat.')),
+   // v1.099 : l'Armure avec son icône, celle de {armure}.
+   (c=>{const h=c.querySelector('.rg-carte-titre'),ic=typeof iconeArmure==='function'?iconeArmure():null;if(h&&ic){ic.classList.add('rg-armure-ic');h.prepend(ic,' ')}return c})(rgCarte(RG.pass,'Armure',rgEl('p','','Des points pris après le Blindage et avant les PV. Tombe à la fin du combat.'))),
    rgCarte(RG.mait,'Radiance',rgEl('p','','Le surplus d’un soin radiant monte les PV max. Perdue à la Nécrose, au Poison et au repos.')))),
  // 8. Les aventuriers.
  ()=>rgSection('aventuriers','Les aventuriers',RG.vert,'🧝','Un aventurier a sa VIE, son Endurance, ses Dégâts, ses PV et ses compétences.',
