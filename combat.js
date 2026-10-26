@@ -1125,7 +1125,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché','Entravé','Tangible'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché','Entravé','Tangible','Immobilisé'];
 // v1.018 : Esquive x+ — sur un d6 de x ou plus, le combattant ignore tout d'une attaque ; 0, il n'esquive pas. L'ancienne case cochée vaut 6+.
 function esquiveDe(o){const v=o&&o.esquive;if(v===true)return 6;const n=Math.trunc(Number(v));return n>=2&&n<=6?n:0}
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
@@ -1712,8 +1712,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(p){return 'Sur un <b>critique</b> au contact, la cible est <b>Entravée</b> et subit <b>Nécrose 1</b>. Se libérer : <b>1 PM</b>, test de <b>Force '+((p&&p.reussites)||2)+'</b>.'}},
  rosesfanees:{cle:'rosesfanees',nom:'Roses fanées',type:'act',monstre:true,bouton:'Roses fanées',aide:'Action, une fois par tour : soigne de 2 dés verts l’allié blessé le plus bas du modèle choisi (pas le porteur).',
   params:[{cle:'modele',nom:'Allié soigné',type:'modele',defaut:''}],phrase(){return 'Soigne un allié de <b>2 dés verts</b>.'}},
- enracinee:{cle:'enracinee',nom:'Enracinée',type:'pass',monstre:true,aide:'Passif, une fois par combat : sous la moitié de ses PV, ne se déplace plus, gagne Armure 10 ; en fin de tour, 1 dé blanc à chaque aventurier au contact.',
-  params:[],phrase(){return 'À la moitié de ses PV : ne se déplace plus, gagne <b>Armure 10</b>, et chaque aventurier au contact subit <b>1 dé blanc</b> en fin de tour.'}},
+ enracinee:{cle:'enracinee',nom:'Enracinée',type:'pass',monstre:true,aide:'Passif, une fois par combat : sous la moitié de ses PV, devient Immobilisée, gagne Armure 10 ; en fin de tour, 1 dé blanc à chaque aventurier au contact.',
+  params:[],phrase(){return 'À la moitié de ses PV : devient <b>Immobilisée</b>, gagne <b>Armure 10</b>, et chaque aventurier au contact subit <b>1 dé blanc</b> en fin de tour.'}},
  service:{cle:'service',nom:'Service',type:'act',monstre:true,gratuit:true,bouton:'Service',aide:'Action gratuite, une fois par combat : réveille des alliés du modèle choisi, à son contact.',
   params:[{cle:'modele',nom:'Allié réveillé',type:'modele',defaut:''},{cle:'nombre',nom:'Nombre',type:'nombre',defaut:2,min:1,max:6}],
   phrase(p){return 'Une fois par combat : réveille <b>'+((p&&p.nombre)||2)+'</b> alliés à son contact.'}},

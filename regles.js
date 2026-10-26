@@ -79,6 +79,7 @@ Object.assign(REGLES_ETATS,{
  'Ciblage':'Un repère posé sur la cible : aucun effet automatique.',
  'Charme':'N’attaque pas celui qui l’a charmé. Tombe à la fin du combat.',
  'Tangible':'Les coups le blessent, même s’il est <b>Intangible</b>. Posé par l’Eau de brume et le Sel bleu, pour 2 tours.',
+ 'Immobilisé':'En combat, <b>ne se déplace plus</b>. <b>Se libérer</b> : 1 PM, test de <b>Force 1</b>. Une attaque, un talent, un piège ou un coffre peuvent l’infliger ; Enracinée le pose sur la créature qui s’enracine.',
  'Entravé':'Ne peut pas quitter le contact de celui qui l’enlace ou l’agrippe (Agripper : une Action, 1 Attaque au contact). <b>Se libérer</b> : 1 PM, test de <b>Force</b> (réussites selon le talent). Tombe si celui qui l’enlace meurt.'});
 const RG={act:'#4f7fb5',mvt:'#8a6440',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',ame:'#5e9a5b',mait:'#c99a3c',bonus:'#2a9d8f',accent:'#9c631c',vert:'#3d7a5b',rouge:'#a4442f'};
 const rgN=(v,d)=>typeof v!=='undefined'?v:d;

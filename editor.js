@@ -583,6 +583,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('humain-ingenieux')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-humain-debrouillard'&&x.effet==='debrouillard');
   if(t)Object.assign(t,{name:'Ingénieux',type:'abon',effet:'ingenieux',params:{},effects:'Avant d’effectuer une attaque ou un test de compétence, vous ajoutez 1 dé noir au résultat du jet. Une fois entre chaque repos court.'});
   c.semisForge.push('humain-ingenieux')}
+ // v1.075 : l'icône d'Immobilisé, la n°26 de la planche ETATS, sauf si le MJ en a déjà choisi une.
+ if(!c.semisForge.includes('etat-immobilise')){const l=c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{};c.logosEtats={...l,...(l['Immobilisé']?{}:{'Immobilisé':'planches/ETATS.webp#26'})};c.semisForge.push('etat-immobilise')}
  if(!c.semisForge.includes('etat-entrave')){c.logosEtats={...(c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{}),'Entravé':'planches/ETATS 2.webp#8'};c.semisForge.push('etat-entrave')}
  // v0.970 : les talents d'adversaires créés sans mécanique (import) prennent la leur, à leur nom.
  if(Array.isArray(c.talents)){const NOMS_MECANIQUES={'agrippe':'agrippe','vulnerable au feu':'vulnerablefeu','pique':'pique','enracine':'enracine','spores':'spores','sensible au fongicide':'sensiblefongicide','acharnement':'traque','avaler':'avaler','charge':'chargesanglier','cent yeux':'centyeux','enlacer':'enlacer','roses fanees':'rosesfanees','enracinee':'enracinee','service':'service','semis':'semis','racine de vie':'racinedevie','le grenier est son corps':'grenier','inflammable':'inflammable','intangible':'intangible'};
