@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.083","d":"2026-10-26","t":"Spores : Nécrose 1 au contact après chaque Attaque reçue"},
 {"v":"1.082","d":"2026-10-26","t":"Déclencheur « À 50% des PV » des talents ; bulle du terrain dangereux au repos de la souris"},
 {"v":"1.081","d":"2026-10-26","t":"Enraciné : Immobilisé en permanence"},
 {"v":"1.080","d":"2026-10-26","t":"Performances : terrain dangereux, mesures de la carte, pages cachées, écus, calculs du rendu"},
