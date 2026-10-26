@@ -3529,8 +3529,18 @@ function revelePassages(a){const m=currentMap(),zones=m&&zonesDe(m),z=zoneDe(a);
 let dangerCourant=null;
 function typeDangerCourant(creer){const m=mapDraft;if(!m)return null;const l=dangersDe(m);let t=l.find(x=>x.id===dangerCourant)||l[0]||null;
  if(!t&&creer){t=cleanDanger({id:crypto.randomUUID(),nom:'Terrain dangereux'});l.push(t)}if(t)dangerCourant=t.id;return t}
-function majTypesDanger(){const s=$('map-danger-type');if(!s||!mapDraft)return;const l=dangersDe(mapDraft),t=typeDangerCourant(false);
- s.innerHTML=l.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nom)+'</option>').join('')+'<option value="__nouveau">+ Nouveau type…</option>';s.value=t?t.id:'__nouveau'}
+/* v1.068 — Les types de terrain dangereux sont communs à toutes les cartes : le menu offre ceux de chaque carte, un même nom
+   n'y paraissant qu'une fois. Choisir un type qu'une carte n'a pas encore l'y copie, sans terrain ; la fiche d'un type,
+   enregistrée, vaut pour toutes les cartes qui portent ce nom. Le terrain tracé reste propre à chaque carte. */
+const cleTypeDanger=t=>String(t&&t.nom||'').normalize('NFC').trim().toLowerCase();
+function typesDangerCommuns(){const vus=new Map();[mapDraft,...(typeof maps!=='undefined'?maps:[])].forEach(m=>{if(!m||!Array.isArray(m.dangers))return;
+ m.dangers.forEach(t=>{const k=cleTypeDanger(t);if(k&&!vus.has(k))vus.set(k,t)})});return vus}
+const PROPS_TYPE_DANGER=['nom','couleur','degats','degatsDes','etats','sensibles','ronces','sel'];
+function copieTypeDanger(de,vers){PROPS_TYPE_DANGER.forEach(k=>{if(de[k]===undefined)delete vers[k];else vers[k]=JSON.parse(JSON.stringify(de[k]))})}
+function majTypesDanger(){const s=$('map-danger-type');if(!s||!mapDraft)return;const l=dangersDe(mapDraft),t=typeDangerCourant(false),ici=new Set(l.map(cleTypeDanger));
+ const ailleurs=[...typesDangerCommuns().entries()].filter(([k])=>!ici.has(k));
+ s.innerHTML=[...l.map(x=>[x.nom,x.id]),...ailleurs.map(([k,x])=>[x.nom,'__commun:'+k])].sort((a,b)=>a[0].localeCompare(b[0],'fr'))
+  .map(([n,v])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join('')+'<option value="__nouveau">+ Nouveau type…</option>';s.value=t?t.id:'__nouveau'}
 const dangerDialog=dialog('danger-editor','Terrain dangereux','<form id="danger-form"><div id="danger-fields"></div><div class="form-actions"><button type="button" id="danger-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 function openDanger(t){if(!t||view!=='mj')return;dangerDialog.querySelector('h2').textContent=t.nom;
  $('danger-fields').innerHTML='<div class="edit-grid">'+field('Nom','nom',t.nom,'text','required maxlength="40"')
@@ -3541,16 +3551,22 @@ function openDanger(t){if(!t||view!=='mj')return;dangerDialog.querySelector('h2'
   +'<div class="coffre-cases"><label class="field-check"><input type="checkbox" name="ronces"'+(t.ronces?' checked':'')+'>Ronces — les Gants de ronceur en protègent</label>'
   +'<label class="field-check"><input type="checkbox" name="sel"'+(t.sel?' checked':'')+'>Sel — le Sel de racine le détruit</label></div>';
  $('danger-form').onsubmit=e=>{e.preventDefault();const f=$('danger-form').elements;pushUndo();
+  const avant=cleTypeDanger(t);
   t.nom=f.nom.value.trim().slice(0,40)||'Terrain dangereux';if(/^#[0-9a-fA-F]{6}$/.test(f.couleur.value))t.couleur=f.couleur.value;
   {const d=lisFormuleDegats(f.degats.value);if(d){t.degats=d.degats;if(d.degatsDes)t.degatsDes=d.degatsDes;else delete t.degatsDes}}
   t.sensibles=SENSIBLES_DANGER.some(([k])=>k===f.sensibles.value)?f.sensibles.value:'tous';
   t.etats=[...dangerDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x));
   if(f.ronces.checked)t.ronces=true;else delete t.ronces;if(f.sel.checked)t.sel=true;else delete t.sel;
+  // v1.068 : le même type, sur les autres cartes, prend la même fiche.
+  maps.forEach(m=>{if(!m||!Array.isArray(m.dangers))return;m.dangers.forEach(x=>{if(x!==t&&cleTypeDanger(x)===avant)copieTypeDanger(t,x)})});
   dangerDialog.close();matiereChangee()};
  $('danger-suppr').onclick=()=>{if(!confirm('Supprimer « '+t.nom+' » et tout son terrain ?'))return;pushUndo();const l=dangersDe(mapDraft),i=l.indexOf(t);if(i>=0)l.splice(i,1);
   dangerCourant=null;dangerDialog.close();matiereChangee()};
  dangerDialog.showModal()}
-if($('map-danger-type'))$('map-danger-type').onchange=e=>{if(!mapDraft)return;if(e.target.value==='__nouveau'){pushUndo();const t=cleanDanger({id:crypto.randomUUID(),nom:'Terrain dangereux'});
+if($('map-danger-type'))$('map-danger-type').onchange=e=>{if(!mapDraft)return;
+ if(e.target.value.startsWith('__commun:')){const src=typesDangerCommuns().get(e.target.value.slice(9));if(!src){majTypesDanger();return}pushUndo();
+  const t=cleanDanger({id:crypto.randomUUID(),nom:src.nom});copieTypeDanger(src,t);t.formes=[];dangersDe(mapDraft).push(t);dangerCourant=t.id;majTypesDanger();saveMaps();return}
+ if(e.target.value==='__nouveau'){pushUndo();const t=cleanDanger({id:crypto.randomUUID(),nom:'Terrain dangereux'});
   dangersDe(mapDraft).push(t);dangerCourant=t.id;majTypesDanger();openDanger(t);return}dangerCourant=e.target.value;majTypesDanger()};
 if($('map-danger-edit'))$('map-danger-edit').onclick=()=>{if(!mapDraft)return;const t=typeDangerCourant(true);majTypesDanger();if(t)openDanger(t)};
 {const rc=renderCanvas;renderCanvas=function(...x){const r=rc(...x);majTypesDanger();return r}}
