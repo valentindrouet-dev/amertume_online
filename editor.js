@@ -2983,6 +2983,8 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
   const k=d[1]!==undefined?d[1]:d[2];
   // v1.062 : {soin}, l'icône du Soin ; le dé vert s'écrit {vert}.
   if(d[1]!==undefined&&cleAccolade(k)==='soin'){const ic=logoBonus({carac:'soin'});if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('soin-ico','soin-texte');el.append(ic);fin=rd.lastIndex;continue}}
+  // v1.094 : {dégât}, au singulier, l'icône des dégâts ; {dégâts} reste la valeur.
+  if(d[1]!==undefined&&cleAccolade(k)==='degat'){const ic=iconeDegats();if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('dmg-texte');el.append(ic);fin=rd.lastIndex;continue}}
   const c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
   // v0.962 : {PA} et {PM}, leurs billes.
   if(pt){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);const i=document.createElement('i');i.className='pt pt-texte '+(pt==='pa'?'action':'mvt');i.setAttribute('role','img');i.setAttribute('aria-label',pt.toUpperCase());el.append(i);fin=rd.lastIndex;continue}

@@ -3738,3 +3738,5 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .bulles-paliers .talent-titres>.talent-bulle-nom b,.bulles-paliers .talent-sous{white-space:normal}
 /* Le panneau de l'arbre a déjà son grand rond et son nom. */
 .arbres-detail .detail-corps .talent-ico{display:none}
+/* v1.094 : {dégât} dans un texte, l'icône des dégâts à la taille de celle du Soin. */
+.dmg-ico.dmg-texte{display:inline-block;width:18px;height:18px;object-fit:contain;vertical-align:-4px}

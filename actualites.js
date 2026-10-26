@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.094","d":"2026-10-26","t":"{dégât} : l’icône des dégâts"},
 {"v":"1.093","d":"2026-10-26","t":"Éditeur d’adversaire sans le champ Famille / rôle"},
 {"v":"1.092","d":"2026-10-26","t":"Arcs des bonus dans l’arbre ; Provocation limitée au mouvement du provoqué"},
 {"v":"1.091","d":"2026-10-26","t":"Bulles des talents au modèle des objets"},
