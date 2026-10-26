@@ -1180,6 +1180,16 @@ function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))
  prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n2+k,v=Number(arr[i])||0;if(v&8)return null;arr[i]=v|8|2;return arr},()=>ouvreCoffreFait(c,h))}
 // v1.011 : « Ouvrir pour… » sur un Coffre de Groupe : la fenêtre commune, jamais le coffre ordinaire.
 {const oc=ouvrirCoffre;ouvrirCoffre=function(c,h,parMJ){if(c&&c.groupe===true&&typeof ouvrirCoffreGroupe==='function'){if(h)ouvrirCoffreGroupe(h,c);return}return oc(c,h,parMJ)}}
+/* v1.067 — Les crans d'un état cumulable, pour un coffre ou un piège : la case de l'état, et à côté sa quantité, « x » ou « xdy » ;
+   lue à l'enregistrement, tirée quand le piège part. */
+function casesEtatsCrans(o){return '<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((o.etats||[]).includes(e)?' checked':'')+'>'+esc(e)
+ +(cumulable(e)?'<input name="crans" data-etat="'+esc(e)+'" class="etat-crans" value="'+esc(formuleDegats((o.crans||{})[e]||{degats:1}))+'" pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" aria-label="Quantité de '+esc(e)+'">':'')+'</label>').join('')+'</div>'}
+function montreCrans(boite){boite.querySelectorAll('.etat-crans').forEach(x=>{x.hidden=!x.closest('label').querySelector('input[name="etat"]').checked})}
+function lisCrans(boite,o){const cr={};boite.querySelectorAll('.etat-crans').forEach(x=>{const e=x.dataset.etat,q=lisFormuleDegats(x.value);if(!(o.etats||[]).includes(e)||!q||(!q.degatsDes&&q.degats<=1))return;cr[e]=q});
+ if(Object.keys(cr).length)o.crans=cr;else delete o.crans}
+function tireCrans(o){const crans={};(o.etats||[]).forEach(e=>{if(cumulable(e)&&o.crans&&o.crans[e])crans[e]=Math.max(1,tireDegats(o.crans[e]).total)});return crans}
+// Pose l'état et ses crans en plus ; rend « Poison 4 », ou rien s'il n'a pas pris.
+function infligeCrans(a,e,crans){if(infligeEtat(a,e)!==true)return '';const k=(crans&&crans[e])||1;if(k>1)ajouteEtat(a,e,k-1);return e+(k>1?' '+k:'')}
 function ouvreCoffreFait(c,h){if(h&&!payeAction(h))return;
  if(coffreArme(c)){c.desamorce=true;
   // Le piège part : une gerbe de feu sur le coffre, ici et sur chaque table.
@@ -1187,10 +1197,10 @@ function ouvreCoffreFait(c,h){if(h&&!payeAction(h))return;
   // Ses dégâts, fixes ou aux dés, se tirent une fois : la même gerbe frappe tous ceux qui sont là.
   const jet=tireDegats(c);
   // v1.066 : la quantité d'un état cumulable, fixe ou aux dés, se tire une fois aussi.
-  const crans={};(c.etats||[]).forEach(e=>{if(cumulable(e)&&c.crans&&c.crans[e])crans[e]=Math.max(1,tireDegats(c.crans[e]).total)});
+  const crans=tireCrans(c);
   const touches=actors.filter(o=>o&&o.hero&&alive(o)&&!o.horsCarte&&dansZoneCoffre(o,c)).map(o=>{const p=[];
    if(jet.total>0){const {perdu:n,blinde}=encaisse(o,jet.total,null);p.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
-   (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true){const k=crans[e]||1;if(k>1)ajouteEtat(o,e,k-1);p.push(e+(k>1?' '+k:''))}});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
+   (c.etats||[]).forEach(e=>{const t=infligeCrans(o,e,crans);if(t)p.push(t)});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
   log('Piège ! '+c.nom+' se déclenche'+(jet.jets.length?' ('+formuleDegats(c)+' : '+jet.jets.join(' + ')+')':'')+(touches.length?' — '+touches.join(' ; '):'')+'.',{ton:'degats'})}
  c.ouvert=true;c.deverrouille=true;
  const pieces=(c.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean),rich={...(c.richesses||{})},gains=[];
@@ -1296,7 +1306,7 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  const parts=[];
  if(issue!=='esquive'){const jet=tireDegats(p),deg=issue==='moitie'?Math.floor(jet.total/2):jet.total;
   if(deg>0){const {perdu:n,blinde}=encaisse(o,deg,null);parts.push((blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))+(jet.jets.length?' ('+formuleDegats(p)+' : '+jet.jets.join(' + ')+')':''))}
-  if(issue==='plein'){const etats=(p.etats||[]).filter(e=>infligeEtat(o,e)===true);parts.push(...etats);
+  if(issue==='plein'){const crans=tireCrans(p),poses=[],etats=(p.etats||[]).filter(e=>{const t=infligeCrans(o,e,crans);if(t)poses.push(t);return !!t});parts.push(...poses);
    // Hors combat, ils survivront au combat que ce pas-là déclenche peut-être.
    if(etats.length&&!enCombat())o.etatsPieges=[...new Set([...(Array.isArray(o.etatsPieges)?o.etatsPieges:[]),...etats])];
    parts.push(...appliquePertes(o,p.caracs))}}
@@ -1415,7 +1425,7 @@ function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p
   if(ok&&dedans){const de={x:a.x,y:a.y},q=sortieDuPiege(a,p);a.x=q.x;a.y=q.y;delete a.avantPiege;if((p.etats||[]).includes('Au sol')&&hasState(a,'Au sol'))setState(a,'Au sol',false);if(typeof settleActor==='function')settleActor(a);render();glisseAuPiege(a,de);saveMaps();scheduleSave();return}}
  if(enCombat()&&typeof afterAction==='function')afterAction(a);
  /* Manqué du bord, l'aventurier est précipité dans le piège ; manqué du fond, il y reste et en subit encore les états. */
- if(quoi==='enjambement'&&!ok&&dedans){const etats=(p.etats||[]).filter(e=>infligeEtat(a,e)===true);floatNumber(a,'Piège !','perte');
+ if(quoi==='enjambement'&&!ok&&dedans){const crans=tireCrans(p),etats=(p.etats||[]).map(e=>infligeCrans(a,e,crans)).filter(Boolean);floatNumber(a,'Piège !','perte');
   if(etats.length)log('Piège ! '+nomNum(a)+' retombe dans '+p.nom+' — '+etats.join(', ')+'.',{ton:'degats'});render();saveMaps();scheduleSave();return}
  if(quoi==='enjambement'&&!ok){declenchePiege(p,a,true);return}
  render();saveMaps();scheduleSave()}
@@ -1449,7 +1459,7 @@ function bullePiege(p,mj){const g=document.createElement('div');g.className='gea
  if(p.desc){const d=document.createElement('p');d.className='objet-desc-bulle';d.textContent=p.desc;g.append(d)}
  if(mj){const t=(nom,x)=>x?nom+' : '+skillNames[x.comp]+' '+x.reussites:'';
   const l=[p.cache&&!p.revele?t('Caché',p.detection):'',p.declenche?'Déclenché':p.desamorce?'Désamorcé':'',p.actif?'Toujours actif':'',t('Désamorçable',p.desamorcage),t('Évitable',p.evitement),t('Enjambable',p.enjambement),
-   p.reamorcable?'Réamorçable':'',p.degatsDes||p.degats>0?formuleDegats(p)+' dégât'+(p.degatsDes||p.degats>1?'s':''):'',...(p.etats||[]),...(p.caracs||[]).map(phrasePerte)].filter(Boolean);
+   p.reamorcable?'Réamorçable':'',p.degatsDes||p.degats>0?formuleDegats(p)+' dégât'+(p.degatsDes||p.degats>1?'s':''):'',...(p.etats||[]).map(e=>p.crans&&p.crans[e]?e+' '+formuleDegats(p.crans[e]):e),...(p.caracs||[]).map(phrasePerte)].filter(Boolean);
   if(l.length){const q=document.createElement('p');q.className='muted objet-cache-bulle';q.textContent=l.join(' · ');g.append(q)}}
  return g}
 /* Les pièges ont leur calque, sous le brouillard, comme les coffres. La troupe ne voit un piège que connu et sous ses yeux ; le
@@ -2968,12 +2978,12 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
   +parade('enjambable','enj','Enjambable',!!p.enjambement,p.enjambement,null,0)
   +'<div class="coffre-cases">'+coche('reamorcable','Réamorçable',!!p.reamorcable)+'</div>'
   +'<h2 class="sous-titre">Effets</h2><div class="edit-grid">'+field('Dégâts','degats',formuleDegats(p),'text','pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" class="degats-formule"')+'</div>'
-  +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((p.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'
+  +casesEtatsCrans(p)
   +'<div class="piege-pertes" id="piege-pertes"></div>';
  const f=$('piege-form').elements;
  // Toujours actif, il ne se franchit qu'en l'enjambant : la case Enjambable va avec.
- const montre=()=>{if(f.actif.checked)f.enjambable.checked=true;f.enjambable.disabled=f.actif.checked;piegeDialog.querySelectorAll('.piege-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked})};
- ['cache','desamorcable','evitable','enjambable','actif'].forEach(k=>{f[k].onchange=montre});montre();
+ const montre=()=>{if(f.actif.checked)f.enjambable.checked=true;f.enjambable.disabled=f.actif.checked;piegeDialog.querySelectorAll('.piege-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked});montreCrans(piegeDialog)};
+ ['cache','desamorcable','evitable','enjambable','actif'].forEach(k=>{f[k].onchange=montre});piegeDialog.querySelectorAll('input[name="etat"]').forEach(x=>{x.onchange=montre});montre();
  const apercu=()=>{$('piege-apercu').replaceChildren(visuelPiege({image,logo:f.logo.value}));$('piege-image-retirer').hidden=!image};
  f.logo.addEventListener('change',apercu);apercu();
  $('piege-image-importer').onclick=()=>$('piege-image-fichier').click();
@@ -2989,7 +2999,7 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
   if(f.evitable.checked)p.evitement={...lisTest('evi'),issue:f.evi_issue.value==='moitie'?'moitie':'esquive'};else delete p.evitement;
   if(f.enjambable.checked||f.actif.checked)p.enjambement=lisTest('enj');else delete p.enjambement;if(f.actif.checked)p.actif=true;else delete p.actif;
   if(f.reamorcable.checked)p.reamorcable=true;else delete p.reamorcable;
-  {const d=lisFormuleDegats(f.degats.value);if(d){p.degats=d.degats;if(d.degatsDes)p.degatsDes=d.degatsDes;else delete p.degatsDes}}p.etats=[...piegeDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x));
+  {const d=lisFormuleDegats(f.degats.value);if(d){p.degats=d.degats;if(d.degatsDes)p.degatsDes=d.degatsDes;else delete p.degatsDes}}p.etats=[...piegeDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x));lisCrans(piegeDialog,p);
   p.caracs=cleanPertes(pertes)};
  // Les déclencheurs liés : une ligne chacun, que la croix retire ; les deux boutons en tracent un de plus sur la carte.
  const listeDecl=()=>{const b=$('piege-declencheurs');b.replaceChildren();let nz=0,nf=0;
@@ -3039,13 +3049,12 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   +field('Code ou mot de passe','code',c.code||'','text','maxlength="40" autocomplete="off"')+'</div>'
   +'<div class="coffre-si" data-si="piege_on"><div class="edit-grid">'+nb('Réussites de Ruse ou Technique pour le trouver','piege',Math.max(1,c.piege||1),1,9)+field('Dégâts du piège','degats',formuleDegats(c),'text','pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" class="degats-formule"')+'</div>'
   // v1.066 : un état cumulable coché prend sa quantité, « x » ou « xdy » comme les dégâts.
-  +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((c.etats||[]).includes(e)?' checked':'')+'>'+esc(e)
-   +(cumulable(e)?'<input name="crans" data-etat="'+esc(e)+'" class="etat-crans" value="'+esc(formuleDegats((c.crans||{})[e]||{degats:1}))+'" pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" aria-label="Quantité de '+esc(e)+'">':'')+'</label>').join('')+'</div></div>'
+  +casesEtatsCrans(c)+'</div>'
   +'<h2 class="sous-titre">Contenu</h2><div class="coffre-tresor" id="coffre-bourse"></div>'
   +'<div id="coffre-contenu"></div>';
  const f=$('coffre-form').elements;remplitCles(f.cleId,c.cleId||'');
  const montre=()=>{coffreDialog.querySelectorAll('.coffre-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked});
-  coffreDialog.querySelectorAll('.etat-crans').forEach(x=>{x.hidden=!x.closest('label').querySelector('input[name="etat"]').checked})};
+  montreCrans(coffreDialog)};
  ['cache','ferme','piege_on'].forEach(k=>{f[k].onchange=montre});coffreDialog.querySelectorAll('input[name="etat"]').forEach(x=>{x.onchange=montre});montre();
  /* L'or et les gemmes, tirés aux dés à l'ouverture : « x d y » par ligne. Ce qu'un coffre d'avant tenait
     en nombres fixes s'y lit en dés à une face, trente pièces valant 30d1. */
@@ -3060,8 +3069,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   {const cd=String(f.code.value||'').trim().slice(0,40);if(f.ferme.checked&&cd)c.code=cd;else delete c.code}
   c.piege=f.piege_on.checked?Math.max(1,n(f.piege.value,9)):0;{const d=c.piege?lisFormuleDegats(f.degats.value):null;if(!c.piege){c.degats=0;delete c.degatsDes}else if(d){c.degats=d.degats;if(d.degatsDes)c.degatsDes=d.degatsDes;else delete c.degatsDes}}
   c.etats=c.piege?[...coffreDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x)):[];
-  {const cr={};coffreDialog.querySelectorAll('.etat-crans').forEach(x=>{const e=x.dataset.etat,q=lisFormuleDegats(x.value);if(!c.etats.includes(e)||!q||(!q.degatsDes&&q.degats<=1))return;cr[e]=q});
-   if(Object.keys(cr).length)c.crans=cr;else delete c.crans}
+  lisCrans(coffreDialog,c);
   c.richesses={};const b=normaliseBourse(bourse.bourse,false);if(b.length)c.bourse=b;else delete c.bourse;
   c.items=[...contenu.inventaire].slice(0,99);coffreDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('coffre-suppr').onclick=()=>{if(!confirm('Supprimer « '+c.nom+' » ?'))return;pushUndo();
