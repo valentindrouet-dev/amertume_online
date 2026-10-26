@@ -3763,9 +3763,9 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 /* v1.100 — L'arbre : un talent achetable se grise, rond et icône ; un talent inaccessible ou trop cher passe en monochrome rouge.
    Le panneau de droite suit. */
 .arbre-roue>.arbre-noeud.dispo .arbre-rond{background:var(--panel-2);border-color:var(--line);filter:grayscale(1);opacity:.55}
-.arbre-roue>.arbre-noeud.verrou .arbre-rond{background:var(--panel-2);border-color:var(--line);filter:grayscale(1) brightness(.8) sepia(1) hue-rotate(-50deg) saturate(4);opacity:.55}
-.arbre-roue>.arbre-noeud.verrou .arbre-satellites{filter:grayscale(1) brightness(.8) sepia(1) hue-rotate(-50deg) saturate(4);opacity:.55}
+.arbre-roue>.arbre-noeud.verrou .arbre-rond{background:var(--panel-2);border-color:var(--line);filter:grayscale(1) brightness(.5) sepia(1) hue-rotate(-38deg) saturate(1.5) brightness(.9);opacity:.85}
+.arbre-roue>.arbre-noeud.verrou .arbre-satellites{filter:grayscale(1) brightness(.5) sepia(1) hue-rotate(-38deg) saturate(1.5) brightness(.9);opacity:.85}
 .arbres-v2 .arbres-detail .detail-tete.cliquable.achetable .detail-rond{filter:grayscale(1);background:var(--panel-2);border-color:var(--line)}
-.arbres-v2 .arbres-detail .detail-tete.cliquable.fermee .detail-rond{filter:grayscale(1) brightness(.8) sepia(1) hue-rotate(-50deg) saturate(4)}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.fermee .detail-rond{filter:grayscale(1) brightness(.5) sepia(1) hue-rotate(-38deg) saturate(1.5) brightness(.9)}
 /* v1.100 : les satellites ne prennent plus la souris : pas de bulle, le survol passe au rond. */
 .arbre-satellites :is(.sat-arc,.sat-bille){pointer-events:none;cursor:default}
