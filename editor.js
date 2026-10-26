@@ -2965,7 +2965,22 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
   if(pt){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);const i=document.createElement('i');i.className='pt pt-texte '+(pt==='pa'?'action':'mvt');i.setAttribute('role','img');i.setAttribute('aria-label',pt.toUpperCase());el.append(i);fin=rd.lastIndex;continue}
   const v=c<0&&!et&&!pl&&d[1]!==undefined?variableTalent(k):null;if(c<0&&!et&&!pl&&!v)continue;
   if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(c>=0?deDansTexte(c):et?etatDansTexte(et):pl?plasmaDansTexte():motVariable(k,v,a));fin=rd.lastIndex}
- if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}
+ if(fin<texte.length)motsDans(el,texte.slice(fin),noms);teinteAdversaires(el);return el}
+/* v1.074 — Dans le texte d'un talent ou d'une pièce, le nom d'un adversaire du Bestiaire — « Ronceur », ou « Ronceurs » — s'écrit en
+   gras, de la couleur de son Type, celle de son cercle au Bestiaire ; un PNJ, de celle de son alignement. */
+const TEINTES_TYPES_ADV={standard:'#8d9794',alpha:'#c9953f',solitaire:'#c8523f',boss:'#9b6fb5'},TEINTES_ALIGNEMENTS={allie:'#8fb6e0',neutre:'#dcc074',adverse:'#d29180'};
+let adversairesDuTexte={cle:null,rx:null,parNom:null};
+function teinteAdversaires(el){const l=(typeof catalog!=='undefined'&&Array.isArray(catalog.monsters)?catalog.monsters:[]).filter(m=>m&&String(m.name||'').trim().length>2);
+ const cle=l.map(m=>m.name+'|'+(m.type||'')+'|'+(m.pnj?alignementDe(m):'')).join('¦');
+ if(adversairesDuTexte.cle!==cle){const parNom=new Map();l.forEach(m=>{const k=String(m.name).trim().toLowerCase();if(!parNom.has(k))parNom.set(k,m.pnj?TEINTES_ALIGNEMENTS[alignementDe(m)]||TEINTES_TYPES_ADV.standard:TEINTES_TYPES_ADV[m.type||'standard']||TEINTES_TYPES_ADV.standard)});
+  const q=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/ /g,'\\s+');
+  adversairesDuTexte={cle,parNom,rx:parNom.size?new RegExp('(?<![\\p{L}\\p{N}])('+[...parNom.keys()].sort((x,y)=>y.length-x.length).map(q).join('|')+')[sx]?(?![\\p{L}\\p{N}])','giu'):null}}
+ const {rx,parNom}=adversairesDuTexte;if(!rx)return el;
+ const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),ts=[];let n;while((n=w.nextNode()))if(!(n.parentElement&&n.parentElement.closest('.mot-adversaire,.mot-talent,.mot-terrain')))ts.push(n);
+ ts.forEach(t=>{const v=String(t.nodeValue);rx.lastIndex=0;if(!rx.test(v))return;rx.lastIndex=0;const f=document.createDocumentFragment();let last=0,m;
+  while((m=rx.exec(v))){if(m.index>last)f.append(v.slice(last,m.index));const b=document.createElement('b');b.className='mot-cle mot-adversaire';b.textContent=m[0];
+   b.style.color=parNom.get(m[1].replace(/\s+/g,' ').toLowerCase())||'';f.append(b);last=rx.lastIndex}
+  if(last<v.length)f.append(v.slice(last));t.replaceWith(f)});return el}
 /* Les talents d'un arbre, dans le texte d'un des siens : leur nom exact, casse ignorée, prend la
    couleur de sa nature — « Charge » en bleu d'Action dans un talent du Destructeur. */
 const TEINTES_TALENTS={abon:'#2a9d8f',act:'#4f7fb5',mvt:'#8a6440',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',mait:'#c99a3c',ame:'#5e9a5b'};
