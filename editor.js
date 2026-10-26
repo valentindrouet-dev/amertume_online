@@ -814,6 +814,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   ['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
+  if(t.debutTour!==true)delete t.debutTour;
   if(t.moitiePV!==true)delete t.moitiePV;
   if(t.plasma!==true)delete t.plasma;
   if(typeof t.incident!=='string'||!t.incident.trim())delete t.incident;else t.incident=t.incident.trim().slice(0,400);
@@ -3767,6 +3768,9 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
    génériques, ou les adversaires pour un effet de monstre. */
 const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',murelem:'Mystique',murdegats:'Mystique',murzone:'Mystique',mitraille:'Mystique',siphon:'Mystique',siphonplus:'Mystique',siphonsoin:'Mystique',ricochet:'Mystique',ricochetplus:'Mystique',ricochetcritique:'Mystique',thesaurisation:'Mystique',thesaurisationfois:'Mystique',thesaurisationsoin:'Mystique',mitraillecibles:'Mystique',mitrailleorbes:'Mystique',orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbes2des:'Mystique',orbesrouges:'Mystique',orbescritun:'Mystique',orbescrittous:'Mystique',delugegratuit:'Mystique',implosionmouvement:'Mystique',implosionorbe:'Mystique',contagion:'Mystique',contagioncontact:'Mystique',contagionvue:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
  gardien:'Gardien',rempart:'Gardien',boutoir:'Gardien',boutoirtous:'Gardien',boutoirimpact:'Gardien',coupbouclier:'Gardien',coupbouclierplus:'Gardien',coupboucliernoir:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame',lameventcibles:'Ombrelame',lameventdouble:'Ombrelame',lameventpoison:'Ombrelame',lameventprofonde:'Ombrelame',lameventfatale:'Ombrelame',impulsion:'Ombrelame',impulsiontour:'Ombrelame',impulsionallie:'Ombrelame',insaisispoison:'Ombrelame',insaisisadieu:'Ombrelame',insaisisombre:'Ombrelame',insaisisdegats:'Ombrelame',coursemortelle:'Ombrelame',coursechoix:'Ombrelame',courseombrelame:'Ombrelame',bondissement:'Ombrelame',bondissementlibre:'Ombrelame',bondissementfrappe:'Ombrelame',decoupe:'Ombrelame',decoupedegats:'Ombrelame',decoupeplus:'Ombrelame',lameempoisonnee:'Ombrelame',lamepoisonplus:'Ombrelame',lamepoisoncontact:'Ombrelame'};
+// v1.090 : Détresse, Muraille et les nouvelles améliorations du Gardien.
+Object.assign(CLASSES_EFFETS_DEVINEES,{detresse:'Gardien',detresserage:'Gardien',detressetous:'Gardien',muraille:'Gardien',muraillearmure:'Gardien',muraillegarde:'Gardien',
+ interventionsol:'Gardien',gardienonde:'Gardien',gardienrelance:'Gardien',meneurtous:'Gardien',meneurdouble:'Gardien'});
 // Frappe Furieuse et la maîtrise Rage sont au Destructeur.
 Object.assign(CLASSES_EFFETS_DEVINEES,{stimulant:'Mécaniste',stimulantsoi:'Mécaniste',stimulantonde:'Mécaniste',stimulantplasma:'Mécaniste',ganteletsbleu:'Mécaniste',ganteletssur:'Mécaniste',ganteletsdeux:'Mécaniste',gantelets:'Mécaniste',clemolette:'Mécaniste',clemolettetout:'Mécaniste',clemolettereparer:'Mécaniste',cellule:'Mécaniste',grandecellule:'Mécaniste',condensateur:'Mécaniste',valvesecours:'Mécaniste',vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
 // v1.007 : les effets d'Ombrelame.
@@ -4275,6 +4279,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
   +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label>'
   +'<label class="field-check" id="debut-combat"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutCombat" '+(talentDebut(t)?'checked':'')+'>Début de combat</label>'
+  // v1.090 : un talent de début de tour se joue à chaque tour, tant qu'aucun adversaire n'a agi.
+  +'<label class="field-check" id="debut-tour"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutTour" '+(t.debutTour===true?'checked':'')+'>Début de tour</label>'
   // v1.081 : le déclencheur « À 50% des PV » — le talent ne joue qu'à la moitié des PV ou moins ; Enracinée l'a d'office.
   +'<label class="field-check" id="moitie-pv"><input type="checkbox" name="moitiePV" '+(seuilMoitiePV(t)?'checked':'')+(t.effet==='enracinee'?' disabled':'')+'>À 50% des PV</label>'
   // v0.851 : le talent reçoit les dés de Plasma glissés sur son bouton.
@@ -4306,7 +4312,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  // « Remplace le logo du talent » ne vaut que pour une amélioration.
  if(champs.paliersActifs)champs.paliersActifs.addEventListener('change',()=>{lisBrouillonTalent();dessineReglagesTalent()});
  if(champs.type&&$('paliers-ame'))champs.type.addEventListener('change',()=>{$('paliers-ame').hidden=champs.type.value!=='ame';lisBrouillonTalent();dessineReglagesTalent()});
- if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value);if($('debut-combat'))$('debut-combat').hidden=champs.type.value==='ame'});
+ if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value);if($('debut-combat'))$('debut-combat').hidden=champs.type.value==='ame';if($('debut-tour'))$('debut-tour').hidden=champs.type.value==='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
   $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
@@ -4404,6 +4410,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(t.type==='ame'&&f.remplacePrecedente)t.remplacePrecedente=f.remplacePrecedente.checked;else delete t.remplacePrecedente;
  if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
  if(t.type!=='ame'&&f.debutCombat&&t.effet!=='bonus')t.debutCombat=f.debutCombat.checked;else delete t.debutCombat;
+ if(t.type!=='ame'&&f.debutTour&&f.debutTour.checked&&t.effet!=='bonus')t.debutTour=true;else delete t.debutTour;
  if(f.moitiePV&&f.moitiePV.checked&&t.effet!=='bonus'&&t.effet!=='enracinee')t.moitiePV=true;else delete t.moitiePV;
  if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;
  if(f.radiant&&f.radiant.checked&&t.effet!=='bonus')t.radiant=true;else delete t.radiant;

@@ -135,7 +135,8 @@ REGLES_SECTIONS.push(
    '<b>Mouvement</b> : fractionnable dans le tour. <b>Terrain difficile</b> : chaque mètre en coûte deux. <b>Impraticable</b> : bloque comme un mur.',
    '<b>Ajustement</b> : mouvement épuisé, on bouge encore sans sortir de la zone de contact où l’on s’est arrêté.',
    '<b>Tour suivant</b> : le Feu brûle, la Foudre perd un cran, Surpris tombe, les points et les talents joués reviennent.',
-   '<b>Début</b> : les états de chacun sont levés (sauf ceux d’un piège récent). Au tour 1, les talents de début de combat passent d’abord.',
+   '<b>Début</b> : les états de chacun sont levés (sauf ceux d’un piège récent). Les talents de début de combat se jouent quand on veut pendant le premier tour des aventuriers, ceux de début de tour pendant chaque tour : ils se ferment dès qu’un adversaire dépense un PA ou un PM. Un bouton au-dessus du token les rappelle.',
+   '<b>Muraille</b> : Immobilisé et DEF +1 jusqu’à la fin du tour, où Immobilisé tombe tout seul. <b>Meneur</b> peut donner « + Niveau » : le niveau du porteur.',
    '<b>Fin</b> : tous les états tombent (sauf Coma et ceux d’une pièce portée), l’Armure aussi ; le repos court redevient possible.'])),
  // 7. Les états.
  ()=>rgSection('etats','Les états',RG.reac,'✦','<b>n</b> est le nombre de crans d’un état <b>cumulable</b> : chaque nouvelle fois en ajoute un. Les autres se posent une fois. L’<b>Onde</b> absorbe le prochain état ; <b>Feu et Gel</b> s’annulent.',

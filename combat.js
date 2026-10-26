@@ -1831,14 +1831,14 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  meneur:{cle:'meneur',nom:'Meneur',type:'pass',
   aide:'Passif : le porteur augmente les dégâts, la DEF ou les PV max, temporairement, de son allié le plus proche, de deux ou de tous ses alliés, au contact, en vue ou n’importe où ; d’un nombre fixe, ou de son propre bonus.',
   params:[{cle:'quoi',nom:'Ce qu’il augmente',type:'choix',defaut:'dmg',options:[['dmg','les dégâts'],['def','la DEF'],['pv','les PV max, temporairement']]},
-   {cle:'base',nom:'De combien',type:'choix',defaut:'fixe',options:[['fixe','un nombre fixe'],['porteur','le bonus du porteur : ses dégâts, sa DEF']]},
+   {cle:'base',nom:'De combien',type:'choix',defaut:'fixe',options:[['fixe','un nombre fixe'],['porteur','le bonus du porteur : ses dégâts, sa DEF'],['niveau','votre Niveau']]},
    {cle:'valeur',nom:'Nombre fixe',type:'nombre',defaut:1,min:1,max:20},
    {cle:'combien',nom:'Pour',type:'choix',defaut:'un',options:[['un','l’allié le plus proche'],['deux','les deux alliés les plus proches'],['tous','tous les alliés']]},
    {cle:'portee',nom:'Qui se trouve',type:'choix',defaut:'contact',options:[['contact','au contact'],['vue','dans la ligne de vue'],['partout','n’importe où']]}],
   phrase(p){const quoi=(p&&p.quoi)||'dmg',q={dmg:'les dégâts',def:'la DEF',pv:'les PV max temporaires'}[quoi]||'les dégâts';
    const qui={un:'votre allié le plus proche',deux:'vos deux alliés les plus proches',tous:'tous vos alliés'}[p&&p.combien]||'votre allié le plus proche';
    const ou={vue:' dans votre ligne de vue',partout:''}[p&&p.portee]??' au contact';
-   const de=bonusDuMeneur(p)?(quoi==='def'?'votre DEF':'vos dégâts'):'+'+Math.max(1,(p&&p.valeur)|0);
+   const de=p&&p.base==='niveau'?'+ Niveau (votre niveau)':bonusDuMeneur(p)?(quoi==='def'?'votre DEF':'vos dégâts'):'+'+Math.max(1,(p&&p.valeur)|0);
    return 'Vous augmentez <b>'+q+'</b> de <b>'+qui+ou+'</b> de <b>'+de+'</b>.'}},
  /* Bonus de caractéristique : un nœud d'arbre qui n'est pas un talent. Appris, il ajoute
     à la fiche : des PV max, de l'Endurance, de la Vie, des dégâts, ou un point à une
@@ -2326,6 +2326,49 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),ouvert=k=>!!v&&v[k]>0&&n>=v[k];
    return 'Le porteur effectue <b>une attaque</b>, puis repousse '+(ouvert('tous')?'<b>tous les adversaires à son contact</b>':'<b>la cible</b>')
     +(ouvert('loin')?' à <b>deux fois sa zone de contact</b>.':' <b>hors de sa zone de contact</b>.')}}};
+/* v1.090 — Le Gardien : Meneur au Niveau et ses améliorations ; Détresse ; Muraille ; les améliorations d'Attaque d'état
+   (Attaque Blindée), d'Intervention et de Gardien. */
+const ETAT_ATTAQUE_PARAM={cle:'etat',nom:'État de l’attaque',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])};
+Object.assign(TALENTS_CODES,{
+ meneurtous:{cle:'meneurtous',nom:'Meneur — Tous',court:'Tous',type:'ame',
+  aide:'Amélioration de Meneur : le bonus va à tous les alliés à sa portée, plus seulement au plus proche.',
+  params:[],phrase(){return 'Vous augmentez les dégâts de <b>tous vos alliés</b> au contact.'}},
+ meneurdouble:{cle:'meneurdouble',nom:'Meneur — Double',court:'Double',type:'ame',
+  aide:'Amélioration de Meneur : le bonus est doublé — le double du Niveau du porteur.',
+  params:[],phrase(){return 'Vous augmentez les dégâts du <b>double de votre Niveau</b>.'}},
+ detresse:{cle:'detresse',nom:'Détresse',type:'pass',
+  aide:'Passif : chaque fois que l’allié Gardé du porteur subit des dégâts d’une attaque ou d’un talent adverse, le porteur gagne Rage 1.',
+  params:[],phrase(){return 'Chaque fois que votre allié <b>Gardé</b> subit des dégâts d’attaque ou de talent adverses, vous gagnez <b>Rage 1</b>.'}},
+ detresserage:{cle:'detresserage',nom:'Détresse — Rage 2',court:'Rage 2',type:'ame',
+  aide:'Amélioration de Détresse : le porteur gagne Rage 2.',
+  params:[],phrase(){return 'Vous gagnez <b>Rage 2</b>.'}},
+ detressetous:{cle:'detressetous',nom:'Détresse — Tout allié au contact',court:'Tout allié au contact',type:'ame',
+  aide:'Amélioration de Détresse : n’importe quel allié au contact du porteur la déclenche, Gardé ou non.',
+  params:[],phrase(){return '<b>N’importe quel allié</b> à votre contact.'}},
+ muraille:{cle:'muraille',nom:'Muraille',type:'mvt',bouton:'Muraille',
+  aide:'Mouvement : le porteur subit Immobilisé et gagne DEF +1 jusqu’à la fin du tour ; il perd ses PM restants.',
+  params:[],phrase(){return 'Vous subissez <b>Immobilisé</b> jusqu’à la fin du tour et gagnez <b>DEF +1</b> ; vous perdez tous vos PM restants.'}},
+ muraillearmure:{cle:'muraillearmure',nom:'Muraille — Armure',court:'Armure',type:'ame',
+  aide:'Amélioration de Muraille : le porteur gagne aussi Armure × Endurance.',
+  params:[],phrase(){return 'Vous gagnez aussi <b>Armure × Endu</b>.'}},
+ muraillegarde:{cle:'muraillegarde',nom:'Muraille — Allié Gardé',court:'Allié Gardé',type:'ame',
+  aide:'Amélioration de Muraille : l’allié Gardé du porteur, à son contact, a lui aussi DEF +1.',
+  params:[],phrase(){return 'Si votre allié <b>Gardé</b> est à votre contact, il bénéficie aussi de <b>DEF +1</b>.'}},
+ attaqueetatarmure:{cle:'attaqueetatarmure',nom:'Attaque d’état — Armure',court:'Armure',type:'ame',
+  aide:'Amélioration d’Attaque d’état : quand le porteur gagne l’état, il gagne aussi Armure × Endurance.',
+  params:[ETAT_ATTAQUE_PARAM],phrase(){return 'Vous gagnez aussi <b>Armure × Endu</b>.'}},
+ attaqueetatgarde:{cle:'attaqueetatgarde',nom:'Attaque d’état — Allié Gardé',court:'Allié Gardé',type:'ame',
+  aide:'Amélioration d’Attaque d’état : l’allié Gardé du porteur, à son contact, gagne aussi l’état.',
+  params:[ETAT_ATTAQUE_PARAM],phrase(p){return 'Votre allié <b>Gardé</b> gagne aussi <b>'+((p&&p.etat)||'Blindage')+'</b> s’il est à votre contact.'}},
+ interventionsol:{cle:'interventionsol',nom:'Intervention — Au sol',court:'Au sol',type:'ame',
+  aide:'Amélioration d’Intervention : une fois son attaque faite, l’adversaire subit Au sol.',
+  params:[],phrase(){return 'Après que l’adversaire a effectué son attaque, vous lui infligez <b>Au sol</b>.'}},
+ gardienonde:{cle:'gardienonde',nom:'Gardien — Onde',court:'Onde',type:'ame',
+  aide:'Amélioration de Gardien : l’allié qui reçoit Gardé reçoit aussi Onde.',
+  params:[],phrase(){return 'Quand il reçoit <b>Gardé</b>, votre allié reçoit aussi <b>Onde</b>.'}},
+ gardienrelance:{cle:'gardienrelance',nom:'Gardien — Chaque tour',court:'Chaque tour',type:'ame',
+  aide:'Amélioration de Gardien : Gardé se relance à chaque tour, et peut passer à un autre allié.',
+  params:[],phrase(){return 'Vous pouvez relancer <b>Gardé</b> à chaque tour : il peut passer à un autre allié.'}}});
 /* Chaque amélioration dit le talent qu'elle améliore : la bibliothèque la range dessous, et son nom
    s'écrit « Talent — court », d'un seul modèle pour toutes ; l'ancien nom reste connu, pour retrouver
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
@@ -2333,7 +2376,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
- soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage'};
+ soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
+ meneurtous:'meneur',meneurdouble:'meneur',detresserage:'detresse',detressetous:'detresse',muraillearmure:'muraille',muraillegarde:'muraille',
+ attaqueetatarmure:'attaqueetat',attaqueetatgarde:'attaqueetat',interventionsol:'intervention',gardienonde:'gardien',gardienrelance:'gardien'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
 /* ---------- Les effets d'équipement ----------
