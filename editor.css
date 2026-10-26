@@ -3745,3 +3745,14 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 #actor-fields .edit-grid.grille-adv4{grid-template-columns:repeat(4,minmax(0,1fr))}
 #actor-fields .edit-grid:is(.grille-adv5,.grille-adv4) label{min-width:0}
 #actor-fields .edit-grid:is(.grille-adv5,.grille-adv4) :is(input,select){width:100%;min-width:0;box-sizing:border-box}
+/* v1.096 — L'onglet Talents : les grands ronds sur une ligne, un trait entre chaque nature ; les Actions bonus et les Passifs plus
+   petits, sur la leur, comme dans l'arbre ; les ronds ne se touchent pas. */
+.talents-cadre>.talent-ligne{display:flex;flex-wrap:wrap;align-items:flex-start;row-gap:8px}
+.talents-cadre>.talent-ligne+.talent-ligne{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.talent-ligne>.talent-rangee{display:flex;flex-wrap:wrap;flex-basis:auto;gap:8px;padding:0 10px;align-self:stretch;align-items:flex-start}
+.talent-ligne>.talent-rangee:first-child{padding-left:0}
+.talent-ligne>.talent-rangee+.talent-rangee{border-left:1px solid var(--line)}
+.talent-ligne>.talent-rangee .cat-carte{width:auto}
+.talent-ligne.ligne-grands .cat-pill.gear-carre.talent-carre{width:56px;max-width:none;height:56px}
+.talent-ligne.ligne-moyens .cat-pill.gear-carre.talent-carre{width:42px;max-width:none;height:42px}
+.talent-ligne.ligne-moyens .cat-pill.gear-carre.talent-carre .glyphe{font-size:18px}

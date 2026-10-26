@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.096","d":"2026-10-26","t":"Onglet Talents : lignes par nature, petits ronds pour Actions bonus et Passifs"},
 {"v":"1.095","d":"2026-10-26","t":"Éditeur d’adversaire : champs sur deux lignes"},
 {"v":"1.094","d":"2026-10-26","t":"{dégât} : l’icône des dégâts"},
 {"v":"1.093","d":"2026-10-26","t":"Éditeur d’adversaire sans le champ Famille / rôle"},

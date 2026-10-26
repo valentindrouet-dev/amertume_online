@@ -4025,9 +4025,17 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
     const sep=document.createElement('span');sep.className='espece-separateur';sep.textContent=nomE;r.append(sep);
     if(view==='mj'&&id){sep.classList.add('cliquable');sep.onclick=()=>openReglagesEspece(id)}
     lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
-  else ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
-   const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
-   lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)});
+  /* v1.096 : une ligne pour les grands ronds — Maîtrise, Actions, Mouvements, Réactions, Critiques —, un trait entre chaque nature ;
+     une ligne pour les petits — Actions bonus, Passifs —, comme dans l'arbre ; les Améliorations dessous, comme avant. */
+  else{const lignes={grands:['mait','act','mvt','reac','crit'],moyens:['abon','pass']};
+   Object.entries(lignes).forEach(([nomL,types])=>{const ligne=document.createElement('div');ligne.className='talent-ligne ligne-'+nomL;
+    types.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
+     const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
+     lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));ligne.append(r)});
+    if(ligne.childElementCount)cadre.append(ligne)});
+   ORDRE_TYPES_TALENTS.filter(k=>![...lignes.grands,...lignes.moyens].includes(k)).forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
+    const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
+    lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
   if(cadre.childElementCount)bloc.append(cadre);
   cols.append(bloc)}
 }
