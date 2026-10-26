@@ -1036,3 +1036,8 @@ async function connexionMJ(){if(!auth){document.addEventListener('amertume-fireb
  // La fenêtre porte, le temps de cette connexion, le nom du bouton qui l'ouvre.
  const t=compteDialog.querySelector('.dialog-head h2'),avant=t?t.textContent:'';if(t)t.textContent='Connexion MJ';
  compteDialog.addEventListener('close',()=>{if(t)t.textContent=avant},{once:true});demandeCompte()}
+/* v1.080 — Les talents tenus et la DEF, retenus le temps d'un rendu (memoRendu) : posés ici, après toutes leurs enveloppes. */
+{const tc=talentsCodes;talentsCodes=function(a,...x){const m=typeof memoRendu!=='undefined'&&memoRendu;if(!m||x.length||!a||typeof a!=='object')return tc.call(this,a,...x);
+ if(!m.tc.has(a))m.tc.set(a,tc.call(this,a));return m.tc.get(a)}}
+{const d0=defOf;defOf=function(a,...x){const m=typeof memoRendu!=='undefined'&&memoRendu;if(!m||x.length||!a||typeof a!=='object')return d0.call(this,a,...x);
+ if(!m.def.has(a))m.def.set(a,d0.call(this,a));return m.def.get(a)}}

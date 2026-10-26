@@ -529,7 +529,9 @@ let cartePeinte=null;
 function cleVoile(){const m=currentMap();return m?m.id+'|'+(m.fogOff?1:0):''}
 // Peint, ou rien à peindre : le voile s'ôte. Brouillard pas encore calculé, cadre sans largeur : il reste.
 function leverVoile(){const m=currentMap(),cv=$('fog');
- const peint=!m||m.fogOff||(fogVis&&fogDim&&cv.clientWidth>0&&cv.clientHeight>0);
+ // v1.080 : la taille du cadre mesurée au début du rendu, s'il y en a une — la toile le couvre exactement.
+ const w=cadreFige&&cadreFige.cw?cadreFige.cw:cv.clientWidth,h=cadreFige&&cadreFige.ch?cadreFige.ch:cv.clientHeight;
+ const peint=!m||m.fogOff||(fogVis&&fogDim&&w>0&&h>0);
  if(!peint)return;cartePeinte=cleVoile();voileAttente.hidden=true}
 let vueTroupe=false;
 function oeilJoueur(){return view!=='mj'||vueTroupe}
@@ -538,7 +540,8 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  // Voile levé par le MJ : plus rien ne masque la carte, pour personne.
  if(!m||!fogVis||!d||m.fogOff){cv.style.display='none';return}
  cv.style.display='';
- const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
+ // v1.080 : la toile couvre exactement le cadre ; mesuré au début du rendu (cadreFige), il ne se relit pas en plein milieu.
+ const large=cadreFige&&cadreFige.cw?cadreFige.cw:cv.clientWidth,haut=cadreFige&&cadreFige.ch?cadreFige.ch:cv.clientHeight;if(!large||!haut)return;
  // Toile à la résolution de l'écran : le bord du polygone est tracé au pixel près.
  const ech=Math.min(2,window.devicePixelRatio||1);
  /* La toile suivait la seule taille du cadre, et le zoom l'agrandissait ensuite : à deux
@@ -679,9 +682,10 @@ function svgPorte(d,ratio,cls){if(!(Number(d.a)||0))return svgRect(d,cls);
  const el=document.createElementNS(nsSVG,'polygon');
  el.setAttribute('points',doorPolygon(d,ratio).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
  if(cls)el.setAttribute('class',cls);return el}
+let ratioDuRendu=false;
 function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=currentMap();
  // La rangée des Actions a pu changer de hauteur : le cadre se recale, et se remesure s'il a bougé.
- svg.replaceChildren();portes.replaceChildren();if(applyMapRatio()&&cadreFige)cadreFige=mesureCadre();renderFog();renderNuit();renderZones();leverVoile();refreshGmBar();
+ svg.replaceChildren();portes.replaceChildren();if(!ratioDuRendu&&applyMapRatio()&&cadreFige)cadreFige=mesureCadre();renderFog();renderNuit();renderZones();leverVoile();refreshGmBar();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
@@ -3323,7 +3327,10 @@ const renderBeforeMaps=render;render=function(){
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
  // Le cadre posé, il se mesure une fois pour tout le rendu.
  applyMapRatio();const dehors=cadreFige;cadreFige=mesureCadre();
- try{computeFog();oublieEntendus();renderBeforeMaps();renderMapLayer();renderFouilles()}finally{cadreFige=dehors?cadreFige:null}
+ /* v1.080 : la carte, mesurée ici, ne se remesure pas au milieu du rendu : la relire après tant de changements forçait la page
+    entière à se recalculer. La rangée des Actions qui change de hauteur la fait remesurer d'elle-même (son observateur). */
+ ratioDuRendu=true;
+ try{computeFog();oublieEntendus();renderBeforeMaps();renderMapLayer();renderFouilles()}finally{cadreFige=dehors?cadreFige:null;ratioDuRendu=false}
  calerColonnes();
  majOnglets()};
 /* Le journal descend jusqu'au bas de la carte : son panneau est calé dessus à chaque rendu

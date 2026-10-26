@@ -1060,7 +1060,7 @@ const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderNuit();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
-assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles()}finally{cadreFige=dehors?cadreFige:null}\n calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
+assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles()}finally{cadreFige=dehors?cadreFige:null;ratioDuRendu=false}\n calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
 assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
 assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px")&&!page.includes('titre-actions')&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}'),'un seul lettrage de titres');
@@ -3648,7 +3648,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.716 — L'Accueil suit les fiches et la table sans recharger la page ; chez un joueur, il ne montre que ses aventuriers dès le
    chargement ; la case de l'aventure et le token pâli sont au MJ seul. */
 {const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
- assert.ok(ed.includes("renderBestiary();if(document.body.classList.contains('page-accueil'))renderAccueil()}")&&vv.includes("if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();")
+ assert.ok(ed.includes("if(vue('bestiary'))renderBestiary();if(vue('accueil'))renderAccueil()}")&&vv.includes("if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();")
   &&pg.includes("return !!new URL(location.href).searchParams.get('table')&&!(typeof admin!=='undefined'&&admin===true)}")
   &&ed.includes(" const part=a.hero&&view==='mj'?document.createElement('input'):null;")&&ed.includes(" if(a.horsCarte&&view==='mj'){jeton.classList.add('hors-table');"),'Accueil à jour, case et pâleur au MJ');}
 /* v0.715 — Les joueurs connectés : leur présence renouvelée chaque minute, leur liste à l'Accueil et dans une fenêtre, un bouton
@@ -4151,7 +4151,7 @@ assert.ok(page.includes("function analyseComplete(o){const s=connuDe(o);return I
  &&page.includes("+(neufs.length&&analyseComplete(o)?'\\n'+o.name+' est entièrement analysé !':''),{ton:'talent'});")
  &&page.includes(":proie&&analyseComplete(proie)?nomNum(proie)+' est entièrement analysé.'"),'l’adversaire entièrement analysé');
 /* v0.631 — La DEF connue d'un adversaire paraît dans la colonne des combattants ; l'XP de l'Analyse se lit dans sa case du journal. */
-assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySelector('.vie-ligne').append(shieldBadge(defOf(a)));")
+assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySelector('.vie-ligne').append(ecuDeListe(a,defOf(a)));")
  &&page.includes("+(gagne?'\\nLe groupe gagne '+gain+' XP.':'')"),'la DEF connue, l’XP dans la case de l’Analyse');
 /* v0.630 — La bulle d'un token aux chiffres de la fiche, la vie sur toute la largeur, les Attaques spéciales à découvrir à part. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -4235,7 +4235,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(page.includes("function figeCadre(fn){if(cadreFige)return fn();cadreFige=mesureCadre();try{return fn()}finally{cadreFige=null}}")
   &&page.includes("function mapSize(){const r=cadreFige||$('map').getBoundingClientRect();return {width:r.width,height:r.height}}")
   &&page.includes(" {const pasBrut=t.onpointermove;t.onpointermove=e=>figeCadre(()=>pasBrut(e))}")&&page.includes("figeCadre(()=>document.querySelectorAll('#pv-layer .pv').forEach(j=>placeJauge(j)))")
-  &&carto.includes(" applyMapRatio();const dehors=cadreFige;cadreFige=mesureCadre();")&&carto.includes("if(applyMapRatio()&&cadreFige)cadreFige=mesureCadre();")
+  &&carto.includes(" applyMapRatio();const dehors=cadreFige;cadreFige=mesureCadre();")&&carto.includes("if(!ratioDuRendu&&applyMapRatio()&&cadreFige)cadreFige=mesureCadre();")
   &&vif.includes("function glisseUneImage(){if(typeof figeCadre==='function'&&!cadreFige)return figeCadre(glisseUneImage);"),'la carte se mesure une fois');
  assert.ok(page.includes("function ajusteNomFiche(){if(nomAAjuster)return;nomAAjuster=requestAnimationFrame(")&&!page.includes("for(let f=25;f>=17&&n.scrollWidth>n.clientWidth;f--)"),'le nom se cale à l’image suivante');}
 /* v0.619 — Les dégâts d'un piège, posé ou de coffre : fixes, ou « xdy », tirés à chaque fois qu'il part. */

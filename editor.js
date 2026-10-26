@@ -7049,7 +7049,9 @@ function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
  n.textContent='✓ '+texte;n.classList.add('ok');clearTimeout(reglageTimer);
  reglageTimer=setTimeout(()=>{n.textContent='';n.classList.remove('ok')},3200)}
 // L'Accueil suit les fiches : un contenu reçu, un aventurier arrivé d'un joueur y paraissent sans recharger la page.
-function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary();if(document.body.classList.contains('page-accueil'))renderAccueil()}
+/* v1.080 : seule la page affichée se redessine ; une autre le fait en s'ouvrant (showPage). */
+function renderCatalogPages(){const vue=p=>document.body.classList.contains('page-'+p);
+ if(vue('heroes'))renderHeroes();if(vue('talents'))renderTalents();if(vue('armory'))renderArmory();if(vue('bestiary'))renderBestiary();if(vue('accueil'))renderAccueil()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;if($('armory-sort2'))$('armory-sort2').onchange=renderArmory;
 $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
 $('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();$('armory-chambre').onclick=()=>openChambre();

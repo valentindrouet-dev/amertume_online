@@ -3637,9 +3637,12 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 #difficiles-bords{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible;filter:blur(max(2px,calc(var(--token,40px) * .1)))}
 #difficiles-bords .diffi-bord{fill:none;stroke:#a2691f;stroke-width:5px;stroke-opacity:.5;vector-effect:non-scaling-stroke}
 /* v1.028 — Le terrain dangereux rougeoie lentement, dans sa couleur ; au survol, sa bulle le nomme. */
-@keyframes danger-pouls{from{fill-opacity:.18;stroke-opacity:.25}to{fill-opacity:.42;stroke-opacity:.55}}
-#dangers-carte .danger-carte{animation:danger-pouls 2.6s ease-in-out infinite alternate}
-@media (prefers-reduced-motion:reduce){#dangers-carte .danger-carte{animation:none}}
+/* v1.080 : le pouls bat sur la transparence du calque entier, déjà flou, que la carte graphique module seule ; il ne refait plus
+   le flou à chaque image. Mêmes valeurs qu'avant : .18 à .42 de fond, .25 à .55 de bord. */
+@keyframes danger-pouls{from{opacity:.43}to{opacity:1}}
+#dangers-carte .danger-carte{fill-opacity:.42;stroke-opacity:.55}
+#dangers-carte{will-change:opacity;animation:danger-pouls 2.6s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){#dangers-carte{animation:none;opacity:.67}}
 .ancre-danger{position:absolute;width:2px;height:2px;margin:-1px 0 0 -1px;pointer-events:none}
 .j-etat-nomme{white-space:nowrap}
 /* v1.029 — La bulle d'un terrain dangereux prend sa couleur : le fond teinté, le nom écrit de sa teinte. */
