@@ -6622,7 +6622,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      ancien) continue en lignes dessous. */
   // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
   // v1.098 : BONUS_SATELLITES à false — plus rien à droite des ronds pour les bonus ; à true, ils reviennent (arcs, ou billes avec ARCS_BONUS à false).
-  let satN=0;const BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
+  let satN=0;const ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
   /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
      talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
      ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */
@@ -6706,13 +6706,20 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(!centre&&!gros.length&&!moyens.length&&!mj)return;
    const vG=mj&&gros.length<MAX_LIGNE_ARBRE.gros,vM=mj&&moyens.length<MAX_LIGNE_ARBRE.moyen,nG=gros.length+(vG?1:0),nM=moyens.length+(vM?1:0);
    // Le carré : la case 0 est le talent initial ; les gros prennent les cases 1, 2, 3, puis la suite, deux par ligne.
-   const x0=MARGE+D.centre/2,y0=MARGE+D.centre/2,caseG=i=>({x:x0+(i%2)*PAS_G,y:y0+Math.floor(i/2)*PAS_G});
+   const x0=MARGE+D.centre/2,y0=MARGE+D.centre/2;let caseG=i=>({x:x0+(i%2)*PAS_G,y:y0+Math.floor(i/2)*PAS_G});
    const lignesG=Math.max(2,Math.ceil((nG+1)/2)),lignesM=Math.max(1,Math.ceil(nM/2));
    const xm=x0+PAS_G+D.gros/2+ECART-PAS_MX/2+D.moyen/2,ym=y0+PAS_G/2;
    // Les moyens, deux par ligne ; les lignes centrées sur le carré, un rond seul au milieu de sa ligne.
-   const caseM=i=>{const r=Math.floor(i/2),seul=r===lignesM-1&&nM%2===1;return {x:seul?xm+PAS_MX/2:xm+(i%2)*PAS_MX,y:ym+(r-(lignesM-1)/2)*PAS_MY}};
-   const W=xm+PAS_MX+D.moyen/2+MARGE,dy=Math.max(0,(lignesM-1)/2*PAS_MY+D.moyen/2-(ym-MARGE));
-   const H=Math.max(y0+(lignesG-1)*PAS_G+D.gros/2,ym+(lignesM-1)/2*PAS_MY+D.moyen/2)+dy+MARGE;
+   let caseM=i=>{const r=Math.floor(i/2),seul=r===lignesM-1&&nM%2===1;return {x:seul?xm+PAS_MX/2:xm+(i%2)*PAS_MX,y:ym+(r-(lignesM-1)/2)*PAS_MY}};
+   let W=xm+PAS_MX+D.moyen/2+MARGE,dy=Math.max(0,(lignesM-1)/2*PAS_MY+D.moyen/2-(ym-MARGE));
+   let H=Math.max(y0+(lignesG-1)*PAS_G+D.gros/2,ym+(lignesM-1)/2*PAS_MY+D.moyen/2)+dy+MARGE;
+   /* v1.103 : en colonnes — à gauche le talent initial, centré ; puis les gros ronds (Action, Réaction, Mouvement) l'un sous
+      l'autre ; puis les moyens (Passifs, Actions bonus) sur deux colonnes. ARBRE_COLONNES à false rend le carré d'avant. */
+   if(ARBRE_COLONNES){const PY=118,R=Math.max(1,nG,Math.ceil(nM/2)),RM=Math.max(1,Math.ceil(nM/2)),yMid=MARGE+D.gros/2+(R-1)*PY/2;
+    const xC=MARGE+D.centre/2+14,xG=xC+160,xM1=xG+150,xM2=xM1+PAS_MX;
+    caseG=i=>i===0?{x:xC,y:yMid}:{x:xG,y:yMid+((i-1)-(nG-1)/2)*PY};
+    caseM=i=>{const r=Math.floor(i/2),seul=r===RM-1&&nM%2===1;return {x:seul?(xM1+xM2)/2:(i%2?xM2:xM1),y:yMid+(r-(RM-1)/2)*PY}};
+    W=xM2+D.moyen/2+MARGE;H=yMid+(R-1)*PY/2+D.gros/2+MARGE;dy=0}
    const roue=document.createElement('div');roue.className='arbre-roue';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const pose=(el,p,cls)=>{el.classList.add('roue-'+cls);el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';roue.append(el)};
    if(centre){const el=estVide(centre)?noeudVide(centre,c,false):noeudArbre(centre,c,libre);if(!estVide(centre))satellites(el,centre,'centre');if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
@@ -8461,7 +8468,8 @@ function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle
  const des=nomP.querySelector('.bulle-des');if(des){des.remove();nomP.classList.remove('avec-des')}
  titres.append(nomP,sous);tete.append(ico,titres);
  // À droite : les dés du coup, puis les états que le talent porte.
- const etats=etatsDuTalent(talentAuPalier(t,pn));
+ // v1.103 : plus d'états à droite, seulement les dés d'un coup.
+ const etats=[];
  if(des||etats.length){const v=document.createElement('div');v.className='talent-valeur';if(des)v.append(des);
   etats.forEach(e=>{const im=typeof imageEtat==='function'?imageEtat(e):null,s=document.createElement('span');s.className='talent-etat';s.title=e;
    if(im&&im.tagName==='IMG'){im.alt='';s.append(im)}else{s.textContent=e;s.style.color=TEINTE_ETAT_MOT[e]||''}v.append(s)});

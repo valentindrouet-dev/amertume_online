@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.103","d":"2026-10-26","t":"Arbre en colonnes ; bulles sans état ni XP"},
 {"v":"1.102","d":"2026-10-26","t":"Arbre : rouge des inaccessibles plus léger"},
 {"v":"1.101","d":"2026-10-26","t":"Arbre : rouge des inaccessibles plus sombre et terne"},
 {"v":"1.100","d":"2026-10-26","t":"Arbre : achetables en gris, inaccessibles en rouge ; arcs sans bulle"},

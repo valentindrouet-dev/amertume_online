@@ -3769,3 +3769,5 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbres-v2 .arbres-detail .detail-tete.cliquable.fermee .detail-rond{filter:grayscale(1) brightness(.66) sepia(.9) hue-rotate(-34deg) saturate(1.2)}
 /* v1.100 : les satellites ne prennent plus la souris : pas de bulle, le survol passe au rond. */
 .arbre-satellites :is(.sat-arc,.sat-bille){pointer-events:none;cursor:default}
+/* v1.103 : la bulle d'un talent ne dit plus son prix en XP : l'arbre et son panneau le disent. */
+.bulle .talent-detail .talent-bulle-nom .cout-xp{display:none}
