@@ -83,13 +83,13 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-tools [data-tool=wall]{border-color:#5b6a71;color:var(--t-wall)}
 #map-tools [data-tool=door]{border-color:#a5703a;color:var(--t-door)}
 #map-tools [data-tool=start]{border-color:#5f8d73;color:var(--t-start)}
-#map-tools [data-tool=foe]{border-color:#a0625a;color:var(--t-foe)}
+#map-tools [data-tool^=foe]{border-color:#a0625a;color:var(--t-foe)}
 #map-tools button.on{color:#11181b}
 #map-tools [data-tool=select].on{background:#7faddc;border-color:#7faddc}
 #map-tools [data-tool=wall].on{background:#93a4ab;border-color:#93a4ab}
 #map-tools [data-tool=door].on{background:#c98a4b;border-color:#c98a4b}
 #map-tools [data-tool=start].on{background:#8bbd9c;border-color:#8bbd9c}
-#map-tools [data-tool=foe].on{background:#d29180;border-color:#d29180}
+#map-tools [data-tool^=foe].on{background:#d29180;border-color:#d29180}
 .canvas-wrap{flex:1;display:grid;place-items:center;min-height:0;overflow:hidden;border-radius:10px}
 #map-canvas{position:relative;transform-origin:0 0;will-change:transform;background:var(--map-bg) 0 0/100% 100% no-repeat;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;touch-action:none;user-select:none;box-shadow:0 10px 30px #0006}
 #map-canvas.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%;background-position:0 0;background-repeat:repeat}

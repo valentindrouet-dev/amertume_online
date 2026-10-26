@@ -5731,8 +5731,8 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
   &&src.includes("alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})")&&src.includes("'pool','pnj','alignement','unique','mouvement'])]"),'la case Unique');
  assert.ok(src.includes("if(m.pnj&&m.unique===true&&actors.some(a=>a&&!a.hero&&a.template===m.id)){")&&src.includes("const n=m.pnj&&m.unique===true?1:"),'sur la table, un seul exemplaire');
  // L'éditeur de cartes : l'outil PNJ, sa liste, l'unique, la couleur.
- assert.ok(mp.includes('<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl"')&&mp.includes("catalog.monsters.forEach((m,i)=>$(m.pnj?'map-pnj-tpl':'map-foe-tpl').add(")
-  &&mp.includes("if(mapTool==='foe'||mapTool==='pnj'){")&&mp.includes("const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;")
+ assert.ok(mp.includes('<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl"')&&mp.includes("sp.replaceChildren(...tri(tous.filter(([m])=>m.pnj))")
+  &&mp.includes("if(typeOutilAdv(mapTool)||mapTool==='pnj'){")&&mp.includes("const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;")
   &&mp.includes("if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}")&&feuille.includes('.shape.foe.al-allie{'),'l’outil PNJ');
  // La fiche de table : le bouton d'alignement, au MJ ; en ligne, au MJ seul.
  assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")&&vivant.includes("'alignementJeu','debutTour','enAventure'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}

@@ -1767,7 +1767,7 @@ mapsPage.innerHTML=
  +'<button data-tool="danger">Dangereux</button><button data-tool="dangerlibre">Dangereux libre</button><button data-tool="dangerligne">Ligne dangereuse</button><button data-tool="dangergomme">Gomme de dangereux</button>'
  +'<select id="map-danger-type" aria-label="Type de terrain dangereux"></select><button id="map-danger-edit" type="button">✎ Type</button><span class="bar-sep"></span>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="fenetre">Fenêtre</button><button data-tool="start">Zone de départ</button>'
- +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
+ +'<button data-tool="foestandard">Standard</button><button data-tool="foealpha">Élite</button><button data-tool="foesolitaire">Solitaire</button><button data-tool="foeboss">Boss</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
  +'<button data-tool="objet">+ Objet</button><button data-tool="indice">Indice</button><button data-tool="ressource">Ressource</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="coffregroupe">Coffre de groupe</button><button data-tool="lumiere">Lumière</button><button data-tool="piege">Piège</button><button data-tool="notemj">Note de MJ</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
@@ -1928,7 +1928,7 @@ $('paysage-del').onclick=()=>{const p=mapDraft;if(!estPaysage(p)||!confirm('Supp
  if(currentMapId===p.id)fermerPaysage();const i=maps.indexOf(p);if(i>=0)maps.splice(i,1);
  mapDraft=maps.filter(estPaysage)[0]||maps.find(m=>!estPaysage(m))||null;mapSel=null;undoStack=[];redoStack=[];if(!maps.length)newMap();
  renderMapList();renderCanvas();saveMaps();render()};
-document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(courbe&&courbe.outil!==mapTool)courbe=null;if(mapTool!=='lasso')lasso=null;
+document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(typeOutilAdv(mapTool)){typeAdvChoisi=typeOutilAdv(mapTool);remplitModelesAdv()}if(courbe&&courbe.outil!==mapTool)courbe=null;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme'&&mapTool!=='dangergomme';
  zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
@@ -1940,7 +1940,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 const FAMILLES_OUTILS=[['blocage','Blocage',['wall','ligne','courbe','cadre','pinceau','blocagelibre']],['decoupe','Découpe',['cut','lasso','gomme']],
  ['obscurite','Obscurité',['obscur','obscurlibre','obscurremplir','obscurgomme']],['imprat','Impraticable',['imprat','impratlibre','impratligne','impratcourbe','impratcadre','impratgomme']],
  ['diffi','Difficile',['diffi','diffilibre','diffiligne','difficadre','diffigomme']],['danger','Dangereux',['danger','dangerlibre','dangerligne','dangergomme']],['ouvertures','Portes et fenêtres',['door','secret','fenetre']],
- ['placement','Placement',['start','foe','pnj','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege','notemj']],['zones','Zones',['zones','separer','regrouper']]];
+ ['tokens','Tokens',['foestandard','foealpha','foesolitaire','foeboss','pnj']],['placement','Objets',['start','objet','indice','ressource','coffre','coffrerond','coffregroupe','lumiere','piege','notemj']],['zones','Zones',['zones','separer','regrouper']]];
 let aimantOn=(()=>{try{return localStorage.getItem('amertume-aimant')==='1'}catch(e){return false}})();
 let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outils');return FAMILLES_OUTILS.some(x=>x[0]===f)?f:'blocage'}catch(e){return 'blocage'}})();
 {const barre=$('map-tools');if(barre&&!barre.querySelector('.familles-outils')){
@@ -1951,7 +1951,7 @@ let familleOuverte=(()=>{try{const f=localStorage.getItem('amertume-famille-outi
  FAMILLES_OUTILS.forEach(([k,nom,outils])=>{const b=document.createElement('button');b.type='button';b.className='famille-outil';b.dataset.famille=k;b.textContent=nom;
   b.onclick=()=>{familleOuverte=k;try{localStorage.setItem('amertume-famille-outils',familleOuverte)}catch(e){}majFamillesOutils()};tete.append(b);
   const r=document.createElement('div');r.className='outils-famille';r.dataset.famille=k;
-  outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foe'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'));if(t==='dangergomme')['map-danger-type','map-danger-edit'].forEach(id=>{if($(id))r.append($(id))})});
+  outils.forEach(t=>{const o=outil(t);if(!o)return;r.append(o);if(t==='foeboss'&&$('map-foe-tpl'))r.append($('map-foe-tpl'));if(t==='pnj'&&$('map-pnj-tpl'))r.append($('map-pnj-tpl'));if(t==='dangergomme')['map-danger-type','map-danger-edit'].forEach(id=>{if($(id))r.append($(id))})});
   corps.push(r)});
  const fin=document.createElement('span');fin.className='familles-fin';tete.append(fin);
  ['pinceau-taille','map-aimant','undo','redo','czoom-out','czoom-label','czoom-in','czoom-reset','czoom-largeur'].forEach(id=>{const x=$(id);if(x)tete.append(x)});
@@ -2034,8 +2034,17 @@ function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amer
  {const s=$('map-batiment');if(s){s.replaceChildren(new Option('— aucun —',''),...((typeof domaine!=='undefined'&&domaine.batiments)||[]).map(b=>new Option(b.nom,b.id)));s.value=mapDraft&&mapDraft.batiment||'';s.disabled=!mapDraft}}
  {const s=$('map-lieu');if(s){s.replaceChildren(new Option('— aucun lieu —',''),...lieuxDesCartes().map(l=>new Option(l,l)),new Option('✎ Nouveau lieu…','*'));s.value=mapDraft&&mapDraft.lieu||'';s.disabled=!mapDraft}}
  if(mapDraft)$('map-name').value=mapDraft.name;
- // Deux outils, deux listes : les adversaires d'un côté, les PNJ de l'autre.
- $('map-foe-tpl').replaceChildren();$('map-pnj-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$(m.pnj?'map-pnj-tpl':'map-foe-tpl').add(new Option(m.name,String(i))))}
+ remplitModelesAdv()}
+/* v1.070 — La famille Tokens : un outil par Type d'adversaire (Standard, Élite, Solitaire, Boss) et un pour les PNJ. Le menu
+   des modèles ne montre que ceux du Type de l'outil choisi, par ordre alphabétique ; celui des PNJ aussi. */
+const typeOutilAdv=t=>({foestandard:'standard',foealpha:'alpha',foesolitaire:'solitaire',foeboss:'boss'})[t]||'';
+let typeAdvChoisi='standard';
+function remplitModelesAdv(){const s=$('map-foe-tpl'),sp=$('map-pnj-tpl');if(!s||!sp)return;const av=s.value,avp=sp.value;
+ const tri=l=>l.sort((a,b)=>a[0].name.localeCompare(b[0].name,'fr',{sensitivity:'base'}));
+ const tous=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>m&&m.name);
+ s.replaceChildren(...tri(tous.filter(([m])=>!m.pnj&&(m.type||'standard')===typeAdvChoisi)).map(([m,i])=>new Option(m.name,String(i))));
+ sp.replaceChildren(...tri(tous.filter(([m])=>m.pnj)).map(([m,i])=>new Option(m.name,String(i))));
+ if([...s.options].some(o=>o.value===av))s.value=av;if([...sp.options].some(o=>o.value===avp))sp.value=avp}
 
 /* Le tracé se fait en deux clics : le premier pose l'origine, le second arrête le trait.
    Maj le contraint aux huit directions, comme dans n'importe quel outil de dessin. */
@@ -2133,6 +2142,10 @@ const HINTS={courbe:'Chaque clic pose un point : la ligne de blocage passe par t
  piegebloc:'Trace la hitbox du piège : un rectangle à part de son icône, qu’on étire en travers du passage. Tant qu’un aventurier ne l’a pas enjambé, il ne traverse pas ; caché, le piège part dès qu’on la touche.',
  piegefil:'Tire le fil qui déclenche le piège, d’un bout à l’autre : un combattant qui le touche le fait partir.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
+ foestandard:'Clique pour poser l’adversaire Standard choisi à droite. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
+ foealpha:'Clique pour poser l’adversaire Élite choisi à droite. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
+ foesolitaire:'Clique pour poser l’adversaire Solitaire choisi à droite. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
+ foeboss:'Clique pour poser le Boss choisi à droite. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
  objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.',
  zones:'Les zones : toute étendue close par la matière et les portes en est une, chacune de sa couleur et de son numéro. Clique un numéro pour le renommer. Clique un trait de séparation ou un lien pour le choisir, Suppr l’efface.',
  separer:'Deux clics tracent un trait qui coupe une zone en deux — un seuil, une arche — sans rien bloquer d’autre. Il s’aimante aux angles de la matière et aux bords de la carte. Échap abandonne, Suppr efface le trait choisi.',
@@ -2522,7 +2535,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
     centre:{x:cible.x+(cible.w||0)/2,y:cible.y+(cible.h||0)/2}};
    $('map-canvas').setPointerCapture(e.pointerId)}
   renderCanvas();e.preventDefault();return}
- if(mapTool==='foe'||mapTool==='pnj'){const t=catalog.monsters[Number($(mapTool==='pnj'?'map-pnj-tpl':'map-foe-tpl').value)];if(!t)return;
+ if(typeOutilAdv(mapTool)||mapTool==='pnj'){const t=catalog.monsters[Number($(mapTool==='pnj'?'map-pnj-tpl':'map-foe-tpl').value)];if(!t)return;
   // Un PNJ unique n'a qu'un exemplaire sur une carte : le second clic montre celui qui y est déjà.
   const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;
   if(deja>=0){mapSel={kind:'foe',i:deja};renderCanvas();$('shape-label').textContent=t.name+' est unique : il est déjà sur cette carte.';return}
