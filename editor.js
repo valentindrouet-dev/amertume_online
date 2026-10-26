@@ -6661,7 +6661,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       d.append(bl);continue}
      d.append(cd)}
     return cadre};
-   const bulle=(forme,x)=>{if(typeof surveille==='function')surveille(forme,()=>ouvrirBulle(forme,carte(x),'bulle-satellite'))};
+   // v1.100 : plus de bulle sur les satellites — les arcs seuls ; SATELLITES_BULLES à true les rend.
+   const SATELLITES_BULLES=false,bulle=(forme,x)=>{if(SATELLITES_BULLES&&typeof surveille==='function')surveille(forme,()=>ouvrirBulle(forme,carte(x),'bulle-satellite'))};
    // Le vert des arcs, plus franc que celui des cartes : clair en haut, plein en bas, liseré sombre.
    const AME='72,152,64',AME_CLAIR='142,206,112',AME_SOMBRE='44,96,40';
    /* Les segments gardent la même longueur (29 px) et le même jour (8,5 px), qu'il y en ait un ou quatre : la file se centre
