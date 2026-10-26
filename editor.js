@@ -720,6 +720,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  c.logosBonus={};Object.entries(lb).forEach(([k,v])=>{if(/^[a-z]+(:\d+)?$/.test(k)&&typeof v==='string'&&v&&v.length<=120)c.logosBonus[k]=v});
  // Le logo commun des ronds de remplissage de l'arbre.
  if(typeof c.logoRemplissage!=='string'||!c.logoRemplissage||c.logoRemplissage.length>120)delete c.logoRemplissage;
+ if(typeof c.logoArmure!=='string'||!c.logoArmure||c.logoArmure.length>120)delete c.logoArmure;
  // L'icône de l'Attaque d'un aventurier qui n'a pas d'arme en main.
  if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;
  // Ce que la troupe a appris de chaque type d'adversaire par l'Analyse : six clés connues, par modèle.
@@ -2070,13 +2071,15 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
  const lb=catalog.logosBonus||{};
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
-  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))+selGrille(selGroupes('Rage','etat-rage',(catalog.logosEtats||{})['Rage']||'',groupes))
+  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))+selGrille(selGroupes('Rage','etat-rage',(catalog.logosEtats||{})['Rage']||'',groupes))+selGrille(selGroupes('Armure','etat-armure',catalog.logoArmure||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Recettes</h3>'+[['herboristerie','Herboristerie'],['tannerie','Tannerie'],['forge','Forge']].map(([k,n])=>selGrille(selGroupes(n,'recette-'+k,(catalog.logosRecettes||{})[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))
   +ACTIONS_SPECIALES.map(([k,n])=>selGrille(selGroupes(esc(n),'action-'+k,actionSpeciale(k).logo||'',groupes))+'<label class="action-texte">Texte · '+esc(n)+'<textarea name="actiontexte-'+k+'" rows="2">'+esc(actionSpeciale(k).texte||'')+'</textarea></label>').join('');
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
-  if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
+  // v1.097 : l'icône des PV d'Armure, celle de {armure} dans les textes.
+  if(nom==='etat-armure'){if(e.target.value)catalog.logoArmure=e.target.value;else delete catalog.logoArmure}
+  else if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
   else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
   else if(/^recette-(herboristerie|tannerie|forge)$/.test(nom)){const k=nom.slice(8),o={...(catalog.logosRecettes||{})};if(e.target.value)o[k]=e.target.value;else delete o[k];catalog.logosRecettes=o}
   else if(nom==='etat-garde'||nom==='etat-furie'||nom==='etat-rage'){const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
@@ -2983,6 +2986,8 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
   const k=d[1]!==undefined?d[1]:d[2];
   // v1.062 : {soin}, l'icône du Soin ; le dé vert s'écrit {vert}.
   if(d[1]!==undefined&&cleAccolade(k)==='soin'){const ic=logoBonus({carac:'soin'});if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('soin-ico','soin-texte');el.append(ic);fin=rd.lastIndex;continue}}
+  // v1.097 : {armure}, l'icône des PV d'Armure.
+  if(d[1]!==undefined&&cleAccolade(k)==='armure'){const ic=iconeArmure();if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('armure-texte');el.append(ic);fin=rd.lastIndex;continue}
   // v1.094 : {dégât}, au singulier, l'icône des dégâts ; {dégâts} reste la valeur.
   if(d[1]!==undefined&&cleAccolade(k)==='degat'){const ic=iconeDegats();if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('dmg-texte');el.append(ic);fin=rd.lastIndex;continue}}
   const c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
@@ -5496,6 +5501,10 @@ const estVide=t=>!!t&&t.vide===true;
    nature. Il tient lignes et petits ronds comme une case vide ; un talent posé dessus les reprend. */
 const estRemplissage=t=>estVide(t)&&t.remplissage===true;
 const COULEURS_REMPLISSAGE=['act','abon','mvt','reac','pass','crit','mait','ame'];
+/* v1.097 — L'icône des PV d'Armure : celle que le MJ a choisie dans les Icônes, sinon un bouclier au bleu des PV d'Armure. */
+function iconeArmure(){const l=typeof catalog!=='undefined'&&catalog.logoArmure,im=l&&logoImage(l,LOGOS_TOUS);if(im){im.classList.add('armure-ico');im.alt='Armure';return im}
+ const el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.setAttribute('class','armure-ico');el.setAttribute('role','img');el.setAttribute('aria-label','Armure');
+ el.innerHTML='<path d="M12 2.5l7.5 3v5.6c0 4.6-3.1 8.4-7.5 10.4C7.6 19.5 4.5 15.7 4.5 11.1V5.5z" fill="#4fd8ff" stroke="#1d6f8a" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 5.4v13.4" stroke="#b8f2ff" stroke-width="1.5" stroke-linecap="round"/>';return el}
 function iconeRemplissage(){const l=typeof catalog!=='undefined'&&catalog.logoRemplissage,im=l&&logoImage(l,LOGOS_TOUS);return im||document.createTextNode('?')}
 // Posé sur une case vide, il la colore ; ailleurs, il prend sa place comme un talent neuf.
 function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissage=true;v.couleur=couleur;return true}
