@@ -3378,6 +3378,15 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 .lifebar.big .pv-radiance .pv-rad-val{font:700 15px/1 system-ui}
 :is(.bulle-comb-vie,.hero-card .hero-pv) .lifebar .pv-radiance .pv-rad-val{font:700 12px/1 system-ui}
 #pv-layer .pv .pv-rad-val{display:none}
+/* v1.085 : la part nécrosée dit son montant, comme la Radiance ; hachures plus larges dans les colonnes et sur la fiche, comme
+   au-dessus des socles de la carte. */
+.lifebar .pv-necrose{background:repeating-linear-gradient(135deg,#8fa52a 0 5px,#bcd24a 5px 10px)}
+:is(.lifebar,#hpbar) .pv-necrose .pv-nec-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#000;z-index:2}
+.lifebar .pv-necrose .pv-nec-val{font:600 12px/1 system-ui}
+.actor .lifebar .pv-necrose .pv-nec-val{font:700 11px/1 system-ui}
+.lifebar.big .pv-necrose .pv-nec-val{font:700 15px/1 system-ui}
+:is(.bulle-comb-vie,.hero-card .hero-pv) .lifebar .pv-necrose .pv-nec-val{font:700 12px/1 system-ui}
+#pv-layer .pv .pv-nec-val{display:none}
 /* v0.962 : {PA} et {PM} dans un texte, leurs billes. */
 i.pt.pt-texte{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.18em;margin:0 1px}
 i.pt.pt-texte.action{background:url(img/points/pa.webp) center/contain no-repeat}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.085","d":"2026-10-26","t":"Nécrose : hachures plus larges et montant affiché"},
 {"v":"1.084","d":"2026-10-26","t":"Nécrose des barres de PV en jaune-vert maladif"},
 {"v":"1.083","d":"2026-10-26","t":"Spores : Nécrose 1 au contact après chaque Attaque reçue"},
 {"v":"1.082","d":"2026-10-26","t":"Déclencheur « À 50% des PV » des talents ; bulle du terrain dangereux au repos de la souris"},
