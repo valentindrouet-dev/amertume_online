@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.089","d":"2026-10-26","t":"Hurlement arrêté par les murs et blocages"},
 {"v":"1.088","d":"2026-10-26","t":"Apprendre une recette : ingrédients de la recette"},
 {"v":"1.087","d":"2026-10-26","t":"Bestiaire : filtre par familles du jeu"},
 {"v":"1.086","d":"2026-10-26","t":"Une plante au plus par adversaire"},

@@ -107,7 +107,7 @@ REGLES_SECTIONS.push(
   rgCalcul('5','+','2 (Lourd)','+','8 (Mystiques doublés)','+','Dégâts +2','=','17'),
   rgEl('p','rg-note','Le Lourd passe malgré sa face de 2 ; les deux Mystiques montrent la même face et doublent.'),
   rgEl('h3','','Après les dés'),
-  rgListe(['<b>Portée</b> : au contact, la cible est dans la zone de contact, sans mur. À distance, il faut une ligne de vue ; les murs et les combattants de l’autre camp la coupent ; aucune portée maximale.',
+  rgListe(['<b>Portée</b> : au contact, la cible est dans la zone de contact, sans mur. À distance, il faut une ligne de vue ; les murs et les combattants de l’autre camp la coupent ; aucune portée maximale. Un talent à rayon, comme Hurlement, ne touche que ceux qu’aucun mur, porte fermée ni blocage ne sépare du porteur.',
    '<b>Ajouts</b> si le coup porte : Corruption (crans des deux), Maléfice +1d6, Dominateur, Assaut Sauvage, Plasma.',
    '<b>Péril</b> : sous son seuil de PV, les dégâts doublent ou sont divisés par deux.',
    '<b>Ordre d’encaissement</b> : Blindage (tout le coup) → Gardien, Rempart, Garde rapprochée → Armure → PV.',
