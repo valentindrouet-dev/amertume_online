@@ -8404,3 +8404,32 @@ function sortePiece(o){const c=o&&o.category;
    elle, la Recette prend celle des recettes de son métier. */
 function metierRecette(r){const o=r&&(catalog.items||[]).find(x=>x&&x.id===r.recetteDe),h=o&&o.herbo||{};return h.forge?'forge':h.tannerie?'tannerie':'herboristerie'}
 {const le=logoEquipement;logoEquipement=function(o,cls){if(o&&o.category==='recette'&&!o.logo){const l=(catalog.logosRecettes||{})[metierRecette(o)];if(l)return logoImage(l,LOGOS_TOUS,cls)}return le(o,cls)}}
+/* v1.091 — La bulle d'un talent, comme celle d'une pièce : en tête, l'icône à gauche ; le nom et, dessous, sa nature et son
+   déclencheur ; à droite, ses dés et les états qu'il porte, à la place de l'or ; un trait, puis le texte, comme avant. La bulle
+   garde la teinte de sa nature. Un bonus de caractéristique n'est pas un talent : sa bulle ne change pas. */
+function etatsDuTalent(t){const p=paramsTalent(t)||{},connus=typeof ETATS_JEU!=='undefined'?ETATS_JEU:[];
+ return [...new Set(Object.values(p).flatMap(v=>Array.isArray(v)?v:[v]).filter(v=>typeof v==='string'&&connus.includes(v)))]}
+function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle-nom');if(!nomP)return;
+ const a=o.a||null,vu0=o.vu||(x=>x),tv=talentPourAventurier(vu0(t),a),pn=o.palier||(a?palierDe(a,t):0)||1;
+ const tete=document.createElement('div');tete.className='talent-tete';
+ const ico=document.createElement('span');ico.className='talent-ico';
+ const sur=a?logoRemplace(a,t):'',im=logoTalent(sur?{...tv,logo:sur}:logoHerite(tv,vu0),'talent-ico-img');
+ if(im)ico.append(im);else ico.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:GLYPHES_TALENT[t.type]||'✦'}));
+ const titres=document.createElement('div');titres.className='talent-titres';
+ // Le nom d'abord, puis sa nature et ce qui le déclenche, en italique ; une limite déjà prise reste en rouge.
+ const sous=document.createElement('p');sous.className='talent-sous';const parts=[talentType(t)[2]];
+ if(typeof talentDebut==='function'&&talentDebut(t))parts.push('Début de combat');
+ if(typeof talentDebutTour==='function'&&talentDebutTour(t,a))parts.push('Début de tour');
+ d.querySelectorAll(':scope>.talent-limite').forEach(l=>{parts.push(l.classList.contains('epuisee')?l:l.textContent);l.remove()});
+ parts.forEach((x,k)=>{if(k)sous.append(' · ');if(typeof x==='string')sous.append(x);else{const s=document.createElement('span');s.className='epuisee';s.textContent=x.textContent;sous.append(s)}});
+ const des=nomP.querySelector('.bulle-des');if(des){des.remove();nomP.classList.remove('avec-des')}
+ titres.append(nomP,sous);tete.append(ico,titres);
+ // À droite : les dés du coup, puis les états que le talent porte.
+ const etats=etatsDuTalent(talentAuPalier(t,pn));
+ if(des||etats.length){const v=document.createElement('div');v.className='talent-valeur';if(des)v.append(des);
+  etats.forEach(e=>{const im=typeof imageEtat==='function'?imageEtat(e):null,s=document.createElement('span');s.className='talent-etat';s.title=e;
+   if(im&&im.tagName==='IMG'){im.alt='';s.append(im)}else{s.textContent=e;s.style.color=TEINTE_ETAT_MOT[e]||''}v.append(s)});
+  tete.append(v)}
+ const avant=d.querySelector(':scope>.bulle-cibles');if(avant)avant.after(tete);else d.prepend(tete);
+ const trait=document.createElement('div');trait.className='talent-trait';tete.after(trait)}
+{const bt0=bulleTalent;bulleTalent=function(t,o={}){const d=bt0(t,o);try{if(t&&t.effet!=='bonus')enteteTalent(d,t,o||{})}catch(e){}return d}}

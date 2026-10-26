@@ -3712,3 +3712,29 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 /* v1.056 — Réordonner les cartes et les lieux : là où la carte ou le lieu glissé se posera, un trait au-dessus. */
 .map-row.avant,.map-lieu-tete.avant{box-shadow:0 -3px 0 var(--line-strong)}
 .map-lieu-tete[draggable="true"]{cursor:grab}
+/* v1.091 — La bulle d'un talent, comme celle d'une pièce : en tête l'icône, le nom (Killam) et, dessous, sa nature et son
+   déclencheur en italique ; ses dés et ses états à droite ; un trait, puis le texte. */
+.talent-detail .talent-tete{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+.talent-detail .talent-ico{flex:0 0 56px;width:56px;height:56px;display:flex;align-items:center;justify-content:center}
+.talent-detail .talent-ico img{width:100%;height:100%;object-fit:contain}
+.talent-detail .talent-ico .glyphe{font-size:30px;line-height:1;color:var(--teinte)}
+.talent-detail .talent-titres{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.talent-detail .talent-titres>.talent-bulle-nom{margin:0;flex-wrap:nowrap;align-items:center}
+.talent-detail .talent-titres>.talent-bulle-nom b{font:700 20px/1.2 'Killam',Georgia,serif;white-space:nowrap}
+.talent-detail .talent-sous{margin:0;font:italic 14px/1.3 system-ui;color:var(--muted);white-space:nowrap}
+.talent-detail .talent-sous .epuisee{color:#b03a48;font-weight:700}
+.talent-detail .talent-valeur{align-self:flex-start;margin:0 0 0 8px;display:flex;align-items:center;gap:6px;flex:none;white-space:nowrap}
+.talent-detail .talent-valeur .bulle-des{margin:0}
+.talent-detail .talent-etat{display:inline-flex;align-items:center;font:700 13px/1 system-ui}
+.talent-detail .talent-etat img{width:24px;height:24px;object-fit:contain}
+.talent-detail .talent-trait{border-top:1px solid var(--line);margin:0 0 8px}
+.talent-detail:has(.talent-tete .cout-xp){position:relative}
+.bulle:has(.talent-tete){max-width:min(480px,94vw)}
+.bulle .talent-detail.large:has(>.talent-tete){font-size:14px;min-width:300px}
+/* Le corps ne pousse pas la bulle : seule la tête la fait s'élargir. */
+.bulle .talent-detail.large:has(>.talent-tete)>:not(.talent-tete):not(.bulle-cibles){width:0;min-width:100%;box-sizing:border-box}
+/* Deux paliers côte à côte, dans l'arbre : le nom passe à la ligne plutôt que de déborder. */
+.bulles-paliers>.talent-detail:has(>.talent-tete){max-width:380px;min-width:260px}
+.bulles-paliers .talent-titres>.talent-bulle-nom b,.bulles-paliers .talent-sous{white-space:normal}
+/* Le panneau de l'arbre a déjà son grand rond et son nom. */
+.arbres-detail .detail-corps .talent-ico{display:none}
