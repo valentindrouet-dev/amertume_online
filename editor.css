@@ -1825,6 +1825,7 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .etats-attaque .etats-titre{flex-basis:100%;font-size:13px;color:var(--muted)}
 .etats-attaque .etat-case{display:inline-flex;align-items:center;gap:4px;font-size:13px;cursor:pointer}
 .etats-attaque .etat-case input{width:auto;margin:0}
+.etats-attaque .etat-case input.etat-crans{width:52px;margin:0 0 0 4px;padding:1px 6px;text-align:center;font-size:13px}
 .cat-carte .nom-carte{overflow-wrap:break-word}
 /* Les attaques dans la bulle d'un modèle : une ligne chacune, le nom puis les états, les dés
    et le bonus de dégâts. */

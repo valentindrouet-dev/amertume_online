@@ -2970,7 +2970,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.cleanMonster({name:'X',attacks:[{name:'A',etats:['Feu','Poison','Coma','Feu']},{name:'B',etat:'Gel'},{name:'C'}]}).attacks.map(a=>[a.etat,a.etats]),
   [['Feu',['Feu','Poison']],['Gel',['Gel']],[undefined,undefined]],'la liste gardée, les inconnus et les doublons écartés');
  assert.deepEqual(C.attackChoices({attacks:[{name:'A',etats:['Feu','Poison'],etat:'Feu'},{name:'B',etat:'Gel'}]},[]).map(a=>a.etats),[['Feu','Poison'],['Gel']],'la table pose tous les états');
- assert.ok(src.includes("+ETATS_JEU.map(e=>'<label class=\"etat-case\"><input type=\"checkbox\" name=\"ax'+i+'\" value=\"'+esc(e)+'\"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'")
+ assert.ok(src.includes("+ETATS_JEU.map(e=>'<label class=\"etat-case\"><input type=\"checkbox\" name=\"ax'+i+'\" value=\"'+esc(e)+'\"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)")
   &&src.includes("const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);"),'des cases, une par état');}
 /* v0.304 — La bulle d'un modèle montre ses attaques : états infligés, dés, bonus de dégâts ;
    sans arme ni attaque spéciale, ses propres dés. */

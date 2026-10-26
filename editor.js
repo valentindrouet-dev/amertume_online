@@ -7194,12 +7194,20 @@ function htmlAttaques(liste){return liste.map((a,i)=>'<div class="attack-card" d
   +selGrille(sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'
   // Les états qu'elle inflige : autant qu'on en coche, tous posés à la touche.
   +'<div class="etats-attaque" role="group" aria-label="États infligés"><span class="etats-titre">États infligés</span>'
-  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+field('Armure','aa'+i,Math.max(0,Math.trunc(Number(a.armure))||0),'number','min="0" max="99"')+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('')}
+  // v1.073 : un état cumulable coché prend sa quantité, « x » ou « xdy » (1 par défaut).
+  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)
+   +(cumulable(e)?'<input class="etat-crans" name="ak'+i+'" data-etat="'+esc(e)+'" value="'+esc(formuleDegats((a.crans||{})[e]||{degats:1}))+'" pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" aria-label="Quantité de '+esc(e)+'"'+(etatsAttaque(a).includes(e)?'':' hidden')+'>':'')+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+field('Armure','aa'+i,Math.max(0,Math.trunc(Number(a.armure))||0),'number','min="0" max="99"')+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('')}
+// v1.073 : les quantités des états cumulables cochés d'une attaque, ou rien.
+function cransAttaque(form,i){const coches=[...form.querySelectorAll('input[name="ax'+i+'"]:checked')].map(x=>x.value),cr={};
+ form.querySelectorAll('input[name="ak'+i+'"]').forEach(x=>{const q=lisFormuleDegats(x.value);if(coches.includes(x.dataset.etat)&&q&&(q.degatsDes||q.degats>1))cr[x.dataset.etat]=q});return Object.keys(cr).length?cr:undefined}
+// v1.073 : cocher un état cumulable montre sa quantité ; décocher la cache.
+document.addEventListener('change',e=>{const x=e.target;if(!x||!x.matches||!x.matches('.etats-attaque .etat-case>input[type="checkbox"]'))return;const q=x.parentNode.querySelector('.etat-crans');if(q)q.hidden=!x.checked});
 // Les états d'une attaque spéciale : la liste, ou l'état unique d'avant.
 const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);
 function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=lisAttaques($('actor-form'),attackDraft)}
 function lisAttaques(form,liste){const f=form.elements;return liste.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,
   ...(etats=>({etats,etat:etats[0]||''}))([...form.querySelectorAll('input[name="ax'+i+'"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),
+  crans:cransAttaque(form,i),
   logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12))),armure:f['aa'+i]?num(f['aa'+i].value,0,99):(Number(a.armure)||0)}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
    qu'on reconnaisse le geste. Ils vivent sur le brouillon jusqu'à l'enregistrement. */

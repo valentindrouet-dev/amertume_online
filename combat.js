@@ -374,6 +374,9 @@ function cleanMonster(t){const dés={};
   // Plusieurs états se gardent tous ; l'état unique d'avant reste lu.
   const etats=[...new Set((Array.isArray(a&&a.etats)?a.etats:[a&&a.etat]).filter(e=>ETATS_JEU.includes(e)))].slice(0,6);
   if(etats.length){o.etats=etats;o.etat=etats[0]}
+  // v1.073 : la quantité d'un état cumulable, « x » ou « xdy ».
+  const cr={};etats.forEach(e=>{const q=a&&a.crans&&a.crans[e],d=cleanDesDegats(q&&q.degatsDes),n=Math.max(0,Math.min(99,Math.trunc(Number(q&&q.degats))||0));if(cumulable(e)&&(d||n>1))cr[e]=d?{degats:0,degatsDes:d}:{degats:n}});
+  if(Object.keys(cr).length)o.crans=cr;
   return o});
  return {name:texte(t&&t.name,120)||'Adversaire',type:['standard','alpha','solitaire','boss'].includes(t&&t.type)?t.type:'standard',
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
