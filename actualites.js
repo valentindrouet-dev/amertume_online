@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.107","d":"2026-10-26","t":"Détresse : correctif sur les dégâts d’attaque"},
 {"v":"1.106","d":"2026-10-26","t":"Main Secourable et ses améliorations"},
 {"v":"1.105","d":"2026-10-26","t":"Provocation, Solidité, Carapace : améliorations ; arbre plus serré"},
 {"v":"1.104","d":"2026-10-26","t":"Intervention : allié Gardé, Sans opportunité, Riposte"},
