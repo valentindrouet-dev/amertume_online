@@ -37,7 +37,8 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
 /* La DEF va de 0 à 6 : à 6, plus aucune face ne la passe, seuls le Lourd et le Mortel. */
 const DEF_MAX=6;
 function defPlafonnee(def){return Math.max(0,Math.min(DEF_MAX,Math.trunc(Number(def))||0))}
-function passeDef([v,c],def,solidite=false){return c===5||(c===2&&!solidite)||v>defPlafonnee(def)}
+// v1.105 : « solidite » vaut true (le Lourd est écarté) ou 'noir' (le Lourd et le Mortel le sont).
+function passeDef([v,c],def,solidite=false){return (c===5&&solidite!=='noir')||(c===2&&!solidite)||v>defPlafonnee(def)}
 /* Portée : le rayon de contact vaut 3 tailles de token en diamètre. Les positions
    sont en pourcentage de la carte, converties en pixels avec sa taille affichée. */
 function mapPoint(a,size){return [a.x/100*size.width,a.y/100*size.height]}
@@ -2278,6 +2279,23 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration : la DEF du porteur écarte aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
   params:[],
   phrase(){return 'La DEF du porteur écarte aussi les <b>dés de dégâts mortels</b> (rouges).'}},
+ // v1.105 : Carapace — un passif : chaque combat commence avec Endurance × Armure ; doublée ; donnée aussi à l'allié Gardé.
+ carapace:{cle:'carapace',nom:'Carapace',type:'pass',
+  aide:'Passif : le porteur commence chaque combat avec autant d’Armure que son Endurance.',params:[],
+  phrase(){return 'Vous commencez chaque combat avec <b>ENDU × Armure</b>.'}},
+ carapacedouble:{cle:'carapacedouble',nom:'Carapace — Double',court:'Double',type:'ame',
+  aide:'Amélioration de Carapace : deux fois l’Endurance en Armure.',params:[],
+  phrase(){return 'Vous commencez chaque combat avec <b>(ENDU × 2) × Armure</b>.'}},
+ carapacegarde:{cle:'carapacegarde',nom:'Carapace — Allié Gardé',court:'Allié Gardé',type:'ame',
+  aide:'Amélioration de Carapace : l’allié qui reçoit Gardé reçoit aussi l’Armure de la Carapace du porteur, une fois par combat.',params:[],
+  phrase(){return 'Votre allié <b>Gardé</b> gagne votre <b>Carapace</b>.'}},
+ // v1.105 : les améliorations de Solidité — l'allié Gardé écarte aussi les rouges ; la DEF du porteur, aussi les noirs.
+ soliditegarde:{cle:'soliditegarde',nom:'Solidité — Allié Gardé',court:'Allié Gardé',type:'ame',
+  aide:'Amélioration de Solidité : la DEF de l’allié Gardé du porteur écarte aussi les dés rouges (Lourds).',params:[],
+  phrase(){return 'Votre allié <b>Gardé</b> bloque aussi les <b>dés rouges</b> (lourds).'}},
+ soliditenoir:{cle:'soliditenoir',nom:'Solidité — Dés noirs',court:'Dés noirs',type:'ame',
+  aide:'Amélioration de Solidité : la DEF du porteur écarte aussi les dés noirs (Mortels).',params:[],
+  phrase(){return 'Votre DEF bloque aussi les <b>dés noirs</b> (mortels).'}},
  /* Provocation : un adversaire en vue s'avance au contact du porteur, rien de plus. Ses
     améliorations y ajoutent le coup (Provocation — attaque) et la chute (Provocation — au sol). */
  provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
@@ -2290,6 +2308,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  provocsol:{cle:'provocsol',nom:'Provocation — au sol',court:'au sol',type:'ame',
   aide:'Amélioration de Provocation : l’adversaire provoqué tombe Au sol.',params:[],
   phrase(){return 'L’adversaire provoqué par une <b>Provocation</b> tombe <b>Au sol</b>.'}},
+ // v1.105 : l'allié Gardé au contact du provoqué l'attaque aussi.
+ provocgarde:{cle:'provocgarde',nom:'Provocation — Allié Gardé',court:'Allié Gardé',type:'ame',
+  aide:'Amélioration de Provocation : si l’allié Gardé du porteur est au contact de l’adversaire provoqué, il l’attaque aussi, sans dépenser son Action.',params:[],
+  phrase(){return 'Si votre allié <b>Gardé</b> est au contact, il effectue aussi une <b>Attaque</b> contre l’adversaire ciblé.'}},
  /* Charge : une action du Destructeur. Le porteur fait un mouvement jusqu'au contact de sa cible, puis l'attaque au
     contact ; le tout ne coûte qu'un point de Mouvement, pas l'Action. Trois améliorations : la distance parcourue,
     en mètres, s'ajoute au bonus de dégâts ; la cible est repoussée hors de la zone de contact ; puis, amélioration
@@ -2382,7 +2404,7 @@ Object.assign(TALENTS_CODES,{
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
- provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
+ provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
  meneurtous:'meneur',meneurdouble:'meneur',detresserage:'detresse',detressetous:'detresse',muraillearmure:'muraille',muraillegarde:'muraille',
  attaqueetatarmure:'attaqueetat',attaqueetatgarde:'attaqueetat',interventionsol:'intervention',interventionsansopp:'intervention',interventionattaque:'intervention',gardienonde:'gardien',gardienrelance:'gardien'};

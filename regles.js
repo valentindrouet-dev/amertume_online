@@ -100,7 +100,7 @@ REGLES_SECTIONS.push(
    rgCarte(RG.rouge,'2. Échec',rgEl('p','',rgHtml('<b>Deux 1</b> ou plus (hors dés Mortels) : <b>échec</b>, rien ne porte.')),rgCalcul(rgDe(0,1),rgDe(2,1),'→','Échec')),
    rgCarte(RG.mait,'3. Critique',rgEl('p','',rgHtml('<b>Deux 6</b> ou plus : <b>critique</b>. On ajoute un dé de la première couleur de la réserve, et encore un tant qu’il fait 6.')),rgCalcul(rgDe(2,6),rgDe(0,6),'+',rgDe(2),'→','Critique')),
    rgCarte(RG.crit,'4. Faille',rgEl('p','','Si l’attaquant porte Faille, le dé rose écarte tous les dés de sa face.')),
-   rgCarte(RG.pass,'5. DEF',rgEl('p','',rgHtml('Un dé ne compte que si sa face <b>dépasse la DEF</b> (0 à '+rgN(typeof DEF_MAX!=='undefined'&&DEF_MAX,6)+'). Le Lourd et le Mortel passent toujours. À DEF 6, seuls eux passent.'))),
+   rgCarte(RG.pass,'5. DEF',rgEl('p','',rgHtml('Un dé ne compte que si sa face <b>dépasse la DEF</b> (0 à '+rgN(typeof DEF_MAX!=='undefined'&&DEF_MAX,6)+'). Le Lourd et le Mortel passent toujours, sauf sous <b>Solidité</b> (le Lourd ; le Mortel aussi, améliorée). À DEF 6, seuls eux passent.'))),
    rgCarte(RG.vert,'6. Total',rgEl('p','',rgHtml('Somme des dés qui passent (Mystique doublé, Phase multiplié). Si <b>au moins un dé passe</b>, on ajoute le <b>bonus de Dégâts</b> et la <b>Saignée</b> de la cible.')))),
   rgEl('h3','','Exemple'),
   rgCalcul(rgDe(0,5),rgDe(2,2),rgDe(3,4),rgDe(3,4),'→','DEF 3'),
@@ -138,6 +138,7 @@ REGLES_SECTIONS.push(
    '<b>Début</b> : les états de chacun sont levés (sauf ceux d’un piège récent). Les talents de début de combat se jouent quand on veut pendant le premier tour des aventuriers, ceux de début de tour pendant chaque tour : ils se ferment dès qu’un adversaire dépense un PA ou un PM. Un bouton au-dessus du token les rappelle.',
    '<b>Muraille</b> : Immobilisé et DEF +1 jusqu’à la fin du tour, où Immobilisé tombe tout seul. <b>Meneur</b> peut donner « + Niveau » : le niveau du porteur.',
    '<b>Intervention</b> : seulement pour l’allié Gardé du porteur.',
+   '<b>Carapace</b> : chaque combat commence avec Endurance × Armure (× 2, améliorée) ; l’allié Gardé peut la recevoir aussi.',
    '<b>Mouvement forcé</b> (Provocation…) : jamais plus loin que le mouvement du provoqué, ses PM compris ; trop loin, il fait ce mouvement vers le porteur, puis s’arrête. Immobilisé, il ne bouge pas.',
    '<b>Fin</b> : tous les états tombent (sauf Coma et ceux d’une pièce portée), l’Armure aussi ; le repos court redevient possible.'])),
  // 7. Les états.
