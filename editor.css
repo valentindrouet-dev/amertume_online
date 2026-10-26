@@ -3667,6 +3667,8 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .bulle .gear-detail.large:has(.gear-tete){font-size:14px;min-width:300px}
 .gear-detail .gear-trait{border-top:1px solid var(--line);margin:0 0 8px}
 .gear-detail .sources-butin{position:static;justify-content:flex-end;margin-top:6px}
+/* v1.077 : au journal, les jetons de qui l'a laissée tomber chevauchent le coin bas droit de la bulle : elle garde sa taille. */
+.bulle .gear-detail .sources-butin{position:absolute;top:auto;bottom:-12px;right:-12px;margin:0}
 /* v1.046 — Le nom (sauf très long) et la sorte d'une pièce tiennent sur une ligne : la bulle s'élargit pour eux. */
 .bulle:has(.gear-tete){max-width:min(480px,94vw)}
 .gear-detail .gear-titres .gear-nom{white-space:nowrap}.gear-detail .gear-titres .gear-nom.nom-long{white-space:normal}
@@ -3679,6 +3681,10 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 /* v1.049 — Le titre d'une Note de MJ, au-dessus de son texte, dans sa bulle. */
 .note-mj-bulle .note-mj-titre{margin:0 0 4px}
 /* v1.051 — Une puce dans le texte d'une pièce : le losange des affixes, le texte aligné après lui. */
+.gear-detail p.gear-affixe.de-classe{display:flex;align-items:flex-start;gap:0;line-height:1.45}.gear-detail p.gear-affixe.de-classe>.gear-losange{flex:none;margin:calc((1.45em - 12px) / 2) 5px 0 0;vertical-align:0}
+/* v1.077 : le nom d'une pièce ne passe plus sous sa valeur ; la bulle s'élargit pour lui. */
+.gear-detail .gear-titres:not(:has(.nom-long)){flex:1 0 auto}
+.forge-mesure .forge-nom{min-width:180px}
 .gear-detail .gear-puce{display:flex;align-items:flex-start;gap:7px;margin:0 0 3px;line-height:1.45}.gear-detail .gear-puce>.gear-losange{flex:none;margin:calc((1.45em - 12px) / 2) 0 0;vertical-align:0;transform:none}
 /* v1.053 — La saisie du code d'un coffre : une case par chiffre ; le mot de passe, sur une ligne. */
 .code-cases{display:flex;gap:8px;justify-content:center;margin:4px 0 12px}

@@ -3815,7 +3815,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
   &&ed.includes("if(!c.semisForge.includes('affixes-combat')){")&&ed.includes("sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])"),'affixes de combat câblés');}
 /* v0.689 — La ligne d'un affixe de classe : losange, talent à sa couleur, classe en gras, « Vos Orbes infligent Poison 1. » */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(ed.includes("p.append(los,b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');return p}")
+ assert.ok(ed.includes("c.append(b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');p.append(los,c);return p}")
   &&css.includes('.gear-detail .gear-losange{display:inline-block;width:12px;height:12px;')&&css.includes('.gear-detail .gear-affixe.de-classe{color:#2b2620;font-weight:400}'),'ligne d’affixe de classe');}
 /* v0.688 — Les affixes de classe, réservés au quatrième affixe des Légendaires ; l'état conféré d'un clic ; le premier affixe
    de classe : les orbes du Mystique infligent aussi Poison x. */

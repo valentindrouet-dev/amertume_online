@@ -3122,7 +3122,7 @@ function normaliseForges(l){const vus=new Set();return (Array.isArray(l)?l:[]).f
  .map(f=>{const aff=(Array.isArray(f.affixes)?f.affixes:[]).filter(x=>typeof x==='string'&&x).slice(0,4),src=f.valeurs&&typeof f.valeurs==='object'&&!Array.isArray(f.valeurs)?f.valeurs:{};
   // Les valeurs choisies à la main, sur mesure : une par affixe de la pièce, de 1 à 99.
   const vals=Object.fromEntries(clesAffixes(aff).filter(k=>Number.isFinite(Math.trunc(Number(src[k])))&&src[k]!==''&&src[k]!==null).map(k=>[k,Math.max(1,Math.min(99,Math.trunc(Number(src[k]))))]));
-  return {id:f.id.slice(0,60),base:f.base.slice(0,60),affixes:aff,...(Object.keys(vals).length?{valeurs:vals}:{})}}).filter(f=>!vus.has(f.id)&&vus.add(f.id))}
+  return {id:f.id.slice(0,60),base:f.base.slice(0,60),...(typeof f.nom==='string'&&f.nom.trim()?{nom:f.nom.trim().slice(0,60)}:{}),affixes:aff,...(Object.keys(vals).length?{valeurs:vals}:{})}}).filter(f=>!vus.has(f.id)&&vus.add(f.id))}
 // Ce qu'un affixe fait, en mots : « +2 PV max », « +1 dé Lourd », « inflige Feu ».
 // Une valeur d'affixe en mots : « 2 », ou « 1–30 » quand elle se tire selon la rareté.
 function valeurTexte(x){return x.variable?x.echelle[0][0]+'–'+x.echelle[3][1]:String(x.valeur)}
@@ -3268,7 +3268,7 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
   // Une compétence au hasard qui revient en prend une autre : jamais deux fois la même sur la pièce.
   if(x.effet==='comp'&&x.comp==='*'){const deja=lotComp[x.id]||(lotComp[x.id]=[]),libres=COMPETENCES.map((c,k)=>k).filter(k=>!deja.includes(k)&&!prises.includes(k)),l=libres.length?libres:COMPETENCES.map((c,k)=>k);
    const k=l[hachageForge(graine+'|comp|'+x.id)%l.length];deja.push(k);y.comp=String(k);y.nom=motCompetence(x.nom,k)}return y});
- const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map(x=>[x.cle,x.valeur]))},name:nomForge(base,lot),rarete,unique:true,magasin:false,tanneur:false,recette:[]};
+ const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map(x=>[x.cle,x.valeur]))},name:typeof f.nom==='string'&&f.nom.trim()?f.nom.trim().slice(0,60):nomForge(base,lot),rarete,unique:true,magasin:false,tanneur:false,recette:[]};
  o.bonus=[...normaliseBonusEquip(base.bonus)];o.price=Math.max(0,Math.trunc(Number(base.price))||0);
  lot.forEach(x=>{o.price+=valeurAffixe(x,guide);
   // Les mètres vont à la distance du mouvement ; les PM et PA, au maximum du porteur.

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.077","d":"2026-10-26","t":"Quantité des restes, bulle du journal, objets forgés nommés et lisibles"},
 {"v":"1.076","d":"2026-10-26","t":"Familles d'adversaires simplifiées, sous-familles, affixe Anti-famille"},
 {"v":"1.075","d":"2026-10-26","t":"Nouvel état : Immobilisé"},
 {"v":"1.074","d":"2026-10-26","t":"Noms d'adversaires colorés dans les infobulles"},
