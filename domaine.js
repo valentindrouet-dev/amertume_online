@@ -1246,8 +1246,11 @@ function vitGrille(corps,b,client,onglet){const cle=b.id+'|'+onglet,tous=article
  droite.append(vitEl('hr','vit-trait'));
  const pay=vitPayer(client,choisi.coffre);if(pay)droite.append(pay);
  const agir=vitEl('button','vit-agir',choisi.action);agir.type='button';if(!choisi.ok){agir.classList.add('inactif');agir.setAttribute('aria-disabled','true')}vitRefus(agir,choisi.ok?'':choisi.raison);agir.onclick=()=>{if(choisi.ok)choisi.faire()};droite.append(agir);
+ // v1.088 : à l'apprentissage, les ingrédients de la recette choisie et leur quantité, au lieu des autres recettes.
+ if(onglet==='apprendre'){const ing=besoinsVitrine(client,choisi.o,true);if(ing.length){droite.append(vitEl('h4','vit-autres-titre','Ingrédients'));const l=vitEl('div','vit-ingredients');
+  ing.forEach(x=>{const r=vitEl('div','vit-ingredient'),ic=vitEl('span','vit-ing-logo');if(x.icone)ic.append(x.icone);r.append(ic,vitEl('span','vit-ing-nom',x.q+' '+x.nom));l.append(r)});droite.append(l)}return}
  const autres=tous.filter(x=>x!==choisi);
- if(autres.length){droite.append(vitEl('h4','vit-autres-titre',onglet==='apprendre'?'Autres recettes':'Autres articles'));const l=vitEl('div','vit-autres');
+ if(autres.length){droite.append(vitEl('h4','vit-autres-titre','Autres articles'));const l=vitEl('div','vit-autres');
   autres.forEach(x=>{const r=vitEl('button','vit-autre'+(x.ok?'':' non'));r.type='button';r.append(vitLogo(x.o,'vit-autre-logo'),vitEl('span','vit-autre-nom',x.o.name));if(x.prix!==null)r.append(vitPrix(x.prix));
    r.onclick=()=>{vitrine.sel[cle]=x.o.id;const i=liste.indexOf(x);if(i>=0)vitrine.page[cle]=Math.floor(i/PAR_PAGE_VITRINE);vitRendCorps()};l.append(r)});droite.append(l)}}
 // L'établi : à gauche les recettes, à droite la choisie et ses ingrédients ; au Laboratoire, les matériaux en vente et les recettes à apprendre.
