@@ -4017,20 +4017,24 @@ function renderNotesMJ(){majBoutonNotesMJ();let calque=$('notes-mj');const m=cur
 
 /* v1.028 — Au survol de la carte, sur un terrain dangereux que la troupe voit, une bulle pleine : « Terrain Dangereux : <nom> ».
    Un socle, un bouton, une bulle ouverte par-dessus gardent la leur. */
-let ancreDanger=null,dangerSurvole=null,dangerTache=0;
+let ancreDanger=null,dangerSurvole=null,dangerTache=0,dangerMinuteur=0;
 function survolDanger(e){if(dangerTache)return;dangerTache=requestAnimationFrame(()=>{dangerTache=0;try{
  const vue=$('map-view'),m=currentMap(),dessus=e.target&&e.target.closest&&e.target.closest('.token,button,.bulle,.door,.coffre,.note-mj');
- if(document.body.classList.contains('placement')){if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
+ if(document.body.classList.contains('placement')){clearTimeout(dangerMinuteur);if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
  const q=m&&!dessus?mapPct(e):null,z=q&&dangersDe(m).length?formeDangerSous(q):null,vu=z&&(view==='mj'||m.fogOff||(typeof seenAt==='function'&&seenAt(q.x,q.y)));
- if(!vu){if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
+ if(!vu){clearTimeout(dangerMinuteur);if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}return}
  if(!ancreDanger){ancreDanger=document.createElement('div');ancreDanger.className='ancre-danger'}if(!ancreDanger.isConnected)vue.append(ancreDanger);
  ancreDanger.style.left=q.x+'%';ancreDanger.style.top=q.y+'%';
  const cle=z.t.id+'|'+cleFormeDanger(z.t,z.p);if(dangerSurvole===cle&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger){if(typeof placerBulle==='function')placerBulle();return}
+ /* v1.081 : comme celle d'un adversaire, la bulle attend que la souris se pose — 700 ms sans bouger sur le terrain. */
+ clearTimeout(dangerMinuteur);if(e.pointerType&&e.pointerType!=='mouse')return;
+ dangerMinuteur=setTimeout(()=>{if(!ancreDanger||!ancreDanger.isConnected||window.socleEnMain)return;ouvreBulleDanger(z,cle)},700)}catch(err){}})}
+function ouvreBulleDanger(z,cle){try{
  dangerSurvole=cle;const d=document.createElement('div');d.className='gear-detail large';const p=document.createElement('p');p.className='gear-nom';p.textContent='Terrain Dangereux : '+z.t.nom;d.append(p);
  const teinte=/^#[0-9a-fA-F]{3,8}$/.test(String(z.t.couleur||''))?z.t.couleur:'';if(teinte){d.classList.add('bulle-danger');d.style.setProperty('--teinte',teinte)}
- ouvrirBulle(ancreDanger,d,'bulle-gear');const bu=d.closest('.bulle');if(bu&&teinte)bu.style.setProperty('--bulle-bord','color-mix(in srgb,'+teinte+' 16%,#fbf3e2)')}catch(err){}})}
+ ouvrirBulle(ancreDanger,d,'bulle-gear');const bu=d.closest('.bulle');if(bu&&teinte)bu.style.setProperty('--bulle-bord','color-mix(in srgb,'+teinte+' 16%,#fbf3e2)')}catch(err){}}
 if($('map-view')){$('map-view').addEventListener('pointermove',survolDanger);
- $('map-view').addEventListener('pointerleave',()=>{if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}})}
+ $('map-view').addEventListener('pointerleave',()=>{clearTimeout(dangerMinuteur);if(dangerSurvole){dangerSurvole=null;if(ancreDanger&&typeof bulleAncre!=='undefined'&&bulleAncre===ancreDanger)fermerBulle()}})}
 
 /* v1.029 — Le terrain ne clignote plus au relâchement d'un socle : chaque rendu de la carte redessinait ses calques et relançait
    le pouls. Tant que rien n'a changé, les calques restent ; redessinés, le pouls reprend là où il en était. */

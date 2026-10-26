@@ -814,6 +814,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   ['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
+  if(t.moitiePV!==true)delete t.moitiePV;
   if(t.plasma!==true)delete t.plasma;
   if(typeof t.incident!=='string'||!t.incident.trim())delete t.incident;else t.incident=t.incident.trim().slice(0,400);
   // v0.983 : les phrases du journal, du texte court par clé.
@@ -4273,6 +4274,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
   +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label>'
   +'<label class="field-check" id="debut-combat"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutCombat" '+(talentDebut(t)?'checked':'')+'>Début de combat</label>'
+  // v1.081 : le déclencheur « À 50% des PV » — le talent ne joue qu'à la moitié des PV ou moins ; Enracinée l'a d'office.
+  +'<label class="field-check" id="moitie-pv"><input type="checkbox" name="moitiePV" '+(seuilMoitiePV(t)?'checked':'')+(t.effet==='enracinee'?' disabled':'')+'>À 50% des PV</label>'
   // v0.851 : le talent reçoit les dés de Plasma glissés sur son bouton.
   +'<label class="field-check"><input type="checkbox" name="plasma" '+(t.plasma===true?'checked':'')+'>Accepte le Plasma</label>'
   +'<label class="field-check"><input type="checkbox" name="radiant" '+(t.radiant===true?'checked':'')+'>Soin radiant</label>'
@@ -4400,6 +4403,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(t.type==='ame'&&f.remplacePrecedente)t.remplacePrecedente=f.remplacePrecedente.checked;else delete t.remplacePrecedente;
  if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
  if(t.type!=='ame'&&f.debutCombat&&t.effet!=='bonus')t.debutCombat=f.debutCombat.checked;else delete t.debutCombat;
+ if(f.moitiePV&&f.moitiePV.checked&&t.effet!=='bonus'&&t.effet!=='enracinee')t.moitiePV=true;else delete t.moitiePV;
  if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;
  if(f.radiant&&f.radiant.checked&&t.effet!=='bonus')t.radiant=true;else delete t.radiant;
  if(f.incidentOn&&f.incidentOn.checked&&f.incident&&f.incident.value.trim()&&t.effet!=='bonus')t.incident=f.incident.value.trim().slice(0,400);else delete t.incident;
@@ -6185,6 +6189,8 @@ function bulleTalent(t,{a=null,vu:vu0=x=>x,verrou='',note='',des=null,cout=false
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
  // v0.949 : sous le nom d'une Action bonus, sa limite en italique ; rouge une fois prise dans son créneau.
+ // v1.081 : un talent qui ne joue qu'à la moitié des PV le dit sous son nom.
+ if(seuilMoitiePV(t)){const l=document.createElement('p');l.className='talent-limite';l.textContent='À 50% des PV';d.append(l)}
  if(texteLimite(t)){const l=document.createElement('p');l.className='talent-limite'+(a&&typeof limiteEpuisee==='function'&&limiteEpuisee(a,t)?' epuisee':'');l.textContent=texteLimite(t);d.append(l)}
 
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, à cheval sur le bord haut de la bulle, à droite.
@@ -7276,6 +7282,12 @@ function antiApercu(a,indices){const out={dice:{},bonus:0,lignes:[]};if(!a||type
   else if(x.mode==='d6')out.lignes.push('**+'+n+'d6** dégâts contre les '+fam+'.');
   else if(x.mode==='etat')out.lignes.push('Inflige '+x.etat+(cumulable(x.etat)?' '+n:'')+' aux '+fam+'.')}));return out}
 const ajouteDes=(dice,plus)=>{if(!dice||!plus||!Object.keys(plus).length)return dice;const d={...dice};Object.entries(plus).forEach(([k,n])=>{d[k]=(Number(d[k])||0)+n});return d};
+// v1.081 — Le déclencheur « À 50% des PV » d'un talent : coché à la main, ou d'office pour Enracinée.
+const seuilMoitiePV=t=>!!t&&(t.moitiePV===true||t.effet==='enracinee');
+document.addEventListener('change',e=>{const s=e.target;if(!s||s.name!=='effet'||s.tagName!=='SELECT'||!s.form)return;const c=s.form.elements.moitiePV;if(!c)return;
+ if(s.value==='enracinee'){c.checked=true;c.disabled=true}else if(c.disabled){c.disabled=false;c.checked=false}});
+// Pour Enracinée, la case reste cochée : le seuil fait partie de sa mécanique.
+document.addEventListener('click',e=>{const c=e.target;if(c&&c.name==='moitiePV'&&c.form&&c.form.elements.effet&&c.form.elements.effet.value==='enracinee')e.preventDefault()});
 // Les états d'une attaque spéciale : la liste, ou l'état unique d'avant.
 const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);
 function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=lisAttaques($('actor-form'),attackDraft)}
