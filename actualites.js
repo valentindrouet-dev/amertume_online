@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.069","d":"2026-10-26","t":"Case PNJ dans la fiche d'un adversaire"},
 {"v":"1.068","d":"2026-10-26","t":"Types de terrain dangereux communs à toutes les cartes"},
 {"v":"1.067","d":"2026-10-26","t":"Pièges : quantité des états cumulables"},
 {"v":"1.066","d":"2026-10-25","t":"Piège de coffre : quantité des états cumulables"},
