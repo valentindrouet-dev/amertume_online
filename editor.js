@@ -6618,7 +6618,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      Passifs…), 6 au plus, centrées en hauteur sur le carré : la hauteur d'un niveau ne change pas. Ce qui dépasse (un arbre
      ancien) continue en lignes dessous. */
   // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
-  let satN=0;const ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
+  // v1.098 : BONUS_SATELLITES à false — plus rien à droite des ronds pour les bonus ; à true, ils reviennent (arcs, ou billes avec ARCS_BONUS à false).
+  let satN=0;const BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
   /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
      talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
      ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */
@@ -6626,7 +6627,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    // Dans l'ordre du panneau de droite : les améliorations de haut en bas, les bonus de gauche à droite.
    const ORDRE=['so','s','se','o','e','no','n','ne'],rangP=x=>{const k=lisChemin(x);return [k.rang,ORDRE.indexOf(k.dir)]};
    const P=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x)).sort((x,y)=>rangP(x)[0]-rangP(y)[0]||rangP(x)[1]-rangP(y)[1]);
-   const ams=P.filter(x=>!estBonus(x)).slice(0,{centre:4,gros:4,moyen:3}[cls]),bons=P.filter(estBonus).slice(0,{centre:4,gros:3,moyen:2}[cls]);
+   const ams=P.filter(x=>!estBonus(x)).slice(0,{centre:4,gros:4,moyen:3}[cls]),bons=BONUS_SATELLITES?P.filter(estBonus).slice(0,{centre:4,gros:3,moyen:2}[cls]):[];
    if(!ams.length&&!bons.length)return;
    /* Le rond déborde de sa bordure (3 px) ; un jour de 12 px le sépare de ses satellites, hors du double cercle d'or du
       talent choisi. Les segments et les billes sont modelés : fond dégradé, liseré sombre, reflet clair ; vides, ils gardent
