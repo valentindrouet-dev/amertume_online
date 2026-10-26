@@ -3247,7 +3247,7 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .arbres-detail .detail-gage-n{position:absolute;right:-5px;bottom:-5px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:grid;place-items:center;background:#d2500a;color:#fff;font:800 10px/1 system-ui}
 /* v0.900 — La barre de PV : Radiance dorée, Nécrose, Armure électrique, à droite des PV. */
 :is(.lifebar,#pv-layer .pv) :is(.pv-radiance,.pv-necrose,.pv-armure){position:absolute;top:0;bottom:0;display:block}
-:is(.lifebar,#pv-layer .pv) .pv-necrose{background:repeating-linear-gradient(135deg,#3b2440 0 3px,#5a3a63 3px 6px)}
+:is(.lifebar,#pv-layer .pv) .pv-necrose{background:repeating-linear-gradient(135deg,#8fa52a 0 3px,#bcd24a 3px 6px)}
 :is(.lifebar,#pv-layer .pv) .pv-radiance{background:color-mix(in srgb,#f2c14e 30%,transparent)}
 :is(.lifebar,#pv-layer .pv) .pv-radiance-plein{display:block;height:100%;background:linear-gradient(90deg,#f2c14e,#fff3c4 50%,#f2c14e);background-size:200% 100%;box-shadow:0 0 6px #f2c14e;animation:pv-brille 2.4s linear infinite}
 :is(.lifebar,#pv-layer .pv) .pv-armure{background:linear-gradient(90deg,#4fd8ff,#b8f2ff 50%,#4fd8ff);background-size:200% 100%;box-shadow:0 0 6px #4fd8ff,inset 0 1px 0 color-mix(in srgb,#fff 70%,transparent);animation:pv-brille 1.8s linear infinite}

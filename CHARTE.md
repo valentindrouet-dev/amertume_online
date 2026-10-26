@@ -233,7 +233,7 @@ Le texte d'un bouton est un **verbe court**, à l'infinitif ou à l'impératif, 
 | Part | Classe | Teintes |
 |---|---|---|
 | Radiance | `.pv-radiance` | or brillant `#f2c14e`, reflet `#fff3c4` |
-| Nécrose | `.pv-necrose` | hachures `#3b2440` et `#5a3a63` |
+| Nécrose | `.pv-necrose` | hachures `#8fa52a` et `#bcd24a` (jaune-vert maladif, comme son icône) |
 | Armure | `.pv-armure` | bleu électrique `#4fd8ff`, reflet `#b8f2ff` |
 
 **Points d'Action et de Mouvement** (`.pt.action`, `.pt.mvt`) : toujours leur icône, `img/points/pa.webp` (bleu) et `img/points/pm.webp` (brun) ; dépensé, grisé.
