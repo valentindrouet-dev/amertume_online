@@ -1127,7 +1127,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   // Au survol, ceux que le coup viserait s'allument sur la carte.
   if(typeof surbrillanceCibles==='function'&&typeof ciblesAttaque==='function')surbrillanceCibles(b,()=>ciblesAttaque(a,at.range==='distance'?'distance':'contact'));
   // Sa bulle, celle d'un talent : le nom, les dés et le bonus de dégâts, rien de plus.
-  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null,descr:texteAttaque(at),points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));
+  surveille(b,()=>{const ap=antiApercu(a,typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):[]);
+   return bulleAction(b,{nom:libelle,des:voit?desEtBonus(ajouteDes(desAttaque(a,at.dice),ap.dice),bonusDe(at)+(at.useOwnDamage!==false?ap.bonus:0),at.useOwnDamage!==false,false):null,lignes:voit?[...lignesAttaque(a),...ap.lignes]:null,descr:texteAttaque(at),points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null})});
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      les dés affichés la suivent — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
@@ -1156,8 +1157,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
   if(t.cibles&&typeof surbrillanceCibles==='function')surbrillanceCibles(b,()=>t.cibles());
-  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,cibles:t.cibles?t.cibles():null,
-   des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false,orbeux(t)?etatOrbes:''):null}));
+  surveille(b,()=>{const ap=t.des&&!orbeux(t)?antiApercu(a,t.cibles?t.cibles():[]):{dice:{},bonus:0};
+   return bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,cibles:t.cibles?t.cibles():null,
+   des:voit&&t.des?desEtBonus(ajouteDes(t.des,ap.dice),(t.bonus||0)+ap.bonus,false,false,orbeux(t)?etatOrbes:''):null})});
   /* Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol. Les Orbes, eux,
      y sont déjà, à côté de l'arme, qui reste. */
   if(t.code.cle!=='orbes')survol(b,t.des,t.bonus||0,false,t.logo?[t.logo]:null,orbeux(t)?etatOrbes:'');
@@ -7263,6 +7265,15 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
  while(famillesToutes().some(([k])=>k===id)||ANCIENNES_FAMILLES[id])id=base+(i++);
  catalog.sousFamilles=[...sousFamilles(),{id,nom,famille:mere}];scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
  const bloc=b.closest('.famille-bloc');if(bloc){bloc.insertAdjacentHTML('beforeend','<label class="field-check sous-famille"><input type="checkbox" name="famille" value="'+esc(id)+'" checked>'+esc(nom)+'</label>')}});
+/* v1.079 — L'aperçu d'une attaque compte l'Anti-famille du porteur contre ceux qu'elle viserait : ses dés en plus et son +x
+   s'ajoutent aux dés montrés ; un +xd6 ou un état, en ligne sous eux. */
+function antiApercu(a,indices){const out={dice:{},bonus:0,lignes:[]};if(!a||typeof antiContre!=='function')return out;const vus=new Set();
+ (indices||[]).map(j=>typeof j==='number'?actors[j]:j).filter(Boolean).forEach(c=>antiContre(a,c).forEach(x=>{const k=JSON.stringify(x);if(vus.has(k))return;vus.add(k);
+  const n=Math.max(1,Math.trunc(Number(x.n))||1),fam=nomFamilleMonstre(x.cible);
+  if(x.mode==='de'&&DICE_KEYS.includes(x.de))out.dice[x.de]=(out.dice[x.de]||0)+n;else if(x.mode==='n')out.bonus+=n;
+  else if(x.mode==='d6')out.lignes.push('**+'+n+'d6** dégâts contre les '+fam+'.');
+  else if(x.mode==='etat')out.lignes.push('Inflige '+x.etat+(cumulable(x.etat)?' '+n:'')+' aux '+fam+'.')}));return out}
+const ajouteDes=(dice,plus)=>{if(!dice||!plus||!Object.keys(plus).length)return dice;const d={...dice};Object.entries(plus).forEach(([k,n])=>{d[k]=(Number(d[k])||0)+n});return d};
 // Les états d'une attaque spéciale : la liste, ou l'état unique d'avant.
 const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);
 function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=lisAttaques($('actor-form'),attackDraft)}

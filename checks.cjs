@@ -3945,7 +3945,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
   &&sh.includes("catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),")&&fs.readFileSync('live.js','utf8').includes("'forges',"),'la Forge câblée');}
 /* v0.676 — Les dés qu'un talent ajoute à une attaque, Coup de Bouclier, se lisent dans ses bulles, comme ils partent au jet. */
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(desAttaque(a,at.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
+ assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(ajouteDes(desAttaque(a,at.dice),ap.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
 /* v0.675 — La planche GARDIEN et sa catégorie. */
 assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
@@ -4830,7 +4830,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(x.descriptionEtat(o,'Gardé'),'Sous la garde de Brann.');
  assert.equal(x.descriptionEtat(o,'Ciblage'),'','sans effet en jeu, rien à dire');
  assert.ok(src.includes("function bulleEtat(ancre,o,etat){")&&src.includes("function jetonsCibles(a,liste){")&&src.includes("des=null,cout=false,palier=0,points=true,cibles=null}={}){")
-  &&src.includes("points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));")
+  &&src.includes("points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null})});")
   &&src.includes("points:t.cout||false,cibles:t.cibles?t.cibles():null,")&&page.includes("cibles:()=>ciblesDuGeste(a,code.cle,params,talent),")
   &&page.includes("points:t.cout||false,cibles:t.cibles()})};")
   &&feuille.includes(".bulle-cibles{position:absolute;")&&feuille.includes(".jeton-cible.adverse{border-color:#c2604f;"),'les jetons des cibles sur les bulles');
@@ -5988,7 +5988,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.deepEqual([{type:'pass',pourAttaque:true},{type:'ame',effet:'tenailles'},{type:'ame',effet:'tenailles',pourAttaque:false},{type:'act',pourAttaque:true},{type:'pass',effet:'bonus',pourAttaque:true},{type:'pass'}].map(ctxA.f),
   [true,true,false,false,false,false],'passifs et améliorations cochés, ou câblés sur les attaques');
  assert.ok(src.includes("const attaque=a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);")&&src.includes("talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null)")
-  &&src.includes("lignes:voit?lignesAttaque(a):null")&&src.includes("lisChemin(x).de===t.id&&!ameliorAttaque(x));")
+  &&src.includes("lignes:voit?[...lignesAttaque(a),...ap.lignes]:null")&&src.includes("lisChemin(x).de===t.id&&!ameliorAttaque(x));")
   &&src.includes('name="pourAttaque"')&&src.includes("if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;"),'l’Attaque sur la fiche et ses améliorations');
  assert.ok(css.includes('.talent-detail .palier-effet.amelioration::before{background:color-mix(in srgb,var(--pastille,var(--teinte,#4f7fb5)) 85%,#000);')&&css.includes('.talent-detail.p-act{--pastille:#4f7fb5}'),'la pastille à la couleur de la nature');
  const ctxE={statesOf:a=>a.states||[],setState:(a,e,p)=>{a.states=(a.states||[]).filter(x=>x!==e);if(p)a.states.push(e)}};vm.createContext(ctxE);
