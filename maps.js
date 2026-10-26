@@ -3446,7 +3446,8 @@ const FAMILLES_VEGETALES=['plantes','plantesligneuses','plantescarnivores','sylv
 // Ses familles : les siennes, sinon celles de son modèle au bestiaire — un adversaire posé ne les recopie pas.
 const famillesDe=o=>{if(!o||typeof normaliseFamillesMonstre!=='function')return [];const l=normaliseFamillesMonstre(o.familles);if(l.length)return l;
  const t=o.template&&(catalog.monsters||[]).find(x=>x&&x.id===o.template);return t?normaliseFamillesMonstre(t.familles):[]};
-const estVegetal=o=>!!o&&!o.hero&&famillesDe(o).some(f=>FAMILLES_VEGETALES.includes(f));
+// v1.076 : végétal, de la famille Plantes, hors de la sous-famille Fongiques.
+const estVegetal=o=>{if(!o||o.hero)return false;const f=famillesDe(o);return f.some(k=>FAMILLES_VEGETALES.includes(k))&&!f.includes('fongiques')};
 const estFongique=o=>!!o&&!o.hero&&(famillesDe(o).includes('fongiques')||(typeof porteTalent==='function'&&porteTalent(o,'sensiblefongicide')));
 const estBoss=o=>!!o&&o.type==='boss';
 const estLieutenant=o=>!!o&&!o.hero&&!estBoss(o)&&natureDe(o)==='vivant'&&!estVegetal(o)&&!estFongique(o);
