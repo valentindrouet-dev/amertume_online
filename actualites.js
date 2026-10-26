@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.087","d":"2026-10-26","t":"Bestiaire : filtre par familles du jeu"},
 {"v":"1.086","d":"2026-10-26","t":"Une plante au plus par adversaire"},
 {"v":"1.085","d":"2026-10-26","t":"Nécrose : hachures plus larges et montant affiché"},
 {"v":"1.084","d":"2026-10-26","t":"Nécrose des barres de PV en jaune-vert maladif"},

@@ -3500,10 +3500,11 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
  // La troupe ne lit au bestiaire que ce qu'elle a analysé.
  const troupeSeule=view!=='mj';
  const q=($('bestiary-search').value||'').trim().toLowerCase();
- const familles=[...new Set(catalog.monsters.map(m=>m.family).filter(Boolean))].sort();
+ // v1.087 : les familles et sous-familles du jeu ; une famille choisie montre aussi ses sous-familles.
+ const famTout=famillesToutes(),familles=famTout.map(([k])=>k);
  const sel=$('bestiary-family'),avant=sel.value;
  sel.replaceChildren(new Option('Toutes familles',''));
- familles.forEach(f=>sel.add(new Option(f,f)));
+ famTout.forEach(([k,n,mere])=>sel.add(new Option((mere?'\u00a0\u00a0\u00a0':'')+n,k)));
  sel.value=familles.includes(avant)?avant:'';
  const tri=$('bestiary-sort').value;
  /* v0.991 : un lieu choisi ne montre que les adversaires posés sur ses cartes, toutes confondues — par leur modèle, ou leur nom. */
@@ -3513,7 +3514,7 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
   .forEach(c=>(c.foes||[]).forEach(f=>{const t=f&&f.tpl;if(t){if(t.id)ids.add(t.id);if(t.name)noms.add(t.name)}}));return m=>ids.has(m.id)||noms.has(m.name)})():null;
  for(const [key,titre] of BEST_COLS){
   let liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>(key==='pnj'?!!m.pnj:!m.pnj&&(m.type||'standard')===key)
-   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||m.family===sel.value)&&(!posesIci||posesIci(m))
+   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||normaliseFamillesMonstre(m.familles).includes(sel.value))&&(!posesIci||posesIci(m))
    &&(!troupeSeule||modeleAnalyse(m)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name)
    :tri==='danger-'?danger(a[0])-danger(b[0]):danger(b[0])-danger(a[0]));
