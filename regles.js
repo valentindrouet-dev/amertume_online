@@ -138,6 +138,7 @@ REGLES_SECTIONS.push(
    '<b>Début</b> : les états de chacun sont levés (sauf ceux d’un piège récent). Les talents de début de combat se jouent quand on veut pendant le premier tour des aventuriers, ceux de début de tour pendant chaque tour : ils se ferment dès qu’un adversaire dépense un PA ou un PM. Un bouton au-dessus du token les rappelle.',
    '<b>Muraille</b> : Immobilisé et DEF +1 jusqu’à la fin du tour, où Immobilisé tombe tout seul. <b>Meneur</b> peut donner « + Niveau » : le niveau du porteur.',
    '<b>Intervention</b> : seulement pour l’allié Gardé du porteur.',
+   '<b>Main Secourable</b> (Action bonus) : un allié au contact du porteur et d’un adversaire passe derrière le porteur, sans dégâts d’opportunité.',
    '<b>Carapace</b> : chaque combat commence avec Endurance × Armure (× 2, améliorée) ; l’allié Gardé peut la recevoir aussi.',
    '<b>Mouvement forcé</b> (Provocation…) : jamais plus loin que le mouvement du provoqué, ses PM compris ; trop loin, il fait ce mouvement vers le porteur, puis s’arrête. Immobilisé, il ne bouge pas.',
    '<b>Fin</b> : tous les états tombent (sauf Coma et ceux d’une pièce portée), l’Armure aussi ; le repos court redevient possible.'])),

@@ -2279,6 +2279,16 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration : la DEF du porteur écarte aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
   params:[],
   phrase(){return 'La DEF du porteur écarte aussi les <b>dés de dégâts mortels</b> (rouges).'}},
+ // v1.106 : Main Secourable — une Action bonus ; l'allié au contact, menacé, passe derrière le porteur sans dégâts d'opportunité.
+ mainsecourable:{cle:'mainsecourable',nom:'Main Secourable',type:'abon',bouton:'Main Secourable',
+  aide:'Action bonus : un allié au contact du porteur, au contact d’un adversaire, fait un mouvement gratuit pour passer derrière le porteur, sans subir de dégâts d’opportunité.',params:[],
+  phrase(){return 'Un <b>allié</b> au contact fait un mouvement gratuit pour se retrouver <b>derrière vous</b> et quitter la zone de contact d’un adversaire, sans subir de <b>dégâts d’opportunité</b>.'}},
+ mainsecourablesoin:{cle:'mainsecourablesoin',nom:'Main Secourable — Soin',court:'Soin',type:'ame',
+  aide:'Amélioration de Main Secourable : l’allié secouru regagne 1 dé vert de PV.',params:[],
+  phrase(){return 'Vous soignez l’allié secouru de <b>1 dé vert</b>.'}},
+ mainsecourablerepousse:{cle:'mainsecourablerepousse',nom:'Main Secourable — Repousser',court:'Repousser',type:'ame',
+  aide:'Amélioration de Main Secourable : l’adversaire le plus proche de l’allié secouru est repoussé hors de sa zone de contact.',params:[],
+  phrase(){return 'L’<b>adversaire</b> le plus proche de l’allié secouru est <b>repoussé</b> hors de sa zone de contact.'}},
  // v1.105 : Carapace — un passif : chaque combat commence avec Endurance × Armure ; doublée ; donnée aussi à l'allié Gardé.
  carapace:{cle:'carapace',nom:'Carapace',type:'pass',
   aide:'Passif : le porteur commence chaque combat avec autant d’Armure que son Endurance.',params:[],
@@ -2404,7 +2414,7 @@ Object.assign(TALENTS_CODES,{
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
- provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
+ provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
  meneurtous:'meneur',meneurdouble:'meneur',detresserage:'detresse',detressetous:'detresse',muraillearmure:'muraille',muraillegarde:'muraille',
  attaqueetatarmure:'attaqueetat',attaqueetatgarde:'attaqueetat',interventionsol:'intervention',interventionsansopp:'intervention',interventionattaque:'intervention',gardienonde:'gardien',gardienrelance:'gardien'};
