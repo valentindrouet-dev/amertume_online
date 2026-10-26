@@ -137,6 +137,7 @@ REGLES_SECTIONS.push(
    '<b>Tour suivant</b> : le Feu brûle, la Foudre perd un cran, Surpris tombe, les points et les talents joués reviennent.',
    '<b>Début</b> : les états de chacun sont levés (sauf ceux d’un piège récent). Les talents de début de combat se jouent quand on veut pendant le premier tour des aventuriers, ceux de début de tour pendant chaque tour : ils se ferment dès qu’un adversaire dépense un PA ou un PM. Un bouton au-dessus du token les rappelle.',
    '<b>Muraille</b> : Immobilisé et DEF +1 jusqu’à la fin du tour, où Immobilisé tombe tout seul. <b>Meneur</b> peut donner « + Niveau » : le niveau du porteur.',
+   '<b>Intervention</b> : seulement pour l’allié Gardé du porteur.',
    '<b>Mouvement forcé</b> (Provocation…) : jamais plus loin que le mouvement du provoqué, ses PM compris ; trop loin, il fait ce mouvement vers le porteur, puis s’arrête. Immobilisé, il ne bouge pas.',
    '<b>Fin</b> : tous les états tombent (sauf Coma et ceux d’une pièce portée), l’Armure aussi ; le repos court redevient possible.'])),
  // 7. Les états.

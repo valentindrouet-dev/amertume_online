@@ -1544,8 +1544,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(){return 'Au début du premier tour de combat, un <b>allié visible</b> reçoit l’état <b>Gardé</b> : l’allié ciblé, sinon le plus proche. Vous subissez <b>la moitié</b> des dégâts reçus par cet allié à sa place, si vous êtes à son contact.'}},
  /* v0.838 — Intervention : une Réaction ; avant qu'un allié à portée de mouvement ne subisse des dégâts, le porteur vient à son contact. */
  intervention:{cle:'intervention',nom:'Intervention',type:'reac',
-  aide:'Réaction : avant qu’un allié à portée de mouvement ne subisse des dégâts, le porteur se déplace à son contact.',
-  params:[],phrase(){return 'Avant qu’un <b>allié</b> à portée de mouvement ne subisse des dégâts, vous vous déplacez <b>à son contact</b>.'}},
+  aide:'Réaction : avant que son allié Gardé, à portée de mouvement, ne subisse les dégâts d’une Attaque, le porteur se déplace à son contact.',
+  params:[],phrase(){return 'Avant qu’un <b>allié Gardé</b> à portée de mouvement ne subisse les dégâts d’une Attaque, vous vous déplacez <b>à son contact</b>.'}},
  /* v0.838 — Améliorations de Gardien : la totalité des dégâts du Gardé, au contact ; deux alliés Gardés. */
  gardientotal:{cle:'gardientotal',nom:'Gardien — Totalité',court:'Totalité',type:'ame',
   aide:'Amélioration de Gardien : le porteur subit la totalité des dégâts reçus par son allié Gardé à sa place, s’il est à son contact.',
@@ -2360,6 +2360,13 @@ Object.assign(TALENTS_CODES,{
  attaqueetatgarde:{cle:'attaqueetatgarde',nom:'Attaque d’état — Allié Gardé',court:'Allié Gardé',type:'ame',
   aide:'Amélioration d’Attaque d’état : l’allié Gardé du porteur, à son contact, gagne aussi l’état.',
   params:[ETAT_ATTAQUE_PARAM],phrase(p){return 'Votre allié <b>Gardé</b> gagne aussi <b>'+((p&&p.etat)||'Blindage')+'</b> s’il est à votre contact.'}},
+ // v1.104 : Intervention sans dégâts d'opportunité ; et le coup gratuit sur l'attaquant.
+ interventionsansopp:{cle:'interventionsansopp',nom:'Intervention — Sans opportunité',court:'Sans opportunité',type:'ame',
+  aide:'Amélioration d’Intervention : quitter le contact d’un adversaire pour intervenir ne provoque aucune attaque d’opportunité.',
+  params:[],phrase(){return 'Vous ignorez les <b>attaques d’opportunité</b> si vous quittez le contact d’un adversaire pour intervenir.'}},
+ interventionattaque:{cle:'interventionattaque',nom:'Intervention — Riposte',court:'Riposte',type:'ame',
+  aide:'Amélioration d’Intervention : arrivé, le porteur fait une attaque gratuite au contact contre l’adversaire qui attaque son allié.',
+  params:[],phrase(){return 'Vous effectuez une <b>attaque gratuite</b> au contact contre l’adversaire qui attaque votre allié.'}},
  interventionsol:{cle:'interventionsol',nom:'Intervention — Au sol',court:'Au sol',type:'ame',
   aide:'Amélioration d’Intervention : une fois son attaque faite, l’adversaire subit Au sol.',
   params:[],phrase(){return 'Après que l’adversaire a effectué son attaque, vous lui infligez <b>Au sol</b>.'}},
@@ -2378,7 +2385,7 @@ Object.assign(TALENTS_CODES,{
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
  meneurtous:'meneur',meneurdouble:'meneur',detresserage:'detresse',detressetous:'detresse',muraillearmure:'muraille',muraillegarde:'muraille',
- attaqueetatarmure:'attaqueetat',attaqueetatgarde:'attaqueetat',interventionsol:'intervention',gardienonde:'gardien',gardienrelance:'gardien'};
+ attaqueetatarmure:'attaqueetat',attaqueetatgarde:'attaqueetat',interventionsol:'intervention',interventionsansopp:'intervention',interventionattaque:'intervention',gardienonde:'gardien',gardienrelance:'gardien'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
 /* ---------- Les effets d'équipement ----------
