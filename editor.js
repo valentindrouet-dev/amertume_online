@@ -7529,6 +7529,8 @@ function butinDesRetires(partants,tirage=Math.random,pour=null){const heros=acto
      une fois prises, elles ne tombent plus de lui. */
   const fams=typeof normaliseFamillesMonstre==='function'?normaliseFamillesMonstre(f.familles):[],dejaVole=new Set(Array.isArray(f.plantesVolees)?f.plantesVolees:[]);
   const plantes=fams.length?(catalog.items||[]).filter(o=>o&&o.category==='herbe'&&!dejaVole.has(o.id)).filter(o=>{const d=normaliseDrops(o.drops),ch=Math.max(0,...fams.map(k=>d[k]||0));return ch>0&&tirage()*100<ch}):[];
+  // v1.086 : une plante au plus par adversaire — tirée au hasard parmi celles qui tombent.
+  if(plantes.length>1)plantes.splice(0,plantes.length,plantes[Math.min(plantes.length-1,Math.floor(tirage()*plantes.length))]);
   if(pour&&plantes.length)f.plantesVolees=[...dejaVole,...plantes.map(o=>o.id)];
   if(!(f.inventaire||[]).length&&!Object.keys(tire).length&&!plantes.length)return;
   // Son loot forgé : le sien, ou celui de son modèle, sinon la chance de son type.
