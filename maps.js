@@ -1788,7 +1788,7 @@ mapsPage.innerHTML=
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
- +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><label class="field-check map-jcj" title="Les aventuriers s’y affrontent : chacun est neutre, ennemi de tous ; pas d’XP sur cette carte."><input type="checkbox" id="map-jcj">PvP</label><span class="map-xp" id="map-xp"></span>'
+ +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label class="map-code">Code<input id="map-code" maxlength="24"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><label class="field-check map-jcj" title="Les aventuriers s’y affrontent : chacun est neutre, ennemi de tous ; pas d’XP sur cette carte."><input type="checkbox" id="map-jcj">PvP</label><span class="map-xp" id="map-xp"></span>'
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button><button id="map-progression" hidden>Effacer la progression</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
@@ -1923,6 +1923,8 @@ $('map-jcj').onchange=()=>{if(!mapDraft)return;if($('map-jcj').checked)mapDraft.
 let jcjMemo={t:0,v:false};
 // La carte sur la table est-elle PvP ? Relue au plus toutes les 300 ms : le camp de chacun se demande à chaque instant.
 function carteJcJ(){const n=performance.now();if(n-jcjMemo.t>300){const m=typeof currentMap==='function'?currentMap():null;jcjMemo={t:n,v:!!(m&&m.jcj===true)}}return jcjMemo.v}
+// v1.110 : le code d'une carte, celui que lit la liste de l'éditeur.
+$('map-code').oninput=()=>{if(!mapDraft)return;const v=$('map-code').value.trim().slice(0,24);if(v)mapDraft.code=v;else delete mapDraft.code;renderMapList();saveMaps()};
 $('map-name').oninput=()=>{if(mapDraft){mapDraft.name=$('map-name').value;renderMapList();saveMaps()}};
 /* Sauvegarde des couches : le fichier se suffit à lui-même, image comprise, et il
    revient toujours en cartes neuves — on ne remplace jamais ce qui est là. */
@@ -2037,11 +2039,12 @@ function rattacheCarteEditee(){if(mapDraft&&maps.includes(mapDraft))return;let i
 function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amertume-carte-editee',mapDraft.id)}catch(e){}
  const rangee=m=>{const b=document.createElement('button');
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
- const nom=document.createElement('strong');nom.textContent=m.name;ensure(m);
+ // v1.110 : la liste lit le code de la carte s'il y en a un — plus court ; le nom reste celui de la table.
+ const nom=document.createElement('strong');nom.textContent=m.code||m.name;ensure(m);
  b.title=m.name+(m.id===currentMapId?' — chargée sur la table':'')+'\n'+matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
  b.append(nom);
  // v1.109 : une progression enregistrée se signale d'une pastille, sa date au survol.
- if(m.progression){const s=document.createElement('span');s.className='map-sauve';s.textContent='💾';s.title='Progression enregistrée le '+dateProgression(m);s.setAttribute('aria-label',s.title);nom.append(s)}
+ if(m.progression){const s=document.createElement('span');s.className='map-sauve';s.textContent='💾';s.title='Progression enregistrée le '+dateProgression(m);s.setAttribute('aria-label',s.title);nom.prepend(s)}
  b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};
   // Elle se glisse sur le bandeau d'un lieu, ou sur la liste hors des lieux pour l'en sortir.
   b.draggable=true;b.addEventListener('dragstart',e=>{carteGlissee=m;try{e.dataTransfer.setData('text/plain',m.id||'');e.dataTransfer.effectAllowed='move'}catch(_){}});
@@ -2078,6 +2081,7 @@ function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amer
  {const s=$('map-batiment');if(s){s.replaceChildren(new Option('— aucun —',''),...((typeof domaine!=='undefined'&&domaine.batiments)||[]).map(b=>new Option(b.nom,b.id)));s.value=mapDraft&&mapDraft.batiment||'';s.disabled=!mapDraft}}
  {const s=$('map-lieu');if(s){s.replaceChildren(new Option('— aucun lieu —',''),...lieuxDesCartes().map(l=>new Option(l,l)),new Option('✎ Nouveau lieu…','*'));s.value=mapDraft&&mapDraft.lieu||'';s.disabled=!mapDraft}}
  if(mapDraft)$('map-name').value=mapDraft.name;
+ {const c=$('map-code');if(c){c.value=mapDraft&&mapDraft.code||'';c.disabled=!mapDraft;c.placeholder=mapDraft?mapDraft.name.slice(0,24):''}}
  if(typeof majBoutonProgression==='function')majBoutonProgression();
  {const j=$('map-jcj');if(j){j.checked=!!(mapDraft&&mapDraft.jcj===true);j.disabled=!mapDraft}}
  remplitModelesAdv()}
