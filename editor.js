@@ -6744,7 +6744,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(ARBRE_PALIERS){
    const S60=Math.sqrt(3)/2,rad=Math.PI/180,PAS=2.5*(135+146)/2,DX=(PAS+135)/2,DY=(PAS-135)*S60;
    // L'axe libre d'un palier de droite : 0° ; le chemin y vient à ±CH ; un pas, CH / 2,5. Le niveau 1 se tourne vers l'opposé du chemin.
-   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:151,moyen:140},n:{gros:146,moyen:135}};
+   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:128,moyen:117},n:{gros:128,moyen:117}};
+   // v1.121 : les ronds se rapprochent du centre (les arcs sont petits) ; le pas s'ouvre : 58° au niveau 1, 50° ensuite.
+   const PS1=58,PSN=50;
    /* v1.120 : nouvelle disposition du MJ — chaque palier, niveau 1 compris, porte 2 gros à un demi-pas de son axe et 2 moyens à
       un pas et demi ; le pas vaut le tiers de l'angle du chemin (le chemin passe à trois pas). L'axe du niveau 1 : l'opposé de son chemin. */
    const PS=CH/3;
@@ -6754,8 +6756,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     return {g,cache,centre,gros,moyens}}).filter(Boolean);
    const dernier=groupes.length-1,suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
    // Les places de chaque palier, en degrés (0 : à droite, 90 : en bas) ; de gauche à droite, de haut en bas.
-   const gabarit=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PS/2,AX1+PS/2],moyen:[AX1-1.5*PS,AX1+1.5*PS],r:RAYONS[1]};
-    const m=v=>i%2?180-v:v;return {gros:[m(-PS/2),m(PS/2)],moyen:[m(-1.5*PS),m(1.5*PS)],r:RAYONS.n}};
+   const gabarit=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PS1/2,AX1+PS1/2],moyen:[AX1-1.5*PS1,AX1+1.5*PS1],r:RAYONS[1]};
+    const m=v=>i%2?180-v:v;return {gros:[m(-PSN/2),m(PSN/2)],moyen:[m(-1.5*PSN),m(1.5*PSN)],r:RAYONS.n}};
+   const gabarit120=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PS/2,AX1+PS/2],moyen:[AX1-1.5*PS,AX1+1.5*PS],r:{gros:151,moyen:140}};
+    const m=v=>i%2?180-v:v;return {gros:[m(-PS/2),m(PS/2)],moyen:[m(-1.5*PS),m(1.5*PS)],r:{gros:146,moyen:135}}};
    // Les gabarits d'avant, pour retrouver où chaque rond se voyait : v1.117 (et v1.118), v1.114.
    const gabarit117=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PA,AX1+PA],moyen:[AX1-2*PA,AX1,AX1+2*PA],r:{gros:152,moyen:141}};
     const m=v=>i%2?180-v:v;return {gros:[m(-PA/2),m(PA/2)],moyen:[m(-1.5*PA),m(1.5*PA)],r:{gros:148,moyen:137}}};
@@ -6774,8 +6778,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     return {...x,c0,G,P,hors}});
    /* v1.117, v1.120 : une fois par arbre et par gabarit, chez le MJ, chaque rond prend la place nouvelle la plus proche de celle où
       il se voyait (sa place libre, ou sa place de l'ancien gabarit) ; le placement libre se décoche : la disposition est devenue le gabarit. */
-   {const cle='gabarit-120:'+classe;if(mj&&classe&&Array.isArray(catalog.semisForge)&&!catalog.semisForge.includes(cle)){
-    const ancien=catalog.semisForge.includes('gabarit-117:'+classe)?gabarit117:gabarit114;
+   {const cle='gabarit-121:'+classe;if(mj&&classe&&Array.isArray(catalog.semisForge)&&!catalog.semisForge.includes(cle)){
+    const sf=k=>catalog.semisForge.includes('gabarit-'+k+':'+classe),ancien=sf(120)?gabarit120:sf(117)?gabarit117:gabarit114;
     plans.forEach((q,i)=>{const A=ancien(i,q.g),R0=A.r;['gros','moyen'].forEach(l=>{const ts=[...q.P[l].filter(Boolean),...q.hors.filter(h=>h[0]===l).map(h=>h[1])];
      const vu=t=>{if(enLibre&&manuel(t))return {x:t.orbite.dx,y:t.orbite.dy};const k=Number(t.ordreArbre),a=A[l][k];return Number.isInteger(k)&&a!==undefined?{x:R0[l]*Math.cos(a*rad),y:R0[l]*Math.sin(a*rad)}:null};
      const paires=[];ts.forEach(t=>{const v=vu(t);q.G[l].forEach((a,k)=>{const p=autour({x:0,y:0},a,l,q.G);paires.push([v?Math.hypot(p.x-v.x,p.y-v.y):1e6+k,t,k])})});
