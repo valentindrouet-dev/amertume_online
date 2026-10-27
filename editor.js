@@ -6822,14 +6822,23 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      addEventListener('pointermove',mv);addEventListener('pointerup',up)})};
    /* v1.119 : l'aura d'un palier — un disque doré derrière tout (talents, chemin, niveaux), centré sur son talent initial, qui
       mord un peu sur chaque rond autour (14 px au-delà de leur bord intérieur). */
-   {const defs=document.createElementNS(NS,'defs'),gr=document.createElementNS(NS,'radialGradient'),id='aura-palier-'+(++satN);gr.id=id;
-    [[0,'aura-coeur'],[.72,'aura-milieu'],[1,'aura-bord']].forEach(([o,k])=>{const st=document.createElementNS(NS,'stop');st.setAttribute('offset',String(o));st.setAttribute('class',k);gr.append(st)});defs.append(gr);svg.append(defs);
-    plans.forEach(x=>{if(!x.centre)return;const p=sh(x.c0),r=x.G.r.moyen-D.moyen/2+14,ci=document.createElementNS(NS,'circle');
-     ci.setAttribute('cx',p.x.toFixed(1));ci.setAttribute('cy',p.y.toFixed(1));ci.setAttribute('r',r.toFixed(1));ci.setAttribute('class','aura-palier');ci.style.fill='url(#'+id+')';svg.append(ci)})}
+   // v1.122 : dorée quand l'aventurier a le niveau du palier, grise sinon.
+   {const defs=document.createElementNS(NS,'defs'),ids={};svg.append(defs);
+    ['','gris-'].forEach(v=>{const gr=document.createElementNS(NS,'radialGradient'),id='aura-palier-'+v+(++satN);gr.id=ids[v]=id;
+     [[0,'aura-coeur'],[.72,'aura-milieu'],[1,'aura-bord']].forEach(([o,k])=>{const st=document.createElementNS(NS,'stop');st.setAttribute('offset',String(o));st.setAttribute('class',k+(v?' gris':''));gr.append(st)});defs.append(gr)});
+    plans.forEach(x=>{if(!x.centre)return;const p=sh(x.c0),r=x.G.r.moyen-D.moyen/2+14,ci=document.createElementNS(NS,'circle'),atteint=niveauA>=x.g;
+     ci.setAttribute('cx',p.x.toFixed(1));ci.setAttribute('cy',p.y.toFixed(1));ci.setAttribute('r',r.toFixed(1));ci.setAttribute('class','aura-palier'+(atteint?'':' gris'));ci.style.fill='url(#'+ids[atteint?'':'gris-']+')';svg.append(ci)})}
+   /* v1.122 : le lien entre deux paliers, en crans — un par niveau qui les sépare, entre les bords des centres ; chaque niveau atteint
+      au-delà du premier palier en dore un, les autres restent gris. Sous chaque centre, la couleur de son palier. */
+   const lien=(p1,p2,g1,g2)=>{const d=Math.hypot(p2.x-p1.x,p2.y-p1.y)||1,ux=(p2.x-p1.x)/d,uy=(p2.y-p1.y)/d,RC=D.centre/2+3,N=Math.max(1,g2-g1),fait=Math.max(0,Math.min(N,niveauA-g1)),JOUR=4,L=(d-2*RC-(N-1)*JOUR)/N;
+    const seg=(a,b,cls)=>{const l=document.createElementNS(NS,'line');[['x1',p1.x+ux*a],['y1',p1.y+uy*a],['x2',p1.x+ux*b],['y2',p1.y+uy*b]].forEach(([k,v])=>l.setAttribute(k,v.toFixed(1)));l.setAttribute('class','chemin-palier '+cls);svg.append(l)};
+    seg(0,RC,'cran'+(niveauA>=g1?'':' gris'));seg(d-RC,d,'cran'+(niveauA>=g2?'':' gris'));
+    for(let k=0;k<N;k++){const a=RC+k*(L+JOUR);seg(a,a+L,'cran'+(k<fait?'':' gris'))}};
+
    plans.forEach((x,i)=>{const g=x.g,c0=sh(x.c0);
     // Le chemin : de centre en centre, le niveau à mi-chemin (pas au premier) ; après le dernier, en pointillés vers le niveau suivant.
-    if(i){const avant=sh(plans[i-1].c0);trait(avant.x,avant.y,c0.x,c0.y,false);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
-    if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true);pastille(suivant,p.x,p.y,niveauA<suivant)}
+    if(i){const avant=sh(plans[i-1].c0);lien(avant,c0,plans[i-1].g,g);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
+    if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true);if(niveauA<suivant)svg.lastChild.classList.add('gris');pastille(suivant,p.x,p.y,niveauA<suivant)}
     // Le centre : le talent initial du palier.
     if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===0);if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}

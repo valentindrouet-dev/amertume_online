@@ -3806,3 +3806,20 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue.arbre-paliers>.arbre-noeud.choisi::after{content:'';position:absolute;left:50%;top:50%;width:62px;height:62px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #c99a3c;box-shadow:0 0 10px 2px color-mix(in srgb,#c99a3c 45%,transparent);pointer-events:none;box-sizing:border-box}
 .arbre-roue.arbre-paliers>.arbre-noeud.choisi.roue-gros::after{width:84px;height:84px}
 .arbre-roue.arbre-paliers>.arbre-noeud.choisi.roue-centre::after{width:120px;height:120px}
+/* v1.122 — La vue de l'aventurier, dans l'arbre des paliers. Acquis : fond et icône en couleur. Achetable : le fond de sa nature,
+   l'icône grise. Fermé ou trop cher : fond et icône gris. L'aura et le lien se grisent tant que le niveau n'y est pas. */
+.arbre-roue.arbre-paliers>.arbre-noeud:is(.dispo,.verrou) .arbre-rond{filter:none;opacity:1;color:var(--muted)}
+.arbre-roue.arbre-paliers>.arbre-noeud:is(.dispo,.verrou) .arbre-rond img{filter:grayscale(1);opacity:.75}
+.arbre-roue.arbre-paliers>.arbre-noeud.dispo .arbre-rond{background:var(--panel);border-color:var(--teinte)}
+.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-act:not(.bonus) .arbre-rond{background:#cfdcea}.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-mvt:not(.bonus) .arbre-rond{background:#eee2d4}
+.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-reac:not(.bonus) .arbre-rond{background:#ddd3ea}.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-pass:not(.bonus) .arbre-rond{background:#dcd8cf}
+.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-crit:not(.bonus) .arbre-rond{background:#eccfd0}.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-mait:not(.bonus) .arbre-rond{background:#f0e0bd}
+.arbre-roue.arbre-paliers>.arbre-noeud.dispo.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}
+.arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-rond{background:var(--panel-2);border-color:var(--line)}
+.arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-satellites{filter:grayscale(1);opacity:.6}
+.arbre-chemin-paliers .aura-coeur.gris{stop-color:#7d7a74;stop-opacity:.32}
+.arbre-chemin-paliers .aura-milieu.gris{stop-color:#7d7a74;stop-opacity:.22}
+.arbre-chemin-paliers .aura-bord.gris{stop-color:#7d7a74;stop-opacity:.16}
+.arbre-chemin-paliers .aura-palier.gris{stroke:#7d7a74;stroke-opacity:.3}
+.arbre-chemin-paliers .chemin-palier.cran{stroke-linecap:butt}
+.arbre-chemin-paliers .chemin-palier.gris{stroke:#7d7a74;opacity:.4}

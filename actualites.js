@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.122","d":"2026-10-27","t":"Arbre de talents : coloration de la vue aventurier"},
 {"v":"1.121","d":"2026-10-27","t":"Arbre de talents : ronds rapprochés du centre"},
 {"v":"1.120","d":"2026-10-27","t":"Arbre de talents : disposition, arcs et sélection"},
 {"v":"1.119","d":"2026-10-27","t":"Arbre de talents : aura des paliers"},
