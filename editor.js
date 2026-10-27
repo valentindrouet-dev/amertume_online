@@ -7558,7 +7558,9 @@ function listeNombree(noms){const n=new Map();noms.forEach(x=>n.set(x,(n.get(x)|
  return [...n].map(([nom,k])=>k>1?k+' '+plurielNom(nom):nom).join(', ')}
 /* Un adversaire retiré de la scène laisse son XP : elle va à chaque aventurier présent
    sur la carte, en entier. Une seule ligne au journal, partagée à la table. */
-function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&(Math.trunc(Number(f.xp))||0)>0);
+function xpDesRetires(partants){
+ // v1.108 : une carte PvP ne donne pas d'XP.
+ if(typeof carteJcJ==='function'&&carteJcJ())return;const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&(Math.trunc(Number(f.xp))||0)>0);
  const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero&&!a.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(a)));
  // D'Expérience : chaque aventurier gagne en plus, par adversaire vaincu, ce que ses pièces forgées lui promettent.
  if(heros.length&&typeof effetsForge==='function'){const nb=partants.filter(f=>f&&!duCoteTroupe(f)&&!f.orbeStatique).length;

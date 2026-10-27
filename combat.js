@@ -2864,8 +2864,14 @@ function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj)return 'adverse';cons
 // Un Orbe statique est du camp de qui l'a posé.
 function campDe(a){if(!a)return '';if(a.hero)return 'troupe';if(a.orbeStatique)return a.orbeStatique.camp==='troupe'?'troupe':'adverse';const al=alignementDe(a);return al==='allie'?'troupe':al}
 function duCoteTroupe(a){return campDe(a)==='troupe'}
-function memeCamp(a,b){return !!a&&!!b&&campDe(a)===campDe(b)}
-function hostiles(a,b){const x=campDe(a),y=campDe(b);return !!x&&!!y&&x!==y&&(x==='troupe'||y==='troupe')}
+/* v1.108 — Carte PvP (cochée par le MJ) : chaque aventurier est son propre camp — ses Orbes statiques avec lui ; il est l'ennemi de
+   tous les autres, aventuriers, adversaires et PNJ. Entre adversaires, rien ne change. */
+const enJcJ=()=>typeof carteJcJ==='function'&&carteJcJ();
+const proprioJcJ=x=>x&&x.hero?x.id:x&&x.orbeStatique&&x.orbeStatique.camp==='troupe'?x.orbeStatique.de:null;
+function memeCamp(a,b){if(!a||!b)return false;if(enJcJ()){const p=proprioJcJ(a),q=proprioJcJ(b);if(p||q)return p===q}return campDe(a)===campDe(b)}
+function hostiles(a,b){const x=campDe(a),y=campDe(b);if(!x||!y)return false;
+ if(enJcJ()){const p=proprioJcJ(a),q=proprioJcJ(b);if(p||q)return a!==b&&p!==q}
+ return x!==y&&(x==='troupe'||y==='troupe')}
 /* Trie des paires [combattant, place dans la liste], depuis un combattant et dans un
    cadre en pixels. On garde la place plutôt que le numéro affiché : c'est elle qui le
    produit, et elle est toujours à portée de main. */

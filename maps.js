@@ -1759,7 +1759,7 @@ mapsPage.innerHTML=
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
- +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><span class="map-xp" id="map-xp"></span>'
+ +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><label class="field-check map-jcj" title="Les aventuriers s’y affrontent : chacun est neutre, ennemi de tous ; pas d’XP sur cette carte."><input type="checkbox" id="map-jcj">PvP</label><span class="map-xp" id="map-xp"></span>'
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
@@ -1889,6 +1889,11 @@ $('map-batiment').onchange=()=>{if(!mapDraft)return;const v=$('map-batiment').va
 $('map-lieu').onchange=()=>{const s=$('map-lieu');if(!mapDraft)return;
  if(s.value==='*'){const n=prompt('Nom du nouveau lieu :','');if(n&&n.trim())poseLieuCarte(mapDraft,n);else renderMapList();return}
  poseLieuCarte(mapDraft,s.value)};
+/* v1.108 — Carte PvP : une case de la carte ; les aventuriers s'y affrontent, sans XP à gagner. */
+$('map-jcj').onchange=()=>{if(!mapDraft)return;if($('map-jcj').checked)mapDraft.jcj=true;else delete mapDraft.jcj;jcjMemo.t=0;renderMapList();saveMaps();if(typeof render==='function')render()};
+let jcjMemo={t:0,v:false};
+// La carte sur la table est-elle PvP ? Relue au plus toutes les 300 ms : le camp de chacun se demande à chaque instant.
+function carteJcJ(){const n=performance.now();if(n-jcjMemo.t>300){const m=typeof currentMap==='function'?currentMap():null;jcjMemo={t:n,v:!!(m&&m.jcj===true)}}return jcjMemo.v}
 $('map-name').oninput=()=>{if(mapDraft){mapDraft.name=$('map-name').value;renderMapList();saveMaps()}};
 /* Sauvegarde des couches : le fichier se suffit à lui-même, image comprise, et il
    revient toujours en cartes neuves — on ne remplace jamais ce qui est là. */
@@ -2039,6 +2044,7 @@ function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amer
  {const s=$('map-batiment');if(s){s.replaceChildren(new Option('— aucun —',''),...((typeof domaine!=='undefined'&&domaine.batiments)||[]).map(b=>new Option(b.nom,b.id)));s.value=mapDraft&&mapDraft.batiment||'';s.disabled=!mapDraft}}
  {const s=$('map-lieu');if(s){s.replaceChildren(new Option('— aucun lieu —',''),...lieuxDesCartes().map(l=>new Option(l,l)),new Option('✎ Nouveau lieu…','*'));s.value=mapDraft&&mapDraft.lieu||'';s.disabled=!mapDraft}}
  if(mapDraft)$('map-name').value=mapDraft.name;
+ {const j=$('map-jcj');if(j){j.checked=!!(mapDraft&&mapDraft.jcj===true);j.disabled=!mapDraft}}
  remplitModelesAdv()}
 /* v1.070 — La famille Tokens : un outil par Type d'adversaire (Standard, Élite, Solitaire, Boss) et un pour les PNJ. Le menu
    des modèles ne montre que ceux du Type de l'outil choisi, par ordre alphabétique ; celui des PNJ aussi. */
@@ -2233,7 +2239,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':adv&&(modeleActuel(adv.tpl)||adv.tpl).pnj?'PNJ':KINDS[mapSel.kind])
   +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(lum?' · '+lum.nom+' · '+lum.rayon+' m':'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(piege?' · '+piege.nom+(piege.cache?' · caché':''):'')+(piegeDuDecl?' · '+piegeDuDecl.nom:'')+(verrou?' · verrouillée':''):'Aucune sélection.';
- $('map-xp').textContent=xpDeCarte(m)+' xp';
+ $('map-xp').textContent=(m.jcj===true?0:xpDeCarte(m))+' xp';
  $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+obscuriteDe(m).length+' zone(s) d’obscurité, '+(m.lumieres||[]).length+' lumière(s), '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s), '+m.coffres.length+' coffre(s), '+(m.pieges||[]).length+' piège(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
