@@ -5640,6 +5640,15 @@ function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
 // v0.972 : sans lignes, un talent s'ouvre au niveau de son groupe ; un petit rond attend toujours son talent.
 {const v0=verrouArbre;verrouArbre=function(portes,liste,t,niveau=Infinity){if(!(typeof ARBRE_V3!=='undefined'&&ARBRE_V3)||!t||lisChemin(t))return v0(portes,liste,t,niveau);
  const g=groupeArbre(t,liste);return niveau>=g?'':'Niveau '+g}}
+/* v1.111 — Les paliers : les ronds d'un palier ne s'ouvrent qu'une fois son talent initial (le centre) acquis ; le centre d'un palier,
+   une fois celui du palier d'avant acquis — le talent de classe du premier palier compte toujours pour acquis. */
+{const v1=verrouArbre;verrouArbre=function(portes,liste,t,niveau=Infinity){const r=v1(portes,liste,t,niveau);
+ if(r||!(typeof ARBRE_V3!=='undefined'&&ARBRE_V3)||!t||lisChemin(t)||t.flottant===true||!Array.isArray(liste))return r;
+ const tient=x=>!x||estVide(x)||x.flottant===true||(portes||[]).includes(x.id);
+ const centreDuPalier=g=>liste.find(x=>x&&!estVide(x)&&(g===1?x.flottant===true:x.centreGroupe===true&&groupeArbre(x,liste)===g));
+ const g=groupeArbre(t,liste);
+ if(t.centreGroupe===true){for(const h of GROUPES_ARBRE.filter(h=>h<g).reverse()){const c=centreDuPalier(h);if(c)return tient(c)?'':c.name||'—'}return ''}
+ const c=centreDuPalier(g);return tient(c)?'':c.name||'—'}}
 /* Ce qu'on tient encore d'une liste : depuis ses départs tenus, de talent tenu en talent tenu le long
    des lignes ; et, de chaque talent atteint, ses petits ronds rang après rang tant qu'ils sont tenus.
    « sans » : le même chemin, ce talent-là oublié. */
@@ -6624,7 +6633,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      ancien) continue en lignes dessous. */
   // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
   // v1.098 : BONUS_SATELLITES à false — plus rien à droite des ronds pour les bonus ; à true, ils reviennent (arcs, ou billes avec ARCS_BONUS à false).
-  let satN=0;const ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
+  let satN=0;const ARBRE_PALIERS=true,ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
   /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
      talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
      ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */
@@ -6699,6 +6708,55 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(carac==='comp')teinteCompetence(Math.max(0,Math.min(7,Number(p.comp)||0)),teinte);else teinte(carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150');
      svg.append(b);bulle(b,x)})}
    const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
+  /* v1.111 — Les paliers, comme dans Diablo IV : chaque niveau a son talent initial au centre ; ses gros ronds (Actions, Réactions,
+     Mouvements) et ses moyens (Actions bonus, Passifs…) gravitent autour, sur un cercle, en laissant libre le passage du chemin.
+     Un chemin doré relie les centres, d'un palier au suivant, en zigzag ; la pastille du niveau se pose dessus.
+     ARBRE_PALIERS à false rend la disposition en colonnes. */
+  if(ARBRE_PALIERS){
+   // Le rayon de chaque cercle suit le nombre de ronds qu'il porte (80 px chacun), de 150 à 190 px : aucun ne touche son voisin.
+   const R=150,RMAX=190,DX=240,STEP=350,EXT=RMAX+D.gros/2+30,XL=MARGE+EXT,XR=XL+DX,TOP=MARGE+R+40,GAP=28;
+   const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
+    const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
+    return {g,cache,centre,gros,moyens}}).filter(Boolean);
+   const pos=groupes.map((x,i)=>({x:i%2?XL:XR,y:TOP+i*STEP})),dernier=groupes.length-1;
+   const suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
+   const W=XR+EXT+MARGE,H=(dernier>=0?pos[dernier].y:TOP)+EXT+MARGE;
+   const roue=document.createElement('div');roue.className='arbre-roue arbre-paliers';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
+   const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-chemin-paliers');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';roue.append(svg);
+   // Le chemin s'arrête au bord des centres : il ne passe pas sous eux.
+   const trait=(x1,y1,x2,y2,pointille,r1=0,r2=0)=>{const d=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/d,uy=(y2-y1)/d;x1+=ux*r1;y1+=uy*r1;x2-=ux*r2;y2-=uy*r2;const l=document.createElementNS(NS,'line');[['x1',x1],['y1',y1],['x2',x2],['y2',y2]].forEach(([k,v])=>l.setAttribute(k,v.toFixed(1)));l.setAttribute('class','chemin-palier'+(pointille?' suite':''));svg.append(l)};
+   const pastille=(g,x,y,ferme)=>{const b=document.createElement('span');b.className='arbre-niveau-pastille pastille-palier'+(ferme?' fermee':'');
+    const s=document.createElement('small');s.textContent='Niv.';const n=document.createElement('b');n.textContent=String(g);b.append(s,n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
+   const niveauA=a?(Number(a.level)||1):Infinity;
+   const pose=(el,p,cls,x)=>{el.classList.add('roue-'+cls);if(x.cache)el.classList.add('hors-limite-mj');el.style.left=p.x+'px';el.style.top=p.y+'px';roue.append(el)};
+   groupes.forEach((x,i)=>{const c0=pos[i],g=x.g;
+    // Le chemin : d'en haut vers le premier centre, puis de centre en centre ; après le dernier, en pointillés vers le niveau suivant.
+    const avant=i?pos[i-1]:{x:c0.x,y:MARGE},apres=i<dernier?pos[i+1]:suivant?{x:c0.x+(i%2?DX:-DX)/2,y:c0.y+STEP/2}:null;
+    const RC=D.centre/2+6;trait(avant.x,avant.y,c0.x,c0.y,!i,i?RC:0,RC);pastille(g,i?(avant.x+c0.x)/2:c0.x,i?(avant.y+c0.y)/2:c0.y-R,niveauA<g);
+    if(apres&&i===dernier){trait(c0.x,c0.y,apres.x,apres.y,true,RC,0);pastille(suivant,apres.x,apres.y,niveauA<suivant)}
+    // Les ronds autour du centre : le cercle moins le passage du chemin, à l'arrivée et au départ.
+    const ang=p=>Math.atan2(p.y-c0.y,p.x-c0.x)*180/Math.PI,interdits=[ang(avant),...(apres?[ang(apres)]:[])];
+    const vG=mj&&x.gros.length<MAX_LIGNE_ARBRE.gros,vM=mj&&x.moyens.length<MAX_LIGNE_ARBRE.moyen;
+    const grosL=[...x.gros.map(t=>['gros',t]),...(vG?[['gros',null]]:[])],moyL=[...x.moyens.map(t=>['moyen',t]),...(vM?[['moyen',null]]:[])],K=grosL.length+moyL.length;
+    // Les gros, répartis parmi les moyens : aucun ne se touche.
+    const ordre=[];{const places=new Set(grosL.map((_,j)=>Math.floor((j+.5)*K/Math.max(1,grosL.length))));let gi=0,mi=0;for(let k=0;k<K;k++)ordre.push(places.has(k)&&gi<grosL.length?grosL[gi++]:mi<moyL.length?moyL[mi++]:grosL[gi++])}
+    // Les arcs libres, du chemin d'arrivée au suivant, dans le sens des aiguilles.
+    const f=interdits.map(v=>(v+360)%360).sort((u,v)=>u-v),libres=[];
+    if(f.length===1)libres.push([f[0]+GAP,f[0]+360-GAP]);else f.forEach((v,k)=>{const w=k+1<f.length?f[k+1]:f[0]+360;if(w-v>2*GAP)libres.push([v+GAP,w-GAP])});
+    const total=libres.reduce((s0,[u,v])=>s0+(v-u),0)||360,pas=total/Math.max(1,K),Rg=Math.max(R,Math.min(RMAX,K*80/(total*Math.PI/180)));
+    const angle=k=>{let d=(k+.5)*pas;for(const [u,v] of libres){if(d<=v-u)return u+d;d-=v-u}return 0};
+    const surCercle=k=>{const t=angle(k)*Math.PI/180;return {x:c0.x+Rg*Math.cos(t),y:c0.y+Rg*Math.sin(t)}};
+    // Le centre : le talent initial du palier.
+    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre');if(x.centre===initial)el.classList.add('racine');
+     if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
+    else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
+    ordre.forEach(([ligne,t],k)=>{const p=surCercle(k);
+     if(!t){pose(place(ligne,g,ligne),p,ligne,x);return}
+     let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne)}else{el=noeudVide(t,c,false);
+      if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',remplace:t.id})}}
+     if(mj)surDepot(el,g,ligne,t);pose(el,p,ligne,x)})});
+   const sec=document.createElement('section');sec.className='arbre-groupe arbre-groupe-paliers';sec.append(roue);plan.append(sec);
+   col.append(plan);return col}
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
    const cache=limite&&g>limite;if(cache&&!limiteVue)return;if(cache)sec.classList.add('hors-limite-mj');
    if(a&&(Number(a.level)||1)<g)sec.classList.add('groupe-ferme');

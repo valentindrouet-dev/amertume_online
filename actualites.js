@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.111","d":"2026-10-27","t":"Arbre de talents en paliers"},
 {"v":"1.110","d":"2026-10-27","t":"Cartes : code court dans la liste, pastille à gauche"},
 {"v":"1.109","d":"2026-10-27","t":"Progression enregistrée par carte"},
 {"v":"1.108","d":"2026-10-27","t":"Cartes PvP"},

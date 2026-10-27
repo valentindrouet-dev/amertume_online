@@ -3776,3 +3776,11 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 /* v1.110 : le code d'une carte, court, à côté de son nom ; la pastille de progression à gauche du nom dans la liste. */
 .maps-bar .map-code{display:flex;flex-direction:column;font-size:13px;color:var(--muted)}.maps-bar .map-code input{width:120px}
 .map-row .map-sauve{margin:0 6px 0 0}
+/* v1.111 — Les paliers : le chemin doré de centre en centre, sous les ronds ; la pastille du niveau posée dessus. */
+.arbre-roue.arbre-paliers{margin:0 auto}
+.arbre-roue>.arbre-chemin-paliers{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.arbre-chemin-paliers .chemin-palier{stroke:#c99a3c;stroke-width:14;stroke-linecap:round;opacity:.55}
+.arbre-chemin-paliers .chemin-palier.suite{stroke-width:10;stroke-dasharray:2 18;opacity:.5}
+.arbre-roue>.pastille-palier{position:absolute;transform:translate(-50%,-50%);z-index:1;white-space:nowrap}
+.arbre-roue>.pastille-palier.fermee{opacity:.6}
+.arbre-groupe.arbre-groupe-paliers{padding:0}
