@@ -6667,7 +6667,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       talent choisi. Les segments et les billes sont modelés : fond dégradé, liseré sombre, reflet clair ; vides, ils gardent
       le fond du panneau et le liseré de leur couleur. */
    // v1.002 : les segments, à l'échelle de leur rond (11 px × 29 px sur le talent initial de 100 px), mêmes proportions à 1, 2, 3 ou 4. Les billes, à 8 px du rond.
-   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,kE=D[cls]/100,JOUR=Math.max(9,12*kE),ep=11*kE,rb={centre:9,gros:8,moyen:6.5}[cls];
+   // v1.120 : tous les arcs à la taille de ceux des moyens ronds, à 3 px du rond (la sélection n'ajoute plus de cercle autour).
+   const NS='http://www.w3.org/2000/svg',Ro=D[cls]/2+3,kE=D.moyen/100,JOUR=3,ep=11*kE,rb={centre:9,gros:8,moyen:6.5}[cls];
    // v1.003 : l'écart du rond suit aussi l'échelle (12 px sur le talent initial, 9 px au moins : le cercle d'or du talent choisi passe dessous).
    const rA=Ro+JOUR+ep/2,rB=Ro+8+rb,S=2*(Math.max(rA+ep/2,rB+rb)+4),c=S/2,uid='sat'+(++satN);
    const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-satellites');svg.setAttribute('viewBox','0 0 '+S+' '+S);svg.style.width=svg.style.height=S+'px';
@@ -6743,15 +6744,22 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(ARBRE_PALIERS){
    const S60=Math.sqrt(3)/2,rad=Math.PI/180,PAS=2.5*(135+146)/2,DX=(PAS+135)/2,DY=(PAS-135)*S60;
    // L'axe libre d'un palier de droite : 0° ; le chemin y vient à ±CH ; un pas, CH / 2,5. Le niveau 1 se tourne vers l'opposé du chemin.
-   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:152,moyen:141},n:{gros:148,moyen:137}};
+   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:151,moyen:140},n:{gros:146,moyen:135}};
+   /* v1.120 : nouvelle disposition du MJ — chaque palier, niveau 1 compris, porte 2 gros à un demi-pas de son axe et 2 moyens à
+      un pas et demi ; le pas vaut le tiers de l'angle du chemin (le chemin passe à trois pas). L'axe du niveau 1 : l'opposé de son chemin. */
+   const PS=CH/3;
    // v1.118 : les arcs des talents initiaux sont du côté de ceux de leur palier ; les gros s'écartent pour les laisser passer.
    const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
     const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
     return {g,cache,centre,gros,moyens}}).filter(Boolean);
    const dernier=groupes.length-1,suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
    // Les places de chaque palier, en degrés (0 : à droite, 90 : en bas) ; de gauche à droite, de haut en bas.
-   const gabarit=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PA,AX1+PA],moyen:[AX1-2*PA,AX1,AX1+2*PA],r:RAYONS[1]};
-    const m=v=>i%2?180-v:v;return {gros:[m(-PA/2),m(PA/2)],moyen:[m(-1.5*PA),m(1.5*PA)],r:RAYONS.n}};
+   const gabarit=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PS/2,AX1+PS/2],moyen:[AX1-1.5*PS,AX1+1.5*PS],r:RAYONS[1]};
+    const m=v=>i%2?180-v:v;return {gros:[m(-PS/2),m(PS/2)],moyen:[m(-1.5*PS),m(1.5*PS)],r:RAYONS.n}};
+   // Les gabarits d'avant, pour retrouver où chaque rond se voyait : v1.117 (et v1.118), v1.114.
+   const gabarit117=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PA,AX1+PA],moyen:[AX1-2*PA,AX1,AX1+2*PA],r:{gros:152,moyen:141}};
+    const m=v=>i%2?180-v:v;return {gros:[m(-PA/2),m(PA/2)],moyen:[m(-1.5*PA),m(1.5*PA)],r:{gros:148,moyen:137}}};
+   const gabarit114=(i,g)=>({...(g===1&&i===0?{gros:[240,0],moyen:[300,180,60]}:{gros:[180,0],moyen:i%2?[240,120]:[300,60]}),r:{gros:146,moyen:135}});
    const autour=(c0,ang,ligne,G)=>{const r=G.r[ligne];return {x:c0.x+r*Math.cos(ang*rad),y:c0.y+r*Math.sin(ang*rad)}};
    // Ce qui dépasse le gabarit (un arbre d'avant) attend plus loin, du côté extérieur, que le MJ le range.
    const DEHORS=[-30,30,0,-60,60],dehors=(q,i,k)=>{const a=DEHORS[k%5],r=2*RAYONS.n.moyen+Math.floor(k/5)*RAYONS.n.moyen,v=(i%2?180-a:a)*rad;return {x:q.c0.x+r*Math.cos(v),y:q.c0.y+r*Math.sin(v)}};
@@ -6764,11 +6772,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      l.forEach(t=>{const k=Number(t.ordreArbre);if(Number.isInteger(k)&&k>=0&&k<n&&!T[k])T[k]=t;else attente.push(t)});
      attente.forEach(t=>{const k=T.indexOf(null);if(k>=0)T[k]=t;else hors.push([ligne,t])});P[ligne]=T});
     return {...x,c0,G,P,hors}});
-   /* v1.117 : une fois par arbre, chez le MJ, chaque rond prend la place nouvelle la plus proche de celle où il se voyait (sa place
-      libre, ou sa place de l'ancien gabarit) ; le placement libre se décoche : la disposition est devenue le gabarit. */
-   {const cle='gabarit-117:'+classe;if(mj&&classe&&Array.isArray(catalog.semisForge)&&!catalog.semisForge.includes(cle)){
-    const ancien=(i,g)=>g===1&&i===0?{gros:[240,0],moyen:[300,180,60]}:{gros:[180,0],moyen:i%2?[240,120]:[300,60]},R0={gros:146,moyen:135};
-    plans.forEach((q,i)=>{const A=ancien(i,q.g);['gros','moyen'].forEach(l=>{const ts=[...q.P[l].filter(Boolean),...q.hors.filter(h=>h[0]===l).map(h=>h[1])];
+   /* v1.117, v1.120 : une fois par arbre et par gabarit, chez le MJ, chaque rond prend la place nouvelle la plus proche de celle où
+      il se voyait (sa place libre, ou sa place de l'ancien gabarit) ; le placement libre se décoche : la disposition est devenue le gabarit. */
+   {const cle='gabarit-120:'+classe;if(mj&&classe&&Array.isArray(catalog.semisForge)&&!catalog.semisForge.includes(cle)){
+    const ancien=catalog.semisForge.includes('gabarit-117:'+classe)?gabarit117:gabarit114;
+    plans.forEach((q,i)=>{const A=ancien(i,q.g),R0=A.r;['gros','moyen'].forEach(l=>{const ts=[...q.P[l].filter(Boolean),...q.hors.filter(h=>h[0]===l).map(h=>h[1])];
      const vu=t=>{if(enLibre&&manuel(t))return {x:t.orbite.dx,y:t.orbite.dy};const k=Number(t.ordreArbre),a=A[l][k];return Number.isInteger(k)&&a!==undefined?{x:R0[l]*Math.cos(a*rad),y:R0[l]*Math.sin(a*rad)}:null};
      const paires=[];ts.forEach(t=>{const v=vu(t);q.G[l].forEach((a,k)=>{const p=autour({x:0,y:0},a,l,q.G);paires.push([v?Math.hypot(p.x-v.x,p.y-v.y):1e6+k,t,k])})});
      paires.sort((u,v)=>u[0]-v[0]);const T=new Array(q.G[l].length).fill(null),pris=new Set();paires.forEach(([,t,k])=>{if(!T[k]&&!pris.has(t)){T[k]=t;pris.add(t)}});

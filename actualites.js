@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.120","d":"2026-10-27","t":"Arbre de talents : disposition, arcs et sélection"},
 {"v":"1.119","d":"2026-10-27","t":"Arbre de talents : aura des paliers"},
 {"v":"1.118","d":"2026-10-27","t":"Arbre de talents : arcs des talents initiaux du côté de leur palier"},
 {"v":"1.117","d":"2026-10-27","t":"Arbre de talents : disposition officielle"},
