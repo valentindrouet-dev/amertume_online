@@ -3015,7 +3015,7 @@ function applyHeal(a,montant){if(a&&a.hero===true&&a.vie!==undefined&&a.vie!==nu
    Une saisie vide, illisible ou d'un autre monde ne détruit rien : elle revient à
    la valeur d'avant, ou s'arrête à la borne. La virgule vaut le point : on tape
    comme on écrit. */
-const STAT_LIMITS={hp:[0,99999],max:[1,99999],def:[0,6],dmg:[0,999],xp:[0,999999],
+const STAT_LIMITS={hp:[0,99999],max:[1,99999],def:[0,6],dmg:[0,999],xp:[0,9999999],
  level:[1,20],endu:[1,999],pvBonus:[-9999,9999],skill:[0,30],
  vie:[0,999,true],vieMax:[1,999,true],
  pv:[1,99999],damage:[0,999]};   // pv et damage : les noms du bestiaire.
@@ -3090,10 +3090,12 @@ function conversionDegats(texte,combien=6){const dnd=lireDegatsDnd(texte);if(dnd
  const r={moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),propositions:pris.sort(tri)};
  if(CONVERSIONS_VUES.size>200)CONVERSIONS_VUES.clear();CONVERSIONS_VUES.set(cle,r);
  return {...dnd,...r,propositions:r.propositions.map(p=>({...p,des:{...p.des}}))}}
+// v1.123 : 40 niveaux ; du 21 au 40, chaque marche grandit de 5 000 XP (55 000, 60 000… 150 000).
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
+for(let k=1;k<=20;k++)NIVEAUX_XP.push(NIVEAUX_XP[NIVEAUX_XP.length-1]+50000+5000*k);
 /* Les paliers d'XP se règlent à la main, par le MJ : la partie les porte (catalog.niveauxXp), autant de
    niveaux que d'origine, le premier à 0, chacun au-dessus du précédent. Sans réglage valable, ceux d'origine. */
-const XP_PALIER_MAX=999999;
+const XP_PALIER_MAX=9999999;
 function niveauxXpValides(l){return Array.isArray(l)&&l.length===NIVEAUX_XP.length&&l[0]===0
  &&l.every((v,i)=>Number.isInteger(v)&&v>=0&&v<=XP_PALIER_MAX&&(i===0||v>l[i-1]))}
 function seuilsXp(){const l=typeof catalog!=='undefined'&&catalog?catalog.niveauxXp:null;return niveauxXpValides(l)?l:NIVEAUX_XP}

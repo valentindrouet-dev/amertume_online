@@ -3823,3 +3823,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-chemin-paliers .aura-palier.gris{stroke:#7d7a74;stroke-opacity:.3}
 .arbre-chemin-paliers .chemin-palier.cran{stroke-linecap:butt}
 .arbre-chemin-paliers .chemin-palier.gris{stroke:#7d7a74;opacity:.4}
+/* v1.123 : un talent fermé ou trop cher — fond gris de l'aura, un peu plus clair ; son contour et celui de ses arcs, d'une même couleur. */
+.arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-rond{background:color-mix(in srgb,#7d7a74 24%,var(--panel));border-color:var(--line-strong)}
+.arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-satellites{filter:none;opacity:1}
+.arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-satellites .sat-arc{stroke:var(--line-strong)!important;opacity:1;filter:none}

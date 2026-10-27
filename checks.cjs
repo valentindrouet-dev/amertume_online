@@ -948,8 +948,8 @@ assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20
  const a1={id:'a1',effet:'x',chemin:ch(1)},a2={id:'a2',effet:'y',chemin:ch(2)},a3={id:'a3',effet:'y',chemin:ch(2),remplacePrecedente:true};
  assert.deepEqual(sansAmeliorationsRemplacees([a1,a2]).map(t=>t.id),['a1','a2']);assert.deepEqual(sansAmeliorationsRemplacees([a1,a3]).map(t=>t.id),['a3']);}
 // Le niveau d'un aventurier suit son XP, palier par palier.
-{const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,20);
- assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,20]);
+{const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,40);
+ assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,28]);
  const h={hero:true,xp:0,level:1};writeStat(h,'xp','14000');assert.equal(h.level,6);
  const m={hero:false,xp:0,level:3};writeStat(m,'xp','900');assert.equal(m.level,3,'un adversaire garde le niveau qu’on lui donne');}
 assert.equal(readStat('inconnue','5',2),2);                    // Une clé qui n'existe pas ne s'invente pas.
