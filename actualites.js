@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.114","d":"2026-10-27","t":"Arbre de talents : paliers 1, 5, 10, 15, 20 en gabarit fixe"},
 {"v":"1.113","d":"2026-10-27","t":"Bandeau de mise à jour au-dessus des fenêtres ; pas de pointillés au-dessus du premier palier"},
 {"v":"1.112","d":"2026-10-27","t":"Arbre : placement libre des ronds autour des centres"},
 {"v":"1.111","d":"2026-10-27","t":"Arbre de talents en paliers"},

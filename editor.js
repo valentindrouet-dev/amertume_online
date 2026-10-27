@@ -733,6 +733,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  {const l=c.limitesArbres&&typeof c.limitesArbres==='object'&&!Array.isArray(c.limitesArbres)?c.limitesArbres:{};c.limitesArbres={};
   Object.entries(l).slice(0,60).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(typeof k==='string'&&k&&n>=(k==='*'?1:2)&&n<=20)c.limitesArbres[k.slice(0,60)]=n});
   if(!Object.keys(c.limitesArbres).length)delete c.limitesArbres}
+ // v1.114 : les paliers passent à 1, 5, 10, 15, 20 — les talents des niveaux 4, 7 et 10 suivent au 5, au 10 et au 15, la limite des joueurs aussi.
+ if(!c.semisForge.includes('paliers-5')){const M={4:5,7:10,10:15};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
+  if(c.limitesArbres)Object.keys(c.limitesArbres).forEach(k=>{const n=M[c.limitesArbres[k]];if(n)c.limitesArbres[k]=n});c.semisForge.push('paliers-5')}
  // L'icône et le texte des actions spéciales.
  c.actionsSpeciales=normaliseActionsSpeciales(c.actionsSpeciales);if(!Object.keys(c.actionsSpeciales).length)delete c.actionsSpeciales;
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
@@ -5913,10 +5916,11 @@ const ARBRE_V2=true;let arbreDetailId=null;
 /* v0.972 — L'arbre en groupes de niveau : Niveau 1, 4, 7, 10, sans lignes. Dans chaque groupe, les gros ronds (Actions, Réactions,
    Mouvements) sur une première ligne, quatre au plus ; les ronds moyens (Actions bonus, Passifs, Maîtrises, Critiques) dessous,
    six au plus. Le talent initial ouvre l'arbre, seul, en gros rond. Un talent s'apprend dès le niveau de son groupe. */
-const ARBRE_V3=true,GROUPES_ARBRE=[1,4,7,10],MAX_LIGNE_ARBRE={gros:3,moyen:6};
+// v1.114 : les paliers, tous les cinq niveaux.
+const ARBRE_V3=true,GROUPES_ARBRE=[1,5,10,15,20],MAX_LIGNE_ARBRE={gros:3,moyen:6};
 // v0.9997 : un rond de remplissage garde la place où le MJ l'a posé ; sinon sa couleur la dit.
 const ligneArbreDe=t=>estRemplissage(t)?(['gros','moyen'].includes(t.ligneArbre)?t.ligneArbre:['act','reac','mvt'].includes(t.couleur)?'gros':'moyen'):['act','reac','mvt'].includes(talentType(t)[0])?'gros':'moyen';
-const groupeDeNiveau=n=>n>=10?10:n>=7?7:n>=4?4:1;
+const groupeDeNiveau=n=>GROUPES_ARBRE.filter(g=>g<=n).pop()||1;
 // Le groupe d'un talent : le sien, sinon d'après le niveau que ses lignes lui demandaient — le plus petit niveau qui l'atteint.
 function niveauxParLignes(liste){const L=(liste||[]).filter(Boolean),out=new Map(),file=[];
  departsDe(L).forEach(id=>{out.set(id,1);file.push(id)});
@@ -6602,7 +6606,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const centreDe=g=>g===1?initial:L.find(t=>t.centreGroupe===true&&t!==initial&&groupeArbre(t,c.liste)===g)||null;
   const anneau=(g,ligne)=>L.filter(t=>t!==initial&&!t.centreGroupe&&groupeArbre(t,c.liste)===g&&ligneArbreDe(t)===ligne).sort((u,v)=>ordreArbre(u)-ordreArbre(v));
   // Ranger « t » au groupe g : dans un demi-cercle (ligne), ou au centre (ligne « centre ») ; « sur » : le talent qu'il remplace.
-  const deplace=(id,g,ligne,sur)=>{const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||t===initial||t===sur)return false;
+  const deplace=(id,g,ligne,sur,k)=>{const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||t===initial||t===sur)return false;
    if(!c.liste.includes(t)){note('Glisse ce talent depuis cet arbre, ou range-le d’abord dans cette colonne.');return false}
    // Au niveau 1, le centre est le talent initial de la classe : il s'y pose comme dans l'ancien gros rond.
    if(ligne==='centre'){if(g===1)return placerTalent(t.id,{famille:c.famille,flottant:true});const ancien=centreDe(g);
@@ -6611,25 +6615,27 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(ligneArbreDe(t)!==ligne&&!(t.centreGroupe&&sur&&ligneArbreDe(sur)===ligneArbreDe(t))){note(ligne==='gros'?'Ces places reçoivent les Actions, Réactions et Mouvements.':'Ces places reçoivent les Actions bonus, Passifs, Maîtrises et Critiques.');return false}
    if(sur){// Échange : chacun prend la place de l'autre, centre compris.
     const gt=groupeArbre(t,c.liste),ot=ordreArbre(t),ct=t.centreGroupe===true;t.groupe=groupeArbre(sur,c.liste);t.ordreArbre=ordreArbre(sur);
-    if(sur.centreGroupe)t.centreGroupe=true;else delete t.centreGroupe;sur.groupe=gt;sur.ordreArbre=ot;if(ct)sur.centreGroupe=true;else delete sur.centreGroupe;return true}
+    if(sur.centreGroupe)t.centreGroupe=true;else delete t.centreGroupe;sur.groupe=gt;sur.ordreArbre=ot;if(ct)sur.centreGroupe=true;else delete sur.centreGroupe;delete t.orbite;delete sur.orbite;return true}
+   // v1.114 : une place du gabarit des paliers, à son rang.
+   if(Number.isInteger(k)){delete t.centreGroupe;delete t.orbite;t.groupe=g;t.ordreArbre=k;return true}
    const l=anneau(g,ligne).filter(x=>x!==t);
    if(l.length>=MAX_LIGNE_ARBRE[ligne]){note('Ces places sont pleines : dépose le talent sur un autre pour les échanger.');return false}
    delete t.centreGroupe;t.groupe=g;t.ordreArbre=l.length?ordreArbre(l[l.length-1])+1:0;return true};
   /* Le dépôt se lit sur la roue, à la capture : avant tout autre écouteur des ronds (l'ancien gros rond du talent de classe
      prenait le dépôt pour lui). Chaque rond ou place porte sa destination. */
-  const surDepot=(el,g,ligne,sur)=>{el._depot={g,ligne,sur}};
+  const surDepot=(el,g,ligne,sur,k)=>{el._depot={g,ligne,sur,k}};
   const ecouteRoue=roue=>{const cible=e=>{const x=e.target&&e.target.closest&&e.target.closest('.arbre-roue>*');return x&&x._depot?x:null};
    roue.addEventListener('dragover',e=>{const x=arbreGlisse&&cible(e);roue.querySelectorAll('.survol').forEach(z=>{if(z!==x)z.classList.remove('survol')});if(x){e.preventDefault();e.stopPropagation();x.classList.add('survol')}},true);
    roue.addEventListener('dragleave',e=>{if(!roue.contains(e.relatedTarget))roue.querySelectorAll('.survol').forEach(z=>z.classList.remove('survol'))},true);
    roue.addEventListener('drop',e=>{const x=cible(e);roue.querySelectorAll('.survol').forEach(z=>z.classList.remove('survol'));if(!x||!arbreGlisse)return;e.preventDefault();e.stopPropagation();
-    const id=arbreGlisse,{g,ligne,sur}=x._depot;arbreGlisse=null;if(deplace(id,g,ligne,sur))arbreChange()},true)};
+    const id=arbreGlisse,{g,ligne,sur,k}=x._depot;arbreGlisse=null;if(deplace(id,g,ligne,sur,k))arbreChange()},true)};
   // Une case libre de la grille, pour un talent créé ici : la grille ancienne garde ses cases, la roue ne s'en sert pas.
   const caseLibreGrille=()=>{const pris=new Set(L.map(t=>{const p=posDe(t);return p?p.x+','+p.y:''}));for(let y=0;y<400;y++)for(let x=0;x<8;x++)if(!pris.has(x+','+y))return {x,y};return {x:0,y:0}};
-  const creeIci=(g,ligne)=>{if(ligne==='centre'&&g===1){ajouterDansArbre({famille:c.famille,voie:c.voie,flottant:true,type:'mait'});return}const l=ligne==='centre'?[]:anneau(g,ligne);
-   ajouterDansArbre({famille:c.famille,voie:c.voie,pos:caseLibreGrille(),groupe:g,ordreArbre:l.length?ordreArbre(l[l.length-1])+1:0,...(ligne==='centre'?{centreGroupe:true}:{}),type:ligne==='moyen'?'pass':'act'})};
-  const place=(cls,g,ligne)=>{const v=document.createElement('button');v.type='button';v.className='arbre-place-groupe '+cls;
+  const creeIci=(g,ligne,k)=>{if(ligne==='centre'&&g===1){ajouterDansArbre({famille:c.famille,voie:c.voie,flottant:true,type:'mait'});return}const l=ligne==='centre'?[]:anneau(g,ligne);
+   ajouterDansArbre({famille:c.famille,voie:c.voie,pos:caseLibreGrille(),groupe:g,ordreArbre:Number.isInteger(k)?k:l.length?ordreArbre(l[l.length-1])+1:0,...(ligne==='centre'?{centreGroupe:true}:{}),type:ligne==='moyen'?'pass':'act'})};
+  const place=(cls,g,ligne,k)=>{const v=document.createElement('button');v.type='button';v.className='arbre-place-groupe '+cls;
    v.setAttribute('aria-label',ligne==='centre'?'Talent initial du niveau '+g:ligne==='gros'?'Ajouter une Action, une Réaction ou un Mouvement':'Ajouter une Action bonus ou un Passif');
-   v.onclick=()=>creeIci(g,ligne);surDepot(v,g,ligne,null);return v};
+   v.onclick=()=>creeIci(g,ligne,k);surDepot(v,g,ligne,null,k);return v};
   /* v0.9996 : chaque niveau en deux blocs. À gauche, un carré : le talent initial en haut à gauche, les gros ronds (Actions,
      Mouvements, Réactions, 3 au plus) dans les trois autres coins. À droite, deux colonnes de moyens ronds (Actions bonus,
      Passifs…), 6 au plus, centrées en hauteur sur le carré : la hauteur d'un niveau ne change pas. Ce qui dépasse (un arbre
@@ -6711,19 +6717,39 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(carac==='comp')teinteCompetence(Math.max(0,Math.min(7,Number(p.comp)||0)),teinte);else teinte(carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150');
      svg.append(b);bulle(b,x)})}
    const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
-  /* v1.111 — Les paliers, comme dans Diablo IV : chaque niveau a son talent initial au centre ; ses gros ronds (Actions, Réactions,
-     Mouvements) et ses moyens (Actions bonus, Passifs…) gravitent autour, sur un cercle, en laissant libre le passage du chemin.
-     Un chemin doré relie les centres, d'un palier au suivant, en zigzag ; la pastille du niveau se pose dessus.
+  /* v1.114 — Le gabarit des paliers. Autour de chaque talent initial, six directions à 60° : le chemin en prend une ou deux,
+     les ronds le reste, à places fixes. Niveau 1 : 2 gros, 3 moyens. Ensuite : un gros à gauche, un à droite ; un moyen
+     au-dessus, un au-dessous, du côté que le chemin laisse libre. Les gros un peu plus loin que les moyens : le jour entre le
+     centre et chacun reste le même. D'un centre au suivant, deux rayons et demi, à 60° de l'horizontale.
      ARBRE_PALIERS à false rend la disposition en colonnes. */
   if(ARBRE_PALIERS){
-   // Le rayon de chaque cercle suit le nombre de ronds qu'il porte (80 px chacun), de 150 à 190 px : aucun ne touche son voisin.
-   const R=150,RMAX=190,DX=240,STEP=350,EXT=RMAX+D.gros/2+30,XL=MARGE+EXT,XR=XL+DX,TOP=MARGE+R+40,GAP=28;
+   const RM=135,RB=RM+(D.gros-D.moyen)/2,PAS=2.5*(RM+RB)/2,S60=Math.sqrt(3)/2,rad=Math.PI/180;
    const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
     const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
     return {g,cache,centre,gros,moyens}}).filter(Boolean);
-   const pos=groupes.map((x,i)=>({x:i%2?XL:XR,y:TOP+i*STEP})),dernier=groupes.length-1;
-   const suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
-   const W=XR+EXT+MARGE,H=(dernier>=0?pos[dernier].y:TOP)+EXT+MARGE;
+   const dernier=groupes.length-1,suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
+   // Les places de chaque palier, en degrés (0 : à droite, 90 : en bas) ; de gauche à droite, de haut en bas.
+   const gabarit=(i,g)=>g===1&&i===0?{gros:[240,0],moyen:[300,180,60]}:{gros:[180,0],moyen:i%2?[240,120]:[300,60]};
+   const autour=(c0,ang,ligne)=>{const r=ligne==='gros'?RB:RM;return {x:c0.x+r*Math.cos(ang*rad),y:c0.y+r*Math.sin(ang*rad)}};
+   // Ce qui dépasse le gabarit (un arbre d'avant) attend plus loin, du côté extérieur, que le MJ le range.
+   const DEHORS=[-30,30,0,-60,60],dehors=(q,i,k)=>{const a=DEHORS[k%5],r=2*RM+Math.floor(k/5)*RM,v=(i%2?180-a:a)*rad;return {x:q.c0.x+r*Math.cos(v),y:q.c0.y+r*Math.sin(v)}};
+   // v1.112 : la place que le MJ avait choisie à la main donne la place du gabarit la plus proche.
+   const manuel=t=>!!(t&&t.orbite&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy));
+   const plans=groupes.map((x,i)=>{const c0={x:i%2?-PAS/2:0,y:i*PAS*S60},G=gabarit(i,x.g),P={},hors=[];
+    ['gros','moyen'].forEach(ligne=>{const n=G[ligne].length,T=new Array(n).fill(null),attente=[],l=ligne==='gros'?x.gros:x.moyens;
+     l.filter(manuel).forEach(t=>{let k=-1,best=Infinity;G[ligne].forEach((v,j)=>{if(T[j])return;const p=autour({x:0,y:0},v,ligne),d=Math.hypot(p.x-t.orbite.dx,p.y-t.orbite.dy);if(d<best){best=d;k=j}});if(k>=0)T[k]=t;else attente.push(t)});
+     l.filter(t=>!manuel(t)).forEach(t=>{const k=Number(t.ordreArbre);if(Number.isInteger(k)&&k>=0&&k<n&&!T[k])T[k]=t;else attente.push(t)});
+     attente.forEach(t=>{const k=T.indexOf(null);if(k>=0)T[k]=t;else hors.push([ligne,t])});P[ligne]=T});
+    return {...x,c0,G,P,hors}});
+   // Chez le MJ, la place se fixe : son rang dans le gabarit s'écrit, la place libre d'avant s'oublie.
+   if(mj){let ch=false;plans.forEach(q=>['gros','moyen'].forEach(l=>q.P[l].forEach((t,k)=>{if(!t)return;if(t.ordreArbre!==k){t.ordreArbre=k;ch=true}if(t.orbite){delete t.orbite;ch=true}})));if(ch)scheduleSave()}
+   const haut1=q=>({x:q.c0.x,y:q.c0.y-(RB+RM)/2}),fin=(q,i)=>({x:q.c0.x+(i%2?PAS/4:-PAS/4),y:q.c0.y+PAS*S60/2});
+   // Le cadre : tout ce qui se pose, arcs des améliorations compris (à gauche des ronds).
+   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;const tient=(p,r,gauche=0)=>{x0=Math.min(x0,p.x-r-gauche);y0=Math.min(y0,p.y-r);x1=Math.max(x1,p.x+r);y1=Math.max(y1,p.y+r)};
+   plans.forEach((q,i)=>{tient(q.c0,D.centre/2+6,26);if(!i)tient(haut1(q),28);if(i===dernier&&suivant)tient(fin(q,i),28);
+    ['gros','moyen'].forEach(l=>q.G[l].forEach((v,k)=>{if(q.P[l][k]||mj)tient(autour(q.c0,v,l),D[l]/2+6,22)}));q.hors.forEach(([l],k)=>tient(dehors(q,i,k),D[l]/2+6,22))});
+   if(!plans.length){x0=y0=0;x1=y1=D.centre}
+   const sh=p=>({x:p.x-x0+MARGE,y:p.y-y0+MARGE}),W=x1-x0+2*MARGE,H=y1-y0+2*MARGE;
    const roue=document.createElement('div');roue.className='arbre-roue arbre-paliers';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-chemin-paliers');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';roue.append(svg);
    // Le chemin s'arrête au bord des centres : il ne passe pas sous eux.
@@ -6731,51 +6757,22 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const pastille=(g,x,y,ferme)=>{const b=document.createElement('span');b.className='arbre-niveau-pastille pastille-palier'+(ferme?' fermee':'');
     const s=document.createElement('small');s.textContent='Niv.';const n=document.createElement('b');n.textContent=String(g);b.append(s,n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
    const niveauA=a?(Number(a.level)||1):Infinity;
-   /* v1.112 : chez le MJ, un rond se prend et se pose où l'on veut autour du centre de son palier — près d'un autre centre, il change
-      de palier ; lâché sur un centre, il reprend sa place sur le cercle. Un clic sans bouger l'ouvre, comme avant. */
-   const libre=(el,t,ligne,gCur)=>{const rond=el.querySelector('.arbre-rond')||el;el.draggable=false;rond.draggable=false;
-    rond.addEventListener('pointerdown',e=>{if(e.button!==0||e.altKey||e.shiftKey||e.ctrlKey||e.metaKey)return;
-     const echelle=(roue.getBoundingClientRect().width/roue.offsetWidth)||1,x0=e.clientX,y0=e.clientY,l0=parseFloat(el.style.left),t0=parseFloat(el.style.top);let bouge=false;
-     const mv=ev=>{const dx=(ev.clientX-x0)/echelle,dy=(ev.clientY-y0)/echelle;if(!bouge&&Math.hypot(dx,dy)<5)return;
-      if(!bouge){bouge=true;el.classList.add('tire-libre');if(typeof fermerBulle==='function')fermerBulle()}el.style.left=(l0+dx)+'px';el.style.top=(t0+dy)+'px'};
-     const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);if(!bouge)return;
-      const stop=c=>{c.stopPropagation();c.preventDefault()};el.addEventListener('click',stop,{capture:true,once:true});setTimeout(()=>el.removeEventListener('click',stop,{capture:true}),60);
-      const px=parseFloat(el.style.left),py=parseFloat(el.style.top);let k=0,best=Infinity;pos.forEach((q,i)=>{const d=Math.hypot(px-q.x,py-q.y);if(d<best){best=d;k=i}});
-      const dx=px-pos[k].x,dy=py-pos[k].y,d=Math.hypot(dx,dy);
-      if(groupes[k].g!==gCur&&!deplace(t.id,groupes[k].g,ligne,null)){renderArbres();return}
-      if(d<D.centre/2+10)delete t.orbite;else{const lim=RMAX+80,f=d>lim?lim/d:1;t.orbite={dx:Math.round(dx*f),dy:Math.round(dy*f)}}
-      arbreChange()};
-     addEventListener('pointermove',mv);addEventListener('pointerup',up)})};
    const pose=(el,p,cls,x)=>{el.classList.add('roue-'+cls);if(x.cache)el.classList.add('hors-limite-mj');el.style.left=p.x+'px';el.style.top=p.y+'px';roue.append(el)};
-   groupes.forEach((x,i)=>{const c0=pos[i],g=x.g;
-    // Le chemin : d'en haut vers le premier centre, puis de centre en centre ; après le dernier, en pointillés vers le niveau suivant.
-    const avant=i?pos[i-1]:{x:c0.x,y:MARGE},apres=i<dernier?pos[i+1]:suivant?{x:c0.x+(i%2?DX:-DX)/2,y:c0.y+STEP/2}:null;
-    const RC=D.centre/2+6;if(i)trait(avant.x,avant.y,c0.x,c0.y,false,RC,RC);pastille(g,i?(avant.x+c0.x)/2:c0.x,i?(avant.y+c0.y)/2:c0.y-R,niveauA<g);
-    if(apres&&i===dernier){trait(c0.x,c0.y,apres.x,apres.y,true,RC,0);pastille(suivant,apres.x,apres.y,niveauA<suivant)}
-    // Les ronds autour du centre : le cercle moins le passage du chemin, à l'arrivée et au départ.
-    const ang=p=>Math.atan2(p.y-c0.y,p.x-c0.x)*180/Math.PI,interdits=[ang(avant),...(apres?[ang(apres)]:[])];
-    const vG=mj&&x.gros.length<MAX_LIGNE_ARBRE.gros,vM=mj&&x.moyens.length<MAX_LIGNE_ARBRE.moyen;
-    // v1.112 : un rond que le MJ a placé à la main garde sa place ; les autres se partagent le cercle.
-    const manuel=t=>!!(t&&t.orbite&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy));
-    const manuels=[...x.gros.filter(manuel).map(t=>['gros',t]),...x.moyens.filter(manuel).map(t=>['moyen',t])];
-    const grosL=[...x.gros.filter(t=>!manuel(t)).map(t=>['gros',t]),...(vG?[['gros',null]]:[])],moyL=[...x.moyens.filter(t=>!manuel(t)).map(t=>['moyen',t]),...(vM?[['moyen',null]]:[])],K=grosL.length+moyL.length;
-    // Les gros, répartis parmi les moyens : aucun ne se touche.
-    const ordre=[];{const places=new Set(grosL.map((_,j)=>Math.floor((j+.5)*K/Math.max(1,grosL.length))));let gi=0,mi=0;for(let k=0;k<K;k++)ordre.push(places.has(k)&&gi<grosL.length?grosL[gi++]:mi<moyL.length?moyL[mi++]:grosL[gi++])}
-    // Les arcs libres, du chemin d'arrivée au suivant, dans le sens des aiguilles.
-    const f=interdits.map(v=>(v+360)%360).sort((u,v)=>u-v),libres=[];
-    if(f.length===1)libres.push([f[0]+GAP,f[0]+360-GAP]);else f.forEach((v,k)=>{const w=k+1<f.length?f[k+1]:f[0]+360;if(w-v>2*GAP)libres.push([v+GAP,w-GAP])});
-    const total=libres.reduce((s0,[u,v])=>s0+(v-u),0)||360,pas=total/Math.max(1,K),Rg=Math.max(R,Math.min(RMAX,K*80/(total*Math.PI/180)));
-    const angle=k=>{let d=(k+.5)*pas;for(const [u,v] of libres){if(d<=v-u)return u+d;d-=v-u}return 0};
-    const surCercle=k=>{const t=angle(k)*Math.PI/180;return {x:c0.x+Rg*Math.cos(t),y:c0.y+Rg*Math.sin(t)}};
+   plans.forEach((x,i)=>{const g=x.g,c0=sh(x.c0),RC=D.centre/2+6;
+    // Le chemin : de centre en centre, la pastille du niveau à mi-chemin ; au premier, au-dessus ; après le dernier, en pointillés vers le niveau suivant.
+    if(i){const avant=sh(plans[i-1].c0);trait(avant.x,avant.y,c0.x,c0.y,false,RC,RC);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
+    else{const p=sh(haut1(x));pastille(g,p.x,p.y,niveauA<g)}
+    if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true,RC,0);pastille(suivant,p.x,p.y,niveauA<suivant)}
     // Le centre : le talent initial du palier.
     if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre');if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
     else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
-    [...ordre.map((e,k)=>[...e,surCercle(k)]),...manuels.map(([l,t])=>[l,t,{x:c0.x+t.orbite.dx,y:c0.y+t.orbite.dy}])].forEach(([ligne,t,p])=>{
-     if(!t){pose(place(ligne,g,ligne),p,ligne,x);return}
-     let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne)}else{el=noeudVide(t,c,false);
+    const rond=(ligne,t,p)=>{let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne)}else{el=noeudVide(t,c,false);
       if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',remplace:t.id})}}
-     if(mj){surDepot(el,g,ligne,t);libre(el,t,ligne,g)}pose(el,p,ligne,x)})});
+     if(mj)surDepot(el,g,ligne,t);pose(el,p,ligne,x)};
+    ['gros','moyen'].forEach(ligne=>x.G[ligne].forEach((v,k)=>{const t=x.P[ligne][k],p=sh(autour(x.c0,v,ligne));
+     if(t)rond(ligne,t,p);else if(mj)pose(place(ligne,g,ligne,k),p,ligne,x)}));
+    x.hors.forEach(([ligne,t],k)=>rond(ligne,t,sh(dehors(x,i,k))))});
    const sec=document.createElement('section');sec.className='arbre-groupe arbre-groupe-paliers';sec.append(roue);plan.append(sec);
    col.append(plan);return col}
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);
