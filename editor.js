@@ -810,6 +810,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.flottant!==true||t.horsArbre===true)delete t.flottant;else delete t.chemin;
   if(t.vide!==true)delete t.vide;
   if(t.paliersActifs!==true||!(t.type==='ame'||t.effet==='bonus'))delete t.paliersActifs;
+  // v1.112 : la place choisie par le MJ autour du centre de son palier, en pixels ; sans elle, le cercle la donne.
+  if(t.orbite&&!(typeof t.orbite==='object'&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy)))delete t.orbite;
+  if(t.orbite){const d=Math.hypot(t.orbite.dx,t.orbite.dy),f=d>400?400/d:1;t.orbite={dx:Math.round(t.orbite.dx*f),dy:Math.round(t.orbite.dy*f)}}
   // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
   if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}
   else if(!['act','abon','mvt','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
@@ -6728,6 +6731,21 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const pastille=(g,x,y,ferme)=>{const b=document.createElement('span');b.className='arbre-niveau-pastille pastille-palier'+(ferme?' fermee':'');
     const s=document.createElement('small');s.textContent='Niv.';const n=document.createElement('b');n.textContent=String(g);b.append(s,n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
    const niveauA=a?(Number(a.level)||1):Infinity;
+   /* v1.112 : chez le MJ, un rond se prend et se pose où l'on veut autour du centre de son palier — près d'un autre centre, il change
+      de palier ; lâché sur un centre, il reprend sa place sur le cercle. Un clic sans bouger l'ouvre, comme avant. */
+   const libre=(el,t,ligne,gCur)=>{const rond=el.querySelector('.arbre-rond')||el;el.draggable=false;rond.draggable=false;
+    rond.addEventListener('pointerdown',e=>{if(e.button!==0||e.altKey||e.shiftKey||e.ctrlKey||e.metaKey)return;
+     const echelle=(roue.getBoundingClientRect().width/roue.offsetWidth)||1,x0=e.clientX,y0=e.clientY,l0=parseFloat(el.style.left),t0=parseFloat(el.style.top);let bouge=false;
+     const mv=ev=>{const dx=(ev.clientX-x0)/echelle,dy=(ev.clientY-y0)/echelle;if(!bouge&&Math.hypot(dx,dy)<5)return;
+      if(!bouge){bouge=true;el.classList.add('tire-libre');if(typeof fermerBulle==='function')fermerBulle()}el.style.left=(l0+dx)+'px';el.style.top=(t0+dy)+'px'};
+     const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);if(!bouge)return;
+      const stop=c=>{c.stopPropagation();c.preventDefault()};el.addEventListener('click',stop,{capture:true,once:true});setTimeout(()=>el.removeEventListener('click',stop,{capture:true}),60);
+      const px=parseFloat(el.style.left),py=parseFloat(el.style.top);let k=0,best=Infinity;pos.forEach((q,i)=>{const d=Math.hypot(px-q.x,py-q.y);if(d<best){best=d;k=i}});
+      const dx=px-pos[k].x,dy=py-pos[k].y,d=Math.hypot(dx,dy);
+      if(groupes[k].g!==gCur&&!deplace(t.id,groupes[k].g,ligne,null)){renderArbres();return}
+      if(d<D.centre/2+10)delete t.orbite;else{const lim=RMAX+80,f=d>lim?lim/d:1;t.orbite={dx:Math.round(dx*f),dy:Math.round(dy*f)}}
+      arbreChange()};
+     addEventListener('pointermove',mv);addEventListener('pointerup',up)})};
    const pose=(el,p,cls,x)=>{el.classList.add('roue-'+cls);if(x.cache)el.classList.add('hors-limite-mj');el.style.left=p.x+'px';el.style.top=p.y+'px';roue.append(el)};
    groupes.forEach((x,i)=>{const c0=pos[i],g=x.g;
     // Le chemin : d'en haut vers le premier centre, puis de centre en centre ; après le dernier, en pointillés vers le niveau suivant.
@@ -6737,7 +6755,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     // Les ronds autour du centre : le cercle moins le passage du chemin, à l'arrivée et au départ.
     const ang=p=>Math.atan2(p.y-c0.y,p.x-c0.x)*180/Math.PI,interdits=[ang(avant),...(apres?[ang(apres)]:[])];
     const vG=mj&&x.gros.length<MAX_LIGNE_ARBRE.gros,vM=mj&&x.moyens.length<MAX_LIGNE_ARBRE.moyen;
-    const grosL=[...x.gros.map(t=>['gros',t]),...(vG?[['gros',null]]:[])],moyL=[...x.moyens.map(t=>['moyen',t]),...(vM?[['moyen',null]]:[])],K=grosL.length+moyL.length;
+    // v1.112 : un rond que le MJ a placé à la main garde sa place ; les autres se partagent le cercle.
+    const manuel=t=>!!(t&&t.orbite&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy));
+    const manuels=[...x.gros.filter(manuel).map(t=>['gros',t]),...x.moyens.filter(manuel).map(t=>['moyen',t])];
+    const grosL=[...x.gros.filter(t=>!manuel(t)).map(t=>['gros',t]),...(vG?[['gros',null]]:[])],moyL=[...x.moyens.filter(t=>!manuel(t)).map(t=>['moyen',t]),...(vM?[['moyen',null]]:[])],K=grosL.length+moyL.length;
     // Les gros, répartis parmi les moyens : aucun ne se touche.
     const ordre=[];{const places=new Set(grosL.map((_,j)=>Math.floor((j+.5)*K/Math.max(1,grosL.length))));let gi=0,mi=0;for(let k=0;k<K;k++)ordre.push(places.has(k)&&gi<grosL.length?grosL[gi++]:mi<moyL.length?moyL[mi++]:grosL[gi++])}
     // Les arcs libres, du chemin d'arrivée au suivant, dans le sens des aiguilles.
@@ -6750,11 +6771,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre');if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
     else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
-    ordre.forEach(([ligne,t],k)=>{const p=surCercle(k);
+    [...ordre.map((e,k)=>[...e,surCercle(k)]),...manuels.map(([l,t])=>[l,t,{x:c0.x+t.orbite.dx,y:c0.y+t.orbite.dy}])].forEach(([ligne,t,p])=>{
      if(!t){pose(place(ligne,g,ligne),p,ligne,x);return}
      let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne)}else{el=noeudVide(t,c,false);
       if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',remplace:t.id})}}
-     if(mj)surDepot(el,g,ligne,t);pose(el,p,ligne,x)})});
+     if(mj){surDepot(el,g,ligne,t);libre(el,t,ligne,g)}pose(el,p,ligne,x)})});
    const sec=document.createElement('section');sec.className='arbre-groupe arbre-groupe-paliers';sec.append(roue);plan.append(sec);
    col.append(plan);return col}
   GROUPES_ARBRE.forEach(g=>{const sec=document.createElement('section');sec.className='arbre-groupe';sec.dataset.niveau=String(g);

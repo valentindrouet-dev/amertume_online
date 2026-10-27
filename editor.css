@@ -3784,3 +3784,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue>.pastille-palier{position:absolute;transform:translate(-50%,-50%);z-index:1;white-space:nowrap}
 .arbre-roue>.pastille-palier.fermee{opacity:.6}
 .arbre-groupe.arbre-groupe-paliers{padding:0}
+/* v1.112 : chez le MJ, un rond des paliers se prend et se déplace à la main. */
+.arbre-roue.arbre-paliers>.arbre-noeud .arbre-rond{touch-action:none}
+.arbre-roue.arbre-paliers>.arbre-noeud.tire-libre{z-index:5;opacity:.85}
+.arbre-roue.arbre-paliers>.arbre-noeud.tire-libre .arbre-rond{cursor:grabbing}
