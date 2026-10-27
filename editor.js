@@ -6743,7 +6743,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(ARBRE_PALIERS){
    const S60=Math.sqrt(3)/2,rad=Math.PI/180,PAS=2.5*(135+146)/2,DX=(PAS+135)/2,DY=(PAS-135)*S60;
    // L'axe libre d'un palier de droite : 0° ; le chemin y vient à ±CH ; un pas, CH / 2,5. Le niveau 1 se tourne vers l'opposé du chemin.
-   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:152,moyen:141},n:{gros:135,moyen:124}};
+   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:152,moyen:141},n:{gros:148,moyen:137}};
+   // v1.118 : les arcs des talents initiaux sont du côté de ceux de leur palier ; les gros s'écartent pour les laisser passer.
    const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
     const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
     return {g,cache,centre,gros,moyens}}).filter(Boolean);
@@ -6812,7 +6813,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(i){const avant=sh(plans[i-1].c0);trait(avant.x,avant.y,c0.x,c0.y,false);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
     if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true);pastille(suivant,p.x,p.y,niveauA<suivant)}
     // Le centre : le talent initial du palier.
-    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===1);if(x.centre===initial)el.classList.add('racine');
+    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===0);if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
     else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
     const rond=(ligne,t,p)=>{let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne,i%2===0)}else{el=noeudVide(t,c,false);
