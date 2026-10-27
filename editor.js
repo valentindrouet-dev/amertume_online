@@ -6721,9 +6721,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      les ronds le reste, à places fixes. Niveau 1 : 2 gros, 3 moyens. Ensuite : un gros à gauche, un à droite ; un moyen
      au-dessus, un au-dessous, du côté que le chemin laisse libre. Les gros un peu plus loin que les moyens : le jour entre le
      centre et chacun reste le même. D'un centre au suivant, deux rayons et demi, à 60° de l'horizontale.
+     v1.115 : le centre suivant remonte à la place du moyen rond d'en haut, à l'extérieur, de cette disposition-là.
      ARBRE_PALIERS à false rend la disposition en colonnes. */
   if(ARBRE_PALIERS){
-   const RM=135,RB=RM+(D.gros-D.moyen)/2,PAS=2.5*(RM+RB)/2,S60=Math.sqrt(3)/2,rad=Math.PI/180;
+   const RM=135,RB=RM+(D.gros-D.moyen)/2,PAS=2.5*(RM+RB)/2,S60=Math.sqrt(3)/2,rad=Math.PI/180,DX=(PAS+RM)/2,DY=(PAS-RM)*S60;
    const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
     const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
     return {g,cache,centre,gros,moyens}}).filter(Boolean);
@@ -6735,7 +6736,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const DEHORS=[-30,30,0,-60,60],dehors=(q,i,k)=>{const a=DEHORS[k%5],r=2*RM+Math.floor(k/5)*RM,v=(i%2?180-a:a)*rad;return {x:q.c0.x+r*Math.cos(v),y:q.c0.y+r*Math.sin(v)}};
    // v1.112 : la place que le MJ avait choisie à la main donne la place du gabarit la plus proche.
    const manuel=t=>!!(t&&t.orbite&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy));
-   const plans=groupes.map((x,i)=>{const c0={x:i%2?-PAS/2:0,y:i*PAS*S60},G=gabarit(i,x.g),P={},hors=[];
+   const plans=groupes.map((x,i)=>{const c0={x:i%2?-DX:0,y:i*DY},G=gabarit(i,x.g),P={},hors=[];
     ['gros','moyen'].forEach(ligne=>{const n=G[ligne].length,T=new Array(n).fill(null),attente=[],l=ligne==='gros'?x.gros:x.moyens;
      l.filter(manuel).forEach(t=>{let k=-1,best=Infinity;G[ligne].forEach((v,j)=>{if(T[j])return;const p=autour({x:0,y:0},v,ligne),d=Math.hypot(p.x-t.orbite.dx,p.y-t.orbite.dy);if(d<best){best=d;k=j}});if(k>=0)T[k]=t;else attente.push(t)});
      l.filter(t=>!manuel(t)).forEach(t=>{const k=Number(t.ordreArbre);if(Number.isInteger(k)&&k>=0&&k<n&&!T[k])T[k]=t;else attente.push(t)});
@@ -6743,7 +6744,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     return {...x,c0,G,P,hors}});
    // Chez le MJ, la place se fixe : son rang dans le gabarit s'écrit, la place libre d'avant s'oublie.
    if(mj){let ch=false;plans.forEach(q=>['gros','moyen'].forEach(l=>q.P[l].forEach((t,k)=>{if(!t)return;if(t.ordreArbre!==k){t.ordreArbre=k;ch=true}if(t.orbite){delete t.orbite;ch=true}})));if(ch)scheduleSave()}
-   const haut1=q=>({x:q.c0.x,y:q.c0.y-(RB+RM)/2}),fin=(q,i)=>({x:q.c0.x+(i%2?PAS/4:-PAS/4),y:q.c0.y+PAS*S60/2});
+   const haut1=q=>({x:q.c0.x,y:q.c0.y-(RB+RM)/2}),fin=(q,i)=>({x:q.c0.x+(i%2?DX/2:-DX/2),y:q.c0.y+DY/2});
    // Le cadre : tout ce qui se pose, arcs des améliorations compris (à gauche des ronds).
    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;const tient=(p,r,gauche=0)=>{x0=Math.min(x0,p.x-r-gauche);y0=Math.min(y0,p.y-r);x1=Math.max(x1,p.x+r);y1=Math.max(y1,p.y+r)};
    plans.forEach((q,i)=>{tient(q.c0,D.centre/2+6,26);if(!i)tient(haut1(q),28);if(i===dernier&&suivant)tient(fin(q,i),28);
