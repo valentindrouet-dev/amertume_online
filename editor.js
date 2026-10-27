@@ -6652,11 +6652,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      ancien) continue en lignes dessous. */
   // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
   // v1.098 : BONUS_SATELLITES à false — plus rien à droite des ronds pour les bonus ; à true, ils reviennent (arcs, ou billes avec ARCS_BONUS à false).
-  let satN=0;const ARBRE_PALIERS=true,ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:100,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
+  let satN=0;const ARBRE_PALIERS=true,ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:120,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
   /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
      talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
      ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */
-  const satellites=(el,t,cls)=>{
+  // v1.117 : « droite » met les arcs à droite du rond (paliers de droite) ; sinon, à gauche.
+  const satellites=(el,t,cls,droite=false)=>{
    // Dans l'ordre du panneau de droite : les améliorations de haut en bas, les bonus de gauche à droite.
    const ORDRE=['so','s','se','o','e','no','n','ne'],rangP=x=>{const k=lisChemin(x);return [k.rang,ORDRE.indexOf(k.dir)]};
    const P=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x)).sort((x,y)=>rangP(x)[0]-rangP(y)[0]||rangP(x)[1]-rangP(y)[1]);
@@ -6726,48 +6727,69 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      const teinte=tint=>{if(g){const st=g.querySelectorAll('stop');st[0].setAttribute('stop-color','rgb('+mix(tint,255,.55)+')');st[1].setAttribute('stop-color','rgb('+tint+')');st[2].setAttribute('stop-color','rgb('+mix(tint,0,.22)+')');b.style.stroke='rgb('+mix(tint,0,.45)+')'}else b.style.stroke='rgb('+tint+')'};
      if(carac==='comp')teinteCompetence(Math.max(0,Math.min(7,Number(p.comp)||0)),teinte);else teinte(carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150');
      svg.append(b);bulle(b,x)})}
+   if(droite){const g=mk('g',{transform:'matrix(-1 0 0 1 '+S+' 0)'});[...svg.childNodes].filter(n=>n!==defs).forEach(n=>g.append(n));svg.append(g)}
    const rond=el.querySelector('.arbre-rond');(rond||el).append(svg)};
   /* v1.114 — Le gabarit des paliers. Autour de chaque talent initial, six directions à 60° : le chemin en prend une ou deux,
      les ronds le reste, à places fixes. Niveau 1 : 2 gros, 3 moyens. Ensuite : un gros à gauche, un à droite ; un moyen
      au-dessus, un au-dessous, du côté que le chemin laisse libre. Les gros un peu plus loin que les moyens : le jour entre le
      centre et chacun reste le même. D'un centre au suivant, deux rayons et demi, à 60° de l'horizontale.
      v1.115 : le centre suivant remonte à la place du moyen rond d'en haut, à l'extérieur, de cette disposition-là.
+     v1.117 : la disposition du MJ devient le gabarit. Les centres restent où ils sont ; autour de chacun, les ronds s'étagent de
+     57° en 57°, symétriques autour de l'axe que le chemin laisse libre — gros à un demi-pas, moyens à un pas et demi, chemin à deux pas et demi. Au niveau 1,
+     cinq places autour de l'opposé du chemin (moyen, gros, moyen, gros, moyen) ; ensuite, deux gros de part et d'autre de
+     l'horizontale, du côté extérieur, et deux moyens au-dessus et au-dessous. Chaque palier a son rayon ; les gros un peu plus
+     loin que les moyens, pour le même jour.
      ARBRE_PALIERS à false rend la disposition en colonnes. */
   if(ARBRE_PALIERS){
-   const RM=135,RB=RM+(D.gros-D.moyen)/2,PAS=2.5*(RM+RB)/2,S60=Math.sqrt(3)/2,rad=Math.PI/180,DX=(PAS+RM)/2,DY=(PAS-RM)*S60;
+   const S60=Math.sqrt(3)/2,rad=Math.PI/180,PAS=2.5*(135+146)/2,DX=(PAS+135)/2,DY=(PAS-135)*S60;
+   // L'axe libre d'un palier de droite : 0° ; le chemin y vient à ±CH ; un pas, CH / 2,5. Le niveau 1 se tourne vers l'opposé du chemin.
+   const CH=180-Math.atan2(DY,DX)/rad,PA=CH/2.5,AX1=CH-180,RAYONS={1:{gros:152,moyen:141},n:{gros:135,moyen:124}};
    const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
     const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
     return {g,cache,centre,gros,moyens}}).filter(Boolean);
    const dernier=groupes.length-1,suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
    // Les places de chaque palier, en degrés (0 : à droite, 90 : en bas) ; de gauche à droite, de haut en bas.
-   const gabarit=(i,g)=>g===1&&i===0?{gros:[240,0],moyen:[300,180,60]}:{gros:[180,0],moyen:i%2?[240,120]:[300,60]};
-   const autour=(c0,ang,ligne)=>{const r=ligne==='gros'?RB:RM;return {x:c0.x+r*Math.cos(ang*rad),y:c0.y+r*Math.sin(ang*rad)}};
+   const gabarit=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PA,AX1+PA],moyen:[AX1-2*PA,AX1,AX1+2*PA],r:RAYONS[1]};
+    const m=v=>i%2?180-v:v;return {gros:[m(-PA/2),m(PA/2)],moyen:[m(-1.5*PA),m(1.5*PA)],r:RAYONS.n}};
+   const autour=(c0,ang,ligne,G)=>{const r=G.r[ligne];return {x:c0.x+r*Math.cos(ang*rad),y:c0.y+r*Math.sin(ang*rad)}};
    // Ce qui dépasse le gabarit (un arbre d'avant) attend plus loin, du côté extérieur, que le MJ le range.
-   const DEHORS=[-30,30,0,-60,60],dehors=(q,i,k)=>{const a=DEHORS[k%5],r=2*RM+Math.floor(k/5)*RM,v=(i%2?180-a:a)*rad;return {x:q.c0.x+r*Math.cos(v),y:q.c0.y+r*Math.sin(v)}};
+   const DEHORS=[-30,30,0,-60,60],dehors=(q,i,k)=>{const a=DEHORS[k%5],r=2*RAYONS.n.moyen+Math.floor(k/5)*RAYONS.n.moyen,v=(i%2?180-a:a)*rad;return {x:q.c0.x+r*Math.cos(v),y:q.c0.y+r*Math.sin(v)}};
    /* v1.116 : « Placement libre », coché pour cet arbre, rend au MJ la main sur les ronds : chacun se pose où l'on veut autour de
       son centre (t.orbite), et les joueurs le voient là. Décoché, l'arbre reprend le gabarit ; les places libres restent en mémoire. */
-   const manuel=t=>!!(t&&t.orbite&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy)),enLibre=arbreLibre(classe);
+   const manuel=t=>!!(t&&t.orbite&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy));let enLibre=arbreLibre(classe);
    const lieu=(q,t,p)=>enLibre&&manuel(t)?{x:q.c0.x+t.orbite.dx,y:q.c0.y+t.orbite.dy}:p;
    const plans=groupes.map((x,i)=>{const c0={x:i%2?-DX:0,y:i*DY},G=gabarit(i,x.g),P={},hors=[];
     ['gros','moyen'].forEach(ligne=>{const n=G[ligne].length,T=new Array(n).fill(null),attente=[],l=ligne==='gros'?x.gros:x.moyens;
      l.forEach(t=>{const k=Number(t.ordreArbre);if(Number.isInteger(k)&&k>=0&&k<n&&!T[k])T[k]=t;else attente.push(t)});
      attente.forEach(t=>{const k=T.indexOf(null);if(k>=0)T[k]=t;else hors.push([ligne,t])});P[ligne]=T});
     return {...x,c0,G,P,hors}});
+   /* v1.117 : une fois par arbre, chez le MJ, chaque rond prend la place nouvelle la plus proche de celle où il se voyait (sa place
+      libre, ou sa place de l'ancien gabarit) ; le placement libre se décoche : la disposition est devenue le gabarit. */
+   {const cle='gabarit-117:'+classe;if(mj&&classe&&Array.isArray(catalog.semisForge)&&!catalog.semisForge.includes(cle)){
+    const ancien=(i,g)=>g===1&&i===0?{gros:[240,0],moyen:[300,180,60]}:{gros:[180,0],moyen:i%2?[240,120]:[300,60]},R0={gros:146,moyen:135};
+    plans.forEach((q,i)=>{const A=ancien(i,q.g);['gros','moyen'].forEach(l=>{const ts=[...q.P[l].filter(Boolean),...q.hors.filter(h=>h[0]===l).map(h=>h[1])];
+     const vu=t=>{if(enLibre&&manuel(t))return {x:t.orbite.dx,y:t.orbite.dy};const k=Number(t.ordreArbre),a=A[l][k];return Number.isInteger(k)&&a!==undefined?{x:R0[l]*Math.cos(a*rad),y:R0[l]*Math.sin(a*rad)}:null};
+     const paires=[];ts.forEach(t=>{const v=vu(t);q.G[l].forEach((a,k)=>{const p=autour({x:0,y:0},a,l,q.G);paires.push([v?Math.hypot(p.x-v.x,p.y-v.y):1e6+k,t,k])})});
+     paires.sort((u,v)=>u[0]-v[0]);const T=new Array(q.G[l].length).fill(null),pris=new Set();paires.forEach(([,t,k])=>{if(!T[k]&&!pris.has(t)){T[k]=t;pris.add(t)}});
+     q.P[l]=T;q.hors=q.hors.filter(h=>h[0]!==l).concat(ts.filter(t=>!pris.has(t)).map(t=>[l,t]));ts.forEach(t=>delete t.orbite)})});
+    if(catalog.arbresLibres){delete catalog.arbresLibres[classe];if(!Object.keys(catalog.arbresLibres).length)delete catalog.arbresLibres}
+    enLibre=false;catalog.semisForge.push(cle);scheduleSave()}}
    // Chez le MJ, la place se fixe : son rang dans le gabarit s'écrit, la place libre d'avant s'oublie.
    if(mj){let ch=false;plans.forEach(q=>['gros','moyen'].forEach(l=>q.P[l].forEach((t,k)=>{if(!t)return;if(t.ordreArbre!==k){t.ordreArbre=k;ch=true}})));if(ch)scheduleSave()}
-   const haut1=q=>({x:q.c0.x,y:q.c0.y-(RB+RM)/2}),fin=(q,i)=>({x:q.c0.x+(i%2?DX/2:-DX/2),y:q.c0.y+DY/2});
-   // Le cadre : tout ce qui se pose, arcs des améliorations compris (à gauche des ronds).
-   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;const tient=(p,r,gauche=0)=>{x0=Math.min(x0,p.x-r-gauche);y0=Math.min(y0,p.y-r);x1=Math.max(x1,p.x+r);y1=Math.max(y1,p.y+r)};
-   plans.forEach((q,i)=>{tient(q.c0,D.centre/2+6,26);if(!i)tient(haut1(q),28);if(i===dernier&&suivant)tient(fin(q,i),28);
-    ['gros','moyen'].forEach(l=>q.G[l].forEach((v,k)=>{const t=q.P[l][k];if(t||mj)tient(lieu(q,t,autour(q.c0,v,l)),D[l]/2+6,22)}));q.hors.forEach(([l,t],k)=>tient(lieu(q,t,dehors(q,i,k)),D[l]/2+6,22))});
+   const fin=(q,i)=>({x:q.c0.x+(i%2?DX/2:-DX/2),y:q.c0.y+DY/2});
+   // Le cadre : tout ce qui se pose, arcs des améliorations compris (d'un côté ou de l'autre des ronds).
+   let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;const tient=(p,r,cote=0)=>{x0=Math.min(x0,p.x-r-cote);y0=Math.min(y0,p.y-r);x1=Math.max(x1,p.x+r+cote);y1=Math.max(y1,p.y+r)};
+   plans.forEach((q,i)=>{tient(q.c0,D.centre/2+6,30);if(i===dernier&&suivant)tient(fin(q,i),28);
+    ['gros','moyen'].forEach(l=>q.G[l].forEach((v,k)=>{const t=q.P[l][k];if(t||mj)tient(lieu(q,t,autour(q.c0,v,l,q.G)),D[l]/2+6,22)}));q.hors.forEach(([l,t],k)=>tient(lieu(q,t,dehors(q,i,k)),D[l]/2+6,22))});
    if(!plans.length){x0=y0=0;x1=y1=D.centre}
    const sh=p=>({x:p.x-x0+MARGE,y:p.y-y0+MARGE}),W=x1-x0+2*MARGE,H=y1-y0+2*MARGE;
    const roue=document.createElement('div');roue.className='arbre-roue arbre-paliers';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','arbre-chemin-paliers');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';roue.append(svg);
-   // Le chemin s'arrête au bord des centres : il ne passe pas sous eux.
+   // v1.117 : le chemin va de centre à centre, sous les talents.
    const trait=(x1,y1,x2,y2,pointille,r1=0,r2=0)=>{const d=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/d,uy=(y2-y1)/d;x1+=ux*r1;y1+=uy*r1;x2-=ux*r2;y2-=uy*r2;const l=document.createElementNS(NS,'line');[['x1',x1],['y1',y1],['x2',x2],['y2',y2]].forEach(([k,v])=>l.setAttribute(k,v.toFixed(1)));l.setAttribute('class','chemin-palier'+(pointille?' suite':''));svg.append(l)};
    const pastille=(g,x,y,ferme)=>{const b=document.createElement('span');b.className='arbre-niveau-pastille pastille-palier'+(ferme?' fermee':'');
-    const s=document.createElement('small');s.textContent='Niv.';const n=document.createElement('b');n.textContent=String(g);b.append(s,n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
+    // v1.117 : le seul nombre du niveau.
+    const n=document.createElement('b');n.textContent=String(g);b.append(n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
    const niveauA=a?(Number(a.level)||1):Infinity;
    const pose=(el,p,cls,x)=>{el.classList.add('roue-'+cls);if(x.cache)el.classList.add('hors-limite-mj');el.style.left=p.x+'px';el.style.top=p.y+'px';roue.append(el)};
    /* En placement libre, chez le MJ : un rond se prend et se pose où l'on veut ; près d'un autre centre, il change de palier ;
@@ -6785,20 +6807,19 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       if(d<D.centre/2+10)delete t.orbite;else{const f=d>400?400/d:1;t.orbite={dx:Math.round(dx*f),dy:Math.round(dy*f)}}
       arbreChange()};
      addEventListener('pointermove',mv);addEventListener('pointerup',up)})};
-   plans.forEach((x,i)=>{const g=x.g,c0=sh(x.c0),RC=D.centre/2+6;
-    // Le chemin : de centre en centre, la pastille du niveau à mi-chemin ; au premier, au-dessus ; après le dernier, en pointillés vers le niveau suivant.
-    if(i){const avant=sh(plans[i-1].c0);trait(avant.x,avant.y,c0.x,c0.y,false,RC,RC);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
-    else{const p=sh(haut1(x));pastille(g,p.x,p.y,niveauA<g)}
-    if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true,RC,0);pastille(suivant,p.x,p.y,niveauA<suivant)}
+   plans.forEach((x,i)=>{const g=x.g,c0=sh(x.c0);
+    // Le chemin : de centre en centre, le niveau à mi-chemin (pas au premier) ; après le dernier, en pointillés vers le niveau suivant.
+    if(i){const avant=sh(plans[i-1].c0);trait(avant.x,avant.y,c0.x,c0.y,false);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
+    if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true);pastille(suivant,p.x,p.y,niveauA<suivant)}
     // Le centre : le talent initial du palier.
-    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre');if(x.centre===initial)el.classList.add('racine');
+    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===1);if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
     else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
-    const rond=(ligne,t,p)=>{let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne)}else{el=noeudVide(t,c,false);
+    const rond=(ligne,t,p)=>{let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne,i%2===0)}else{el=noeudVide(t,c,false);
       if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',remplace:t.id})}}
      if(mj){surDepot(el,g,ligne,t);if(enLibre)glisseLibre(el,t,ligne,g)}pose(el,sh(lieu(x,t,p)),ligne,x)};
-    ['gros','moyen'].forEach(ligne=>x.G[ligne].forEach((v,k)=>{const t=x.P[ligne][k],p=sh(autour(x.c0,v,ligne));
-     if(t)rond(ligne,t,autour(x.c0,v,ligne));else if(mj)pose(place(ligne,g,ligne,k),p,ligne,x)}));
+    ['gros','moyen'].forEach(ligne=>x.G[ligne].forEach((v,k)=>{const t=x.P[ligne][k],p=sh(autour(x.c0,v,ligne,x.G));
+     if(t)rond(ligne,t,autour(x.c0,v,ligne,x.G));else if(mj)pose(place(ligne,g,ligne,k),p,ligne,x)}));
     x.hors.forEach(([ligne,t],k)=>rond(ligne,t,dehors(x,i,k)))});
    const sec=document.createElement('section');sec.className='arbre-groupe arbre-groupe-paliers';sec.append(roue);plan.append(sec);
    col.append(plan);return col}

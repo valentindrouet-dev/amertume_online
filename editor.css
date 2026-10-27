@@ -3790,3 +3790,6 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue.arbre-paliers>.arbre-noeud.tire-libre{z-index:5;opacity:.85}
 .arbre-roue.arbre-paliers>.arbre-noeud.tire-libre .arbre-rond{cursor:grabbing}
 .arbres-libre{font:600 12px system-ui;color:var(--muted);align-self:flex-start;cursor:pointer}
+/* v1.117 : les talents initiaux des paliers, d'un cinquième plus grands ; le niveau, en nombre seul. */
+.arbre-roue.arbre-paliers>.roue-centre .arbre-rond,.arbre-roue.arbre-paliers>.arbre-place-groupe.roue-centre{width:120px;height:120px}
+.arbre-roue>.pastille-palier b{margin-left:0}
