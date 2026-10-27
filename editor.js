@@ -6808,6 +6808,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       if(d<D.centre/2+10)delete t.orbite;else{const f=d>400?400/d:1;t.orbite={dx:Math.round(dx*f),dy:Math.round(dy*f)}}
       arbreChange()};
      addEventListener('pointermove',mv);addEventListener('pointerup',up)})};
+   /* v1.119 : l'aura d'un palier — un disque doré derrière tout (talents, chemin, niveaux), centré sur son talent initial, qui
+      mord un peu sur chaque rond autour (14 px au-delà de leur bord intérieur). */
+   {const defs=document.createElementNS(NS,'defs'),gr=document.createElementNS(NS,'radialGradient'),id='aura-palier-'+(++satN);gr.id=id;
+    [[0,'aura-coeur'],[.72,'aura-milieu'],[1,'aura-bord']].forEach(([o,k])=>{const st=document.createElementNS(NS,'stop');st.setAttribute('offset',String(o));st.setAttribute('class',k);gr.append(st)});defs.append(gr);svg.append(defs);
+    plans.forEach(x=>{if(!x.centre)return;const p=sh(x.c0),r=x.G.r.moyen-D.moyen/2+14,ci=document.createElementNS(NS,'circle');
+     ci.setAttribute('cx',p.x.toFixed(1));ci.setAttribute('cy',p.y.toFixed(1));ci.setAttribute('r',r.toFixed(1));ci.setAttribute('class','aura-palier');ci.style.fill='url(#'+id+')';svg.append(ci)})}
    plans.forEach((x,i)=>{const g=x.g,c0=sh(x.c0);
     // Le chemin : de centre en centre, le niveau à mi-chemin (pas au premier) ; après le dernier, en pointillés vers le niveau suivant.
     if(i){const avant=sh(plans[i-1].c0);trait(avant.x,avant.y,c0.x,c0.y,false);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
