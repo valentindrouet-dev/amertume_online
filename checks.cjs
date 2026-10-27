@@ -5814,7 +5814,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
    troupe ; la case Caché de l'éditeur vaut aussitôt pour la carte ouverte. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8');
  assert.equal(C.cleanMap({id:'m',name:'M',foes:[{id:'p1',x:1,y:1,tpl:{id:'t',name:'T',pv:3}}]}).foes[0].id,'p1','la pose garde son identifiant');
- assert.ok(mp.includes("if(!f.id)f.id=crypto.randomUUID();a.pose=f.id;")&&mp.includes("const a=adversaireDeLaTable(mapDraft,f);if(a){a.hidden=f.cache===true;render();scheduleSave()}"),'la case Caché suit sur la table');
+ assert.ok(mp.includes("if(!f.id)f.id=crypto.randomUUID();")&&mp.includes("  a.pose=f.id;")&&mp.includes("const a=adversaireDeLaTable(mapDraft,f);if(a){a.hidden=f.cache===true;render();scheduleSave()}"),'la case Caché suit sur la table');
  assert.ok(page.includes("a.hidden=false;a.vu=true;")&&page.includes("function reveleEnBougeant(a){"),'frapper ou bouger en vue le trahit');}
 /* v0.513 — Glissant : qui finit son mouvement sur le token du porteur tombe Au sol, et le porteur caché est révélé. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
@@ -5943,7 +5943,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  const c=m.coffres[0];assert.deepEqual([c.nom,c.cache,c.perception,c.verrou,c.piege,c.degats,c.etats.join(),c.items.join(),JSON.stringify(c.richesses)],
   ['Malle',true,2,2,2,3,'Feu','epee','{"or":12,"brisure-citrine":2}'],'le coffre voyage avec la carte');
  assert.ok(!('ouvert' in c)&&!('revele' in c),'ce qui lui est arrivé en partie, non');
- assert.ok(carto.includes("if(f.cache)a.hidden=true;actors.push(a)});")&&page.includes("menuCarte(a.name,[['Révéler à la troupe',()=>{a.hidden=false;render();scheduleSave()}]]")
+ assert.ok(carto.includes("if(f.cache)a.hidden=true;")&&carto.includes("  actors.push(a)});")&&page.includes("menuCarte(a.name,[['Révéler à la troupe',()=>{a.hidden=false;render();scheduleSave()}]]")
   &&!carto.includes("'Découvert !'")&&carto.includes("d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul')")&&carto.includes("c.revele=true;floatNumber(centreForme(c),'Révélé !','nul')")
   &&carto.includes("if(objetVu(o))floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');"),'les révélations');
  assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}"),'la table partage portes découvertes et coffres');

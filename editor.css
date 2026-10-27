@@ -3771,3 +3771,5 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-satellites :is(.sat-arc,.sat-bille){pointer-events:none;cursor:default}
 /* v1.103 : la bulle d'un talent ne dit plus son prix en XP : l'arbre et son panneau le disent. */
 .bulle .talent-detail .talent-bulle-nom .cout-xp{display:none}
+/* v1.109 : une carte qui garde une progression le dit d'une pastille, dans la liste des cartes. */
+.map-row .map-sauve{margin-left:6px;font-size:13px;line-height:1}

@@ -1629,13 +1629,36 @@ function verrouilleesAPortee(m,a){if(!m||!a||!a.hero||!alive(a)||a.horsCarte)ret
 function modeleActuel(tpl){if(!tpl)return tpl;const liste=catalog.monsters||[];
  const parId=tpl.id&&liste.find(x=>x&&x.id===tpl.id);if(parId)return parId;
  const parNom=liste.filter(x=>x&&x.name===tpl.name);return parNom.length===1?parNom[0]:tpl}
+/* v1.109 — La progression d'une carte : en la quittant, la table retient les adversaires encore debout (place, PV, états) et ceux
+   qu'on y avait déjà posés ; le reste — objets pris, portes, coffres, pièges, terrains détruits, brouillard — vit déjà sur la carte.
+   À la réouverture : la reprendre, ou repartir à zéro. Une seule progression par carte. */
+const CHAMPS_PROGRESSION=['x','y','hp','max','states','cumuls','bleed','armure','hidden','vu','revealed','connu','alignementJeu','inventaire','bourse','plantesVolees','entendu','name','numero'];
+function noteProgression(){const m=maps.find(x=>x&&x.id===currentMapId);if(!m||view!=='mj'||(typeof spectateur==='function'&&spectateur()))return;
+ const poses=new Set((m.foes||[]).map(f=>f&&f.id).filter(Boolean));
+ const advs=actors.filter(a=>a&&!a.hero&&a.pose&&poses.has(a.pose)&&alive(a)&&!a.retire).map(a=>{const o={pose:a.pose};CHAMPS_PROGRESSION.forEach(k=>{if(a[k]!==undefined)o[k]=structuredClone(a[k])});return o});
+ m.progression={date:Date.now(),poses:[...poses],adversaires:advs,xpAccordee:Math.max(0,Math.trunc(Number(m.xpAccordee))||0)}}
+function effaceProgression(m){if(m&&m.progression){delete m.progression;saveMaps();renderMapList();if(typeof majBoutonProgression==='function')majBoutonProgression()}}
+const dateProgression=m=>m&&m.progression?new Date(m.progression.date).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+// Reprendre, repartir à zéro, ou renoncer : rend 'reprendre', 'zero' ou null.
+function demanderProgression(m){return new Promise(res=>{let d=$('demande-progression');
+ if(!d){d=document.createElement('dialog');d.id='demande-progression';d.className='demande';
+  d.innerHTML='<p id="demande-progression-texte"></p><div class="form-actions"><button type="button" data-v="">Annuler</button><button type="button" data-v="zero">Repartir à zéro</button><button type="button" data-v="reprendre" class="primary">Reprendre la progression</button></div>';
+  document.body.append(d)}
+ $('demande-progression-texte').textContent='Ouvrir « '+m.name+' » ? Une progression y est enregistrée ('+dateProgression(m)+').';
+ let fini=false;const fin=v=>{if(fini)return;fini=true;if(d.open)d.close();res(v||null)};
+ d.querySelectorAll('button').forEach(b=>{b.onclick=()=>fin(b.dataset.v)});d.onclose=()=>fin(null);d.showModal();d.querySelector('.primary').focus()})}
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
+ if(m.progression){demanderProgression(m).then(v=>{if(v)ouvreCarte(m,v==='reprendre')});return}
  if(!confirm('Ouvrir « '+m.name+' » ? Les aventuriers sont regroupés dans la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.'))return;
+ ouvreCarte(m,false)}
+function ouvreCarte(m,reprendre){const id=m.id;
+ // La carte quittée — ou celle qu'on rouvre — retient où en était la troupe.
+ noteProgression();const prog=reprendre&&m.progression?m.progression:null;if(!reprendre)delete m.progression;
  // v0.848 : rouvrir la carte déjà en cours garde le zoom et le point visé.
  const memeCarte=currentMapId===id;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
- // Une carte ouverte repart de zéro XP accordée : la rencontre est à venir.
- m.xpAccordee=0;
+ // Une carte ouverte repart de zéro XP accordée : la rencontre est à venir ; reprise, elle garde ce qu'elle a donné.
+ m.xpAccordee=prog?prog.xpAccordee||0:0;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  /* Ceux que le MJ a cochés partent à l'aventure : eux seuls entrent sur la carte, les autres restent hors de la carte.
     Sans aucune case cochée, tous entrent, comme avant. */
@@ -1647,19 +1670,19 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
- // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;delete m.dangersTrous;
+ // Et ses objets récupérés reviennent à leur place — sauf si l'on reprend la progression : la carte reste comme la troupe l'a laissée.
+ if(!prog){(m.objets||[]).forEach(o=>{delete o.pris;delete o.prisN;delete o.revele;delete o.voile;delete o.examine;delete o.tente});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});delete m.dangersDetruits;delete m.seuilsSel;delete m.dangersTrous}
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start,m.ratio).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
- (m.doors||[]).forEach(d=>{d.open=!!d.fenetre&&etatFenetre(d)==='ouverte';delete d.decouvert;delete d.crochetee});const grille=fogDims(m);
+ if(!prog)(m.doors||[]).forEach(d=>{d.open=!!d.fenetre&&etatFenetre(d)==='ouverte';delete d.decouvert;delete d.crochetee});const grille=fogDims(m);
  // Et ses coffres reviennent comme le MJ les a laissés : cachés, verrouillés, piégés, pleins.
- (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
+ if(!prog)(m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
  // Et ses pièges, armés et cachés comme le MJ les a posés.
- (m.pieges||[]).forEach(p=>{['revele','declenche','desamorce','rate'].forEach(k=>delete p[k])});
+ if(!prog)(m.pieges||[]).forEach(p=>{['revele','declenche','desamorce','rate'].forEach(k=>delete p[k])});
  {const ids=new Set((m.pieges||[]).map(p=>p.id));heros.forEach(a=>{delete a.tenuPar;if(Array.isArray(a.franchis)){a.franchis=a.franchis.filter(id=>!ids.has(id));if(!a.franchis.length)delete a.franchis}})}
- m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
+ if(!prog){m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false}fogSeen=null;fogSeenSrc=null;fogKey='';
  /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
     tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */
  /* Le modèle a été recopié sur la carte le jour où l'adversaire y a été posé ; le
@@ -1668,15 +1691,21 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     sert plus que si le modèle a disparu. */
  const uniques=new Set();
  (m.foes||[]).forEach(f=>{const t=modeleActuel(f.tpl);if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}
+  if(!f.id)f.id=crypto.randomUUID();
+  // Reprise : un adversaire tombé ne revient pas ; un adversaire posé depuis dans l'éditeur arrive, neuf.
+  const garde=prog&&(prog.adversaires||[]).find(x=>x.pose===f.id);if(prog&&!garde&&(prog.poses||[]).includes(f.id))return;
   const a=fromMonster(t);a.x=f.x;a.y=f.y;
   // Le lien vers sa pose : l'éditeur retrouve ainsi l'adversaire en jeu.
-  if(!f.id)f.id=crypto.randomUUID();a.pose=f.id;
+  a.pose=f.id;
   // Ce que la carte lui a donné, à lui seul.
   {const bourse=normaliseBourse(f.bourse);if((Array.isArray(f.inventaire)&&f.inventaire.length)||bourse.length){a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)}}
   normalizeActor(a);
   if(f.hidden)setState(a,'Invisible',true);
   // Caché par le MJ dans l'éditeur : la troupe ne le voit pas tant qu'il ne le révèle pas d'un clic.
-  if(f.cache)a.hidden=true;actors.push(a)});
+  if(f.cache)a.hidden=true;
+  // Reprise : là où il était, avec ses PV, ses états, ce qu'on sait de lui.
+  if(garde){CHAMPS_PROGRESSION.forEach(k=>{if(garde[k]!==undefined)a[k]=structuredClone(garde[k])});normalizeActor(a)}
+  actors.push(a)});
  /* Une carte qui s'ouvre, c'est une rencontre à venir : tour 1, tout remis à zéro, et la
     troupe en exploration — le combat commencera de lui-même au premier adversaire révélé. */
  if(typeof remiseAuTourUn==='function')remiseAuTourUn();
@@ -1760,7 +1789,7 @@ mapsPage.innerHTML=
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><label class="field-check map-jcj" title="Les aventuriers s’y affrontent : chacun est neutre, ennemi de tous ; pas d’XP sur cette carte."><input type="checkbox" id="map-jcj">PvP</label><span class="map-xp" id="map-xp"></span>'
- +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
+ +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button><button id="map-progression" hidden>Effacer la progression</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
  +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cadre">Carré de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button><button data-tool="courbe">Ligne de points</button>'
@@ -1931,6 +1960,8 @@ $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='
   img.onerror=()=>{renderCanvas();saveMaps()};img.src=url})};
 $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;renderCanvas();saveMaps()}};
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
+function majBoutonProgression(){const b=$('map-progression');if(!b)return;const p=!!(mapDraft&&mapDraft.progression);b.hidden=!p;b.title=p?'Progression enregistrée le '+dateProgression(mapDraft)+' : la carte rouvrira comme au premier jour.':''}
+$('map-progression').onclick=()=>{if(!mapDraft||!mapDraft.progression)return;if(confirm('Effacer la progression de « '+mapDraft.name+' » ? Elle rouvrira comme au premier jour.'))effaceProgression(mapDraft)};
 $('paysage-play').onclick=()=>{if(estPaysage(mapDraft))afficherPaysage(mapDraft.id)};
 $('paysage-new').onclick=()=>{newPaysage();renderMapList();renderCanvas();saveMaps()};
 /* v1.032 — Supprimer le paysage sélectionné. Affiché à la table, il se ferme d'abord : la carte d'avant revient. */
@@ -2008,7 +2039,10 @@ function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amer
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
  const nom=document.createElement('strong');nom.textContent=m.name;ensure(m);
  b.title=m.name+(m.id===currentMapId?' — chargée sur la table':'')+'\n'+matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
- b.append(nom);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};
+ b.append(nom);
+ // v1.109 : une progression enregistrée se signale d'une pastille, sa date au survol.
+ if(m.progression){const s=document.createElement('span');s.className='map-sauve';s.textContent='💾';s.title='Progression enregistrée le '+dateProgression(m);s.setAttribute('aria-label',s.title);nom.append(s)}
+ b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};
   // Elle se glisse sur le bandeau d'un lieu, ou sur la liste hors des lieux pour l'en sortir.
   b.draggable=true;b.addEventListener('dragstart',e=>{carteGlissee=m;try{e.dataTransfer.setData('text/plain',m.id||'');e.dataTransfer.effectAllowed='move'}catch(_){}});
   b.addEventListener('dragend',()=>{carteGlissee=null;document.querySelectorAll('.map-row.avant').forEach(x=>x.classList.remove('avant'))});
@@ -2044,6 +2078,7 @@ function renderMapList(){if(mapDraft&&mapDraft.id)try{localStorage.setItem('amer
  {const s=$('map-batiment');if(s){s.replaceChildren(new Option('— aucun —',''),...((typeof domaine!=='undefined'&&domaine.batiments)||[]).map(b=>new Option(b.nom,b.id)));s.value=mapDraft&&mapDraft.batiment||'';s.disabled=!mapDraft}}
  {const s=$('map-lieu');if(s){s.replaceChildren(new Option('— aucun lieu —',''),...lieuxDesCartes().map(l=>new Option(l,l)),new Option('✎ Nouveau lieu…','*'));s.value=mapDraft&&mapDraft.lieu||'';s.disabled=!mapDraft}}
  if(mapDraft)$('map-name').value=mapDraft.name;
+ if(typeof majBoutonProgression==='function')majBoutonProgression();
  {const j=$('map-jcj');if(j){j.checked=!!(mapDraft&&mapDraft.jcj===true);j.disabled=!mapDraft}}
  remplitModelesAdv()}
 /* v1.070 — La famille Tokens : un outil par Type d'adversaire (Standard, Élite, Solitaire, Boss) et un pour les PNJ. Le menu
