@@ -6750,7 +6750,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    groupes.forEach((x,i)=>{const c0=pos[i],g=x.g;
     // Le chemin : d'en haut vers le premier centre, puis de centre en centre ; après le dernier, en pointillés vers le niveau suivant.
     const avant=i?pos[i-1]:{x:c0.x,y:MARGE},apres=i<dernier?pos[i+1]:suivant?{x:c0.x+(i%2?DX:-DX)/2,y:c0.y+STEP/2}:null;
-    const RC=D.centre/2+6;trait(avant.x,avant.y,c0.x,c0.y,!i,i?RC:0,RC);pastille(g,i?(avant.x+c0.x)/2:c0.x,i?(avant.y+c0.y)/2:c0.y-R,niveauA<g);
+    const RC=D.centre/2+6;if(i)trait(avant.x,avant.y,c0.x,c0.y,false,RC,RC);pastille(g,i?(avant.x+c0.x)/2:c0.x,i?(avant.y+c0.y)/2:c0.y-R,niveauA<g);
     if(apres&&i===dernier){trait(c0.x,c0.y,apres.x,apres.y,true,RC,0);pastille(suivant,apres.x,apres.y,niveauA<suivant)}
     // Les ronds autour du centre : le cercle moins le passage du chemin, à l'arrivée et au départ.
     const ang=p=>Math.atan2(p.y-c0.y,p.x-c0.x)*180/Math.PI,interdits=[ang(avant),...(apres?[ang(apres)]:[])];

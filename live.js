@@ -934,7 +934,11 @@ function verifieVersion(){if(typeof IMG_V!=='string'||typeof fetch!=='function')
  fetch('./version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(o=>{const v=o&&typeof o.v==='string'?o.v:'';
   if(!v||!(parseFloat(v)>parseFloat(IMG_V)))return;let b=$('bandeau-version');
   if(!b){b=document.createElement('div');b.id='bandeau-version';b.className='bandeau-version';b.setAttribute('role','status');
-   const t=document.createElement('span'),r=document.createElement('button');r.type='button';r.textContent='Recharger';b.append(t,r);document.body.append(b)}
+   const t=document.createElement('span'),r=document.createElement('button');r.type='button';r.textContent='Recharger';b.append(t,r);document.body.append(b);
+   // v1.113 : dans la couche du dessus, comme les fenêtres : au-dessus de l'arbre, des éditeurs, de tout ce qui s'ouvre.
+   if(typeof b.showPopover==='function'){b.setAttribute('popover','manual');try{b.showPopover()}catch(e){}
+    new MutationObserver(()=>{if(!b.isConnected||!b.matches(':popover-open'))return;const ouvertes=document.querySelectorAll('dialog[open]').length;
+     if(ouvertes>(b._ouvertes||0)){try{b.hidePopover();b.showPopover()}catch(e){}}b._ouvertes=ouvertes}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']})}}
   b.firstChild.textContent='Nouvelle version disponible : v'+v;b.lastChild.onclick=()=>rechargerVersion(v)}).catch(()=>{})}
 setTimeout(verifieVersion,4000);setInterval(verifieVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')verifieVersion()});
