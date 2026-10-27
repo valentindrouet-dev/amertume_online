@@ -659,6 +659,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
  {const vus=new Map(),l=c.talents.filter(t=>{if(!t||!t.id)return true;const d=vus.get(t.id);if(!d){vus.set(t.id,t);return true}
   if(JSON.stringify(d)===JSON.stringify(t))return false;t.id=crypto.randomUUID();vus.set(t.id,t);return true});if(l.length!==c.talents.length)c.talents=l}
+ // v1.124 : la nouvelle table du MJ remplace, une fois, tout réglage fait sur l'ancienne.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('xp-124')){delete c.niveauxXp;c.semisForge.push('xp-124')}
  // v1.123 : des paliers d'XP réglés sur 20 niveaux gagnent les niveaux 21 à 40, aux marches d'origine.
  if(Array.isArray(c.niveauxXp)&&c.niveauxXp.length===20&&niveauxXpValides([...c.niveauxXp,...NIVEAUX_XP.slice(20).map((v,k)=>c.niveauxXp[19]+v-NIVEAUX_XP[19])]))c.niveauxXp=[...c.niveauxXp,...NIVEAUX_XP.slice(20).map(v=>c.niveauxXp[19]+v-NIVEAUX_XP[19])];
  // Les paliers d'XP réglés à la main : gardés s'ils tiennent et diffèrent de ceux d'origine.
@@ -1495,7 +1497,7 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-pv strong',a.max);
  {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true,'',a)}
  // Sur la fiche, le « + » serre un peu la valeur des dégâts : une espace fine.
- ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsAffiches(a));{const t=carte.querySelector('.stat-tile.t-dmg');if(t)t.classList.toggle('en-hausse',degatsEnHausse(a))}ecrire('.stat-tile.t-xp strong',a.xp||0);
+ ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsAffiches(a));{const t=carte.querySelector('.stat-tile.t-dmg');if(t)t.classList.toggle('en-hausse',degatsEnHausse(a))}ecrire('.stat-tile.t-xp strong',a.hero?xpDuNiveau(a).dans:a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
  carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('haute',valeurCompetence(a,k)>1)}
@@ -1558,11 +1560,11 @@ function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:d
  tuiles.forEach(t=>{const cle=[...t.classList].map(c=>/^t-(\w+)$/.exec(c)).filter(Boolean).map(m=>m[1])[0],f=quoi[cle];
   if(!f||(cle==='xp'&&!a.hero))return;calculAuSurvol(t,()=>f(a));if(BULLES){const e=t.querySelector('.ecu');if(e)e.removeAttribute('title')}})}
 // L'XP d'un aventurier au survol : son niveau, le suivant et ce qu'il reste à gagner pour l'atteindre.
-function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a.xp))||0),niv=niveauDeXp(xp),f=n=>n.toLocaleString('fr-FR')+' XP';
- const l=[['Niveau '+niv,f(xp)]];
- const seuils=seuilsXp();
- if(niv>=seuils.length)l.push(['Niveau maximum','atteint']);
- else{const s=seuils[niv];l.push(['Niveau '+(niv+1),'à '+f(s)],['Reste à gagner',f(s-xp)])}
+// v1.124 : l'XP du niveau en cours sur ce qu'il demande, puis ce qu'il reste avant le suivant.
+function detailXp(a){const x=xpDuNiveau(a),f=n=>n.toLocaleString('fr-FR')+' XP';
+ const l=[['Niveau '+x.niveau,x.pour?x.dans.toLocaleString('fr-FR')+' / '+f(x.pour):f(x.dans)]];
+ if(!x.pour)l.push(['Niveau maximum','atteint']);
+ else l.push(['Reste à gagner',f(x.pour-x.dans)]);
  return l}
 function calculAuSurvol(tuile,lignes){if(!tuile)return;
  const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle';
@@ -1581,6 +1583,8 @@ function tuilesVives(a,tuiles,cles,carte){
      ?'DEF nulle : rien n’est porté. Équipe-lui une armure ou un bouclier.'
      :'DEF de l’armure et du bouclier équipés : elle se change dans l’équipement.'}}
   else if(ecu)champVif(ecu,()=>a.def,v=>poserCarac(a,'def',v,carte),'Modifier la DEF de '+a.name);
+  // v1.124 : l'XP d'un aventurier se corrige dans son niveau, comme elle se lit.
+  else if(gros&&cle==='xp'&&a.hero)champVif(gros,()=>xpDuNiveau(a).dans,v=>poserCarac(a,'xp',String(xpDuNiveau(a).bas+Math.max(0,Math.trunc(Number(v))||0)),carte),'Modifier l’XP de '+a.name);
   else if(gros&&!(a.hero&&cle in BASE_HEROS))champVif(gros,()=>a[cle],v=>poserCarac(a,cle,v,carte),'Modifier '+cle.toUpperCase()+' de '+a.name);
   if(petit&&plafond&&!(a.hero&&plafond in BASE_HEROS))champVif(petit,()=>a[plafond],v=>poserCarac(a,plafond,v,carte),
    'Modifier le maximum de '+a.name,'petit')})}
@@ -1799,7 +1803,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
  const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
-  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+\u202F'+degatsAffiches(a)],['xp','XP',a.xp||0]]
+  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+\u202F'+degatsAffiches(a)],['xp','XP',a.hero?xpDuNiveau(a).dans:a.xp||0]]
   .map(t=>statTile(...t));
  tuiles[4].classList.toggle('en-hausse',degatsEnHausse(a));
  // La Vie sous son maximum se teinte de rouge, et redevient blanche au maximum.
@@ -6501,7 +6505,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     ou rendu s'y voit aussitôt. Les PV max se recalculent ici, sans attendre la table. */
  if(a){const r=document.createElement('div');r.className='stat-row en-icones cadre-chiffres arbres-chiffres';r.style.setProperty('--classe',typeof actorTint==='function'?actorTint(a):encre||'#8a7a63');
   const pvMax=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+(Number(a.auraPv)||0);
-  const t=[['vie','Vie',vieAffichee(a)],['endu','Endu',enduAffichee(a)],['pv','PV max',pvMax],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.xp||0]].map(x=>statTile(...x));
+  const t=[['vie','Vie',vieAffichee(a)],['endu','Endu',enduAffichee(a)],['pv','PV max',pvMax],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.hero?xpDuNiveau(a).dans:a.xp||0]].map(x=>statTile(...x));
   [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([c,k])=>iconeStat(t[k],c));t[0].classList.toggle('sous-max',vieEntamee(a));bullesChiffres(a,t);r.append(...t);tete.append(r)}
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));

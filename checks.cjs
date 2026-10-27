@@ -949,8 +949,8 @@ assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20
  assert.deepEqual(sansAmeliorationsRemplacees([a1,a2]).map(t=>t.id),['a1','a2']);assert.deepEqual(sansAmeliorationsRemplacees([a1,a3]).map(t=>t.id),['a3']);}
 // Le niveau d'un aventurier suit son XP, palier par palier.
 {const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,40);
- assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,28]);
- const h={hero:true,xp:0,level:1};writeStat(h,'xp','14000');assert.equal(h.level,6);
+ assert.deepEqual([0,99,100,299,300,650,1149,1150,5000,99999,100000,9999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,39,40,40]);
+ const h={hero:true,xp:0,level:1};writeStat(h,'xp','14000');assert.equal(h.level,16);
  const m={hero:false,xp:0,level:3};writeStat(m,'xp','900');assert.equal(m.level,3,'un adversaire garde le niveau qu’on lui donne');}
 assert.equal(readStat('inconnue','5',2),2);                    // Une clé qui n'existe pas ne s'invente pas.
 const fiche={hp:20,max:24,vie:8,vieMax:8,dmg:2,states:[]};
@@ -4924,13 +4924,13 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    qu'elles portent, pas leurs lignes. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),partage=fs.readFileSync('shared.js','utf8'),T=C.TALENTS_CODES;
  assert.ok(C.niveauxXpValides(C.NIVEAUX_XP)&&!C.niveauxXpValides([0,300,200,...C.NIVEAUX_XP.slice(3)])&&!C.niveauxXpValides([5,...C.NIVEAUX_XP.slice(1)])&&!C.niveauxXpValides(C.NIVEAUX_XP.slice(1)),'des paliers qui montent, le premier à 0');
- assert.equal(C.niveauDeXp(400),2,'sans réglage, ceux d’origine');
+ assert.equal(C.niveauDeXp(400),3,'sans réglage, ceux d’origine');
  assert.ok(src.includes("if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;")
   &&src.includes("+'<div id=\"bloc-niveaux\" hidden><div class=\"divider\"></div><h3 class=\"reglage-titre\">Niveaux d’XP</h3><div id=\"niveaux-xp\" class=\"niveaux-xp\"></div></div>'")
   &&src.includes("$('bloc-niveaux').hidden=view!=='mj';")&&src.includes("catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();")
   &&src.includes("function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}")
   &&src.includes("catalog=normalizeCatalog(s.catalog);syncForges();niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();")
-  &&src.includes(" const seuils=seuilsXp();"),'les paliers d’XP à la main');
+  &&src.includes("function detailXp(a){const x=xpDuNiveau(a)"),'les paliers d’XP à la main');
  assert.deepEqual(C.voletsDe({effet:'contagioncontact'}),{vue:2});assert.ok(T.contagionvue.retire);
  assert.ok(C.phraseTalent('contagioncontact',{},2).includes('visibles')&&C.phraseTalent('contagioncontact',{},1).includes('au contact'));
  assert.ok(page.includes("vue=porteEffet(codes,'contagionvue')||codes.some(x=>x.code.cle==='contagioncontact'&&voletOuvert(x,'vue'))"),'Contagion en vue au palier 2');
@@ -5955,7 +5955,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
 /* v0.501 — Fiche : « + » serré sur les dégâts, valeurs des bonus du bloc Talents plus grandes ; pastilles d'équipement
    à la couleur de la rareté ; pastilles grises dans une bulle de talent grisée. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsAffiches(a));")&&src.includes("['dmg','Dég.','+\\u202F'+degatsAffiches(a)],['xp','XP',a.xp||0]]\n  .map(t=>statTile(...t));")
+ assert.ok(src.includes("ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsAffiches(a));")&&src.includes("['dmg','Dég.','+\\u202F'+degatsAffiches(a)],['xp','XP',a.hero?xpDuNiveau(a).dans:a.xp||0]]\n  .map(t=>statTile(...t));")
   &&css.includes('.hero-card .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur{left:70%;top:70%;font-size:14px;')
   &&css.includes('.gear-detail .gear-bonus::before{background:var(--rarete,#7d7a74);')&&css.includes('.talent-detail.grisee{--pastille:#8f8a80!important}'),'les retouches de la fiche et des pastilles');}
 /* v0.500 — Blindage ne s'empile pas ; Gardien pose l'état Gardé, à l'image choisie par le MJ ; les talents de début

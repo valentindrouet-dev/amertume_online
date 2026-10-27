@@ -158,7 +158,8 @@ REGLES_SECTIONS.push(
    rgCarte(RG.rouge,'Coma et mort',rgListe(['À 0 PV : <b>Coma</b>. En combat, l’aventurier perd <b>1 VIE</b> pour de bon.','<b>VIE à 0</b> : mort ; seul le MJ ressuscite.','Fin du combat : le comateux revient avec <b>1d6 + Endurance</b> PV, au prix d’un repos court.','À 0 PV sous Nécrose : mort.'])),
    rgCarte(RG.vert,'Repos court',rgListe(['<b>1d6 + Endurance</b> PV.','Lève les états (sauf Blindage), la Nécrose ; la Radiance se perd.','Rend les charges « par repos court ».','Autant que son <b>Niveau</b>, un seul entre deux combats.'])),
    rgCarte(RG.mait,'Repos long',rgListe(['Par le MJ, hors combat.','VIE et PV au maximum, repos courts et charges rendus, états et Nécrose levés.'])),
-   rgCarte(RG.accent,'XP et niveau',rgListe(['Chaque aventurier présent gagne l’<b>XP entière</b> d’un adversaire vaincu.','L’XP paie les talents ; dépenser n’abaisse pas le niveau.','Seuils : '+((typeof seuilsXp==='function'?seuilsXp():typeof NIVEAUX_XP!=='undefined'?NIVEAUX_XP:[]).slice(1,8).join(', '))+'…'])))),
+   rgCarte(RG.accent,'XP et niveau',rgListe(['Chaque aventurier présent gagne l’<b>XP entière</b> d’un adversaire vaincu.','L’XP paie les talents ; dépenser n’abaisse pas le niveau.',(()=>{const s=typeof seuilsXp==='function'?seuilsXp():typeof NIVEAUX_XP!=='undefined'?NIVEAUX_XP:[],m=s.slice(1).map((v,i)=>v-s[i]),fr=n=>n.toLocaleString('fr-FR');
+    return 'L’XP repart de <b>0 à chaque niveau</b> ; chacun demande la sienne : '+m.slice(0,6).map(fr).join(', ')+'… jusqu’à '+fr(m[m.length-1]||0)+' pour le niveau '+s.length+' ('+fr(s[s.length-1]||0)+' XP en tout).'})()])))),
  // 9. Les espèces.
  ()=>rgSection('especes','Les espèces',RG.mait,'🧬','Chaque espèce donne ses bonus pour toujours, sa Vitesse, et ses Talents d’Espèce.',rgEspeces()),
  // 10. Les classes.
