@@ -1045,3 +1045,15 @@ async function connexionMJ(){if(!auth){document.addEventListener('amertume-fireb
  if(!m.tc.has(a))m.tc.set(a,tc.call(this,a));return m.tc.get(a)}}
 {const d0=defOf;defOf=function(a,...x){const m=typeof memoRendu!=='undefined'&&memoRendu;if(!m||x.length||!a||typeof a!=='object')return d0.call(this,a,...x);
  if(!m.def.has(a))m.def.set(a,d0.call(this,a));return m.def.get(a)}}
+
+/* v1.125 — Des rendus groupés : passer un tour ou commencer un combat appelait render() jusqu'à quatre fois dans la même
+   milliseconde, chaque enveloppe ajoutant le sien. Dans un groupe, les demandes attendent la fin et n'en font qu'un — sauf si
+   la liste des combattants a changé entre-temps : ce qui lit la table par rang doit la trouver à jour. Posé ici, après toutes
+   les enveloppes de render, tourSuivant et basculerMode : ce fichier est le dernier. */
+let rendusGroupes=0,renduDemande=false,rendusIds='';
+const idsActeurs=()=>actors.map(a=>a&&a.id).join(',');
+{const rG=render;render=function(...x){if(rendusGroupes&&idsActeurs()===rendusIds){renduDemande=true;return}rendusIds=idsActeurs();return rG.apply(this,x)}}
+function groupeRendus(fn){rendusGroupes++;if(rendusGroupes===1){renduDemande=false;rendusIds=idsActeurs()}
+ try{return fn()}finally{rendusGroupes--;if(!rendusGroupes&&renduDemande){renduDemande=false;render()}}}
+{const ts=tourSuivant;tourSuivant=function(...x){return groupeRendus(()=>ts.apply(this,x))}}
+{const bm=basculerMode;basculerMode=function(...x){return groupeRendus(()=>bm.apply(this,x))}}

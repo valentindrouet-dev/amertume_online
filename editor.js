@@ -8373,7 +8373,10 @@ const originalRender=render;render=function(){if(!loading&&synchronisePV())sched
  renderAttackChoices();scheduleSave()};
 // Les entrées éditées restent du texte, y compris dans les boutons de sélection.
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
-function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
+// v1.125 : un socle en main, la sauvegarde locale attend le lâcher — le brouillard exploré l'appelait à chaque pas, et elle copie tout.
+let sauvegardeApresGeste=false;
+function finDeGesteSauve(){if(!sauvegardeApresGeste)return;sauvegardeApresGeste=false;scheduleSave()}
+function scheduleSave(){if(loading)return;if(window.socleEnMain){sauvegardeApresGeste=true;return}clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
 function snapshot(){return {version:8,actors,catalog,round,mode,owner,selected,mapImage,maps,currentMapId,title:sceneTitle()}}
 /* La sauvegarde globale est la sauvegarde locale, mise dans un fichier : même forme, même
    lecture. Elle ajoute ce qui aide à la reconnaître et le verrou des tokens. */
@@ -8641,3 +8644,6 @@ function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle
  const avant=d.querySelector(':scope>.bulle-cibles');if(avant)avant.after(tete);else d.prepend(tete);
  const trait=document.createElement('div');trait.className='talent-trait';tete.after(trait)}
 {const bt0=bulleTalent;bulleTalent=function(t,o={}){const d=bt0(t,o);try{if(t&&t.effet!=='bonus')enteteTalent(d,t,o||{})}catch(e){}return d}}
+
+// v1.125 : les choix d'attaque mesurent la carte une fois.
+{const f=renderAttackChoices;renderAttackChoices=function(...x){return figeCadre(()=>f.apply(this,x))}}
