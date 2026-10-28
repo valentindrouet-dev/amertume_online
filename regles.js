@@ -139,6 +139,7 @@ REGLES_SECTIONS.push(
    '<b>Muraille</b> : Immobilisé et DEF +1 jusqu’à la fin du tour, où Immobilisé tombe tout seul. <b>Meneur</b> peut donner « + Niveau » : le niveau du porteur.',
    '<b>Intervention</b> : seulement pour l’allié Gardé du porteur.',
    '<b>Carte PvP</b> : chaque aventurier y est neutre, ennemi de tous — des autres aventuriers comme des adversaires, qui peuvent attaquer n’importe lequel ; aucune XP n’y est gagnée.',
+   '<b>Inspiration</b> (Mystique, Action, en combat) : test de Mysticisme ; un Orbe de plus ce tour par réussite — non lancé, il se perd à la fin du tour, sauf Thésaurisation. Améliorée : Action bonus ; +1 réussite automatique ; Rage 1 par réussite.',
    '<b>Main Secourable</b> (Action bonus) : un allié au contact du porteur et d’un adversaire passe derrière le porteur, sans dégâts d’opportunité.',
    '<b>Carapace</b> : chaque combat commence avec Endurance × Armure (× 2, améliorée) ; l’allié Gardé peut la recevoir aussi.',
    '<b>Mouvement forcé</b> (Provocation…) : jamais plus loin que le mouvement du provoqué, ses PM compris ; trop loin, il fait ce mouvement vers le porteur, puis s’arrête. Immobilisé, il ne bouge pas.',

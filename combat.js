@@ -2279,6 +2279,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration : la DEF du porteur écarte aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
   params:[],
   phrase(){return 'La DEF du porteur écarte aussi les <b>dés de dégâts mortels</b> (rouges).'}},
+ // v1.127 : Inspiration (Mystique) — une Action : test de Mysticisme ; autant d'orbes en plus ce tour que de réussites.
+ inspiration:{cle:'inspiration',nom:'Inspiration',type:'act',bouton:'Inspiration',
+  aide:'Action, en combat : le porteur fait un test de Mysticisme et gagne, pour ce tour, autant d’Orbes que de réussites.',params:[],
+  phrase(){return 'Vous effectuez un test de <b>Mysticisme</b>. Vous obtenez autant d’<b>Orbes de Feu</b> que de <b>réussites</b> au test.'}},
+ inspirationbonus:{cle:'inspirationbonus',nom:'Inspiration — Action bonus',court:'Action bonus',type:'ame',
+  aide:'Amélioration d’Inspiration : elle devient une Action bonus.',params:[],
+  phrase(){return 'Inspiration devient une <b>Action bonus</b>.'}},
+ inspirationreussite:{cle:'inspirationreussite',nom:'Inspiration — Réussite',court:'+1 réussite',type:'ame',
+  aide:'Amélioration d’Inspiration : +1 réussite automatique au test.',params:[],
+  phrase(){return '<b>+1 réussite</b> automatique au test d’Inspiration.'}},
+ inspirationrage:{cle:'inspirationrage',nom:'Inspiration — Rage',court:'Rage',type:'ame',
+  aide:'Amélioration d’Inspiration : Rage 1 par réussite au test.',params:[],
+  phrase(){return 'Vous obtenez <b>Rage 1</b> par réussite au test d’Inspiration.'}},
  // v1.106 : Main Secourable — une Action bonus ; l'allié au contact, menacé, passe derrière le porteur sans dégâts d'opportunité.
  mainsecourable:{cle:'mainsecourable',nom:'Main Secourable',type:'abon',bouton:'Main Secourable',
   aide:'Action bonus : un allié au contact du porteur, au contact d’un adversaire, fait un mouvement gratuit pour passer derrière le porteur, sans subir de dégâts d’opportunité.',params:[],
@@ -2414,7 +2427,7 @@ Object.assign(TALENTS_CODES,{
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
- provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
+ provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',inspirationbonus:'inspiration',inspirationreussite:'inspiration',inspirationrage:'inspiration',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
  meneurtous:'meneur',meneurdouble:'meneur',detresserage:'detresse',detressetous:'detresse',muraillearmure:'muraille',muraillegarde:'muraille',
  attaqueetatarmure:'attaqueetat',attaqueetatgarde:'attaqueetat',interventionsol:'intervention',interventionsansopp:'intervention',interventionattaque:'intervention',gardienonde:'gardien',gardienrelance:'gardien'};

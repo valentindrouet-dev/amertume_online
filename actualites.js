@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.127","d":"2026-10-28","t":"Mystique : Inspiration et ses améliorations"},
 {"v":"1.126","d":"2026-10-28","t":"Indice de performance pour le MJ"},
 {"v":"1.125","d":"2026-10-28","t":"Réactivité de la table : mesures, écus, sauvegarde, rendus groupés"},
 {"v":"1.124","d":"2026-10-27","t":"Nouvelle table d'XP, XP affichée par niveau"},
