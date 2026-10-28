@@ -1702,7 +1702,7 @@ assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50
 assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;')
  &&src.includes("function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
  &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;if(view==='mj'&&tarifeBonus())scheduleSave();queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();")
- &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
+ &&src.includes("const classeBase=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
  &&src.includes("el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}")
  &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
  &&src.includes("rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;")
@@ -2872,7 +2872,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!T('a').liens&&T('c').pos&&T('g').pos,'la ligne qui menait à lui s’efface ; ses suivants restent en place, devenus des départs');
  assert.ok(T('k').horsArbre&&!T('k').chemin&&T('k2').horsArbre&&!T('k2').chemin,'les petits ronds de ses chemins quittent l’arbre');
  assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
- assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));")
+ assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t)&&t.spherier!==true);")
   &&src.includes(" t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
  /* v0.294 — Ni réserve sous l'arbre, ni mention au catalogue : un talent retiré se remet
     dans l'arbre par son formulaire, « Place dans l'arbre ». */
@@ -4166,7 +4166,7 @@ assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySe
   &&page.includes("(neufs.length?'\\n'+neufs.map(x=>'- '+dit[x]()).join('\\n'):'\\nAucune information nouvelle.')")
   &&page.includes("const k=skillNames.indexOf('Savoir'),jet=skillRoll(valeurCompetence(a,k)-1,d6);")
   &&page.includes("const gain=neufs.length*Math.max(1,Math.round((Math.trunc(Number(o.xp))||0)/10))")
-  &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration'];"),'l’Analyse par le Savoir');
+  &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];"),'l’Analyse par le Savoir');
  assert.ok(src.includes("function bulleCombattant(o){")&&src.includes("const sait=k=>typeof connait!=='function'||connait(o,k);")&&src.includes("'Analysez un adversaire pour en savoir davantage à son sujet !'")
   &&page.includes("if(typeof bulleCombattant==='function'){t.removeAttribute('title');if(!a.hero)survolToken(t,a)}")&&src.includes("function oublierAnalyses(){delete catalog.analyses;")
   &&src.includes("id=\"bestiary-analyses\""),'la bulle du token, le Bestiaire qui oublie');
@@ -4217,12 +4217,12 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(page.includes('<button class="btn-action btn-crier rond" id="crier" hidden>📢</button>')&&page.includes(" if(typeof faisBruit==='function')faisBruit(a,[{x:a.x,y:a.y}],BRUIT_CRI);render();scheduleSave()};")
   &&page.includes("  actors.forEach(a=>{delete a.crie;delete a.entendu;delete a.ecoutes;delete a.analysesFaites})}")&&css.includes('button.btn-crier{--fond:#b9772c;color:#fff}'),'Crier, une fois entre deux combats');
  assert.ok(page.includes("if(a.entendu&&!a.vu&&campDe(a)==='adverse'&&!t.classList.contains('unseen')){const e=document.createElement('span');e.className='entendu'")&&css.includes('#pv-layer .entendu{')
-  &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration'];"),'le « ! », sur toutes les tables');}
+  &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];"),'le « ! », sur toutes les tables');}
 /* v0.621 — Happé par un piège toujours actif, un combattant y est tenu : il n'en sort qu'en l'enjambant, et un enjambement
    réussi le libère pour de bon. Le MJ l'en sort toujours à la main, même au sol, sans règle de mouvement ni point dépensé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
  assert.ok(carto.includes("function tenuParPiege(o){if(!o||!o.tenuPar)return null;")&&carto.includes("o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}")
-  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration'];"),'tenu par le piège, libéré par l’enjambement');
+  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];"),'tenu par le piège, libéré par l’enjambement');
  assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!gelImmobile(actors[i])))&&!gelDebut(actors[i])}")
   &&page.includes("const libere=view==='mj'&&typeof tenuParPiege==='function'&&!!tenuParPiege(a);")&&page.includes("   else if(!libere)lot.forEach(k=>{const o=actors[k];if(o)depensePoint(o,'mouvement')});")
   &&page.includes("   if(libere&&typeof tenuParPiege==='function')tenuParPiege(a);"),'le MJ l’en sort toujours');}
@@ -4281,7 +4281,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(carto.includes("if(etats.length&&!enCombat())o.etatsPieges=")&&page.includes("if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true,a.etatsPieges);a.ignition=''});"),'les états d’un piège passent le début du combat');
  const ctxL={statesOf:a=>a.states.slice(),setState:(a,e,on)=>{if(!on)a.states=a.states.filter(x=>x!==e)}};vm.createContext(ctxL);vm.runInContext(page.match(/function leveEtats\(a,finCombat,garder\)\{[^\n]*\n[^\n]*/)[0]+';this.leveEtats=leveEtats',ctxL);
  const h={states:['Saignée','Feu'],etatsPieges:['Saignée']};assert.equal(ctxL.leveEtats(h,true,h.etatsPieges).join(),'Feu');assert.equal(h.states.join(),'Saignée');assert.ok(!('etatsPieges' in h));
- assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
+ assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
   &&vif.includes("gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});"),'l’état d’un piège ne revient pas en arrière');}
 /* v0.615 — Pièges : un outil de l'éditeur de cartes. Un piège de toute taille, en jeton, en jeton imagé ou en image seule ;
    visible ou caché ; déclenché au contact ou à distance par une zone ou un fil liés ; détecté par Perception ou Ruse ;
@@ -5104,7 +5104,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration'];")&&vivant.includes("const detail={...(meta&&meta.bilan?{bilan:meta.bilan}:{}),")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];")&&vivant.includes("const detail={...(meta&&meta.bilan?{bilan:meta.bilan}:{}),")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
@@ -5351,7 +5351,7 @@ assert.ok(fs.existsSync('img/points/pa.webp')&&fs.existsSync('img/points/pm.webp
 /* v0.895 — L'arbre d'espèce, talents resserrés et centrés. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.arbres-cols-espece .arbre-plan{margin-left:auto;margin-right:auto}'),'v0.895');
 /* v0.894 — L'arbre d'espèce au design de l'arbre de classe : vraie colonne, nom et encre de l'espèce, fenêtre de même taille. */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes('pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y}')&&ed.includes('const depart=c.sansDepart?null:')&&ed.includes('if(espEnTete)nomClasse.textContent=espEnTete.nom;')&&fs.readFileSync('editor.css','utf8').includes('#arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}'),'v0.894');}
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes('pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y}')&&ed.includes('const depart=c.sansDepart?null:')&&ed.includes('const espEnTete=arbresEspece&&a&&ARBRE_V2?especeDe(a.espece):null;')&&fs.readFileSync('editor.css','utf8').includes('#arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}'),'v0.894');}
 /* v0.893 — À la création, les espèces triées par Extension puis par nom ; leurs talents dans l'ordre des types. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("[...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr'))"),'v0.893');
 /* v0.892 — Les talents d'espèce dans la même grille que les autres groupes. */
@@ -6115,7 +6115,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b2','b3'])),JSON.stringify(['o','b3']),'sans le premier, le second tombe ; un bonus hors chemin reste');
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['b1','b2'])),'[]','sans le talent, tout le chemin tombe');
  assert.equal(ctxB.basculeLien(T[0],T[2]),'ajoute','Cendre est la case de droite');assert.equal(ctxB.basculeLien(T[2],T[1]),'ajoute','en diagonale aussi, une ligne');
- assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
+ assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!lisChemin(t)&&t.spherier!==true);")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
 /* v0.358 — Dans la barre d'action, attaques et talents d'attaque sont des ronds, comme les talents
    d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
    de nom sous les ronds de talents. */

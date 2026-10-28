@@ -740,6 +740,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.116 : les arbres que le MJ agence à la main (Placement libre), par classe.
  {const l=c.arbresLibres&&typeof c.arbresLibres==='object'&&!Array.isArray(c.arbresLibres)?c.arbresLibres:{};c.arbresLibres={};
   Object.entries(l).slice(0,60).forEach(([k,v])=>{if(typeof k==='string'&&k&&v===true)c.arbresLibres[k.slice(0,60)]=true});if(!Object.keys(c.arbresLibres).length)delete c.arbresLibres}
+ // v1.128 : les métiers, nommés par le MJ — chacun a son arbre (famille « Métier · nom »).
+ {const l=Array.isArray(c.metiers)?c.metiers:[],vus=new Set();c.metiers=l.map(m=>({nom:String(m&&m.nom||'').replace(/["<>·]/g,'').trim().slice(0,40)})).filter(m=>m.nom&&!vus.has(m.nom)&&vus.add(m.nom)).slice(0,40);if(!c.metiers.length)delete c.metiers}
  // v1.114 : les paliers passent à 1, 5, 10, 15, 20 — les talents des niveaux 4, 7 et 10 suivent au 5, au 10 et au 15, la limite des joueurs aussi.
  if(!c.semisForge.includes('paliers-5')){const M={4:5,7:10,10:15};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
   if(c.limitesArbres)Object.keys(c.limitesArbres).forEach(k=>{const n=M[c.limitesArbres[k]];if(n)c.limitesArbres[k]=n});c.semisForge.push('paliers-5')}
@@ -825,6 +827,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.paliersActifs!==true||!(t.type==='ame'||t.effet==='bonus'))delete t.paliersActifs;
   // v1.112 : la place choisie par le MJ autour du centre de son palier, en pixels ; sans elle, le cercle la donne.
   if(t.orbite&&!(typeof t.orbite==='object'&&Number.isFinite(t.orbite.dx)&&Number.isFinite(t.orbite.dy)))delete t.orbite;
+  // v1.128 : un bonus du sphérier — sa place, ses liens, son départ.
+  if(t.spherier!==true){delete t.spherier;delete t.sphere;delete t.liensSphere;delete t.departSphere}
+  else{const s=t.sphere&&typeof t.sphere==='object'?t.sphere:{};t.sphere={x:Math.max(30,Math.min(4000,Math.round(Number(s.x)||0))),y:Math.max(30,Math.min(4000,Math.round(Number(s.y)||0)))};
+   t.liensSphere=[...new Set((Array.isArray(t.liensSphere)?t.liensSphere:[]).filter(id=>typeof id==='string'&&id&&id!==t.id))].slice(0,12);if(!t.liensSphere.length)delete t.liensSphere;if(t.departSphere!==true)delete t.departSphere}
   if(t.orbite){const d=Math.hypot(t.orbite.dx,t.orbite.dy),f=d>400?400/d:1;t.orbite={dx:Math.round(t.orbite.dx*f),dy:Math.round(t.orbite.dy*f)}}
   // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
   if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}
@@ -5714,14 +5720,14 @@ function talentFlottant(classe){return (catalog.talents||[]).find(t=>t&&t.flotta
 // Tous les talents de classe d'une classe, tenus d'office : l'ancien rond flottant, et la maîtrise de départ.
 function talentsFlottants(classe){return (catalog.talents||[]).filter(t=>t&&t.flottant===true&&!t.horsArbre&&talentFamily(t)===classe)}
 function accordeFlottants(){if(typeof spectateur==='function'&&spectateur())return false;let change=false;
- (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const fls=talentsFlottants(classeDuHeros(a)),l=a.talents||[];
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const fm=typeof familleMetierVue==='function'?familleMetierVue(a):'',fls=[...talentsFlottants(classeDuHeros(a)),...(fm?talentsFlottants(fm):[])],l=a.talents||[];
   const garde=l.filter(id=>{const t=talent(id);return !t||!t.flottant||fls.includes(t)});fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});
   // v0.883 : ceux de son espèce, d'office et gratuits ; ceux d'une autre espèce s'en vont.
   {const de=t=>t&&talentFamily(t)===FAMILLE_ESPECES&&!estBonus(t)&&!lisChemin(t),siens=(catalog.talents||[]).filter(t=>de(t)&&t.espece&&t.espece===a.espece);
    for(let k=garde.length-1;k>=0;k--){const t=talent(garde[k]);if(de(t)&&!siens.includes(t))garde.splice(k,1)}siens.forEach(t=>{if(!garde.includes(t.id))garde.push(t.id)})}
   if(garde.length!==l.length||garde.some((id,k)=>id!==l[k])){a.talents=garde;change=true}});
  return change}
-function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));
+function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t)&&t.spherier!==true);
  const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
  // Dans une colonne, de haut en bas puis de gauche à droite ; qui n'a pas encore de case, en dernier.
  const rang=t=>{const p=posDe(t);return p?[p.y,p.x]:[1e9,0]};
@@ -6334,7 +6340,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(a&&typeof accordeFlottants==='function'&&accordeFlottants())scheduleSave();
  // Une ligne en cours de tracé n'a de sens que dans l'édition.
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
- const classe=a?classeDuHeros(a):arbresClasse;
+ const classeBase=a?classeDuHeros(a):arbresClasse;
+ // v1.128 : les onglets de l'arbre — la classe, son sphérier de Bonus, l'espèce, le métier. L'Espèce remplace son ancien bouton.
+ const onglets=ongletsArbre(a,classeBase);if(!onglets.some(([k])=>k===arbresOnglet))arbresOnglet='classe';arbresEspece=arbresOnglet==='espece';arbresEspeceBtn.hidden=true;
+ const famMetier=arbresOnglet==='metier'?familleMetierVue(a):'',classe=famMetier||classeBase;
  // Sur l'arbre d'une classe, au MJ seul et hors vue joueur : la somme des coûts en XP de tout ce qu'il porte. L'arbre d'un aventurier ne la montre pas.
  {const liste=!a&&view==='mj'&&!arbresVueJoueur&&classe?talentsDeLArbre(classe):[],total=liste.reduce((n,t)=>{for(let k=1;k<=paliersDe(t);k++)n+=coutPalier(t,k);return n},0);
   /* Sous le total, ce que l'arbre donne de chaque caractéristique et compétence : le plus qu'une classe en reçoit.
@@ -6496,9 +6505,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.
  const tete=document.createElement('div');tete.className='arbres-tete';
  // Le nom de la classe tout en haut de la fenêtre, dans sa tête, au milieu.
- const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe';nomClasse.textContent=classe||'Sans classe';
+ // v1.128 : chez un aventurier, son nom ; sur le plan du MJ, la classe — en minuscules, la première lettre en capitale.
+ const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe nom-propre';nomClasse.textContent=a?majusculeInitiale(a.name||''):(classeBase||'Sans classe');
  // v0.894 : sur l'arbre d'espèce, le nom et l'encre de l'espèce.
- const espEnTete=arbresEspece&&a&&ARBRE_V2?especeDe(a.espece):null;if(espEnTete)nomClasse.textContent=espEnTete.nom;
+ const espEnTete=arbresEspece&&a&&ARBRE_V2?especeDe(a.espece):null;
  const encre=espEnTete?espEnTete.teinte:classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
  else corps.style.removeProperty('--encre');
  {const tetes=arbresDialog.querySelector('.dialog-head');tetes.querySelectorAll('.arbres-classe').forEach(x=>x.remove());tetes.prepend(nomClasse)}
@@ -7089,6 +7099,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     retirent. Le plan du MJ les garde, pour y créer des talents ; les autres classes ne changent pas. */
  (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&!mj&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  arbresDialog.classList.toggle('v2',V2);
+ // v1.128 : l'onglet Bonus dessine le sphérier de la classe, et son panneau.
+ const sphere=arbresOnglet==='bonus'&&V2&&classeBase?spherierArbre({a,mj,classe:classeBase,majTable,poserPalier,note}):null;
  if(V2){const cadre=document.createElement('div');cadre.className='arbres-v2';
   const g=document.createElement('div');g.className='arbres-v2-arbre';
   /* v0.894 : l'arbre d'espèce est un arbre comme celui d'une classe — une colonne, ses ronds, son bandeau — sans lien entre les
@@ -7098,6 +7110,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const lignes=[tEsp.filter(haut).sort(ordre),tEsp.filter(t=>!haut(t)).sort(ordre)].filter(l=>l.length);
    const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y},liens:[]})));
    const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));g.append(ge)}
+  else if(sphere)g.append(sphere.el);
+  else if(arbresOnglet==='metier'&&!famMetier){}
   else g.append(grille);
   const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);
@@ -7112,9 +7126,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;
     k.chemin=d?{de:T.id,dir:d,rang:1}:{de:T.id,dir:'so',rang:petitsDe(T,'so').length+1};k.ligneAuto=0;
     catalog.talents.push(k);arbreChange()},true)}
+  if(sphere)sphere.detail(panneau);else if(arbresOnglet==='metier'&&!famMetier){}else{
   const tous=tEsp.length?tEsp:colonnesArbre(classe).flatMap(c=>c.liste).filter(t=>!estVide(t));
-  const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT){remplitDetail(panneau,vuT);const e=g.querySelector('.arbre-noeud-espece[data-id="'+vuT.id+'"]');if(e)e.classList.add('choisi')}}
+  const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT){remplitDetail(panneau,vuT);const e=g.querySelector('.arbre-noeud-espece[data-id="'+vuT.id+'"]');if(e)e.classList.add('choisi')}}}
  else corps.append(grille);
+ // v1.128 : les onglets en tête ; sous eux, chez le MJ, les outils du métier.
+ {const haut=barreOngletsArbre(onglets);corps.prepend(haut);if(arbresOnglet==='metier'&&mj)haut.after(outilsMetier())}
  // Les lignes attendent que la fenêtre soit ouverte et la grille mesurée.
  requestAnimationFrame(traceChemins)}
 /* Les lignes d'une colonne, tracées de rond en rond, de bord à bord : entre deux talents voisins, et
@@ -7378,7 +7395,7 @@ function brancheEspeceFiche(){const f=$('actor-form').elements;if(!f.espece||!dr
   if(f.socle){if(e.taille==='small')f.socle.value='small';else if(avant&&avant.taille==='small'&&f.socle.value==='small')f.socle.value='medium'}
   f.race.dispatchEvent(new Event('input'))}}
 function renderActorForm(){const a=draft;const sien=w=>!w.forge||(a.inventaire||[]).includes(w.id),weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon'&&sien(w)).map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot&&sien(w)).map(w=>[w.id,w.name])];
-$('actor-fields').innerHTML='<div class="edit-grid'+(a.hero?'':' grille-adv5')+'">'+field('Nom','name',a.name,'text','required maxlength="120"')+(a.hero?field('Classe / rôle','role',a.role,'text','list="classes-jeu" maxlength="120"'):'<input type="hidden" name="role" value="'+esc(a.role||'')+'">')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"'+(a.hero?' disabled':''))+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+champEspeceFiche(a):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any" disabled')+field('Endurance','endu',a.endu,'number','min="1" max="999" disabled')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number',a.hero?'min="1" max="40" disabled':'min="1" max="20"'):'')+'</div>'
+$('actor-fields').innerHTML='<div class="edit-grid'+(a.hero?'':' grille-adv5')+'">'+field('Nom','name',a.name,'text','required maxlength="120"')+(a.hero?field('Classe / rôle','role',a.role,'text','list="classes-jeu" maxlength="120"'):'<input type="hidden" name="role" value="'+esc(a.role||'')+'">')+(a.hero&&metiersJeu().length?sel('Métier','metier',a.metier||'',[['','Aucun'],...metiersJeu().map(m=>[esc(m.nom),m.nom])]):'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"'+(a.hero?' disabled':''))+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+champEspeceFiche(a):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any" disabled')+field('Endurance','endu',a.endu,'number','min="1" max="999" disabled')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number',a.hero?'min="1" max="40" disabled':'min="1" max="20"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
   +'<div class="edit-grid'+(a.hero?'':' grille-adv4')+'">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']])+sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])+sel('Nature','nature',a.nature==='mortvivant'||a.nature==='mecanique'?a.nature:'vivant',[['vivant','Vivant'],['mortvivant','Mort-vivant'],['mecanique','Mécanique']])+'</div><div class="edit-grid">'+htmlFamillesAdv(a):'')+(!a.hero?'<label class="field-check"><input name="pnj" type="checkbox" '+(a.pnj?'checked':'')+'>PNJ</label>':'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+sel('Esquive','esquive',String(esquiveDe(a)),[['0','Aucune'],['2','2+'],['3','3+'],['4','4+'],['5','5+'],['6','6+']])+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"')
@@ -7576,7 +7593,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
 function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();if(a.hero&&f.espece&&especeDe(f.espece.value)){const e=especeDe(f.espece.value),c={espece:e.id};a.espece=e.id;a.race=e.nom;
   if(f.especeSavoir){delete a.savoirAnterieur;delete a.competent;a[champSavoir(c)]=f.especeSavoir.value===''?null:Number(f.especeSavoir.value)}
   if(f.especeHeritage)a.heritage=f.especeHeritage.value||null;if(f.especeAscendance)a.ascendance=f.especeAscendance.value||null;
-  if(e.taille==='small')a.socle='small'}if(a.hero&&typeof majusculeInitiale==='function')a.name=majusculeInitiale(a.name);if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}if(f.nature){if(f.nature.value==='mortvivant'||f.nature.value==='mecanique')a.nature=f.nature.value;else delete a.nature}
+  if(e.taille==='small')a.socle='small'}if(a.hero&&typeof majusculeInitiale==='function')a.name=majusculeInitiale(a.name);if(a.hero&&f.metier){if(f.metier.value)a.metier=f.metier.value;else delete a.metier}if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}if(f.nature){if(f.nature.value==='mortvivant'||f.nature.value==='mecanique')a.nature=f.nature.value;else delete a.nature}
  if(!a.hero&&f.nature){const fm=normaliseFamillesMonstre([...document.querySelectorAll('#actor-form input[name="famille"]:checked')].map(x=>x.value));if(fm.length)a.familles=fm;else delete a.familles}
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?9999999:99999);if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.max=Math.max(1,a.max);if(Number.isFinite(a.def))a.def=defPlafonnee(a.def);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value;if(f.pnj){if(f.pnj.checked)a.pnj=true;else{delete a.pnj;delete a.alignement;delete a.unique}}if(a.pnj&&f.alignement)a.alignement=alignementDe({pnj:true,alignement:f.alignement.value});if(a.pnj&&f.unique){if(f.unique.checked)a.unique=true;else delete a.unique}}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive){const v=Math.trunc(Number(f.esquive.value));a.esquive=v>=2&&v<=6?v:0}if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;else a.mouvement=Math.max(0,Math.min(99,v))}if(f.pa&&f.pm&&!a.hero)a.points={...(a.points||{}),action:num(f.pa.value,1,POINTS_MAX.action),mouvement:num(f.pm.value,1,POINTS_MAX.mouvement)};if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
@@ -8677,3 +8694,134 @@ function poseIndicePerf(){const mj=typeof mjIci==='function'&&mjIci(),b=$('indic
   requestAnimationFrame(pas)};
  requestAnimationFrame(pas)}
 poseIndicePerf();document.addEventListener('amertume-mj-change',poseIndicePerf);
+
+/* v1.128 — Les onglets de l'arbre, le sphérier des Bonus, les métiers.
+   Le sphérier : par classe, des bonus (caractéristiques, compétences, orbes…) que le MJ pose où il veut, relie entre eux et marque
+   de départ (t.spherier, t.sphere {x,y}, t.liensSphere, t.departSphere). Un aventurier achète un bonus de départ, ou un bonus relié
+   à un bonus qu'il tient ; rendu, ce qui n'est plus relié à un départ tenu tombe avec lui. Les métiers : une liste que le MJ nomme
+   (catalog.metiers), un champ de la fiche (a.metier), un arbre par métier — celui d'une classe, famille « Métier · nom ». */
+let arbresOnglet='classe',arbresMetierMJ='',sphereSel=null,sphereLier=false;
+const estSphere=t=>!!t&&t.spherier===true;
+const talentsSphere=classe=>(catalog.talents||[]).filter(t=>estSphere(t)&&talentFamily(t)===classe);
+const voisinsSphere=(t,liste)=>liste.filter(x=>x!==t&&((x.liensSphere||[]).includes(t.id)||(t.liensSphere||[]).includes(x.id)));
+// Ce qu'un aventurier tient vraiment du sphérier de sa classe : depuis les départs tenus, de lien en lien tenu.
+function spheresTenues(a,classe){const l=talentsSphere(classe),tient=new Set(a&&a.talents||[]),vus=new Set(),file=l.filter(t=>t.departSphere&&tient.has(t.id));
+ file.forEach(t=>vus.add(t.id));while(file.length){const t=file.shift();voisinsSphere(t,l).forEach(x=>{if(tient.has(x.id)&&!vus.has(x.id)){vus.add(x.id);file.push(x)}})}return vus}
+const sphereOuverte=(a,t,l)=>t.departSphere===true||voisinsSphere(t,l).some(x=>(a.talents||[]).includes(x.id));
+const PREFIXE_METIER='Métier · ';
+const metiersJeu=()=>Array.isArray(catalog.metiers)?catalog.metiers:[];
+const familleMetier=nom=>nom?PREFIXE_METIER+nom:'';
+function familleMetierVue(a){const l=metiersJeu();if(a)return a.metier&&l.some(m=>m.nom===a.metier)?familleMetier(a.metier):'';
+ if(!l.some(m=>m.nom===arbresMetierMJ))arbresMetierMJ=l[0]?l[0].nom:'';return familleMetier(arbresMetierMJ)}
+function ongletsArbre(a,classe){const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=[['classe',classe||'Classe']];
+ if(classe&&(plan||talentsSphere(classe).length))l.push(['bonus','Bonus']);
+ const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece',e.nom]);
+ if(a?!!fm:plan)l.push(['metier',a?a.metier:(arbresMetierMJ||'Métier')]);
+ return l}
+function barreOngletsArbre(onglets){const b=document.createElement('div');b.className='vit-onglets arbres-onglets';b.setAttribute('role','tablist');
+ onglets.forEach(([k,n])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));
+  // La fenêtre garde sa taille d'un onglet à l'autre.
+  t.onclick=()=>{if(arbresOnglet===k)return;const r=arbresDialog.getBoundingClientRect();arbresDialog.style.width=Math.round(r.width)+'px';arbresDialog.style.minHeight=Math.round(r.height)+'px';
+   arbresOnglet=k;sphereSel=null;sphereLier=false;renderArbres()};b.append(t)});
+ return b}
+const boutonOutil=(texte,fn,on)=>{const b=document.createElement('button');b.type='button';b.textContent=texte;if(on)b.classList.add('on');b.onclick=fn;return b};
+// Chez le MJ, sur l'onglet Métier : le métier regardé, en créer un, le renommer, le supprimer.
+function outilsMetier(){const o=document.createElement('div');o.className='arbres-outils';const l=metiersJeu();
+ if(l.length){const s=document.createElement('select');s.setAttribute('aria-label','Métier');l.forEach(m=>s.add(new Option(m.nom,m.nom)));s.value=arbresMetierMJ;s.onchange=()=>{arbresMetierMJ=s.value;renderArbres()};o.append(s)}
+ const nomLibre=(texte,avant)=>{const v=prompt(texte,avant||'');const n=String(v||'').replace(/["<>·]/g,'').trim().slice(0,40);return n&&!metiersJeu().some(m=>m.nom===n)?n:''};
+ o.append(boutonOutil('+ Métier',()=>{const n=nomLibre('Nom du nouveau métier');if(!n)return;catalog.metiers=[...metiersJeu(),{nom:n}];catalog.nbArbres={...(catalog.nbArbres||{}),[familleMetier(n)]:1};arbresMetierMJ=n;arbreChange()}));
+ if(l.length){
+  o.append(boutonOutil('Renommer',()=>{const v=arbresMetierMJ,n=nomLibre('Nouveau nom du métier « '+v+' »',v);if(!n)return;const f0=familleMetier(v),f1=familleMetier(n);
+   catalog.metiers=metiersJeu().map(m=>m.nom===v?{nom:n}:m);(catalog.talents||[]).forEach(t=>{if(t&&t.famille===f0)t.famille=f1});actors.forEach(x=>{if(x&&x.metier===v)x.metier=n});
+   if(catalog.arbresLibres&&catalog.arbresLibres[f0]){catalog.arbresLibres[f1]=true;delete catalog.arbresLibres[f0]}
+   ['nbArbres','voies'].forEach(k=>{const o=catalog[k];if(o&&o[f0]!==undefined){o[f1]=o[f0];delete o[f0]}});
+   if(Array.isArray(catalog.semisForge))catalog.semisForge.filter(k=>k.endsWith(':'+f0)).forEach(k=>catalog.semisForge.push(k.slice(0,-f0.length)+f1));
+   arbresMetierMJ=n;arbreChange()}));
+  o.append(boutonOutil('Supprimer',async()=>{const v=arbresMetierMJ,f0=familleMetier(v),ts=(catalog.talents||[]).filter(t=>t&&t.famille===f0),ids=new Set(ts.map(t=>t.id));
+   if(!await demander('Supprimer le métier « '+v+' »'+(ts.length?' et ses '+ts.length+' talent'+(ts.length>1?'s':''):'')+' ? Les aventuriers qui l’exercent le perdent, et l’XP de ces talents leur revient.','Supprimer'))return;
+   catalog.metiers=metiersJeu().filter(m=>m.nom!==v);if(!catalog.metiers.length)delete catalog.metiers;catalog.talents=(catalog.talents||[]).filter(t=>!ids.has(t&&t.id));
+   actors.forEach(x=>{if(!x)return;if(x.metier===v)delete x.metier;if(Array.isArray(x.talents))x.talents=x.talents.filter(id=>!ids.has(id));x.paliersTalents=normalisePaliersActeur(x)});
+   arbresMetierMJ='';arbreChange()}))}
+ return o}
+// La teinte d'un bonus : celle de sa caractéristique ; d'une compétence, celle de son logo ; d'un orbe, le violet.
+function teinteSphere(t,f){const p=paramsTalent(t)||{},c=p.carac||'pv';if(c==='comp'){const k=Math.max(0,Math.min(7,Number(p.comp)||0));f(SKILL_TINTS[k]);teinteCompetence(k,f)}else f(c==='orbe'?'138,99,201':STAT_TINTS[c]||'150,150,150')}
+function bulleSphere(el,t,n){surveille(el,()=>{const xp=talentAuPalier(t,Math.max(1,n||1)),p=paramsTalent(xp)||{},d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+(p.carac||'pv');
+ const l=document.createElement('p');l.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(p,{talent:xp}));l.append(b);d.append(l);ouvrirBulle(el,d,'bulle-talent')})}
+/* Le sphérier d'une classe : le plan (ses ronds, ses liens) et le panneau de droite. « ctx » vient de renderArbres. */
+function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=talentsSphere(classe),tient=t=>!!a&&(a.talents||[]).includes(t.id);
+ if(!l.some(t=>t.id===sphereSel))sphereSel=null;
+ const zone=document.createElement('div');zone.className='spherier-zone';
+ const plan=document.createElement('div');plan.className='spherier'+(sphereLier?' lier':'');
+ const W=Math.max(880,...l.map(t=>t.sphere.x+90)),H=Math.max(620,...l.map(t=>t.sphere.y+90));plan.style.width=W+'px';plan.style.height=H+'px';
+ // Chez le MJ : ajouter, lier, marquer le départ, supprimer, copier le sphérier d'une autre classe.
+ if(mj){const o=document.createElement('div');o.className='arbres-outils spherier-outils';const sel=l.find(t=>t.id===sphereSel)||null;
+  o.append(boutonOutil('+ Bonus',()=>{const g=zone.querySelector('.spherier'),cx=g?Math.round(g.parentElement.scrollLeft+g.parentElement.clientWidth/2):W/2,cy=g?Math.round(g.parentElement.scrollTop+Math.min(g.parentElement.clientHeight,H)/2):H/2;
+   // La place libre la plus proche du milieu de la vue : un nouveau rond ne se pose pas sur un autre.
+   let px=Math.max(60,cx),py=Math.max(60,cy);for(let k=0;k<200&&l.some(o=>Math.hypot(o.sphere.x-px,o.sphere.y-py)<80);k++){px+=90;if(px>W-60){px=60;py+=90}}
+   const t={id:crypto.randomUUID(),name:'Bonus',famille:classe,voie:'',type:'pass',level:1,effects:'',effet:'bonus',params:{carac:'pv',valeur:1},couts:[100,0,0],spherier:true,sphere:{x:px,y:py},...(l.length?{}:{departSphere:true})};
+   catalog.talents.push(t);sphereSel=t.id;arbreChange();openTalent(catalog.talents.indexOf(t),renderArbres)}));
+  o.append(boutonOutil('Lier',()=>{sphereLier=!sphereLier;renderArbres()},sphereLier));
+  const dep=boutonOutil('Départ',()=>{if(!sel)return;if(sel.departSphere)delete sel.departSphere;else sel.departSphere=true;arbreChange()},!!(sel&&sel.departSphere));dep.disabled=!sel;o.append(dep);
+  const sup=boutonOutil('Supprimer',()=>{if(!sel)return;catalog.talents=catalog.talents.filter(t=>t!==sel);l.forEach(t=>{if(t.liensSphere)t.liensSphere=t.liensSphere.filter(id=>id!==sel.id)});
+   actors.forEach(x=>{if(x&&Array.isArray(x.talents)&&x.talents.includes(sel.id)){x.talents=x.talents.filter(id=>id!==sel.id);x.paliersTalents=normalisePaliersActeur(x)}});sphereSel=null;arbreChange()});sup.disabled=!sel;sup.classList.add('danger');o.append(sup);
+  const autres=(catalog.classes||[]).map(c=>c&&c.name).filter(n=>n&&n!==classe&&talentsSphere(n).length);
+  if(autres.length){const s=document.createElement('select');s.setAttribute('aria-label','Copier le sphérier d’une autre classe');s.add(new Option('Copier depuis…',''));autres.forEach(n=>s.add(new Option(n,n)));
+   s.onchange=async()=>{const de=s.value;s.value='';if(!de)return;
+    if(l.length&&!await demander('Remplacer le sphérier de '+classe+' ('+l.length+' bonus) par celui de '+de+' ? Les aventuriers perdent les bonus de l’ancien, et leur XP leur revient.','Remplacer'))return;
+    const ids=new Set(l.map(t=>t.id));catalog.talents=catalog.talents.filter(t=>!ids.has(t&&t.id));actors.forEach(x=>{if(x&&Array.isArray(x.talents)&&x.talents.some(id=>ids.has(id))){x.talents=x.talents.filter(id=>!ids.has(id));x.paliersTalents=normalisePaliersActeur(x)}});
+    const src=talentsSphere(de),neuf=new Map(src.map(t=>[t.id,crypto.randomUUID()]));
+    src.forEach(t=>{const k=structuredClone(t);k.id=neuf.get(t.id);k.famille=classe;if(k.liensSphere)k.liensSphere=k.liensSphere.map(id=>neuf.get(id)).filter(Boolean);catalog.talents.push(k)});
+    sphereSel=null;arbreChange()};o.append(s)}
+  zone.append(o)}
+ // Les liens, sous les ronds : dorés quand l'aventurier tient leurs deux bouts.
+ const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','spherier-liens');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';plan.append(svg);
+ const vus=new Set();l.forEach(t=>voisinsSphere(t,l).forEach(x=>{const k=[t.id,x.id].sort().join('|');if(vus.has(k))return;vus.add(k);const ln=document.createElementNS(NS,'line');
+  [['x1',t.sphere.x],['y1',t.sphere.y],['x2',x.sphere.x],['y2',x.sphere.y]].forEach(([c,v])=>ln.setAttribute(c,String(v)));ln.setAttribute('class','spherier-lien'+(tient(t)&&tient(x)?' pris':''));
+  if(mj){ln.addEventListener('click',()=>{t.liensSphere=(t.liensSphere||[]).filter(id=>id!==x.id);x.liensSphere=(x.liensSphere||[]).filter(id=>id!==t.id);arbreChange()})}svg.append(ln)}));
+ const dispo=a?xpDisponible(a,catalog.talents):0;
+ l.forEach(t=>{const el=document.createElement('button');el.type='button';el.dataset.id=t.id;const k=a?palierDe(a,t):0,ouvert=!!a&&sphereOuverte(a,t,l);
+  const etat=!a?'':k?'acquis':ouvert&&coutPalier(t,1)<=dispo?'dispo':'verrou';
+  el.className='sphere-noeud'+(etat?' '+etat:'')+(t.departSphere?' depart':'')+(t.id===sphereSel?' choisi':'');el.style.left=t.sphere.x+'px';el.style.top=t.sphere.y+'px';
+  const r=document.createElement('span');r.className='sphere-rond';poseLogoBonus(r,t);el.append(r);teinteSphere(t,v=>el.style.setProperty('--tint',v));
+  if(paliersDe(t)>1&&a){const p=document.createElement('span');p.className='sphere-paliers';for(let n=1;n<=paliersDe(t);n++){const i=document.createElement('i');if(k>=n)i.className='on';p.append(i)}el.append(p)}
+  bulleSphere(el,t,k||1);
+  // Chez le MJ, un rond se prend et se pose où l'on veut ; un clic le choisit ; en mode Lier, un clic lie (ou délie) le rond choisi à celui-ci.
+  if(mj){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;const x0=e.clientX,y0=e.clientY,s0={...t.sphere};let bouge=false;
+    const mv=ev=>{const dx=ev.clientX-x0,dy=ev.clientY-y0;if(!bouge&&Math.hypot(dx,dy)<5)return;if(!bouge){bouge=true;el.classList.add('tire');if(typeof fermerBulle==='function')fermerBulle()}
+     el.style.left=Math.max(30,s0.x+dx)+'px';el.style.top=Math.max(30,s0.y+dy)+'px'};
+    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);
+     if(bouge){t.sphere={x:Math.round(Math.max(30,parseFloat(el.style.left))),y:Math.round(Math.max(30,parseFloat(el.style.top)))};sphereSel=t.id;arbreChange();return}
+     const s=l.find(x=>x.id===sphereSel);
+     if(sphereLier&&s&&s!==t){const lie=voisinsSphere(t,l).includes(s);if(lie){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}else s.liensSphere=[...(s.liensSphere||[]),t.id];arbreChange();return}
+     sphereSel=t.id;renderArbres()};
+    addEventListener('pointermove',mv);addEventListener('pointerup',up)})}
+  else el.onclick=()=>{sphereSel=t.id;renderArbres()};
+  plan.append(el)});
+ const cadre=document.createElement('div');cadre.className='spherier-cadre';cadre.append(plan);zone.append(cadre);
+ // Le panneau de droite : le bonus choisi, palier par palier — acheter le suivant, rendre le dernier ; chez le MJ, un clic l'édite.
+ const detail=aside=>{aside.replaceChildren();const t=l.find(x=>x.id===sphereSel)||l.find(x=>x.departSphere)||l[0];if(!t)return;
+  const panneau=document.createElement('div');panneau.className='detail-defile';aside.append(panneau);const max=paliersDe(t),k=a?palierDe(a,t):0;
+  const ferme=!a||!sphereOuverte(a,t,l)||(estMort(a)&&view!=='mj')||figeEnCombat(a);
+  const tete=document.createElement('div');tete.className='detail-tete';const rond=document.createElement('span');rond.className='sphere-rond detail-sphere';poseLogoBonus(rond,t);teinteSphere(t,v=>rond.style.setProperty('--tint',v));
+  const droite=document.createElement('div');droite.className='detail-droite';const nom=document.createElement('h3'),ligne=document.createElement('div');ligne.className='detail-nom-ligne';ligne.append(nom);droite.append(ligne);nom.append(libelleBonusEl(paramsTalent(talentAuPalier(t,Math.max(1,k)))||{},{talent:talentAuPalier(t,Math.max(1,k))}));tete.append(rond,droite);panneau.append(tete);
+  for(let n=1;n<=max;n++){const c=document.createElement('div'),prix=coutPalier(t,n),suivante=!!a&&n===k+1&&!ferme&&prix<=dispo;
+   c.className='detail-amelioration detail-bonus'+(k>=n?' acquise':'')+(suivante?' achetable':'');
+   const p=document.createElement('p');p.className='detail-am-nom';const b=document.createElement('b');const xp=talentAuPalier(t,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}));p.append(b);
+   if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';p.append(pr)}c.append(p);
+   if(suivante){c.tabIndex=0;c.setAttribute('role','button');c.onclick=()=>{if(n===1)a.talents=[...a.talents,t.id];else poserPalier(t,n);note('');majTable()}}
+   if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){c.classList.add('rendable');c.tabIndex=0;c.setAttribute('role','button');
+    const rendre=()=>{if(k>1)poserPalier(t,k-1);else{a.talents=a.talents.filter(id=>id!==t.id);const garde=spheresTenues(a,classe);a.talents=a.talents.filter(id=>{const x=talent(id);return !(x&&estSphere(x)&&talentFamily(x)===classe)||garde.has(id)})}
+     a.paliersTalents=normalisePaliersActeur(a);note('');majTable()};c.onclick=rendre;c.oncontextmenu=e=>{e.preventDefault();rendre()}}
+   if(mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
+   panneau.append(c)}};
+ return {el:zone,detail}}
+// Les bonus du sphérier et l'arbre du métier restent à l'aventurier au chargement, s'ils tiennent encore à un départ.
+{const tds=talentsDuSpherier;talentsDuSpherier=function(a){const r=tds(a);if(!r||!a)return r;const garde=new Set(r);
+ const classe=classeDuHeros(a);if(classe)spheresTenues(a,classe).forEach(id=>garde.add(id));
+ const fm=familleMetierVue(a);if(fm){colonnesArbre(fm).forEach(col=>atteintsDepuis(a.talents,col.liste,null).forEach(id=>garde.add(id)));talentsFlottants(fm).forEach(fl=>garde.add(fl.id))}
+ return (a.talents||[]).filter(id=>garde.has(id))}}
+// Un aventurier : son métier, s'il en a un.
+{const na=normalizeActor;normalizeActor=function(a,...x){const r=na(a,...x);if(a){if(typeof a.metier!=='string'||!a.metier.trim())delete a.metier;else a.metier=a.metier.trim().slice(0,40)}return r}}
+// Ouvrir l'arbre d'un aventurier, ou le plan d'une classe : sur l'onglet de la classe.
+{const oa=openArbres;openArbres=function(...x){arbresOnglet='classe';sphereSel=null;sphereLier=false;return oa.apply(this,x)}}
+{const oc=openArbresClasse;openArbresClasse=function(...x){arbresOnglet='classe';sphereSel=null;sphereLier=false;return oc.apply(this,x)}}

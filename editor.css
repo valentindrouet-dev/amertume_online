@@ -3835,3 +3835,35 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .indice-perf b,.indice-perf span{font-variant-numeric:tabular-nums}.indice-perf span{opacity:.8;font-weight:600}
 .indice-perf .indice-perf-fermer{border:0;background:color-mix(in srgb,#f6e9d8 14%,transparent);color:#f6e9d8;width:20px;height:20px;border-radius:50%;padding:0;margin:0;font:700 14px/20px system-ui;cursor:pointer}
 .indice-perf .indice-perf-fermer:hover{background:color-mix(in srgb,#f6e9d8 28%,transparent)}
+/* v1.128 — L'arbre de talents : le nom de l'aventurier en tête, les onglets (Classe, Bonus, Espèce, Métier) façon bâtiments,
+   le sphérier des Bonus. Un rond du sphérier : le logo du bonus sur le fond pâle de sa teinte ; acquis en couleur, achetable au fond
+   coloré et logo gris, fermé tout gris ; le départ, cerclé d'or ; le choisi, contour d'or. */
+#arbres .dialog-head>.arbres-classe.nom-propre{text-transform:none;letter-spacing:1px}
+.arbres-onglets{margin:0 0 12px}
+.arbres-outils{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.arbres-outils button,.arbres-outils select{width:auto;margin:0;padding:6px 12px;font:600 13px system-ui}
+.arbres-outils button.on{background:var(--green);border-color:var(--green);color:#fff}
+.arbres-outils button:disabled{opacity:.5;cursor:default}
+.spherier-zone{flex:1;min-width:0;display:flex;flex-direction:column}
+.spherier-cadre{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel-2);max-height:calc(100vh - 260px)}
+.spherier{position:relative;margin:0 auto}
+.spherier.lier .sphere-noeud{cursor:crosshair}
+.spherier-liens{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.spherier-lien{stroke:#7d7a74;stroke-opacity:.45;stroke-width:5;stroke-linecap:round;pointer-events:stroke}
+.spherier-lien.pris{stroke:#c99a3c;stroke-opacity:.75}
+.sphere-noeud{position:absolute;transform:translate(-50%,-50%);width:62px;height:62px;margin:0;padding:0;border:0;background:none;cursor:pointer;touch-action:none}
+.sphere-noeud.tire{z-index:5;opacity:.85;cursor:grabbing}
+.sphere-rond{position:relative;display:grid;place-items:center;width:100%;height:100%;box-sizing:border-box;border-radius:50%;border:3px solid rgb(var(--tint,150,150,150));background:color-mix(in srgb,rgb(var(--tint,150,150,150)) 22%,var(--panel));box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.sphere-rond>.logo-bonus{width:62%;height:62%;object-fit:contain}
+.sphere-rond>.bonus-valeur{position:absolute;right:-4px;bottom:-4px;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:10px;background:var(--panel);border:1.5px solid rgb(var(--tint,150,150,150));font:700 12px/17px system-ui;color:var(--ink);text-align:center}
+.sphere-noeud.depart .sphere-rond{box-shadow:0 0 0 3px var(--panel-2),0 0 0 5px #c99a3c,0 2px 6px rgba(0,0,0,.2)}
+.sphere-noeud.choisi .sphere-rond{border-color:#c99a3c;box-shadow:0 0 10px 2px color-mix(in srgb,#c99a3c 45%,transparent)}
+.sphere-noeud.depart.choisi .sphere-rond{box-shadow:0 0 0 3px var(--panel-2),0 0 0 5px #c99a3c,0 0 12px 4px color-mix(in srgb,#c99a3c 45%,transparent)}
+.sphere-noeud:is(.dispo,.verrou) .sphere-rond>.logo-bonus{filter:grayscale(1);opacity:.75}
+.sphere-noeud.verrou .sphere-rond{background:color-mix(in srgb,#7d7a74 24%,var(--panel));border-color:var(--line-strong)}
+.sphere-noeud.verrou .sphere-rond>.bonus-valeur{border-color:var(--line-strong)}
+.sphere-paliers{position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;gap:3px;margin-top:3px}
+.sphere-paliers i{width:6px;height:6px;border-radius:50%;border:1.2px solid var(--line-strong);background:var(--panel)}
+.sphere-paliers i.on{background:#c99a3c;border-color:#c99a3c}
+.sphere-rond.detail-sphere{width:96px;height:96px;flex:none}
+.arbres-v2 .arbres-v2-arbre>.spherier-zone{align-self:stretch}.spherier-zone>.spherier-cadre{flex:1;min-height:420px}
