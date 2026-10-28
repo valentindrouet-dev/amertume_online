@@ -740,6 +740,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.116 : les arbres que le MJ agence à la main (Placement libre), par classe.
  {const l=c.arbresLibres&&typeof c.arbresLibres==='object'&&!Array.isArray(c.arbresLibres)?c.arbresLibres:{};c.arbresLibres={};
   Object.entries(l).slice(0,60).forEach(([k,v])=>{if(typeof k==='string'&&k&&v===true)c.arbresLibres[k.slice(0,60)]=true});if(!Object.keys(c.arbresLibres).length)delete c.arbresLibres}
+ // v1.129 : six métiers d'office, une fois ; chacun en une seule colonne.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('metiers-6')){const l=Array.isArray(c.metiers)?c.metiers:[];
+  ['Alchimiste','Forgeron','Tanneur','Mineur','Herboriste','Arcaniste'].forEach(n=>{if(!l.some(m=>m&&m.nom===n))l.push({nom:n});c.nbArbres=c.nbArbres&&typeof c.nbArbres==='object'&&!Array.isArray(c.nbArbres)?c.nbArbres:{};c.nbArbres['Métier · '+n]=1});
+  c.metiers=l;c.semisForge.push('metiers-6')}
  // v1.128 : les métiers, nommés par le MJ — chacun a son arbre (famille « Métier · nom »).
  {const l=Array.isArray(c.metiers)?c.metiers:[],vus=new Set();c.metiers=l.map(m=>({nom:String(m&&m.nom||'').replace(/["<>·]/g,'').trim().slice(0,40)})).filter(m=>m.nom&&!vus.has(m.nom)&&vus.add(m.nom)).slice(0,40);if(!c.metiers.length)delete c.metiers}
  // v1.114 : les paliers passent à 1, 5, 10, 15, 20 — les talents des niveaux 4, 7 et 10 suivent au 5, au 10 et au 15, la limite des joueurs aussi.
@@ -4017,7 +4021,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
  const tri=$('talent-sort').value;
  const visibles=sel.value?[sel.value]:familles;
  for(const famille of visibles){
-  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille
+  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>!estBonus(t)&&!estVide(t)&&(famille===FAMILLE_METIERS?talentFamily(t).startsWith(PREFIXE_METIER):talentFamily(t)===famille)
    &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name,'fr')
    :tri==='niveau-'?(b[0].level||1)-(a[0].level||1)||a[0].name.localeCompare(b[0].name,'fr')
@@ -4056,6 +4060,14 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
     const r=document.createElement('div');r.className='talent-rangee espece-rangee';r.setAttribute('aria-label',nomE);
     const sep=document.createElement('span');sep.className='espece-separateur';sep.textContent=nomE;r.append(sep);
     if(view==='mj'&&id){sep.classList.add('cliquable');sep.onclick=()=>openReglagesEspece(id)}
+    lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
+  /* v1.129 : le groupe Métiers, comme les Espèces — un séparateur par métier, puis ses talents, par type. Chez le MJ, le nom d'un
+     métier ouvre son arbre ; un métier sans talent garde sa ligne, pour qu'on l'ouvre. */
+  else if(famille===FAMILLE_METIERS){const rang=t=>ORDRE_TYPES_TALENTS.indexOf(talentType(t)[0]),noms=metiersJeu().map(m=>m.nom);
+   [...noms.map(n=>[familleMetier(n),n]),['','Sans métier']].forEach(([f,nomM])=>{const lot=ordre.filter(([t])=>f?talentFamily(t)===f:!noms.some(n=>talentFamily(t)===familleMetier(n))).sort((x,y)=>rang(x[0])-rang(y[0]));if(!lot.length&&(!f||view!=='mj'))return;
+    const r=document.createElement('div');r.className='talent-rangee espece-rangee';r.setAttribute('aria-label',nomM);
+    const sep=document.createElement('span');sep.className='espece-separateur';sep.textContent=nomM;r.append(sep);
+    if(view==='mj'&&f){sep.classList.add('cliquable');sep.onclick=()=>openArbresMetier(nomM)}
     lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
   /* v1.096 : une ligne pour les grands ronds — Maîtrise, Actions, Mouvements, Réactions, Critiques —, un trait entre chaque nature ;
      une ligne pour les petits — Actions bonus, Passifs —, comme dans l'arbre ; les Améliorations dessous, comme avant. */
@@ -4267,7 +4279,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  talentDefauts=i===null?(defauts||{}):null;
  /* Les classes offertes : celles du jeu, celles déjà portées par un talent, et celles que
     la troupe s'est données. La classe du talent ouvert y figure toujours, fût-elle inédite. */
- const familles=[...new Set([...talentFamilies().filter(f=>f!==GENERIQUES),
+ const familles=[...new Set([...talentFamilies().filter(f=>f!==GENERIQUES&&f!==FAMILLE_METIERS),...metiersJeu().map(m=>familleMetier(m.nom)),
   ...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean),
   talentFamily(t)])];
  const famille=talentFamily(t);
@@ -6506,7 +6518,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const tete=document.createElement('div');tete.className='arbres-tete';
  // Le nom de la classe tout en haut de la fenêtre, dans sa tête, au milieu.
  // v1.128 : chez un aventurier, son nom ; sur le plan du MJ, la classe — en minuscules, la première lettre en capitale.
- const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe nom-propre';nomClasse.textContent=a?majusculeInitiale(a.name||''):(classeBase||'Sans classe');
+ const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe nom-propre';nomClasse.textContent=a?majusculeInitiale(a.name||''):estFamilleMetier(classeBase)?classeBase.slice(PREFIXE_METIER.length):(classeBase||'Sans classe');
  // v0.894 : sur l'arbre d'espèce, le nom et l'encre de l'espèce.
  const espEnTete=arbresEspece&&a&&ARBRE_V2?especeDe(a.espece):null;
  const encre=espEnTete?espEnTete.teinte:classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
@@ -7131,7 +7143,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT){remplitDetail(panneau,vuT);const e=g.querySelector('.arbre-noeud-espece[data-id="'+vuT.id+'"]');if(e)e.classList.add('choisi')}}}
  else corps.append(grille);
  // v1.128 : les onglets en tête ; sous eux, chez le MJ, les outils du métier.
- {const haut=barreOngletsArbre(onglets);corps.prepend(haut);if(arbresOnglet==='metier'&&mj)haut.after(outilsMetier())}
+ {const haut=barreOngletsArbre(onglets);corps.prepend(haut);if(mj&&estFamilleMetier(classeBase))haut.after(outilsMetier())}
  // Les lignes attendent que la fenêtre soit ouverte et la grille mesurée.
  requestAnimationFrame(traceChemins)}
 /* Les lignes d'une colonne, tracées de rond en rond, de bord à bord : entre deux talents voisins, et
@@ -8713,10 +8725,11 @@ const metiersJeu=()=>Array.isArray(catalog.metiers)?catalog.metiers:[];
 const familleMetier=nom=>nom?PREFIXE_METIER+nom:'';
 function familleMetierVue(a){const l=metiersJeu();if(a)return a.metier&&l.some(m=>m.nom===a.metier)?familleMetier(a.metier):'';
  if(!l.some(m=>m.nom===arbresMetierMJ))arbresMetierMJ=l[0]?l[0].nom:'';return familleMetier(arbresMetierMJ)}
-function ongletsArbre(a,classe){const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=[['classe',classe||'Classe']];
+function ongletsArbre(a,classe){if(!a&&estFamilleMetier(classe))return [['classe',classe.slice(PREFIXE_METIER.length)]];
+ const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=[['classe',classe||'Classe']];
  if(classe&&(plan||talentsSphere(classe).length))l.push(['bonus','Bonus']);
  const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece',e.nom]);
- if(a?!!fm:plan)l.push(['metier',a?a.metier:(arbresMetierMJ||'Métier')]);
+ if(a&&fm)l.push(['metier',a.metier]);
  return l}
 function barreOngletsArbre(onglets){const b=document.createElement('div');b.className='vit-onglets arbres-onglets';b.setAttribute('role','tablist');
  onglets.forEach(([k,n])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));
@@ -8727,21 +8740,20 @@ function barreOngletsArbre(onglets){const b=document.createElement('div');b.clas
 const boutonOutil=(texte,fn,on)=>{const b=document.createElement('button');b.type='button';b.textContent=texte;if(on)b.classList.add('on');b.onclick=fn;return b};
 // Chez le MJ, sur l'onglet Métier : le métier regardé, en créer un, le renommer, le supprimer.
 function outilsMetier(){const o=document.createElement('div');o.className='arbres-outils';const l=metiersJeu();
- if(l.length){const s=document.createElement('select');s.setAttribute('aria-label','Métier');l.forEach(m=>s.add(new Option(m.nom,m.nom)));s.value=arbresMetierMJ;s.onchange=()=>{arbresMetierMJ=s.value;renderArbres()};o.append(s)}
+ if(l.length){const s=document.createElement('select');s.setAttribute('aria-label','Métier');l.forEach(m=>s.add(new Option(m.nom,m.nom)));s.value=arbresMetierMJ;s.onchange=()=>{arbresMetierMJ=s.value;arbresClasse=familleMetier(s.value);renderArbres()};o.append(s)}
  const nomLibre=(texte,avant)=>{const v=prompt(texte,avant||'');const n=String(v||'').replace(/["<>·]/g,'').trim().slice(0,40);return n&&!metiersJeu().some(m=>m.nom===n)?n:''};
- o.append(boutonOutil('+ Métier',()=>{const n=nomLibre('Nom du nouveau métier');if(!n)return;catalog.metiers=[...metiersJeu(),{nom:n}];catalog.nbArbres={...(catalog.nbArbres||{}),[familleMetier(n)]:1};arbresMetierMJ=n;arbreChange()}));
  if(l.length){
   o.append(boutonOutil('Renommer',()=>{const v=arbresMetierMJ,n=nomLibre('Nouveau nom du métier « '+v+' »',v);if(!n)return;const f0=familleMetier(v),f1=familleMetier(n);
    catalog.metiers=metiersJeu().map(m=>m.nom===v?{nom:n}:m);(catalog.talents||[]).forEach(t=>{if(t&&t.famille===f0)t.famille=f1});actors.forEach(x=>{if(x&&x.metier===v)x.metier=n});
    if(catalog.arbresLibres&&catalog.arbresLibres[f0]){catalog.arbresLibres[f1]=true;delete catalog.arbresLibres[f0]}
    ['nbArbres','voies'].forEach(k=>{const o=catalog[k];if(o&&o[f0]!==undefined){o[f1]=o[f0];delete o[f0]}});
    if(Array.isArray(catalog.semisForge))catalog.semisForge.filter(k=>k.endsWith(':'+f0)).forEach(k=>catalog.semisForge.push(k.slice(0,-f0.length)+f1));
-   arbresMetierMJ=n;arbreChange()}));
+   arbresMetierMJ=n;arbresClasse=familleMetier(n);arbreChange()}));
   o.append(boutonOutil('Supprimer',async()=>{const v=arbresMetierMJ,f0=familleMetier(v),ts=(catalog.talents||[]).filter(t=>t&&t.famille===f0),ids=new Set(ts.map(t=>t.id));
    if(!await demander('Supprimer le métier « '+v+' »'+(ts.length?' et ses '+ts.length+' talent'+(ts.length>1?'s':''):'')+' ? Les aventuriers qui l’exercent le perdent, et l’XP de ces talents leur revient.','Supprimer'))return;
    catalog.metiers=metiersJeu().filter(m=>m.nom!==v);if(!catalog.metiers.length)delete catalog.metiers;catalog.talents=(catalog.talents||[]).filter(t=>!ids.has(t&&t.id));
    actors.forEach(x=>{if(!x)return;if(x.metier===v)delete x.metier;if(Array.isArray(x.talents))x.talents=x.talents.filter(id=>!ids.has(id));x.paliersTalents=normalisePaliersActeur(x)});
-   arbresMetierMJ='';arbreChange()}))}
+   arbresMetierMJ='';arbresDialog.close();arbreChange()}))}
  return o}
 // La teinte d'un bonus : celle de sa caractéristique ; d'une compétence, celle de son logo ; d'un orbe, le violet.
 function teinteSphere(t,f){const p=paramsTalent(t)||{},c=p.carac||'pv';if(c==='comp'){const k=Math.max(0,Math.min(7,Number(p.comp)||0));f(SKILL_TINTS[k]);teinteCompetence(k,f)}else f(c==='orbe'?'138,99,201':STAT_TINTS[c]||'150,150,150')}
@@ -8825,3 +8837,20 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
 // Ouvrir l'arbre d'un aventurier, ou le plan d'une classe : sur l'onglet de la classe.
 {const oa=openArbres;openArbres=function(...x){arbresOnglet='classe';sphereSel=null;sphereLier=false;return oa.apply(this,x)}}
 {const oc=openArbresClasse;openArbresClasse=function(...x){arbresOnglet='classe';sphereSel=null;sphereLier=false;return oc.apply(this,x)}}
+
+/* v1.129 — Les métiers ont leur catégorie, comme les espèces : « Métiers » dans l'onglet Talents, un séparateur par métier. Leurs
+   talents gardent leur famille propre (« Métier · nom »), qui fait leur arbre ; la catégorie ne fait que les rassembler. */
+const FAMILLE_METIERS='Métiers';
+const estFamilleMetier=f=>String(f||'').startsWith(PREFIXE_METIER);
+{const tf=talentFamilies;talentFamilies=function(){const l=tf().filter(f=>!estFamilleMetier(f)),i=l.indexOf('Espèces');
+ if(metiersJeu().length||(catalog.talents||[]).some(t=>t&&estFamilleMetier(talentFamily(t))))l.splice(i<0?l.length:i+1,0,FAMILLE_METIERS);return l}}
+// L'arbre d'un métier, au MJ : comme celui d'une classe, sur son seul onglet.
+function openArbresMetier(nom){if(view!=='mj'||!metiersJeu().some(m=>m.nom===nom))return;arbresActeur=null;arbresMetierMJ=nom;arbresClasse=familleMetier(nom);arbresOnglet='classe';sphereSel=null;sphereLier=false;
+ arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height');noteArbres('');renderArbres();if(!arbresDialog.open)arbresDialog.showModal()}
+// Le bandeau de la catégorie Métiers : au MJ, un bouton pour en créer un.
+{const rt=renderTalents;renderTalents=function(...x){const r=rt.apply(this,x);if(view!=='mj')return r;
+ const h=[...document.querySelectorAll('#talent-cols .cat-col>h3')].find(e=>e.firstChild&&e.firstChild.textContent===FAMILLE_METIERS);
+ if(h&&!h.querySelector('.metier-plus')){const b=document.createElement('button');b.type='button';b.className='ico plus metier-plus';b.textContent='+';b.setAttribute('aria-label','Nouveau métier');
+  b.onclick=e=>{e.stopPropagation();const v=prompt('Nom du nouveau métier','');const n=String(v||'').replace(/["<>·]/g,'').trim().slice(0,40);if(!n||metiersJeu().some(m=>m.nom===n))return;
+   catalog.metiers=[...metiersJeu(),{nom:n}];catalog.nbArbres={...(catalog.nbArbres||{}),[familleMetier(n)]:1};renderTalents();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};h.append(b)}
+ return r}}
