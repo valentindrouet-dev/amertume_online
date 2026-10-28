@@ -3827,3 +3827,11 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-rond{background:color-mix(in srgb,#7d7a74 24%,var(--panel));border-color:var(--line-strong)}
 .arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-satellites{filter:none;opacity:1}
 .arbre-roue.arbre-paliers>.arbre-noeud.verrou .arbre-satellites .sat-arc{stroke:var(--line-strong)!important;opacity:1;filter:none}
+/* v1.126 : l'indice de performance du MJ — en bas à gauche, couche du dessus, pastille vert / orange / rouge. */
+.indice-perf{position:fixed;left:10px;bottom:10px;z-index:300;display:flex;align-items:center;gap:8px;padding:5px 6px 5px 10px;border-radius:999px;background:#1b1410f2;color:#f6e9d8;border:1px solid #d29180;box-shadow:0 6px 18px rgba(0,0,0,.4);font:700 13px system-ui}
+.indice-perf[popover]{inset:auto;left:10px;bottom:10px;top:auto;right:auto;margin:0;overflow:visible}
+.indice-perf i{width:10px;height:10px;border-radius:50%;background:#2f7a4b;box-shadow:0 0 6px #2f7a4b}
+.indice-perf.moyen i{background:#c2692a;box-shadow:0 0 6px #c2692a}.indice-perf.mauvais i{background:#b8352f;box-shadow:0 0 6px #b8352f}
+.indice-perf b,.indice-perf span{font-variant-numeric:tabular-nums}.indice-perf span{opacity:.8;font-weight:600}
+.indice-perf .indice-perf-fermer{border:0;background:color-mix(in srgb,#f6e9d8 14%,transparent);color:#f6e9d8;width:20px;height:20px;border-radius:50%;padding:0;margin:0;font:700 14px/20px system-ui;cursor:pointer}
+.indice-perf .indice-perf-fermer:hover{background:color-mix(in srgb,#f6e9d8 28%,transparent)}

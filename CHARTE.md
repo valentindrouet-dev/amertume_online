@@ -240,6 +240,8 @@ Le texte d'un bouton est un **verbe court**, à l'infinitif ou à l'impératif, 
 
 **Mouvement gelé** (`.gele`) : sous Gel, les points de Mouvement prennent le bleu du Gel `#8fd3f7`, cerclé de `#2f8fae`.
 
+**Indice de performance** (`.indice-perf`, MJ seul) : en bas à gauche, dans la couche du dessus, sur toutes les pages. Une pastille de 10 px — vert `#2f7a4b` jusqu'à 50 ms par image, orange `#c2692a` jusqu'à 150 ms, rouge `#b8352f` au-delà —, puis les images par seconde en gras et la plus longue image des deux dernières secondes ; fond `#1b1410f2`, encre `#f6e9d8`, liseré `#d29180`, comme le bandeau de version. Sa croix le cache sur l'appareil ; les Réglages le rendent.
+
 ---
 
 ## 7. Ronds de talent

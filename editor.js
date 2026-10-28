@@ -1276,6 +1276,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="divider"></div><h3 class="reglage-titre">Apparence</h3>'
  +'<div class="reglage"><div><strong>Mode nuit</strong><p class="muted">Fond sombre, mêmes couleurs de jeu.</p></div>'
  +'<button id="theme-switch" class="primary"></button></div>'
+ +'<div id="bloc-perf" class="reglage" hidden><div><strong>Indice de performance</strong><p class="muted">En bas à gauche, pour le MJ seul : images par seconde et plus longue image.</p></div><button id="perf-switch"></button></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Raccourcis de la carte</h3>'
  +'<p class="muted">La touche à maintenir en cliquant sur un combattant. Deux gestes ne peuvent pas partager la même touche.</p>'
  +'<div id="raccourcis"></div>'
@@ -7190,6 +7191,8 @@ function majPageAccueil(){const s=$('page-accueil');if(!s)return;const vus=ongle
  s.onchange=()=>{catalog.pageAccueil=s.value;normalizeCatalog(catalog);scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}}
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('theme-switch').textContent=document.body.classList.contains('sombre')?'☀ Repasser au thème clair':'☾ Passer au mode nuit';
+ // v1.126 : l'indice de performance se cache et se rend ici.
+ $('bloc-perf').hidden=!(typeof mjIci==='function'&&mjIci());$('perf-switch').textContent=indicePerfVoulu()?'Masquer l’indice':'Afficher l’indice';
  // La scène n'a plus de bandeau au-dessus de la table : son titre se lit et se change ici.
  $('bloc-scene').hidden=view!=='mj';
  $('scene-titre').textContent=sceneTitle();
@@ -7259,6 +7262,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
    raccourcis.decible=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « Vue MJ / Joueur » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
   ligne.append(gauche,c);boite.append(ligne)}}
 $('theme-switch').onclick=toggleTheme;
+$('perf-switch').onclick=()=>{try{localStorage.setItem(INDICE_PERF_CLE,indicePerfVoulu()?'0':'1')}catch(e){}poseIndicePerf();renderSettings()};
 $('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();renderSettings();
  noterReglage('Touches d’origine rétablies et enregistrées.')};
 /* Les réglages s'enregistrent à l'instant même : on le dit, faute de quoi rien ne
@@ -8647,3 +8651,29 @@ function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle
 
 // v1.125 : les choix d'attaque mesurent la carte une fois.
 {const f=renderAttackChoices;renderAttackChoices=function(...x){return figeCadre(()=>f.apply(this,x))}}
+
+/* v1.126 — L'indice de performance, au MJ seul : en bas à gauche, dans la couche du dessus (au-dessus des fenêtres), sur toutes
+   les pages. Les images par seconde du navigateur et la plus longue image des deux dernières secondes ; la pastille au vert
+   jusqu'à 50 ms, à l'orange jusqu'à 150 ms, au rouge au-delà. Sa croix le cache sur cet appareil ; les Réglages le rendent. */
+const INDICE_PERF_CLE='amertume-indice-perf';
+function indicePerfVoulu(){try{return localStorage.getItem(INDICE_PERF_CLE)!=='0'}catch(e){return true}}
+function poseIndicePerf(){const mj=typeof mjIci==='function'&&mjIci(),b=$('indice-perf');
+ if(!mj||!indicePerfVoulu()){if(b)b.remove();return}
+ if(b)return;const e=document.createElement('div');e.id='indice-perf';e.className='indice-perf';e.setAttribute('role','status');
+ const pt=document.createElement('i'),ips=document.createElement('b'),max=document.createElement('span'),x=document.createElement('button');
+ x.type='button';x.className='indice-perf-fermer';x.textContent='×';x.setAttribute('aria-label','Masquer l’indice de performance');
+ x.onclick=()=>{try{localStorage.setItem(INDICE_PERF_CLE,'0')}catch(err){}poseIndicePerf();if($('bloc-perf')&&!$('bloc-perf').hidden)renderSettings()};
+ e.append(pt,ips,max,x);document.body.append(e);
+ // Dans la couche du dessus, comme le bandeau de version : au-dessus de l'arbre, des éditeurs, de tout ce qui s'ouvre.
+ if(typeof e.showPopover==='function'){e.setAttribute('popover','manual');try{e.showPopover()}catch(err){}
+  new MutationObserver(()=>{if(!e.isConnected||!e.matches(':popover-open'))return;const n=document.querySelectorAll('dialog[open]').length;
+   if(n>(e._ouvertes||0)){try{e.hidePopover();e.showPopover()}catch(err){}}e._ouvertes=n}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']})}
+ // Chaque image du navigateur se date ; toutes les 500 ms, le compte de la dernière seconde et le plus long creux des deux dernières.
+ const images=[];let affiche=0;
+ const pas=t=>{if(!e.isConnected)return;images.push(t);while(images.length&&t-images[0]>2000)images.shift();
+  // La première lecture attend une seconde pleine : un compte partiel afficherait trop peu d'images.
+  if(t-affiche>=500&&t-images[0]>=1000){affiche=t;let n=0,m=0;for(let k=1;k<images.length;k++){const d=images[k]-images[k-1];if(d>2000)continue;if(d>m)m=d;if(t-images[k]<=1000)n++}
+   ips.textContent=n+' i/s';max.textContent=Math.round(m)+' ms';e.classList.toggle('moyen',m>50&&m<=150);e.classList.toggle('mauvais',m>150)}
+  requestAnimationFrame(pas)};
+ requestAnimationFrame(pas)}
+poseIndicePerf();document.addEventListener('amertume-mj-change',poseIndicePerf);
