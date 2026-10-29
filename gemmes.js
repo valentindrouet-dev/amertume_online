@@ -185,7 +185,7 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
  {const t=document.createElement('table');t.className='gemmes-table';const tr=document.createElement('tr');tr.append(document.createElement('th'));[1,2,3,4,5,6].forEach(f=>{const th=document.createElement('th');th.textContent='Face '+f;tr.append(th)});t.append(tr);
   COULEURS_GEMMES.forEach(c=>{const r=document.createElement('tr');const td=document.createElement('td');td.className='gemmes-couleur';td.append(icone('brisure',c),document.createTextNode(NOM_COULEUR_GEMME[c]));r.append(td);
    R.faces[c].forEach((v,i)=>{const cell=document.createElement('td');cell.append(nombre(v,0,9,(g,n)=>{g.faces[c][i]=n}));r.append(cell)});t.append(r)});boite.append(t)}
- {const l=document.createElement('div');l.className='gemmes-ligne';
+ {const l=document.createElement('div');l.className='gemmes-reglage';
   const li=(txt,el)=>{const lab=document.createElement('label');lab.append(txt,el);l.append(lab)};
   li('Dés sur un critique ',nombre(R.critique,1,6,(g,n)=>{g.critique=n}));li('Plafond de Brisures par couleur et par combat ',nombre(R.plafond,0,99,(g,n)=>{g.plafond=n}));
   const p=document.createElement('span');p.className='muted';p.textContent='Hors combat : chaque déclencheur joue une fois par zone de la carte.';l.append(p);boite.append(l)}
@@ -203,7 +203,7 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
    row.append(c1,c2,c3,c4,c5);t.append(row)});boite.append(t)});
  // 3. Les récompenses et la fusion.
  h('Récompenses et fusion');
- {const l=document.createElement('div');l.className='gemmes-ligne';
+ {const l=document.createElement('div');l.className='gemmes-reglage';
   const lab=document.createElement('label');lab.append('Boss vaincu : chaque aventurier reçoit ');lab.append(nombre(R.boss.n,0,20,(g,n)=>{g.boss.n=n}));const s=document.createElement('select');TAILLES_GEMMES.forEach(([k,n])=>s.add(new Option(n,k)));s.value=R.boss.taille;s.onchange=()=>{poseReglesGemmes(g=>{g.boss.taille=s.value});renderGemmes()};lab.append(' ',s,' de la couleur qu’il a le plus déclenchée.');l.append(lab);
   const f1=document.createElement('label');f1.append('Fusion : ',nombre(R.fusion.eclat,1,99,(g,n)=>{g.fusion.eclat=n}),' Brisures → 1 Éclat ; ',nombre(R.fusion.brome,1,99,(g,n)=>{g.fusion.brome=n}),' Éclats → 1 Brôme');l.append(f1);
   const p=document.createElement('span');p.className='muted';p.textContent='La fusion se règle ici ; elle se branchera avec l’Arcaniste.';l.append(p);boite.append(l)}

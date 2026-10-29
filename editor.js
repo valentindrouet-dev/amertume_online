@@ -2759,7 +2759,9 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
   const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
   if(view==='mj'){or.classList.add('cliquable');or.setAttribute('role','button');or.tabIndex=0;or.onclick=()=>openRichesses(a);or.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
-  corps.append(or)}
+  corps.append(or);
+  // v1.145 : à droite de l'or, ses gemmes — chaque taille et chaque couleur qu'il tient, avec son compte.
+  const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');corps.append(gm)}}
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
@@ -8985,6 +8987,9 @@ function marqueSphere(ctx,t,l){const {a}=ctx;if(!a||(estMort(a)&&view!=='mj')||f
 function totalMarques(a,l){const m=marquesDe(a),tot=new Map();l.filter(t=>m.has(t.id)).forEach(t=>{const p=prixSphere(t),e=tot.get(p.cle)||{...p,n:0};e.n+=p.n;tot.set(p.cle,e)});return [...tot.values()]}
 const gemmesDe=(a,cle)=>Math.max(0,Math.trunc(Number(a&&a.richesses&&a.richesses[cle]))||0);
 function barreInfusion(ctx,l){const {a}=ctx,b=document.createElement('div');b.className='sphere-infusion';const tot=totalMarques(a,l),assez=tot.every(p=>gemmesDe(a,p.cle)>=p.n);
+ // v1.145 : à gauche, la bourse de l'aventurier — ce qu'il peut dépenser.
+ const bourse=document.createElement('div');bourse.className='sphere-bourse';const lg=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);
+ if(lg)bourse.append(lg);else{const v=document.createElement('span');v.className='muted';v.textContent='Aucune gemme';bourse.append(v)}b.append(bourse);
  const bt=document.createElement('button');bt.type='button';bt.className='primary infuser';bt.append('Infuser les Sphères');
  tot.forEach(p=>bt.append(puceGemme(p,gemmesDe(a,p.cle)<p.n)));
  bt.disabled=!tot.length||!assez||(estMort(a)&&view!=='mj')||figeEnCombat(a);bt.onclick=()=>infuseSpheres(ctx,l);b.append(bt);return b}
