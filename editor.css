@@ -4381,3 +4381,7 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #hero-grid .vignette-gauche{width:100px;min-width:100px;max-width:100px}
 #hero-grid .vignette-classe{box-sizing:border-box;width:100%;min-width:0;padding:4px 5px 5px}
 #hero-grid .vignette-classe b{max-width:100%;overflow:hidden;letter-spacing:.7px}
+/* v1.217 — Fenêtre des Versions (Ctrl + Alt + V), par-dessus tout le site. */
+#versions-fenetre{width:min(1100px,92vw);max-width:none;height:86vh;max-height:none;padding:14px 18px;overflow:auto;border:1px solid var(--line-strong);border-radius:18px;background:var(--bg)}
+#versions-fenetre .maj-panel{max-width:none;margin:0}
+#versions-fenetre:focus,#versions-fenetre:focus-visible{outline:none}

@@ -9678,5 +9678,12 @@ function renderMaj(){const boite=$('maj-liste');if(!boite)return;chargeVersions(
   carte.append(h,ul);boite.append(carte)})})}
 // showPage est déclaré plus loin (maps.js) : l'onglet s'y raccroche une fois tous les scripts chargés.
 (function accroche(){if(typeof showPage!=='function'){setTimeout(accroche,100);return}const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='maj')renderMaj();return r}})();
+// v1.217 : Ctrl + Alt + V ouvre, partout et par-dessus toute fenêtre, la fenêtre des Versions ; le même raccourci, Échap ou un clic dehors la referme.
+const versionsFen=document.createElement('dialog');versionsFen.id='versions-fenetre';document.body.append(versionsFen);
+versionsFen.addEventListener('close',()=>{const sec=versionsFen.querySelector('.maj-panel');if(sec)majPage.append(sec)});
+versionsFen.addEventListener('click',e=>{if(e.target===versionsFen)versionsFen.close()});
+function basculeVersions(){if(versionsFen.open){versionsFen.close();return}const sec=majPage.querySelector('.maj-panel');if(sec)versionsFen.append(sec);versionsFen.showModal();versionsFen.scrollTop=0;renderMaj()}
+document.addEventListener('keydown',e=>{if(e.code==='KeyV'&&e.ctrlKey&&e.altKey&&!e.shiftKey&&!e.metaKey){e.preventDefault();e.stopPropagation();basculeVersions();return}
+ if(e.key==='Escape'&&versionsFen.open){e.preventDefault();e.stopPropagation();versionsFen.close()}},true);
 // v1.214 : un clic hors du réglage du coût l'enregistre et le referme.
 document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=document.querySelector('.die-pick.cout-pick');if(!d){coutEdite='';return}if(d.contains(e.target))return;d._pose()},true);
