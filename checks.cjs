@@ -5377,6 +5377,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.194 — Flèches entre aventuriers, schéma en haut, bourse en quatre lignes, sac à huit colonnes, place qui brille, vignettes, carte Sphères. */
+{const ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(ed.includes("const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&voitAventurier(a)&&peutVoirArbres(a)));")&&ed.includes("grille.classList.add('en-vignettes');heros.forEach((a,i)=>grille.append(vignetteHeros(a,i)));")
+  &&ed.includes("rang.className='bourse-corps bourse-lignes';")&&ed.includes("if(boite)boite.dataset.brille=placeDe(o)")&&pl.includes("const CARTE_SPHERES='__spheres';")
+  &&css.includes(".inv-fenetre .sac .sac-ligne{grid-template-columns:repeat(8,minmax(0,1fr));")&&!ed.includes("if(boite)boite.className='corps-sac'"),'v1.194');}
 /* v1.193 — L'onglet Caractéristiques en deux blocs de vignettes, les talents centrés dessous, sans le bloc Inventaire. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('fiche-onglet');")&&ed.includes("c.querySelectorAll(':scope>.titre-comps,:scope>.titre-kit,:scope>.bloc-inventaire').forEach(x=>x.remove());"),'v1.193');}
 /* v1.192 — Les Marques sur la ligne du niveau, après la classe. */

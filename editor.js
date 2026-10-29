@@ -1951,7 +1951,7 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
  $('hero-filtres').hidden=true;
  const heros=trieHeros(troupe.filter(a=>!q||a.name.toLowerCase().includes(q)));
  grille.classList.toggle('une-fiche',heros.length===1);
- heros.forEach((a,i)=>grille.append(heroCard(a,i)));
+ grille.classList.add('en-vignettes');heros.forEach((a,i)=>grille.append(vignetteHeros(a,i)));
  if(!heros.length&&!invitEnLigne()){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
 /* Redessiner la troupe garde la page où elle est : la grille se vidait un instant, et la page remontait tout en haut sous les
@@ -1972,14 +1972,14 @@ function replieHeros(id,replie){const l=herosReplies();if(replie)l.add(id);else 
  const jeton=c.querySelector('.hero-head .avatar');if(jeton&&a.id&&!jeton.classList.contains('hors-table')){jeton.classList.add('repliable');
   jeton.onclick=e=>{e.stopPropagation();replieHeros(a.id,true)}}return c}}
 {const renderHerosSansRepli=renderHeroes;renderHeroes=function(){const r=renderHerosSansRepli.apply(this,arguments);const g=$('hero-grid');if(!g)return r;
- const replies=new Set([...herosReplies(),...actors.filter(x=>x&&x.hero&&x.surBanc===true).map(x=>x.id)]),cartes=[...g.querySelectorAll(':scope>.hero-card')].filter(c=>replies.has(c.dataset.heros));if(!cartes.length)return r;
+ const replies=new Set([...herosReplies(),...actors.filter(x=>x&&x.hero&&x.surBanc===true).map(x=>x.id)]),cartes=[...g.querySelectorAll(':scope>:is(.hero-card,.hero-vignette)')].filter(c=>replies.has(c.dataset.heros));if(!cartes.length)return r;
  const rang=document.createElement('div');rang.className='heros-replies';
  cartes.forEach(c=>{const a=actors.find(x=>x&&x.id===c.dataset.heros);c.remove();if(!a)return;
   const b=document.createElement('button');b.type='button';b.className='avatar heros-replie';b.setAttribute('aria-label',a.name);b.dataset.heros=a.id;
   if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';b.append(im)}else b.textContent=(a.name||'?')[0];
   if(typeof surveille==='function')surveille(b,()=>{const d=document.createElement('div');d.className='bulle-joueurs';d.textContent=a.name;ouvrirBulle(b,d)});else b.title=a.name;
   b.onclick=()=>replieHeros(a.id,false);rang.append(b)});
- g.prepend(rang);g.classList.toggle('une-fiche',g.querySelectorAll(':scope>.hero-card').length===1);return r}}
+ g.prepend(rang);g.classList.toggle('une-fiche',g.querySelectorAll(':scope>:is(.hero-card,.hero-vignette)').length===1);return r}}
 $('hero-search').oninput=()=>renderHeroes();
 $('hero-tri').value=triHeros();$('hero-tri').onchange=()=>{try{localStorage.setItem('amertume-tri-heros',$('hero-tri').value)}catch(e){}renderHeroes()};
 $('hero-add').onclick=()=>openActor(null,true);
@@ -2693,7 +2693,9 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
    try{e.dataTransfer.setData('text/plain',o.id);e.dataTransfer.effectAllowed='move'}catch(_){}
    const boite=p.closest('.corps-sac');if(boite)boite.classList.add('glisse-'+placeDe(o))});
   p.addEventListener('dragend',()=>{gearGlisse=null;p.classList.remove('tire');
-   const boite=p.closest('.corps-sac');if(boite)boite.className='corps-sac'})}
+   const boite=p.closest('.corps-sac');if(boite)[...boite.classList].forEach(x=>{if(x.startsWith('glisse-'))boite.classList.remove(x)})})}
+ // v1.194 : au survol d'une pièce du sac, la place où elle s'équipe brille.
+ if(corps===false&&['weapon','armor','ammo'].includes(o.category)){p.addEventListener('mouseenter',()=>{const boite=p.closest('.corps-sac');if(boite)boite.dataset.brille=placeDe(o)});p.addEventListener('mouseleave',()=>{const boite=p.closest('.corps-sac');if(boite)delete boite.dataset.brille})}
  p.detailPlie=detail;return p}
 let gearGlisse=null,objetGlisse=null;
 /* Un aventurier pris dans le combat : un combat en cours, et lui sur la carte. Au domaine, hors de la table ou resté hors de la
@@ -2817,7 +2819,11 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
   const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
   // La bourse : un emplacement sous le schéma, l'or et les sphères ; le MJ y ajoute ou retire d'un clic.
   const pl=document.createElement('div');pl.className='place p-bourse';pl.dataset.place='bourse';const l=document.createElement('span');l.className='nom-place';l.textContent='Bourse';pl.append(l);
-  const rang=document.createElement('div');rang.className='bourse-corps';rang.append(or);const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');rang.append(gm)}
+  const rang=document.createElement('div');rang.className='bourse-corps bourse-lignes';const lo=document.createElement('div');lo.className='bourse-ligne';lo.append(or);rang.append(lo);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
+  // v1.194 : quatre lignes — l'or, puis les Brisures, les Éclats, les Brômes, chaque couleur avec son compte.
+  TAILLES_GEMMES.forEach(([ta,nomT])=>{const l=document.createElement('div');l.className='bourse-ligne gemmes-corps';l.setAttribute('aria-label',nomT);
+   VARIETES_GEMMES.forEach(([v])=>{const k=cleGemme(ta,v,false),n=Math.max(0,Math.trunc(Number(a.richesses[k]))||0),el=document.createElement('span');el.className='gem-vive g-'+v+(n?'':' zero');
+    const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,false),b);el.title=nomGemme(ta,v,false);l.append(el)});rang.append(l)});
   if(view==='mj'){pl.classList.add('cliquable');pl.setAttribute('role','button');pl.tabIndex=0;pl.title='Or et sphères de '+a.name;pl.onclick=()=>openRichesses(a);pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
   pl.append(rang);corps.append(pl)}
  else if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
@@ -4889,7 +4895,7 @@ function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.r
   const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
   t.append(n,d,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';
   c.append(av,t,fl);c.setAttribute('aria-label',a.name);
-  c.onclick=()=>{if(typeof showPage!=='function')return;showPage('heroes');requestAnimationFrame(()=>{const f=document.querySelector('#hero-grid>.hero-card[data-heros="'+a.id+'"]');if(f)f.scrollIntoView({block:'center',behavior:'smooth'})})};
+  c.onclick=()=>{if(typeof showPage!=='function')return;showPage('heroes');requestAnimationFrame(()=>{const f=document.querySelector('#hero-grid>[data-heros="'+a.id+'"]');if(f)f.scrollIntoView({block:'center',behavior:'smooth'})})};
   boite.append(c)})}
 function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)b.hidden=!peutCreerAventurier()}{const v=document.querySelector('.brand .ver'),p=$('accueil-pied');if(p)p.textContent=v?v.textContent:''}renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
 /* ---------- Créer un aventurier ----------
@@ -6247,9 +6253,16 @@ function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arb
 /* Sur le plan d'une classe, deux flèches au dehors des bords de la fenêtre : l'arbre de la classe voisine,
    dans l'ordre de l'onglet Talents ; après la dernière, la première. Dans la fenêtre, pour rester cliquables. */
 const flechesArbres=[-1,1].map(sens=>{const b=document.createElement('button');b.type='button';b.className='arbres-fleche';b.hidden=true;
- b.textContent=sens<0?'‹':'›';b.onclick=()=>{const l=talentFamilies().filter(aUnArbre),i=l.indexOf(arbresClasse);
+ b.textContent=sens<0?'‹':'›';b.onclick=()=>{
+  // v1.194 : la fenêtre d'un aventurier passe à l'aventurier voisin, dans l'ordre de la page Aventuriers, sur le même onglet.
+  if(arbresActeur){const l=herosVoisins(),i=l.indexOf(arbresActeur);if(i<0||l.length<2)return;const o=arbresOnglet;openArbres(l[(i+sens+l.length)%l.length]);arbresOnglet=o;renderArbres();return}
+  const l=talentFamilies().filter(aUnArbre),i=l.indexOf(arbresClasse);
   if(i>=0&&l.length>1)openArbresClasse(l[(i+sens+l.length)%l.length])};arbresDialog.append(b);return b});
-function placeFlechesArbres(){const l=arbresDialog.open&&arbresClasse&&!arbresActeur&&view==='mj'?talentFamilies().filter(aUnArbre):[],i=l.indexOf(arbresClasse);
+const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&voitAventurier(a)&&peutVoirArbres(a)));
+function placeFlechesArbres(){if(arbresDialog.open&&arbresActeur){const l=herosVoisins(),i=l.indexOf(arbresActeur);flechesArbres.forEach(b=>b.hidden=i<0||l.length<2);if(i<0||l.length<2)return;
+  const r=arbresDialog.getBoundingClientRect(),w=44;flechesArbres.forEach((b,k)=>{const v=l[(i+(k?1:-1)+l.length)%l.length];b.setAttribute('aria-label','Fiche de '+v.name);
+   b.style.setProperty('--encre',(typeof actorTint==='function'&&actorTint(v))||'var(--ink)');b.style.top=(r.top+r.height/2)+'px';b.style.left=(k?Math.min(innerWidth-w-4,r.right+10):Math.max(4,r.left-w-10))+'px'});return}
+ const l=arbresDialog.open&&arbresClasse&&!arbresActeur&&view==='mj'?talentFamilies().filter(aUnArbre):[],i=l.indexOf(arbresClasse);
  flechesArbres.forEach(b=>b.hidden=i<0||l.length<2);if(i<0||l.length<2)return;
  const r=arbresDialog.getBoundingClientRect(),w=44;
  flechesArbres.forEach((b,k)=>{const voisine=l[(i+(k?1:-1)+l.length)%l.length];b.setAttribute('aria-label','Arbre de talents — '+voisine);
@@ -9412,7 +9425,7 @@ function openInventaire(a){a=acteurCourant(a);if(!a)return;openArbres(a);if(!arb
 // Le schéma à l'échelle : tracé à sa largeur de référence, il grandit ou rapetisse d'un bloc pour remplir la partie gauche.
 function cadreInventaire(){const sch=arbresDialog.querySelector('.inv-schema'),g=arbresDialog.querySelector('.inv-gauche');if(!sch||!g)return;
  sch.style.transform='';const W=INV_LARGEUR,H=sch.offsetHeight,gw=g.clientWidth,gh=g.clientHeight;if(!H||!gw||!gh)return;
- const k=Math.max(.3,Math.min(gw/W,gh/H));sch.style.transformOrigin='0 0';sch.style.transform='translate('+((gw-W*k)/2).toFixed(1)+'px,'+Math.max(0,(gh-H*k)/2).toFixed(1)+'px) scale('+k.toFixed(4)+')'}
+ const k=Math.max(.3,Math.min(gw/W,gh/H));sch.style.transformOrigin='0 0';sch.style.transform='translate('+((gw-W*k)/2).toFixed(1)+'px,0px) scale('+k.toFixed(4)+')'}
 // La fiche et l'inventaire, dans la fenêtre, suivent ce qui change sur la page des Aventuriers.
 let enRenduArbres=false;
 {const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);if(arbresDialog.open&&arbresActeur&&(arbresOnglet==='stats'||arbresOnglet==='inventaire'||arbresOnglet==='statistiques')&&!enRenduArbres){enRenduArbres=true;try{renderArbres()}finally{enRenduArbres=false}}return r}}
@@ -9452,4 +9465,30 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  c.querySelectorAll(':scope>.titre-comps,:scope>.titre-kit,:scope>.bloc-inventaire').forEach(x=>x.remove());
  const pv=c.querySelector(':scope>.hero-pv'),blocs=document.createElement('div');blocs.className='fiche-blocs';
  if(ch){ch.before(blocs);blocs.append(ch)}if(cp)blocs.append(cp);if(pv)blocs.before(pv);
+ return c}
+/* v1.194 — La page Aventuriers : une vignette par aventurier, comme à l'Accueil — son portrait cerclé de sa classe, son nom, sa
+   classe et son niveau, son lieu. Un clic ouvre sa fiche. Le MJ y garde la case de l'aventure, le rang qu'on glisse, l'accueil
+   d'un aventurier en attente. */
+function vignetteHeros(a,i){const c=document.createElement('div');c.className='accueil-heros hero-vignette';c.dataset.heros=a.id||'';c.setAttribute('role','button');c.tabIndex=0;c.setAttribute('aria-label','Fiche de '+a.name);
+ const teinte=(typeof actorTint==='function'&&actorTint(a))||'';if(teinte)c.style.setProperty('--teinte',teinte);
+ const av=document.createElement('span');av.className='accueil-avatar'+(a.horsCarte&&view==='mj'?' hors-table':'');
+ if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
+ const t=document.createElement('span');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
+ const d=document.createElement('small');d.className='accueil-classe';d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'Niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
+ const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
+ const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
+ t.append(n,d,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';c.append(av,t,fl);
+ if(estMort(a)){c.classList.add('mort');av.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}))}
+ // Ce que la fiche donnait au MJ hors d'elle : la case de l'aventure, l'accueil d'un aventurier en attente.
+ const fiche=heroCard(a,i),part=fiche.querySelector('.hero-aventure'),attente=fiche.querySelector('.hero-attente');
+ if(part){part.onclick=e=>e.stopPropagation();c.append(part)}
+ if(attente){c.classList.add('en-attente');attente.onclick=e=>e.stopPropagation();c.append(attente)}
+ const ouvre=()=>{if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(arbresDialog.open){arbresOnglet='stats';renderArbres()}};
+ c.onclick=e=>{if(e.target.closest('input,button'))return;ouvre()};c.onkeydown=e=>{if(e.target===c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ouvre()}};
+ // En tri libre, la vignette se glisse avant ou après une autre.
+ if(triHeros()==='libre'){c.draggable=true;c.addEventListener('dragstart',e=>{ficheGlissee=a;c.classList.add('fiche-glissee');fermerBulle();try{e.dataTransfer.setData('text/plain',a.id);e.dataTransfer.effectAllowed='move'}catch(_){}});
+  c.addEventListener('dragend',()=>{ficheGlissee=null;c.classList.remove('fiche-glissee');document.querySelectorAll('.hero-vignette.cible-avant,.hero-vignette.cible-apres').forEach(x=>x.classList.remove('cible-avant','cible-apres'))})}
+ c.addEventListener('dragover',e=>{if(!ficheGlissee||ficheGlissee===a)return;e.preventDefault();const r=c.getBoundingClientRect(),apres=e.clientX>r.left+r.width/2;c.classList.toggle('cible-apres',apres);c.classList.toggle('cible-avant',!apres)});
+ c.addEventListener('dragleave',e=>{if(!c.contains(e.relatedTarget))c.classList.remove('cible-avant','cible-apres')});
+ c.addEventListener('drop',e=>{if(!ficheGlissee||ficheGlissee===a)return;e.preventDefault();e.stopPropagation();const apres=c.classList.contains('cible-apres');c.classList.remove('cible-avant','cible-apres');deplaceFiche(ficheGlissee,a,apres)});
  return c}

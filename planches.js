@@ -225,6 +225,27 @@ function renderIcones(){const boite=$('icones-planches');if(!boite)return;boite.
   const pan=document.createElement('div');pan.id='planche-panneau';pan.className='planche-panneau';const bloc=blocPlanche(PLANCHE_CHOISIE);
   if(bloc.tagName==='DETAILS'){bloc.open=true;if(!bloc.dataset.rempli)remplitPlanche(bloc,PLANCHE_CHOISIE);bloc.ontoggle=()=>{if(!bloc.open){PLANCHE_CHOISIE=null;renderIcones()}}}
   pan.append(bloc);boite.append(pan)}}
+/* v1.194 — Les sphères : quinze images à part (img/ressource_*.png), non une planche. Une carte « SPHÈRES » les montre avec
+   leur nom, pour les voir seulement : rien ne s'y découpe ni ne s'y renomme. */
+const CARTE_SPHERES='__spheres';
+function spheresVisibles(){if(typeof TAILLES_GEMMES==='undefined'||typeof iconeDeGemme!=='function')return [];const q=cleTalent($('icones-recherche').value),cat=$('icones-cat').value;if(cat!=='*')return [];
+ return TAILLES_GEMMES.flatMap(([t])=>VARIETES_GEMMES.map(([v])=>({t,v,nom:nomGemme(t,v,false)}))).filter(x=>!q||cleTalent(x.nom).includes(q))}
+{const ri=renderIcones;renderIcones=function(...x){const r=ri(...x),boite=$('icones-planches'),g=boite&&boite.querySelector('.planches-grille');if(!g)return r;
+ const vues=spheresVisibles(),filtre=!!$('icones-recherche').value.trim()||$('icones-cat').value!=='*';if(!vues.length)return r;
+ const c=document.createElement('button');c.type='button';c.className='planche-carte'+(PLANCHE_CHOISIE===CARTE_SPHERES?' on':'');
+ const v=document.createElement('span');v.className='planche-vignette';v.append(iconeDeGemme(vues[0].t,vues[0].v,false));
+ const n=document.createElement('span');n.className='planche-nom';n.textContent='SPHÈRES';
+ const k=document.createElement('span');k.className='planche-compte';k.textContent=filtre?vues.length+' / 15':'15 icônes';c.append(v,n,k);
+ c.onclick=()=>{PLANCHE_CHOISIE=PLANCHE_CHOISIE===CARTE_SPHERES?null:CARTE_SPHERES;renderIcones();if(PLANCHE_CHOISIE){const pan=$('planche-panneau');if(pan)pan.scrollIntoView({block:'nearest',behavior:'smooth'})}};
+ // À sa place dans l'ordre des noms.
+ const apres=[...g.children].find(x=>{const m=x.querySelector('.planche-nom');return m&&m.textContent.localeCompare('SPHÈRES','fr',{numeric:true,sensitivity:'base'})>0});g.insertBefore(c,apres||null);
+ if(PLANCHE_CHOISIE===CARTE_SPHERES){const pan=document.createElement('div');pan.id='planche-panneau';pan.className='planche-panneau';const bloc=document.createElement('div');bloc.className='planche-bloc';
+  const h=document.createElement('h3');h.textContent='SPHÈRES';const tete=document.createElement('div');tete.className='planche-tete';tete.append(h);
+  const grille=document.createElement('div');grille.className='icones-grille';
+  vues.forEach(x=>{const carte=document.createElement('div');carte.className='icone-carte c-aucune';const cas=document.createElement('span');cas.className='icone-case';const im=iconeDeGemme(x.t,x.v,false);cas.append(im);
+   const nom=document.createElement('span');nom.className='icone-nom sphere-nom';nom.textContent=x.nom;carte.append(cas,nom);grille.append(carte)});
+  bloc.append(tete,grille);pan.append(bloc);boite.append(pan)}
+ return r}}
 $('icones-recherche').oninput=renderIcones;$('icones-cat').onchange=renderIcones;
 // Les numéros d'une planche qui passent la recherche et le filtre.
 function iconesVisibles(f){const p=plancheDe(f);if(!p)return [];const q=cleTalent($('icones-recherche').value),cat=$('icones-cat').value;
