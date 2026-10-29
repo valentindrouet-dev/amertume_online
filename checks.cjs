@@ -5377,6 +5377,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.209 — Le coût en Marques d'un talent et de ses améliorations se règle d'un clic dans le panneau de l'arbre. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);"),'v1.209');
+assert.ok(fs.readFileSync('editor.js','utf8').includes("c.querySelectorAll(':scope>.hero-head,:scope>.hero-pv,:scope>.chips').forEach(x=>x.remove());")&&fs.readFileSync('editor.js','utf8').includes("apres.className='arbres-ident-apres'"),'v1.209 en-tête');
+assert.ok(fs.readFileSync('editor.js','utf8').includes('const TEXTES_PUCES={vie:')&&fs.readFileSync('editor.js','utf8').includes("droite.append(nom,nat,ul||desc)"),'v1.209 puces');
 /* v1.208 — Les en-têtes Équipements et Inventaire au-dessus des blocs de l'inventaire. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("out.append(titre('Équipements'),titre('Inventaire'),partGauche,partDroite)"),'v1.208');
 /* v1.207 — Les Richesses en vrai bloc, titre orné, sans pointillés. */
@@ -5400,7 +5404,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#arbres.v2 .arbres-tete
 /* v1.199 — La bourse : le nom de chaque ligne à gauche (Or, Brisure, Éclat, Brôme), les icônes alignées, le chiffre plus gros. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("or.append(piece);{const d=contenu();d.append(or);lo.append(nomLigne('Or'),d)}rang.append(lo);")&&ed.includes("if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});"),'v1.199');}
 /* v1.198 — L'onglet Caractéristiques sans habit de livre, la nature retirée des vignettes, les talents à la teinte de la classe. */
-{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("m.append(h);if(desc)m.append(el('span','vignette-desc',desc));")&&!css.includes('.fiche-livre{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px;border-radius:16px')
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');")&&!css.includes('.fiche-livre{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px;border-radius:16px')
  &&css.includes(".hero-card.fiche-onglet .talent-grille.a-cases{background:linear-gradient(135deg,color-mix(in srgb,var(--classe,var(--accent)) 24%"),'v1.198');}
 /* v1.197 — Bourse : les sphères possédées, leur nombre sur l'icône ; Armes / Équipements par rareté ; la fiche des autres, en lecture. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(!n)return;const el=document.createElement('span');el.className='gem-vive gem-chiffree g-'+v;")&&ed.includes("function herosDeLaPage(a){")
@@ -5819,7 +5823,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-deta
 /* v0.830 — Un prix hors de portée de l'XP disponible, en rouge doux. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("(acquis?' paye':prix>dispoT?' trop-cher':'')")&&fs.readFileSync('editor.css','utf8').includes('.detail-prix.trop-cher{'),'prix trop cher en rouge');
 /* v0.829 — Le prix d'un talent, d'une amélioration ou d'un bonus pris reste affiché, en vert. */
-assert.ok(fs.readFileSync('editor.js','utf8').includes("pr.className='detail-prix detail-prix-rond'+(acquis?' paye'")&&fs.readFileSync('editor.css','utf8').includes('.detail-prix.paye{'),'prix payé en vert');
+assert.ok(fs.readFileSync('editor.js','utf8').includes("pastilleCout(t,1,'detail-prix detail-prix-rond'+(acquis?' paye'")&&fs.readFileSync('editor.css','utf8').includes('.detail-prix.paye{'),'prix payé en vert');
 /* v0.827 — Les Orbes infligent Feu d'office quand ils blessent ; « Orbes — Feu toujours », amélioration des Orbes, même sans dégâts. */
 {const C=require('./combat.js'),o={code:C.TALENTS_CODES.orbes,params:{orbes:1,des:1,couleur:'blue'}},tj={code:C.TALENTS_CODES.orbesfeutoujours,params:{}};
  assert.deepEqual(C.etatOrbeAuPalier([o]),{etat:'Feu',six:false,crans:1,blesse:true});assert.deepEqual(C.etatOrbeAuPalier([o,tj]),{etat:'Feu',six:false,crans:1,blesse:false});

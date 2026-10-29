@@ -4321,3 +4321,21 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .corps-sac.inv-fenetre>.inv-titre::before,.corps-sac.inv-fenetre>.inv-titre::after{content:'';flex:0 1 110px;height:12px;
  background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) right center / 12px 12px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 16px) 1.5px no-repeat}
 .corps-sac.inv-fenetre>.inv-titre::after{background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) left center / 12px 12px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 16px) 1.5px no-repeat}
+/* v1.209 — Le coût en Marques réglable d'un clic, chez le MJ. */
+.detail-prix.cout-editable{cursor:pointer}.detail-prix.cout-editable:hover{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
+.die-pick.cout-pick{display:inline-flex;flex:none;background:color-mix(in srgb,var(--teinte) 22%,var(--panel-2));border:1px solid color-mix(in srgb,var(--teinte) 45%,var(--panel-2));box-shadow:none}
+.die-pick.cout-pick .die-sq{display:grid;place-items:center;background:none}.die-pick.cout-pick .die-sq .marque-ico{width:20px;height:20px;object-fit:contain}
+.die-pick.cout-pick .sphere-val{min-width:24px;text-align:center;cursor:pointer}
+/* v1.209 — L'identité de l'aventurier dans l'en-tête de sa fiche. */
+#arbres .dialog-head .arbres-ident-avant{display:inline-flex;align-items:center;gap:10px;flex:none;margin-right:10px}
+#arbres .dialog-head .arbres-ident-avant .hero-aventure{margin:0;width:18px;height:18px}
+#arbres .dialog-head .arbres-ident-avant .avatar{width:42px;height:42px;flex:none}
+#arbres .dialog-head .arbres-ident-apres{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 14px 0 12px;flex:0 1 auto}
+#arbres .dialog-head .arbres-ident-apres .avec-extension{position:relative;margin-right:14px}
+#arbres .dialog-head .arbres-ident-apres .sheet-class .pastille-extension{top:-9px;right:-10px;width:22px;height:22px}
+#arbres .dialog-head .arbres-ident-apres .chip.chip-marques{display:inline-flex;align-items:center;gap:4px}
+#arbres .dialog-head .arbres-ident-outils{display:inline-flex;align-items:center;gap:2px;margin:0 8px 0 auto}
+/* v1.209 — Les puces des caractéristiques et compétences. */
+:is(.vignette-puces,.detail-puces){margin:2px 0 0;padding:0 0 0 16px;list-style:disc}
+.fiche-onglet .vignette-puces{font:italic 400 11.5px/1.35 system-ui;color:color-mix(in srgb,var(--ink) 72%,transparent)}
+:is(.vignette-puces,.detail-puces) li::marker{color:var(--accent)}

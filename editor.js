@@ -6882,7 +6882,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      cd.className='detail-amelioration'+(bonus?' detail-bonus':'')+(k>=n?' acquise':'')+(suivante?' achetable':'')+(!a?' editable':'');
      const l=document.createElement('p');l.className='detail-am-nom';const b=document.createElement('b');
      if(bonus){const xp=talentAuPalier(x,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}))}else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n])}
-     l.append(b);if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');remplitMarques(pr,prix);l.append(pr)}
+     l.append(b);if(prix||view==='mj')l.append(pastilleCout(x,n,'detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'')))
      cd.append(l);const tx=bonus?'':talentAuPalier(xv,n).effects||'';if(tx){const e=document.createElement('p');texteEnrichi(e,tx,nomsDeLArbre(x),a);cd.append(e)}
      // Un bonus : sa seule vignette, telle que le panneau la montre au survol de son rond.
      if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
@@ -7203,7 +7203,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;
    // Le prix sous le grand rond : le nom garde toute sa ligne, et le cartouche ne sort jamais du cadre.
    // Pris, son prix reste, en vert : de l'XP dépensée.
-   if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(acquis?' paye':prix>dispoT?' trop-cher':'');remplitMarques(pr,prix);rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
+   if(prix||view==='mj'){const pr=pastilleCout(t,1,'detail-prix detail-prix-rond'+(acquis?' paye':prix>dispoT?' trop-cher':''));rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
    if(a){const ok=acquis||(!verrou&&!!el&&prix<=dispoT);tete.classList.add('cliquable',acquis?'acquise':ok?'achetable':'fermee');
    if(ok&&el&&el.agir){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>el.agir();
     tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}}}
@@ -7234,7 +7234,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       // Un nom long rapetisse, pour tenir sur sa ligne à côté de son prix.
       const L=String(b.textContent||'').length;if(L>18)b.style.fontSize=(L>26?14:L>22?15.5:16.5)+'px'}
      l.append(b);
-     if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');remplitMarques(pr,prix);l.append(pr)}
+     if(prix||view==='mj')l.append(pastilleCout(x,n,'detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'')))
      if(mj&&n===1){const x2=document.createElement('button');x2.type='button';x2.className='detail-oter';x2.textContent='✕';x2.setAttribute('aria-label','Ôter');
       x2.onclick=e=>{e.stopPropagation();if(bonus){laisseCaseVide(x);const i=catalog.talents.indexOf(x);if(i>=0)catalog.talents.splice(i,1);actors.forEach(y=>{if(y.talents)y.talents=y.talents.filter(id=>id!==x.id)})}else videDeLArbre(x);arbreChange()};l.append(x2)}
      c.append(l);
@@ -9057,7 +9057,9 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   {const L=String(nom.textContent||'').length;if(L>12)nom.style.fontSize=(L>26?17:L>20?20:L>16?23:26)+'px'}
   // v1.139 : sous le nom, sa nature — Caractéristique, Compétence ou Bonus — et le trait, comme pour un talent.
   const nat=document.createElement('p');nat.className='detail-type-bonus';nat.textContent=natureBonus(p);
-  const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,nat,desc);
+  const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);
+  // v1.209 : une caractéristique ou une compétence se dit en puces, comme sur l'onglet Caractéristiques.
+  {const ul=pucesFiche(p.carac==='comp'?skillNames[Math.max(0,Math.min(7,Number(p.comp)||0))]:p.carac,'detail-desc-bonus detail-puces');droite.append(nom,nat,ul||desc)}
   tete.append(pile,droite);panneau.append(tete);
   if(a){const bi=boutonInfuser(ctx,t,l);if(bi)panneau.append(bi);const bd=boutonDesacheter(ctx,t,l);if(bd)panneau.append(bd)}
   else if(mj)panneau.append(editeurSphere(t));
@@ -9490,15 +9492,14 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  /* v1.196 : chaque vignette dit ce que dit le panneau du sphérier — l'icône, le nom à sa couleur, sa nature, ce qu'elle fait en
     italique — et la valeur, à droite. */
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
-  const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(desc)m.append(el('span','vignette-desc',desc));
+  const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',descriptionBonus({carac:'vie'})],endu:['Endurance',descriptionBonus({carac:'endu'})],pv:['PV max',descriptionBonus({carac:'pv'})],def:['DEF',descriptionBonus({carac:'def'})],
-  dmg:['Dégâts',descriptionBonus({carac:'dmg'})],xp:['XP','Tous les '+XP_PAR_MARQUE+' XP, une Marque, qui paie les talents.']};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']]};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
  if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const k=([...t.classList].find(x=>x.startsWith('t-'))||'t-').slice(2),s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');
   const [nom,desc]=CARACS_FICHE[k]||[k,''];vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'',nom,'Caractéristique',desc,t.style.getPropertyValue('--tint').trim())});
  if(cp)[...cp.querySelectorAll(':scope>.comp-carte')].forEach((k,i)=>{const r=k.querySelector('.comp-rond'),v=k.querySelector('.comp-val'),n=skillNames[i]||'';
-  vignette(k,v?v.textContent:'',n,'Compétence',USAGES_COMPETENCES[n]||USAGES_COMPETENCES[COMPETENCES[i]]||'',r?r.style.getPropertyValue('--tint').trim():'')});
+  vignette(k,v?v.textContent:'',n,'Compétence',[n],r?r.style.getPropertyValue('--tint').trim():'')});
  c.querySelectorAll(':scope>.titre-comps,:scope>.titre-kit,:scope>.bloc-inventaire').forEach(x=>x.remove());
  // La ligne Homme / Espèce / Classe / Marques, sur la ligne du nom.
  const tete=c.querySelector(':scope>.hero-head'),puces=c.querySelector(':scope>.chips'),ident=puces&&puces.querySelector('.hero-identite'),id=tete&&tete.querySelector('.hero-id');
@@ -9506,7 +9507,9 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  // Deux pages : à gauche les caractéristiques et les talents, à droite les compétences.
  const titreTal=c.querySelector(':scope>.titre-tal'),blocTal=c.querySelector(':scope>.talent-grille');
  const livre=el('div','fiche-livre'),pg=el('section','fiche-page page-gauche'),pd=el('section','fiche-page page-droite');
- if(ch)ch.before(livre);livre.append(pg,pd);{const pv=c.querySelector(':scope>.hero-pv');if(pv)livre.before(pv)}
+ if(ch)ch.before(livre);livre.append(pg,pd);
+ // v1.209 : l'identité de l'aventurier et ses PV quittent l'onglet : l'identité passe dans l'en-tête de la fiche.
+ c.querySelectorAll(':scope>.hero-head,:scope>.hero-pv,:scope>.chips').forEach(x=>x.remove());
  pg.append(el('h3','fiche-titre','Caractéristiques'));if(ch)pg.append(ch);
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);pg.append(bt)}
  pd.append(el('h3','fiche-titre','Compétences'));if(cp)pd.append(cp);
@@ -9583,3 +9586,48 @@ function iconesFiche(a){const g=document.createElement('span');g.className='fich
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x),band=arbresDialog.querySelector('.arbres-v2 .arbre-titre.a-xp'),head=arbresDialog.querySelector('.dialog-head');
  if(band&&!arbresReset.hidden){band.prepend(arbresReset);arbresReset.classList.add('dans-arbre')}
  else if(head&&arbresReset.parentElement!==head){head.insertBefore(arbresReset,arbresVue);arbresReset.classList.remove('dans-arbre')}return r}}
+/* v1.209 — Le coût en Marques d'un talent et de chacune de ses améliorations se règle dans le panneau de l'arbre, sans passer
+   par l'éditeur : chez le MJ, un clic sur sa pastille l'ouvre en − / +, comme le prix d'un bonus ; un clic sur le chiffre la referme. */
+let coutEdite='';
+function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);
+ if(view==='mj'&&coutEdite===cle){const d=document.createElement('div');d.className='die-pick cout-pick';d.style.setProperty('--teinte','#c99a3c');
+  const i=document.createElement('i');i.className='die-sq';i.setAttribute('aria-hidden','true');i.append(iconeMarque('marque-ico'));
+  const pose=v=>{const c=Array.isArray(t.couts)?[...t.couts]:[];while(c.length<n)c.push(0);c[n-1]=Math.max(0,Math.min(99,v));t.couts=c;arbreChange()};
+  const bm=document.createElement('button');bm.type='button';bm.textContent='−';bm.setAttribute('aria-label','Coût : moins');bm.onclick=e=>{e.stopPropagation();pose(prix-1)};
+  const val=document.createElement('b');val.className='sphere-val';val.textContent=String(prix);val.title='Fermer';val.onclick=e=>{e.stopPropagation();coutEdite='';renderArbres()};
+  const bp=document.createElement('button');bp.type='button';bp.textContent='+';bp.setAttribute('aria-label','Coût : plus');bp.onclick=e=>{e.stopPropagation();pose(prix+1)};
+  d.append(i,bm,val,bp);d.onclick=e=>e.stopPropagation();return d}
+ const pr=document.createElement('span');pr.className=cls;remplitMarques(pr,prix);
+ if(view==='mj'){pr.classList.add('cout-editable');pr.setAttribute('role','button');pr.tabIndex=0;pr.setAttribute('aria-label','Coût en Marques : '+prix);
+  const ouvre=e=>{e.stopPropagation();e.preventDefault();coutEdite=cle;renderArbres()};pr.onclick=ouvre;pr.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')ouvre(e)}}
+ return pr}
+/* v1.209 — L'en-tête de la fiche, sur tous ses onglets : la case de l'aventure, le portrait, puis, après le nom, le genre,
+   l'espèce, la classe et son niveau, les Marques ; à droite, les outils du MJ. */
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x),h=arbresDialog.querySelector('.dialog-head');if(!h)return r;
+ h.querySelectorAll(':scope>.arbres-ident-avant,:scope>.arbres-ident-apres,:scope>.arbres-ident-outils').forEach(e=>e.remove());
+ const a=arbresActeur&&acteurCourant(arbresActeur),nom=h.querySelector('.arbres-classe');if(!a||!a.hero||!nom)return r;
+ const c=heroCard(a,actors.indexOf(a)),tete=c.querySelector('.hero-head'),ident=c.querySelector('.hero-identite');
+ const avant=document.createElement('span');avant.className='arbres-ident-avant';
+ const part=tete&&tete.querySelector('.hero-aventure'),jeton=tete&&tete.querySelector('.avatar');
+ if(part){part.addEventListener('change',()=>{if(part.checked&&a.horsCarte)ramenerSurLaTable(a);if(typeof renderHeroes==='function')setTimeout(renderHeroes,0)});avant.append(part)}
+ if(jeton){jeton.onclick=null;jeton.classList.remove('repliable');jeton.removeAttribute('role');jeton.removeAttribute('tabindex');avant.append(jeton)}
+ nom.before(avant);
+ if(ident){const apres=document.createElement('span');apres.className='arbres-ident-apres';apres.append(...ident.childNodes);nom.after(apres)}
+ const outils=tete&&tete.querySelector('.cat-tools');if(outils&&outils.childElementCount){const o=document.createElement('span');o.className='arbres-ident-outils';o.append(...outils.childNodes);const x2=h.querySelector('[data-close]');(h.querySelector('#arbres-vue')||x2).before(o)}
+ return r}}
+/* v1.209 — Ce que disent les caractéristiques et les compétences, en puces : onglet Caractéristiques, arbre des Bonus. */
+const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 PV vous perdez 1 Vie','À 0 Vie vous mourez'],
+ endu:['Chaque point donne des PV max pour chaque Vie','Au repos court vous récupérez 1d6 + Endurance PV'],
+ pv:['Endurance × Vie','Plus les bonus de classe, d’espèce et de talents'],
+ def:['Chaque dé de dégâts qui ne la dépasse pas est arrêté','Augmentée par l’armure et le bouclier'],
+ dmg:['Ajoutés à chaque attaque qui touche'],
+ xp:['Fait monter votre niveau','Tous les '+XP_PAR_MARQUE+' XP vous gagnez 1 Marque pour acheter vos talents'],
+ 'Agilité':['Esquiver un piège','Sauter, grimper, garder l’équilibre','Se dégager d’une mêlée'],
+ 'Force':['Enfoncer une porte, soulever, pousser','Se libérer d’une prise','Retenir un allié qui tombe'],
+ 'Mysticisme':['Résister à un sort ou à un charme','Sentir le surnaturel','Utiliser un objet ou un rituel mystique'],
+ 'Perception':['Repérer un piège ou un passage secret','Débusquer un adversaire caché','Fouiller les lieux'],
+ 'Robustesse':['Résister au poison, à la maladie, au froid','Tenir face à la fatigue','Encaisser un état physique'],
+ 'Ruse':['Voler (Larcin)','Mentir, tromper, se cacher'],
+ 'Savoir':['Analyser un adversaire : chaque réussite révèle une information','Se souvenir, déchiffrer, identifier'],
+ 'Technique':['Crocheter une serrure','Désamorcer un piège','Réparer, fabriquer, manier une invention']};
+function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const ul=document.createElement('ul');ul.className=cls||'';l.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});return ul}
