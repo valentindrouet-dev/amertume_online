@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.156 — Le zoom de la Table s'arrête à la carte entière : 100 %, jamais moins. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("function zoomMapAt(facteur,cx,cy){const z=Math.min(8,Math.max(1,mapZoom*facteur));")&&page.includes("if(!w||!h)return;if(!(mapZoom>=1))mapZoom=1;")
+ &&!page.includes("Math.max(.4,mapZoom*facteur)")&&fs.readFileSync('maps.js','utf8').includes("try{mapZoom=Math.min(8,Math.max(1,s.z));"),'v1.156');}
 /* v1.155 — Gemmes : un seuil par déclencheur, une sphère au plus, le journal dit seulement qu'elle est acquise ; nouveaux
    déclencheurs ; les bonus de PA et de PM à plusieurs gemmes. */
 {const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');

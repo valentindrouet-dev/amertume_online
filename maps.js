@@ -3457,7 +3457,7 @@ function lisZooms(){try{const t=JSON.parse(localStorage.getItem(ZOOMS_CLE)||'{}'
   const c=Object.keys(t);c.slice(0,Math.max(0,c.length-30)).forEach(k=>delete t[k]);try{localStorage.setItem(ZOOMS_CLE,JSON.stringify(t))}catch(e){}},400)}}
 function reprendZoom(){const id=typeof currentMapId!=='undefined'&&currentMapId,m=$('map'),w=m.clientWidth,h=m.clientHeight;if(!id||!w||!h)return;
  zoomReprisPour=id;const s=lisZooms()[id];if(!s||!(s.z>0)||!Number.isFinite(s.x)||!Number.isFinite(s.y))return;
- zoomEnReprise=true;try{mapZoom=Math.min(8,Math.max(.4,s.z));mapPanX=w/2-s.x*w*mapZoom;mapPanY=h/2-s.y*h*mapZoom;vueCadre={w,h};applyMapZoom()}finally{zoomEnReprise=false}}
+ zoomEnReprise=true;try{mapZoom=Math.min(8,Math.max(1,s.z));mapPanX=w/2-s.x*w*mapZoom;mapPanY=h/2-s.y*h*mapZoom;vueCadre={w,h};applyMapZoom()}finally{zoomEnReprise=false}}
 // Une carte qui paraît — ouverte, reçue de la table, retrouvée au chargement — reprend son zoom, une fois posée à l'écran.
 {const renderAvantZoom=render;render=function(){renderAvantZoom.apply(this,arguments);
  if(typeof currentMapId!=='undefined'&&currentMapId&&zoomReprisPour!==currentMapId&&!zoomPrevu)zoomPrevu=setTimeout(()=>{zoomPrevu=0;if(zoomReprisPour!==currentMapId)reprendZoom()},80)}}
