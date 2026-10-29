@@ -5368,6 +5368,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.174 — Le sphérier remplit sa colonne jusqu'au panneau, sans vide ; aucun onglet des arbres ne défile vers le bas. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(ed.includes("function arbreSansDefilement(){if(!arbresDialog.open||arbresOnglet==='bonus'||!arbresTaille||arbresMesure)return;")&&ed.includes("arbresMesure=false;renderArbres();arbresDialog.scrollTop=garde.haut}}")
+  &&ed.includes("cw=Math.max(W*k+2,dispoW,zw)")&&css.includes(".arbres-v2.sphere-plein,#arbres.taille-mj .arbres-v2.sphere-plein{column-gap:0}"),'v1.174');}
 /* v1.173 — Les exports emportent tout : fenêtres, crochetage, code et crans des coffres, modèle entier des adversaires, paysages, rang des lieux. */
 {const C=require('./combat.js');const m=C.readMapsFile(JSON.stringify(C.packMaps([{name:'A',paysage:true,lieu:'L',lieuRang:3,doors:[{x:1,y:1,w:4,h:1,fenetre:true,etatInitial:'ouverte'},{x:1,y:5,w:4,h:1,crochetage:5}],
  coffres:[{x:9,y:9,w:3,h:3,code:'42',piege:1,etats:['Poison'],crans:{Poison:{degats:3}}}],foes:[{x:1,y:1,tpl:{id:'loup',name:'Loup',talents:['x'],image:'javascript:alert(1)'}}]}])))[0];

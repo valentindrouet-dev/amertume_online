@@ -9187,9 +9187,28 @@ function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.cl
  const haut=cad.getBoundingClientRect().top-arbresDialog.getBoundingClientRect().top+arbresDialog.scrollTop;
  const dispoH=(arbresTaille?arbresTaille.h:innerHeight*.96)-haut-(parseFloat(cs.paddingBottom)||0)-8;
  const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;
+ /* v1.174 : la fenêtre a sa taille — le cadre du sphérier remplit sa colonne jusqu'au panneau de droite et jusqu'en bas, sans vide ;
+    le plan s'y centre, et le quadrillage passe sur tout le cadre, au pas du plan. */
+ if(arbresTaille&&!arbresMesure){const zw=(cad.closest('.arbres-v2-arbre')||{}).clientWidth||0,cw=Math.max(W*k+2,dispoW,zw),ch=Math.max(H*k+2,dispoH),tx=Math.round((cw-2-W*k)/2),ty=Math.round((ch-2-H*k)/2);
+  plan.style.transform='translate('+tx+'px,'+ty+'px)'+(k<1?' scale('+k+')':'');cad.style.width=Math.floor(cw)+'px';cad.style.height=Math.floor(ch)+'px';
+  const bp=String(plan.style.backgroundPosition||'0px 0px').split(' ').map(v=>parseFloat(v)||0),pas=(parseFloat(plan.style.getPropertyValue('--pas'))||40)*k;
+  cad.classList.toggle('grille',plan.classList.contains('grille'));cad.style.setProperty('--pas',pas+'px');cad.style.backgroundPosition=(tx+bp[0]*k-.5)+'px '+(ty+(bp[1]||0)*k-.5)+'px';
+  if(aside){const d=aside.getBoundingClientRect().left-cad.getBoundingClientRect().right;if(d>.5)cad.style.width=Math.floor(cw+d)+'px'}return}
+ cad.classList.remove('grille');cad.style.removeProperty('background-position');
  plan.style.transform=k<1?'scale('+k+')':'';cad.style.width=Math.ceil(W*k+2)+'px';cad.style.height=Math.ceil(H*k+2)+'px'}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}return r}}
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}});
+/* v1.174 — Aucun onglet de la fenêtre des arbres ne défile vers le bas : l'arbre qui dépasse se réduit, d'un bloc, jusqu'à tenir. */
+function arbreSansDefilement(){if(!arbresDialog.open||arbresOnglet==='bonus'||!arbresTaille||arbresMesure)return;
+ const zone=arbresDialog.querySelector('.arbres-v2-arbre');if(!zone)return;
+ const roues=[...zone.querySelectorAll('.arbre-roue')],blocs=roues.length?roues:[...zone.children].filter(e=>e.offsetHeight);if(!blocs.length)return;
+ blocs.forEach(e=>{e.style.removeProperty('transform');e.style.removeProperty('transform-origin');e.style.removeProperty('margin-bottom')});
+ const H=Math.max(...blocs.map(e=>e.offsetHeight));let k=1;
+ for(let i=0;i<6;i++){const trop=arbresDialog.scrollHeight-arbresDialog.clientHeight;if(trop<=1||!H)break;k=Math.max(.3,k*(1-trop/(H*k)));
+  blocs.forEach(e=>{const h=e.offsetHeight;e.style.transformOrigin='top center';e.style.transform='scale('+k+')';e.style.marginBottom=(-h*(1-k))+'px'})}
+ if(k<1)arbresDialog.scrollTop=0}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);try{arbreSansDefilement()}catch(e){}return r}}
+addEventListener('resize',()=>{try{arbreSansDefilement()}catch(e){}});
 
 /* v1.168 — Le coût en sphères sous les ronds du sphérier se montre ou se cache, d'un bouton ; le choix se garde sur l'appareil. */
 const coutsSphereVus=()=>{try{return localStorage.getItem('amertume-couts-sphere')!=='0'}catch(e){return true}};
@@ -9209,7 +9228,7 @@ function tailleCommuneArbres(){if(!arbresDialog.open||arbresMesure)return;if(app
   arbresTaille={w:Math.round(Math.min(innerWidth*.96,w)),h:Math.round(Math.min(innerHeight*.96,h))}}
  finally{arbresOnglet=garde.onglet;sphereSel=garde.sel;sphereSels=garde.sels;sphereLier=garde.lier;
   if(arbresTaille){arbresDialog.style.width=arbresTaille.w+'px';arbresDialog.style.minHeight=arbresTaille.h+'px'}
-  renderArbres();arbresDialog.scrollTop=garde.haut;arbresMesure=false}}
+  arbresMesure=false;renderArbres();arbresDialog.scrollTop=garde.haut}}
 ['openArbres','openArbresClasse','openArbresMetier'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(...x){arbresTaille=null;const r=f(...x);tailleCommuneArbres();return r}});
 arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresTaille=null});
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresTaille)tailleCommuneArbres()});
