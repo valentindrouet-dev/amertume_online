@@ -4125,21 +4125,22 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .detail-prix{display:inline-flex;align-items:center;gap:4px}.detail-prix .marque-ico{width:16px;height:16px}
 .talent-bulle-nom .cout-xp{display:inline-flex;align-items:center;gap:3px}.talent-bulle-nom .cout-xp .marque-ico{width:13px;height:13px}
 .chip.chip-marques{display:inline-flex;align-items:center;gap:4px}.chip.chip-marques .marque-ico{width:15px;height:15px}
-/* v1.185 : la fenêtre Inventaire — le schéma à gauche, à l'échelle, la bourse dessous ; le sac à droite par catégories. */
-#inventaire{width:min(96vw,1180px);height:min(96dvh,840px);max-width:98vw;max-height:98dvh;display:flex;flex-direction:column;box-sizing:border-box}
-#inventaire.redim{outline:2px dashed #c99a3c;outline-offset:-2px}
-#inventaire-corps{flex:1;min-height:0;display:flex}
-.corps-sac.inv-fenetre{position:relative;flex:1;display:grid;grid-template-columns:minmax(0,1fr) var(--detail-w,440px);gap:0 14px;min-height:0;margin:0}
+/* v1.187 : l'aventurier en onglets — sa fiche (Stats), et l'Inventaire : le schéma à gauche, à l'échelle, la bourse dessous ; le sac à droite. */
+.arbres-v2-arbre.arbres-stats{grid-column:1 / -1;display:flex;align-items:flex-start;justify-content:center}
+.arbres-stats .hero-card{width:100%;max-width:none;box-sizing:border-box}
+.arbres-v2-arbre.arbres-inventaire{grid-column:1 / -1;display:flex;min-height:0;overflow:hidden}
+.corps-sac.inv-fenetre{position:relative;flex:1;display:grid;grid-template-columns:minmax(0,1fr) var(--detail-w,440px);gap:0 14px;min-height:0;height:100%;margin:0}
 .inv-gauche{position:relative;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .inv-schema{position:absolute;left:0;top:0;width:420px;box-sizing:border-box}
 .inv-fenetre .corps{background:none;border:0;padding:10px 8px 8px}
-.inv-droite{min-height:0;overflow:auto;padding:4px 6px 4px 2px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-.inv-fenetre .sac{display:flex;flex-direction:column;gap:6px;padding:6px 8px}
-.inv-fenetre .sac .sac-ligne{gap:8px 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}.inv-fenetre .sac .sac-ligne:last-child{border-bottom:0}
-.inv-fenetre .sac .sac-ligne-titre{font-size:10.5px;margin:4px 0 0}
-.inv-fenetre .sac-carte{width:auto;align-items:center}
-.corps-sac.inv-fenetre>.inv-droite .sac .sac-carte .cat-pill.gear-carre,.corps-sac.inv-fenetre>.inv-droite .sac .sac-carte .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:52px;min-width:52px;height:52px;min-height:52px;max-width:none;aspect-ratio:1}
-.inv-fenetre .sac-carte .nom-sac{display:flex;max-width:76px;min-height:0;font:600 10.5px/1.15 system-ui;text-align:center;justify-content:center;color:var(--ink);overflow-wrap:break-word}
+.inv-droite{min-height:0;overflow:auto;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.inv-droite .inv-plus{margin:0 0 6px;padding:6px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel-2);font:600 13px system-ui;color:var(--ink);cursor:pointer}
+.inv-fenetre .sac{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:0}.inv-fenetre .sac .sac-ligne{width:100%;box-sizing:border-box}
+.inv-fenetre .sac .sac-ligne{display:grid;grid-template-columns:repeat(auto-fill,52px);gap:8px;align-items:start;justify-items:center;padding-bottom:8px;border-bottom:1px solid var(--line)}.inv-fenetre .sac .sac-ligne:last-child{border-bottom:0}
+.inv-fenetre .sac .sac-ligne-titre{grid-column:1 / -1;justify-self:start;font-size:10.5px;margin:4px 0 0}
+.inv-fenetre .sac-carte{width:52px;align-items:center}
+.corps-sac.inv-fenetre .sac .sac-carte .cat-pill.gear-carre,.corps-sac.inv-fenetre .sac .sac-carte .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:52px;min-width:52px;height:52px;min-height:52px;max-width:none;aspect-ratio:1}
+.inv-fenetre .sac-carte .nom-sac{display:none}
 .corps .place.p-bourse{grid-column:1 / 4;min-height:0;align-items:stretch;margin-top:4px}
 .corps .place.p-bourse .bourse-corps{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;min-height:44px;box-sizing:border-box;padding:6px 12px;border:2px dashed var(--line-strong);border-radius:9px;background:color-mix(in srgb,var(--panel) 70%,transparent)}
 .corps .place.p-bourse .or-corps{position:static;display:flex;align-items:center;gap:5px}.corps .place.p-bourse .or-corps b{font:700 18px/1 'Killam',Georgia,serif;color:#a0761a}
@@ -4148,6 +4149,3 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .bloc-inventaire{display:flex;align-items:center;gap:10px;margin:2px 0 4px}
 .ouvre-inventaire{margin:0;padding:7px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel-2);font:600 13px system-ui;color:var(--ink);cursor:pointer}.ouvre-inventaire:hover{background:var(--hover)}
 .or-fiche{display:inline-flex;align-items:center;gap:5px}.or-fiche b{font:700 15px/1 'Killam',Georgia,serif;color:#a0761a}.or-fiche.zero b{opacity:.55}
-#inventaire .inv-plus{margin-left:auto}#inventaire .inv-plus[hidden]{display:none}
-.vit-savoir-ligne{flex-direction:column;align-items:stretch;gap:4px}.vit-savoir-tete{display:flex;align-items:center;gap:10px}
-.vit-savoir-lu{margin:0;font-size:14.5px;line-height:1.4}.vit-savoir-texte{width:100%;box-sizing:border-box;margin:0;font:400 13.5px/1.35 system-ui;resize:vertical}

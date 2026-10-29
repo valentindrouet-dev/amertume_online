@@ -5369,12 +5369,16 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.187 — L'aventurier en onglets : Stats, classe, Bonus, espèce, métier, Inventaire ; le prix du talent lu sans aventurier ; le sac en cinq catégories. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=[...(a?[['stats','Stats','']]:[]),['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['inventaire','Inventaire','']);")
+ &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(heroCard(a,actors.indexOf(a)))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
+ &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
 /* v1.186 — Le texte des joueurs par déclencheur (Connaissance) ; un déclencheur connu réussit un point plus bas. */
 {const g=fs.readFileSync('gemmes.js','utf8');assert.ok(g.includes("const TEXTES_JOUEURS_GEMMES={")&&g.includes("function seuilGemme(cle){const r=reglesGemmes().declencheurs[cle];if(!r)return 5;return Math.max(1,r.seuil-(declencheurConnu(cle)?1:0))}")
  &&g.includes("const seuil=seuilGemme(cle);let gagne=faces.some(f=>f>=seuil)?1:0;")&&fs.readFileSync('domaine.js','utf8').includes("const ch=vitEl('textarea','vit-savoir-texte');"),'v1.186');
  const cles=[...g.matchAll(/\{cle:'([a-z0-9-]+)'/g)].map(m=>m[1]),T=g.slice(g.indexOf('const TEXTES_JOUEURS_GEMMES={'),g.indexOf('const texteJoueurGemme'));cles.forEach(k=>assert.ok(T.includes("'"+k+"':"),'texte joueur : '+k));}
 /* v1.185 — La fenêtre Inventaire : le schéma à l'échelle et la bourse à gauche, le sac par catégories à droite ; le MJ la redimensionne. */
-{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("function openInventaire(a){a=acteurCourant(a);if(!a)return;inventaireActeur=a;renderInventaire();")&&ed.includes("function cadreInventaire(){")
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("function openInventaire(a){a=acteurCourant(a);if(!a)return;openArbres(a);if(!arbresDialog.open)return;arbresOnglet='inventaire';renderArbres()}")&&ed.includes("function cadreInventaire(){")
  &&ed.includes("pl.className='place p-bourse';")&&ed.includes("const LIGNES_SAC=fenetre?CATEGORIES_SAC:")&&ed.includes("c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}")
  &&css.includes(".corps-sac.inv-fenetre{position:relative;flex:1;display:grid;grid-template-columns:minmax(0,1fr) var(--detail-w,440px)"),'v1.185');}
 /* v1.184 — Les Marques : une par 100 XP ; elles paient les talents ; un talent se rend hors combat, après un repos court. */
