@@ -1915,7 +1915,12 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   if(view==='mj'){const r=document.createElement('button');r.type='button';r.className='ressusciter';r.textContent='Ressusciter';
    r.onclick=e=>{e.stopPropagation();ressusciter(a)};tete.append(r)}
   else['click','contextmenu','dragstart','pointerdown','keydown','change','input'].forEach(ev=>c.addEventListener(ev,e=>{if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;e.stopPropagation();e.preventDefault()},true))}
- c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a));return c}
+ // v1.185 : l'inventaire vit dans sa fenêtre ; la fiche en garde le titre, qui l'ouvre, et le bouton.
+ const blocInv=document.createElement('div');blocInv.className='bloc-inventaire';const bInv=document.createElement('button');bInv.type='button';bInv.className='ouvre-inventaire';bInv.textContent='Inventaire';
+ bInv.onclick=e=>{e.stopPropagation();fermerBulle();openInventaire(a)};blocInv.append(bInv);
+ {const n=orDe(a),or=document.createElement('span');or.className='or-fiche'+(n?'':' zero');const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);blocInv.append(or)}
+ titreKit.classList.add('ouvre-arbre');titreKit.onclick=e=>{if(e.target.closest('button'))return;fermerBulle();openInventaire(a)};
+ c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}
 /* L'ordre des fiches : libre, comme le MJ les a rangées en les glissant par leur poignée, ou par nom, niveau, classe, XP.
    Le choix reste sur l'appareil ; l'ordre libre, sur chaque aventurier. */
 const TRIS_HEROS=['libre','nom','niveau','classe','xp'];
@@ -2756,7 +2761,12 @@ const SILHOUETTE='<img class="silhouette" src="'+imgUrl('PERSO.png')+'" alt="" a
    pièce du sac sur le corps pour l'équiper à sa place, une pièce du corps sur le sac pour
    la reposer ; le clic fait de même. Une pièce sans place libre prend celle de la plus
    ancienne. */
-function corpsEtSac(a){const out=document.createElement('div');out.className='corps-sac';
+/* v1.185 : en fenêtre (« fenetre »), le même corps et le même sac, mais en deux parties — le schéma à gauche, avec la bourse
+   dessous ; le sac à droite, pièce par pièce, rangé par catégories, les noms toujours écrits. */
+const CATEGORIES_SAC=[['melee','Armes de mêlée',o=>o.category==='weapon'&&!o.ranged],['ranged','Armes à distance',o=>o.category==='weapon'&&!!o.ranged],['armor','Armures',o=>o.category==='armor'],
+ ['ammo','Munitions',o=>o.category==='ammo'],['object','Objets',o=>o.category==='object'],['potion','Potions',o=>o.category==='potion'],['cle','Clés',o=>o.category==='cle'],['recette','Recettes',o=>o.category==='recette'],
+ ['ressource','Ressources',o=>o.category==='ressource'],['restes','Restes',o=>typeof estReste==='function'?estReste(o):o.category==='restes'],['herbe','Herboristerie',o=>o.category==='herbe'],['treasure','Trésors',o=>o.category==='treasure']];
+function corpsEtSac(a,fenetre){const out=document.createElement('div');out.className='corps-sac'+(fenetre?' inv-fenetre':'');
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&tientAventurier(a));
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
@@ -2797,24 +2807,32 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    m.append(e,v);pl.append(m)}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
  // En bas à gauche du schéma, l'or de l'aventurier : la pièce et le nombre. Le MJ y ajoute ou retire or et gemmes d'un clic.
- if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
+ if(a.hero&&fenetre){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
+  const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
+  // La bourse : un emplacement sous le schéma, l'or et les sphères ; le MJ y ajoute ou retire d'un clic.
+  const pl=document.createElement('div');pl.className='place p-bourse';pl.dataset.place='bourse';const l=document.createElement('span');l.className='nom-place';l.textContent='Bourse';pl.append(l);
+  const rang=document.createElement('div');rang.className='bourse-corps';rang.append(or);const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');rang.append(gm)}
+  if(view==='mj'){pl.classList.add('cliquable');pl.setAttribute('role','button');pl.tabIndex=0;pl.title='Or et sphères de '+a.name;pl.onclick=()=>openRichesses(a);pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
+  pl.append(rang);corps.append(pl)}
+ else if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
   const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
   if(view==='mj'){or.classList.add('cliquable');or.setAttribute('role','button');or.tabIndex=0;or.onclick=()=>openRichesses(a);or.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
   // v1.160 : l'or et, à sa droite sur la même ligne, ses gemmes — chaque taille et chaque couleur qu'il tient, avec son compte.
   const rang=document.createElement('div');rang.className='richesses-corps';rang.append(or);
   const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');rang.append(gm)}corps.append(rang)}
- out.append(corps);
+ let partDroite=null;if(fenetre){const partGauche=document.createElement('div');partGauche.className='inv-gauche';const schema=document.createElement('div');schema.className='inv-schema';schema.append(corps);partGauche.append(schema);
+  partDroite=document.createElement('div');partDroite.className='inv-droite';out.append(partGauche,partDroite)}else out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
  // Son titre, « Inventaire » et le « + » du MJ, est celui du bloc, au-dessus du corps et du sac.
  let rien=true;
  /* Trois lignes, d'elles-mêmes : l'équipement — armes, armures, munitions —, les objets, puis les
     ressources et les restes. Chaque pièce n'y montre que son icône, en petit ; sa bulle dit tout. */
- const LIGNES_SAC=[['equipement','Équipement',o=>['weapon','armor','ammo'].includes(o.category)],['objets','Objets',o=>!['weapon','armor','ammo','ressource','restes','herbe'].includes(o.category)],
+ const LIGNES_SAC=fenetre?CATEGORIES_SAC:[['equipement','Équipement',o=>['weapon','armor','ammo'].includes(o.category)],['objets','Objets',o=>!['weapon','armor','ammo','ressource','restes','herbe'].includes(o.category)],
   ['matieres','Ressources et restes',o=>['ressource','restes','herbe'].includes(o.category)]];
  const lignes=new Map(LIGNES_SAC.map(([k,nom])=>{const l=document.createElement('div');l.className='sac-ligne sac-'+k;
   const t=document.createElement('span');t.className='sac-ligne-titre';t.textContent=nom;l.append(t);return [k,l]}));
- const ligneDe=o=>lignes.get((LIGNES_SAC.find(([,,f])=>f(o))||LIGNES_SAC[1])[0]);
+ const ligneDe=o=>lignes.get((LIGNES_SAC.find(([,,f])=>f(o))||LIGNES_SAC.find(([k])=>k==='object')||LIGNES_SAC[1])[0]);
  [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
   const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
@@ -2838,7 +2856,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
   w.append(p,nomSac);ligneDe(o).append(w)});
  lignes.forEach(l=>{if(l.childElementCount>1)sac.append(l)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
- out.append(sac);
+ if(partDroite)partDroite.append(sac);else out.append(sac);
  /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
  if(peutEquiper){const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   const recoit=(el,fn)=>{el.addEventListener('dragover',e=>{if(!gearGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
@@ -9371,3 +9389,55 @@ arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresRed
 // La taille gardée se relit avec le contenu : elle voyage avec lui.
 {const nc=normalizeCatalog;normalizeCatalog=function(c,...x){const r=nc(c,...x);if(c&&typeof c==='object'&&c.tailleArbres!==undefined){const t=c.tailleArbres;
  if(!t||typeof t!=='object'||!(Number(t.w)>0)||!(Number(t.h)>0))delete c.tailleArbres;else c.tailleArbres={w:Math.round(Number(t.w)),h:Math.round(Number(t.h)),detail:Math.round(Number(t.detail)||360)}}return r}}
+
+/* ---------- v1.185 — La fenêtre Inventaire ----------
+   Comme l'arbre de talents : une fenêtre en deux parties — à gauche le schéma d'équipement, à l'échelle du bloc, la bourse d'or et
+   de sphères sous lui ; à droite le sac, rangé par catégories. Le MJ la redimensionne (« Redimensionner » : le coin de la fenêtre,
+   le séparateur du sac) ; la taille se garde dans le contenu (catalog.tailleInventaire), et les joueurs la voient telle quelle. */
+const INV_LARGEUR=420;
+const inventaireDialog=dialog('inventaire','Inventaire','<div id="inventaire-corps"></div>');
+let inventaireActeur=null,invRedim=false;
+const invRedimBtn=document.createElement('button');invRedimBtn.type='button';invRedimBtn.className='arbres-vue arbres-redim-btn';invRedimBtn.textContent='⤡ Redimensionner';
+const invAutoBtn=document.createElement('button');invAutoBtn.type='button';invAutoBtn.className='arbres-vue arbres-redim-btn';invAutoBtn.textContent='Taille auto';
+const invPlus=document.createElement('button');invPlus.type='button';invPlus.className='arbres-vue inv-plus';invPlus.textContent='+ Ajouter';
+inventaireDialog.querySelector('.dialog-head').insertBefore(invPlus,inventaireDialog.querySelector('[data-close]'));
+inventaireDialog.querySelector('.dialog-head').insertBefore(invRedimBtn,inventaireDialog.querySelector('[data-close]'));
+inventaireDialog.querySelector('.dialog-head').insertBefore(invAutoBtn,inventaireDialog.querySelector('[data-close]'));
+const poigneeInv=document.createElement('div');poigneeInv.className='poignee-fenetre-arbres';poigneeInv.title='Tirer pour redimensionner la fenêtre';poigneeInv.hidden=true;inventaireDialog.append(poigneeInv);
+function tailleInventaireMJ(){const t=typeof catalog!=='undefined'&&catalog&&catalog.tailleInventaire;return t&&typeof t==='object'&&Number(t.w)>0&&Number(t.h)>0?t:null}
+function appliqueTailleInventaire(){const T=tailleInventaireMJ();inventaireDialog.classList.toggle('taille-mj',!!T);
+ if(!T){['width','height','--detail-w'].forEach(k=>inventaireDialog.style.removeProperty(k));return false}
+ const w=Math.min(T.w,Math.round(innerWidth*.98)),h=Math.min(T.h,Math.round(innerHeight*.98));inventaireDialog.style.width=w+'px';inventaireDialog.style.height=h+'px';
+ inventaireDialog.style.setProperty('--detail-w',Math.min(Number(T.detail)||440,Math.max(240,w-380))+'px');return true}
+function sauveTailleInventaire(){const r=inventaireDialog.getBoundingClientRect(),d=parseFloat(getComputedStyle(inventaireDialog).getPropertyValue('--detail-w'))||440;
+ catalog.tailleInventaire={w:Math.round(r.width),h:Math.round(r.height),detail:Math.round(d)};scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+function openInventaire(a){a=acteurCourant(a);if(!a)return;inventaireActeur=a;renderInventaire();if(!inventaireDialog.open)inventaireDialog.showModal();requestAnimationFrame(cadreInventaire)}
+function renderInventaire(){const a=inventaireActeur&&acteurCourant(inventaireActeur),corps=$('inventaire-corps');if(!a||!corps)return;
+ inventaireDialog.querySelector('.dialog-head h2').textContent='Inventaire de '+a.name;invPlus.hidden=view!=='mj';invPlus.onclick=()=>openPicker(a,'gear');
+ appliqueTailleInventaire();corps.replaceChildren(corpsEtSac(a,true));majRedimInv();cadreInventaire()}
+// Le schéma à l'échelle : tracé à sa largeur de référence, il grandit ou rapetisse d'un bloc pour remplir la partie gauche.
+function cadreInventaire(){const sch=inventaireDialog.querySelector('.inv-schema'),g=inventaireDialog.querySelector('.inv-gauche');if(!sch||!g)return;
+ sch.style.transform='';const W=INV_LARGEUR,H=sch.offsetHeight,gw=g.clientWidth,gh=g.clientHeight;if(!H||!gw||!gh)return;
+ const k=Math.max(.3,Math.min(gw/W,gh/H));sch.style.transformOrigin='0 0';sch.style.transform='translate('+((gw-W*k)/2).toFixed(1)+'px,'+Math.max(0,(gh-H*k)/2).toFixed(1)+'px) scale('+k.toFixed(4)+')'}
+function majRedimInv(){const mj=view==='mj';invRedimBtn.hidden=!mj;invAutoBtn.hidden=!mj||!invRedim;invRedimBtn.classList.toggle('on',invRedim);invRedimBtn.setAttribute('aria-pressed',String(invRedim));
+ inventaireDialog.classList.toggle('redim',mj&&invRedim);poigneeInv.hidden=!(mj&&invRedim);
+ const v2=inventaireDialog.querySelector('.inv-fenetre');if(!v2)return;let sep=v2.querySelector(':scope>.poignee-blocs');if(!(mj&&invRedim)){if(sep)sep.remove();return}
+ if(!sep){sep=document.createElement('div');sep.className='poignee-blocs';sep.title='Tirer pour régler la largeur du sac';v2.append(sep);
+  sep.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();const r=inventaireDialog.getBoundingClientRect(),x0=e.clientX,d0=parseFloat(getComputedStyle(inventaireDialog).getPropertyValue('--detail-w'))||440;
+   if(!tailleInventaireMJ()){catalog.tailleInventaire={w:Math.round(r.width),h:Math.round(r.height),detail:Math.round(d0)};appliqueTailleInventaire()}
+   const mv=ev=>{const d=Math.max(240,Math.min(r.width-380,d0-(ev.clientX-x0)));inventaireDialog.style.setProperty('--detail-w',Math.round(d)+'px');cadreInventaire()};
+   const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);sauveTailleInventaire()};addEventListener('pointermove',mv);addEventListener('pointerup',up)})}}
+poigneeInv.addEventListener('pointerdown',e=>{if(e.button!==0||view!=='mj')return;e.preventDefault();const r0=inventaireDialog.getBoundingClientRect(),x0=e.clientX,y0=e.clientY;
+ if(!tailleInventaireMJ()){const d=parseFloat(getComputedStyle(inventaireDialog).getPropertyValue('--detail-w'))||440;catalog.tailleInventaire={w:Math.round(r0.width),h:Math.round(r0.height),detail:Math.round(d)};appliqueTailleInventaire()}
+ const mv=ev=>{const w=Math.max(560,Math.min(innerWidth*.98,r0.width+2*(ev.clientX-x0))),h=Math.max(380,Math.min(innerHeight*.98,r0.height+2*(ev.clientY-y0)));
+  inventaireDialog.style.width=Math.round(w)+'px';inventaireDialog.style.height=Math.round(h)+'px';cadreInventaire()};
+ const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);sauveTailleInventaire();renderInventaire()};
+ addEventListener('pointermove',mv);addEventListener('pointerup',up)});
+invRedimBtn.onclick=()=>{invRedim=!invRedim;majRedimInv()};
+invAutoBtn.onclick=()=>{delete catalog.tailleInventaire;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderInventaire()};
+inventaireDialog.addEventListener('close',()=>{invRedim=false;inventaireActeur=null});
+// La fenêtre suit la fiche : ce qui s'équipe ou se range s'y redessine, comme sur la page des Aventuriers.
+{const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);if(inventaireDialog.open)renderInventaire();return r}}
+addEventListener('resize',()=>{if(inventaireDialog.open)cadreInventaire()});
+{const nc=normalizeCatalog;normalizeCatalog=function(c,...x){const r=nc(c,...x);if(c&&typeof c==='object'&&c.tailleInventaire!==undefined){const t=c.tailleInventaire;
+ if(!t||typeof t!=='object'||!(Number(t.w)>0)||!(Number(t.h)>0))delete c.tailleInventaire;else c.tailleInventaire={w:Math.round(Number(t.w)),h:Math.round(Number(t.h)),detail:Math.round(Number(t.detail)||440)}}return r}}

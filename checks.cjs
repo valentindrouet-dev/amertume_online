@@ -2143,7 +2143,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(ctx.reposerPiece(a,items[3]),true);assert.equal(a.armures.filter(x=>x==='r').length,2);
  assert.equal(ctx.equiperPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),false);
  assert.equal(ctx.equiperPiece(a,{id:'zz',category:'object'}),false);assert.equal(ctx.reposerPiece(a,null),false);
- assert.ok(src.includes('function corpsEtSac(a){')
+ assert.ok(src.includes('function corpsEtSac(a,fenetre){')
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
   &&src.includes("return main?equiperDansMain(a,o,main):equiperPiece(a,o)});\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
   &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;')
@@ -5369,6 +5369,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.185 — La fenêtre Inventaire : le schéma à l'échelle et la bourse à gauche, le sac par catégories à droite ; le MJ la redimensionne. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("function openInventaire(a){a=acteurCourant(a);if(!a)return;inventaireActeur=a;renderInventaire();")&&ed.includes("function cadreInventaire(){")
+ &&ed.includes("pl.className='place p-bourse';")&&ed.includes("const LIGNES_SAC=fenetre?CATEGORIES_SAC:")&&ed.includes("c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}")
+ &&css.includes(".corps-sac.inv-fenetre{position:relative;flex:1;display:grid;grid-template-columns:minmax(0,1fr) var(--detail-w,440px)"),'v1.185');}
 /* v1.184 — Les Marques : une par 100 XP ; elles paient les talents ; un talent se rend hors combat, après un repos court. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function peutRendreTalent(a){return view==='mj'||(!!a&&!aventurierEnCombat(a)&&a.reposPris===true)}")&&ed.includes("if(acquis&&!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}")
  &&ed.includes("c.semisForge.includes('marques')")&&ed.includes("function remplitMarques(el,n){")&&ed.includes("ligne('Coût (Marques)',")&&fs.readFileSync('combat.js','utf8').includes("const XP_PAR_MARQUE=100;"),'v1.184');}
