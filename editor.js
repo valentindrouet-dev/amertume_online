@@ -8858,7 +8858,9 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(a&&k>=max?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';pile.append(pr)}
   const droite=document.createElement('div');droite.className='detail-droite';const nom=document.createElement('h3');nom.className='detail-nom-bonus';nom.append(libelleBonusEl(p,{talent:vu}));
   {const L=String(nom.textContent||'').length;if(L>12)nom.style.fontSize=(L>26?17:L>20?20:L>16?23:26)+'px'}
-  const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,desc);
+  // v1.139 : sous le nom, sa nature — Caractéristique, Compétence ou Bonus — et le trait, comme pour un talent.
+  const nat=document.createElement('p');nat.className='detail-type-bonus';nat.textContent=natureBonus(p);
+  const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,nat,desc);
   tete.append(pile,droite);panneau.append(tete);
   if(mj&&!a){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
   else if(a){const ok=k>0||(sphereOuverte(a,t,l)&&prix<=dispo);tete.classList.add('cliquable',k>0?'acquise':ok?'achetable':'fermee');
@@ -8938,8 +8940,13 @@ function basculeSphere(ctx,t,l){const {a,classe,majTable,poserPalier,note}=ctx;i
  else return false;
  a.paliersTalents=normalisePaliersActeur(a);note('');majTable();return true}
 // Ce que fait la caractéristique d'un bonus, en une phrase.
+// v1.139 : la nature d'un bonus ; une compétence dit à quoi servent ses tests en jeu ; les caractéristiques, leur règle.
+function natureBonus(p){const c=p&&p.carac||'pv';return c==='comp'?'Compétence':['pv','endu','vie','def','dmg'].includes(c)?'Caractéristique':'Bonus'}
 function descriptionBonus(p){const c=p&&p.carac||'pv',e=p&&p.etat||'Rage';
- if(c==='comp')return 'Un point de plus en '+(skillNames[Math.max(0,Math.min(7,Number(p.comp)||0))]||'')+', pour ses tests.';
+ if(c==='comp'){const n=skillNames[Math.max(0,Math.min(7,Number(p.comp)||0))]||'',u=USAGES_COMPETENCES[COMPETENCES[Math.max(0,Math.min(7,Number(p.comp)||0))]]||'';
+  return 'Un point de plus en '+n+'. '+(u?'En jeu : '+u.charAt(0).toLowerCase()+u.slice(1)+' ':'')+ECHELLE_COMPETENCES}
+ if(c==='vie')return TEXTES_CARACS.vie+' À 0 PV, l’aventurier perd 1 VIE ; à 0 VIE, il meurt.';
+ if(c==='endu'||c==='pv'||c==='dmg')return TEXTES_CARACS[c];
  if(c==='etat')return 'L’aventurier commence chaque combat avec '+e+(cumulable(e)?', autant de crans que le bonus.':'.');
  return ({pv:'Les PV maximum : ce que l’aventurier encaisse avant de tomber.',vie:'La VIE : à 0 PV, l’aventurier en perd 1 ; à 0 VIE, il meurt.',
   endu:'L’Endurance : sa ténacité, qui mesure bien des talents et l’aide à se relever.',def:'La DEF : elle s’ajoute à celle de ses armures et de son bouclier contre les coups.',

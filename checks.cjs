@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.139 — Le bloc d'un bonus : sa nature sous le nom, le trait, l'usage des tests d'une compétence. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function natureBonus(p){const c=p&&p.carac||'pv';return c==='comp'?'Compétence':['pv','endu','vie','def','dmg'].includes(c)?'Caractéristique':'Bonus'}"),'v1.139');
 /* v1.138 — Sphérier : un seul bloc à droite, sa description en italique, son coût sous le rond ; un clic achète, le reclic rend. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function basculeSphere(ctx,t,l){const {a,classe,majTable,poserPalier,note}=ctx;")&&ed.includes("desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);")
  &&ed.includes("else el.onclick=()=>{sphereSel=t.id;if(!(a&&basculeSphere(ctx,t,l)))renderArbres()};"),'v1.138');}

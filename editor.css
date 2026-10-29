@@ -3939,3 +3939,7 @@ body:not(.carte-pleine) .interface-message{display:none}
 .arbres-detail .detail-tete-sphere .detail-prix-rond{margin-top:-14px}
 .sphere-rond>.bonus-lettres{position:static;transform:none;margin:0}
 .sphere-rond.detail-sphere>.bonus-lettres{font-size:28px}
+/* v1.139 : le bloc d'un bonus — sa nature sous le nom, puis le trait ; l'icône du nom centrée sur le texte. */
+.arbres-detail .detail-type-bonus{margin:0;padding-bottom:7px;border-bottom:1px solid var(--line);color:var(--muted);font:400 15px/1.3 system-ui}
+.arbres-detail h3.detail-nom-bonus .bonus-libelle{display:inline-flex;align-items:center;gap:.22em}
+.arbres-detail h3.detail-nom-bonus .bonus-libelle .bonus-ico{width:.95em;height:.95em;margin:0;vertical-align:0}
