@@ -4252,3 +4252,5 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .corps .place.p-bourse .bourse-corps.bourse-lignes .bourse-ligne{display:grid;grid-template-columns:62px minmax(0,1fr);align-items:center;gap:8px;width:100%}
 .corps .place.p-bourse .bourse-nom{font:600 10px/1.1 system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
 .corps .place.p-bourse .bourse-items{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;min-width:0}
+/* v1.200 — L'en-tête de l'arbre dont tout est caché (le choix d'élément d'un Mystique, masqué) ne prend pas de place : les onglets se raccordent comme pour les autres classes. */
+#arbres.v2 .arbres-tete.v2:not(:has(>:not([hidden]))){display:none}

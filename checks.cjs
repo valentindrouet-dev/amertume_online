@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.200 — L'en-tête d'arbre tout caché d'un Mystique ne laisse plus d'espace sous les onglets. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes("#arbres.v2 .arbres-tete.v2:not(:has(>:not([hidden]))){display:none}"),'v1.200');
 /* v1.199 — La bourse : le nom de chaque ligne à gauche (Or, Brisure, Éclat, Brôme), les icônes alignées, le chiffre plus gros. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("or.append(piece);{const d=contenu();d.append(or);lo.append(nomLigne('Or'),d)}rang.append(lo);")&&ed.includes("if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});"),'v1.199');}
 /* v1.198 — L'onglet Caractéristiques sans habit de livre, la nature retirée des vignettes, les talents à la teinte de la classe. */
