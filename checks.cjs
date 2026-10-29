@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.181 — Tous les onglets des arbres ont la taille de l'onglet Bonus, verrouillée. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("const fixe=arbresOnglet!=='bonus'?(aBonus&&arbresHB?arbresHB.h:arbresTaille.h):arbresTaille.h;")
+ &&ed.includes("const h=Math.ceil(Math.min(arbresTaille.h,bas));arbresHB={h,cle};pose(h)}")&&css.includes("#arbres .arbres-v2 .arbres-detail{min-height:0}"),'v1.181');}
 /* v1.180 — Un rond de remplissage se supprime depuis son choix ; celui du centre se clique aussi. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function supprimeRondVide(v){")&&ed.includes("x.textContent='🗑 Supprimer ce rond';")&&ed.includes("type:'act',centreGroupe:true,remplace:centre.id})};"),'v1.180');}
 /* v1.179 — L'arbre d'une colonne prend toute la place de son bloc ; la fenêtre remonte jusqu'au dernier rond, dans chaque onglet. */
@@ -5378,14 +5381,14 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 /* v1.177 — Les ronds de l'arbre grandissent jusqu'à remplir leur bloc, sans jamais faire défiler. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function cadreRoue(zone){")&&fs.readFileSync('editor.js','utf8').includes("try{if(!cadreRoue(zone))reduitArbre(zone)}catch(e){}"),'v1.177');
 /* v1.176 — Le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre, comme le sphérier. */
-assert.ok(fs.readFileSync('editor.js','utf8').includes("const h=Math.ceil(Math.min(arbresTaille.h,bas));if(mj)D.style.height=h+'px';else D.style.minHeight=h+'px';"),'v1.176');
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(h>v2.offsetHeight)v2.style.minHeight=Math.floor(h)+'px'}}"),'v1.176');
 /* v1.175 — La partie des talents s'étend jusqu'au panneau de droite, sans vide, dans tous les onglets. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(css.includes("#arbres .arbres-v2,#arbres.taille-mj .arbres-v2{column-gap:0}")&&css.includes("#arbres .arbres-v2 .arbres-v2-arbre>.arbres-cols>.arbre-col{flex:1 0 auto}")
   &&ed.includes("const cols=[...zone.querySelectorAll('.arbres-cols>.arbre-col')],seul=cols.length<=1;"),'v1.175');}
 /* v1.174 — Le sphérier remplit sa colonne jusqu'au panneau, sans vide ; aucun onglet des arbres ne défile vers le bas. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(ed.includes("function arbreSansDefilement(){const D=arbresDialog;if(!D.open||!arbresTaille||arbresMesure)return;")&&ed.includes("arbresMesure=false;renderArbres();arbresDialog.scrollTop=garde.haut}}")
+ assert.ok(ed.includes("function arbreSansDefilement(){const D=arbresDialog;if(!D.open||!arbresTaille||arbresMesure||arbresHBcalcul&&arbresOnglet!=='bonus')return;")&&ed.includes("arbresMesure=false;renderArbres();arbresDialog.scrollTop=garde.haut}}")
   &&ed.includes("cw=Math.max(W*k+2,dispoW,zw)")&&css.includes(".arbres-v2.sphere-plein,#arbres.taille-mj .arbres-v2.sphere-plein{column-gap:0}"),'v1.174');}
 /* v1.173 — Les exports emportent tout : fenêtres, crochetage, code et crans des coffres, modèle entier des adversaires, paysages, rang des lieux. */
 {const C=require('./combat.js');const m=C.readMapsFile(JSON.stringify(C.packMaps([{name:'A',paysage:true,lieu:'L',lieuRang:3,doors:[{x:1,y:1,w:4,h:1,fenetre:true,etatInitial:'ouverte'},{x:1,y:5,w:4,h:1,crochetage:5}],
