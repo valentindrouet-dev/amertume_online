@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.211 — La pastille Classe / niveau sous le portrait des vignettes ; plus de saut au survol des boutons. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("pc.className='vignette-classe'")&&fs.readFileSync('editor.css','utf8').includes('#hero-grid .fiche-icone,#hero-grid .fiche-icone:hover{transform:none;'),'v1.211');
 /* v1.210 — Les sphères réglables d'un clic dans les Richesses ; l'onglet MAJ, chez le MJ. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');assert.ok(ed.includes("function sphereEnPlus(a,k,pas){")&&ed.includes("function renderMaj(){")&&mp.includes('<button data-page="maj">MAJ</button>')&&mp.includes("'settings','maj'];"),'v1.210');}
 /* v1.209 — Le coût en Marques d'un talent et de ses améliorations se règle d'un clic dans le panneau de l'arbre. */
@@ -5396,7 +5398,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const r=el('div','vie-st
 /* v1.203 — Le portrait pâle d'un aventurier retiré de la table le ramène d'un clic, chez le MJ. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("av.onclick=e=>{e.stopPropagation();ramenerSurLaTable(a);renderHeroes()};"),'v1.203');
 /* v1.202 — Le total des sphères aux Stats de Combat ; six icônes par vignette d'aventurier ; les en-têtes ornés de l'onglet Caractéristiques. */
-{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("t.className='stats-sph-total';t.textContent='= '+n;")&&ed.includes("function iconesFiche(a){")&&ed.includes("t.append(n,iconesFiche(a));c.append(av,t);")
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("t.className='stats-sph-total';t.textContent='= '+n;")&&ed.includes("function iconesFiche(a){")&&ed.includes("t.append(n,iconesFiche(a));")
  &&css.includes(".fiche-onglet .fiche-titre{display:flex;align-items:center;justify-content:center;gap:12px;"),'v1.202');}
 /* v1.201 — La silhouette de l'inventaire en haut ; Actifs / Inactifs sur la page Aventuriers ; l'icône « Or » des planches partout. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("[['Actifs',heros.filter(a=>a.enAventure===true)],['Inactifs',heros.filter(a=>a.enAventure!==true)]]")&&ed.includes("function majIconeOr(){")

@@ -9536,7 +9536,11 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
  const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
  // v1.202 : sous le nom, six icônes, une par onglet de la fiche ; chacune l'ouvre sur son onglet.
- t.append(n,iconesFiche(a));c.append(av,t);
+ t.append(n,iconesFiche(a));
+ // v1.211 : sous le portrait, remonté, une pastille sur deux lignes : la classe, son niveau.
+ const gauche=document.createElement('span');gauche.className='vignette-gauche';const pc=document.createElement('span');pc.className='vignette-classe';if(teinte)pc.style.setProperty('--teinte',teinte);
+ const pn=document.createElement('b');pn.textContent=String((a.role||'Aventurier').split('·')[0].trim());const pv=document.createElement('span');pv.textContent='niv. '+(Math.trunc(Number(a.level))||1);pc.append(pn,pv);
+ gauche.append(av,pc);c.append(gauche,t);
  // v1.203 : retiré de la table, son portrait pâlit ; chez le MJ, un clic dessus le ramène sur la carte, comme sur l'ancienne fiche.
  if(av.classList.contains('hors-table')){av.setAttribute('role','button');av.tabIndex=0;av.setAttribute('aria-label','Ramener '+a.name+' sur la table');av.onclick=e=>{e.stopPropagation();ramenerSurLaTable(a);renderHeroes()};av.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();ramenerSurLaTable(a);renderHeroes()}}}
  if(estMort(a)){c.classList.add('mort');av.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}))}

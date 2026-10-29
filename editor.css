@@ -4358,3 +4358,11 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .fiche-onglet .vignette-texte>:is(.vignette-desc,.vignette-puces){margin-top:3px;padding-top:4px;border-top:1px solid var(--line)}
 .fiche-onglet .vignette-texte>.vignette-puces{padding-left:16px}
 #hero-grid .fiche-icones{grid-template-columns:repeat(4,44px)}
+/* v1.211 — Vignette : le portrait remonté, sa pastille Classe / niveau dessous ; plus de saut au survol des boutons (traces d'affichage). */
+#hero-grid.en-vignettes .accueil-heros{align-items:flex-start;contain:paint}
+#hero-grid .vignette-gauche{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none;margin-top:-4px}
+#hero-grid .vignette-classe{--teinte:var(--accent);display:flex;flex-direction:column;align-items:center;gap:1px;min-width:84px;padding:4px 10px 5px;border-radius:10px;border:1px solid color-mix(in srgb,var(--teinte) 55%,transparent);background:color-mix(in srgb,var(--teinte) 14%,var(--panel));color:var(--teinte);text-align:center}
+#hero-grid .vignette-classe b{font:700 10.5px/1.15 system-ui;letter-spacing:1.6px;text-transform:uppercase}
+#hero-grid .vignette-classe span{font:600 11px/1.1 system-ui}
+#hero-grid .fiche-icone,#hero-grid .fiche-icone:hover{transform:none;transition:box-shadow .12s,border-color .12s}
+#hero-grid .fiche-icone:hover{border-color:color-mix(in srgb,var(--teinte) 70%,var(--ink))}
