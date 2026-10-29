@@ -4273,3 +4273,16 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .fiche-onglet .fiche-titre::before,.fiche-onglet .fiche-titre::after{content:'';flex:0 1 120px;height:12px;
  background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) right center / 12px 12px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 16px) 1.5px no-repeat}
 .fiche-onglet .fiche-titre::after{background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) left center / 12px 12px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 16px) 1.5px no-repeat}
+/* v1.204 — Les boutons d'une vignette au look des cases d'équipement : fond clair teinté, ombre douce, l'icône en couleur. */
+#hero-grid .fiche-icones{grid-template-columns:repeat(3,44px);gap:8px}
+#hero-grid .fiche-icone{width:44px;height:44px;border-radius:9px;border:1px solid color-mix(in srgb,var(--teinte) 40%,color-mix(in srgb,var(--ink) 15%,transparent));
+ background:color-mix(in srgb,var(--teinte) 20%,var(--panel-2));box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 36%,transparent),0 2px 5px color-mix(in srgb,var(--ink) 30%,transparent)}
+#hero-grid .fiche-icone svg{width:24px;height:24px;stroke:color-mix(in srgb,var(--teinte) 80%,var(--ink));stroke-width:1.8;filter:none}
+#hero-grid .fiche-icone img{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 1px 1px color-mix(in srgb,var(--ink) 35%,transparent))}
+#hero-grid .fiche-icone:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 36%,transparent),0 4px 9px color-mix(in srgb,var(--ink) 32%,transparent);filter:none}
+#hero-grid .fiche-icone.absente{filter:grayscale(.9);opacity:.5}
+/* v1.204 — Dans la bourse, le montant d'or s'écrit sur sa pièce, comme le nombre d'une sphère. */
+.corps .place.p-bourse .bourse-lignes .or-corps{position:relative;display:inline-block;margin-right:4px}
+.corps .place.p-bourse .bourse-lignes .or-corps .piece-or{display:block;width:34px;height:34px;vertical-align:0}
+.corps .place.p-bourse .bourse-lignes .or-corps b{position:absolute;right:-4px;bottom:-4px;margin:0;color:#fff;font:900 18px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+.corps .place.p-bourse .bourse-lignes .or-corps.zero b{opacity:1}
