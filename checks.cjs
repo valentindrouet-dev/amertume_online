@@ -5134,7 +5134,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.532 — Espace retire tous les ciblages de la carte, au MJ, touche réglable ; la sauvegarde globale emporte aussi
    les campagnes, le journal, les réglages de l'appareil et le domaine de secours, et les repose à l'import. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),dom=fs.readFileSync('domaine.js','utf8');
- assert.ok(page.includes("vue:'m',decible:'espace'};")&&page.includes("actors.forEach(a=>poseCibles(a,[]));render();scheduleSave()")&&page.includes("if(view!=='mj'||")&&src.includes("c.id='rac-decible'"),'Espace retire les ciblages, au MJ, réglable');
+ assert.ok(page.includes("vue:'m',decible:'espace',versions:'v'};")&&page.includes("actors.forEach(a=>poseCibles(a,[]));render();scheduleSave()")&&page.includes("if(view!=='mj'||")&&src.includes("c.id='rac-decible'"),'Espace retire les ciblages, au MJ, réglable');
  assert.ok(src.includes('async function exporterTout(){')&&src.includes('Object.assign(s,await x.lit())')&&src.includes('await x.pose(s)')
   &&src.includes("{nom:'le journal',")&&src.includes("{nom:'les réglages',")&&dom.includes("{nom:'le domaine de secours',")&&camp.includes("{nom:'les campagnes',"),'les annexes de la sauvegarde globale');
  assert.ok(camp.includes('if(c&&(c.modifie||0)>=t)continue;')&&src.includes("localStorage.getItem(k)===null)localStorage.setItem(k,r[k])"),'l’import n’écrase ni une campagne plus récente ni un réglage de l’appareil');}
@@ -5433,7 +5433,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#arbres.v2 .arbres-tete
   &&!/\.src=imgUrl\(iconeGemme\(/.test(ed+gm+fs.readFileSync('domaine.js','utf8'))&&ed.includes("iconesGemmes:structuredClone(catalog.iconesGemmes||{})"),'v1.195');}
 /* v1.194 — Flèches entre aventuriers, schéma en haut, bourse en quatre lignes, sac à huit colonnes, place qui brille, vignettes, carte Sphères. */
 {const ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(ed.includes("const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&herosDeLaPage(a)&&peutVoirArbres(a)));")&&ed.includes("grille.classList.add('en-vignettes');")&&ed.includes("l.forEach(a=>grille.append(vignetteHeros(a,heros.indexOf(a))))")
+ assert.ok(ed.includes("const herosVoisins=()=>{const l=trieHeros(actors.filter(a=>a&&a.hero&&herosDeLaPage(a)&&peutVoirArbres(a)));")&&ed.includes("grille.classList.add('en-vignettes');")&&ed.includes("l.forEach(a=>grille.append(vignetteHeros(a,heros.indexOf(a))))")
   &&ed.includes("rang.className='bourse-corps bourse-lignes';")&&ed.includes("if(boite)boite.dataset.brille=placeDe(o)")&&pl.includes("const CARTE_SPHERES='__spheres';")
   &&css.includes(".inv-fenetre .sac .sac-ligne{grid-template-columns:repeat(8,minmax(0,1fr));")&&!ed.includes("if(boite)boite.className='corps-sac'"),'v1.194');}
 /* v1.193 — L'onglet Caractéristiques en deux blocs de vignettes, les talents centrés dessous, sans le bloc Inventaire. */

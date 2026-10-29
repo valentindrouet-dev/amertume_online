@@ -4385,3 +4385,13 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #versions-fenetre{width:min(1100px,92vw);max-width:none;height:86vh;max-height:none;padding:14px 18px;overflow:auto;border:1px solid var(--line-strong);border-radius:18px;background:var(--bg)}
 #versions-fenetre .maj-panel{max-width:none;margin:0}
 #versions-fenetre:focus,#versions-fenetre:focus-visible{outline:none}
+/* v1.218 — Fiche : vignettes de même hauteur sur chaque ligne ; Marques sur la ligne des Dégâts, l'XP centrée dessous ;
+   titre des Talents au dessin des Caractéristiques ; ronds des talents resserrés au centre. Vignettes de la page Aventuriers :
+   le seul rond de la classe autour du portrait. */
+.hero-card.fiche-onglet .fiche-page>.stat-row.en-icones{align-items:stretch}
+.hero-card.fiche-onglet .fiche-page>.stat-row.en-icones>.vignette{height:100%;box-sizing:border-box}
+.hero-card.fiche-onglet .fiche-page>.stat-row.en-icones>.vignette:has(.t-xp){grid-column:1/-1;justify-self:center;width:calc(50% - 4px)}
+.fiche-onglet .fiche-talents>.titre-tal.fiche-titre{font:700 26px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;text-transform:none}
+.hero-card.fiche-onglet .talent-grille>*{gap:10px 14px}
+.hero-card.fiche-onglet .talent-grille>*>*{flex:0 0 auto}
+#hero-grid.en-vignettes .accueil-avatar{box-shadow:none}

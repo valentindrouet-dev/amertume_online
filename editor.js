@@ -6290,7 +6290,8 @@ const flechesArbres=[-1,1].map(sens=>{const b=document.createElement('button');b
   if(arbresActeur){const l=herosVoisins(),i=l.indexOf(arbresActeur);if(i<0||l.length<2)return;const o=arbresOnglet;openArbres(l[(i+sens+l.length)%l.length]);arbresOnglet=o;renderArbres();return}
   const l=talentFamilies().filter(aUnArbre),i=l.indexOf(arbresClasse);
   if(i>=0&&l.length>1)openArbresClasse(l[(i+sens+l.length)%l.length])};arbresDialog.append(b);return b});
-const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&herosDeLaPage(a)&&peutVoirArbres(a)));
+// v1.218 : les flèches suivent l'ordre de la page Aventuriers — les Actifs, puis les Inactifs.
+const herosVoisins=()=>{const l=trieHeros(actors.filter(a=>a&&a.hero&&herosDeLaPage(a)&&peutVoirArbres(a)));return [...l.filter(a=>a.enAventure===true),...l.filter(a=>a.enAventure!==true)]};
 function placeFlechesArbres(){if(arbresDialog.open&&arbresActeur){const l=herosVoisins(),i=l.indexOf(arbresActeur);flechesArbres.forEach(b=>b.hidden=i<0||l.length<2);if(i<0||l.length<2)return;
   const r=arbresDialog.getBoundingClientRect(),w=44;flechesArbres.forEach((b,k)=>{const v=l[(i+(k?1:-1)+l.length)%l.length];b.setAttribute('aria-label','Fiche de '+v.name);
    b.style.setProperty('--encre',(typeof actorTint==='function'&&actorTint(v))||'var(--ink)');b.style.top=(r.top+r.height/2)+'px';b.style.left=(k?Math.min(innerWidth-w-4,r.right+10):Math.max(4,r.left-w-10))+'px'});return}
@@ -7458,6 +7459,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
   c.onchange=()=>{const v=c.value.trim().toLowerCase();if(v&&!/^[a-z0-9]$/.test(v)){c.value=(raccourcis.vue||'').toUpperCase();return}
    // Une touche déjà prise par « Retirer les ciblages » : les deux l'échangent.
    const pris=v&&raccourcis.decible===v;if(pris)raccourcis.decible=raccourcis.vue;
+   if(v&&raccourcis.versions===v)raccourcis.versions=raccourcis.vue;
    raccourcis.vue=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « Retirer les ciblages » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
   ligne.append(gauche,c);boite.append(ligne)}
  /* La touche qui retire tous les ciblages de la carte : on la presse dans le champ — l'espace compris —,
@@ -7470,7 +7472,17 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
    const v=e.key==='Backspace'||e.key==='Delete'?'':e.key===' '?'espace':String(e.key).toLowerCase();
    if(v&&!/^([a-z0-9]|espace)$/.test(v))return;
    const pris=v&&raccourcis.vue===v;if(pris)raccourcis.vue=raccourcis.decible==='espace'?'':raccourcis.decible;
+   if(v&&raccourcis.versions===v)raccourcis.versions=raccourcis.decible==='espace'?'':raccourcis.decible;
    raccourcis.decible=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « Vue MJ / Joueur » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
+  ligne.append(gauche,c);boite.append(ligne)}
+ // v1.218 : la touche de la fenêtre des Versions, au MJ seul.
+ if(typeof mjIci==='function'&&mjIci()){const ligne=document.createElement('div');ligne.className='reglage';const gauche=document.createElement('div');
+  const t=document.createElement('strong');t.textContent='Versions';const p=document.createElement('p');p.className='muted';p.textContent='Touche du clavier qui ouvre et referme la fenêtre des Versions';gauche.append(t,p);
+  const c=document.createElement('input');c.id='rac-versions';c.readOnly=true;c.size=2;c.value=(raccourcis.versions||'').toUpperCase();c.setAttribute('aria-label','Touche pour la fenêtre des Versions');
+  c.onkeydown=e=>{if(e.key==='Tab'||e.ctrlKey||e.metaKey||e.altKey)return;e.preventDefault();e.stopPropagation();
+   const v=e.key==='Backspace'||e.key==='Delete'?'':String(e.key).toLowerCase();if(v&&!/^[a-z0-9]$/.test(v))return;
+   const pris=v?['vue','decible'].find(k=>raccourcis[k]===v):null;if(pris)raccourcis[pris]=raccourcis.versions;
+   raccourcis.versions=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « '+(pris==='vue'?'Vue MJ / Joueur':'Retirer les ciblages')+' » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
   ligne.append(gauche,c);boite.append(ligne)}}
 $('theme-switch').onclick=toggleTheme;
 $('perf-switch').onclick=()=>{try{localStorage.setItem(INDICE_PERF_CLE,indicePerfVoulu()?'0':'1')}catch(e){}poseIndicePerf();renderSettings()};
@@ -9504,8 +9516,11 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
   const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']]};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']]};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
+ // v1.218 : les Marques à dépenser, une caractéristique de plus, sur la ligne des Dégâts ; l'XP passe dessous.
+ if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tm=document.createElement('div');tm.className='stat-tile t-marques avec-icone';tm.style.setProperty('--tint',(typeof STAT_TINTS!=='undefined'&&STAT_TINTS.xp)||'201,162,39');
+  const n=document.createElement('strong');n.textContent=String(Math.max(0,Math.trunc(Number(xpDisponible(a,catalog.talents))||0)));tm.append(iconeMarque('stat-ico'),n);if(dmg)dmg.after(tm);else ch.append(tm)}
  if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const k=([...t.classList].find(x=>x.startsWith('t-'))||'t-').slice(2),s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');
   const [nom,desc]=CARACS_FICHE[k]||[k,''];vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'',nom,'Caractéristique',desc,t.style.getPropertyValue('--tint').trim())});
  if(cp)[...cp.querySelectorAll(':scope>.comp-carte')].forEach((k,i)=>{const r=k.querySelector('.comp-rond'),v=k.querySelector('.comp-val'),n=skillNames[i]||'';
@@ -9521,6 +9536,8 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  // v1.209 : l'identité de l'aventurier et ses PV quittent l'onglet : l'identité passe dans l'en-tête de la fiche.
  c.querySelectorAll(':scope>.hero-head,:scope>.hero-pv,:scope>.chips').forEach(x=>x.remove());
  pg.append(el('h3','fiche-titre','Caractéristiques'));if(ch)pg.append(ch);
+ // v1.218 : le titre des Talents au dessin de celui des Caractéristiques.
+ if(titreTal)titreTal.classList.add('fiche-titre');
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);pg.append(bt)}
  pd.append(el('h3','fiche-titre','Compétences'));if(cp)pd.append(cp);
  return c}
@@ -9643,6 +9660,7 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  pv:['Endurance × Vie','Plus les bonus de classe, d’espèce et de talents'],
  def:['Chaque dé de dégâts qui ne la dépasse pas est arrêté','Augmentée par l’armure et le bouclier'],
  dmg:['Ajoutés à chaque attaque qui touche'],
+ marques:['Achètent les talents de votre arbre','1 Marque tous les '+XP_PAR_MARQUE+' XP'],
  xp:['Fait monter votre niveau','Tous les '+XP_PAR_MARQUE+' XP vous gagnez 1 Marque pour acheter vos talents'],
  'Agilité':['Esquiver un piège','Sauter, grimper, garder l’équilibre','Se dégager d’une mêlée'],
  'Force':['Enfoncer une porte, soulever, pousser','Se libérer d’une prise','Retenir un allié qui tombe'],
@@ -9678,12 +9696,14 @@ function renderMaj(){const boite=$('maj-liste');if(!boite)return;chargeVersions(
   carte.append(h,ul);boite.append(carte)})})}
 // showPage est déclaré plus loin (maps.js) : l'onglet s'y raccroche une fois tous les scripts chargés.
 (function accroche(){if(typeof showPage!=='function'){setTimeout(accroche,100);return}const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='maj')renderMaj();return r}})();
-// v1.217 : Ctrl + Alt + V ouvre, partout et par-dessus toute fenêtre, la fenêtre des Versions ; le même raccourci, Échap ou un clic dehors la referme.
+// v1.217 : une touche ouvre, partout et par-dessus toute fenêtre, la fenêtre des Versions ; la même touche, Échap ou un clic dehors la referme.
+// v1.218 : cette touche est réglable (V d'origine) et n'appartient qu'au MJ ; elle ne joue pas pendant qu'on écrit dans un champ.
 const versionsFen=document.createElement('dialog');versionsFen.id='versions-fenetre';document.body.append(versionsFen);
 versionsFen.addEventListener('close',()=>{const sec=versionsFen.querySelector('.maj-panel');if(sec)majPage.append(sec)});
 versionsFen.addEventListener('click',e=>{if(e.target===versionsFen)versionsFen.close()});
 function basculeVersions(){if(versionsFen.open){versionsFen.close();return}const sec=majPage.querySelector('.maj-panel');if(sec)versionsFen.append(sec);versionsFen.showModal();versionsFen.scrollTop=0;renderMaj()}
-document.addEventListener('keydown',e=>{if(e.code==='KeyV'&&e.ctrlKey&&e.altKey&&!e.shiftKey&&!e.metaKey){e.preventDefault();e.stopPropagation();basculeVersions();return}
+document.addEventListener('keydown',e=>{const k=raccourcis.versions;
+ if(k&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.repeat&&String(e.key).toLowerCase()===k&&typeof mjIci==='function'&&mjIci()&&!(e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"]'))){e.preventDefault();e.stopPropagation();basculeVersions();return}
  if(e.key==='Escape'&&versionsFen.open){e.preventDefault();e.stopPropagation();versionsFen.close()}},true);
 // v1.214 : un clic hors du réglage du coût l'enregistre et le referme.
 document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=document.querySelector('.die-pick.cout-pick');if(!d){coutEdite='';return}if(d.contains(e.target))return;d._pose()},true);
