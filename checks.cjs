@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.141 — Le chiffre de l'écu de DEF en blanc, cerné de sombre. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("ctx.lineJoin='round';ctx.lineWidth=F*.185;ctx.strokeStyle='#1d1a16';ctx.strokeText(texte,x,y);ctx.fillStyle='#fff';ctx.fillText(texte,x,y)}"),'v1.141');
 /* v1.140 — L'écu de DEF partout au nouveau bouclier ; PA et PM à leurs bulles ; plus de bonus dans les arbres de talents. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(Array.isArray(c.semisForge)&&!c.semisForge.includes('sans-bonus-arbres')){c.talents=(c.talents||[]).filter(t=>!(t&&t.effet==='bonus'&&t.spherier!==true));")
  &&ed.includes("if(carac==='pa'||carac==='pm'){el=document.createElement('img');el.src=imgUrl('points/'+carac+'.webp');")&&fs.readFileSync('index.html','utf8').includes("im.src=imgUrl('BONUS_DEF.webp')});"),'v1.140');}
