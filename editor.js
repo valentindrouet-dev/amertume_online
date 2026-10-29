@@ -9539,7 +9539,7 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  t.append(n,iconesFiche(a));
  // v1.211 : sous le portrait, remonté, une pastille sur deux lignes : la classe, son niveau.
  const gauche=document.createElement('span');gauche.className='vignette-gauche';const pc=document.createElement('span');pc.className='vignette-classe';if(teinte)pc.style.setProperty('--teinte',teinte);
- const pn=document.createElement('b');pn.textContent=String((a.role||'Aventurier').split('·')[0].trim());const pv=document.createElement('span');pv.textContent='niv. '+(Math.trunc(Number(a.level))||1);pc.append(pn,pv);
+ const pn=document.createElement('b');pn.textContent=String((a.role||'Aventurier').split('·')[0].trim());const pv=document.createElement('span');pv.textContent='niv. '+(Math.trunc(Number(a.level))||1);pc.append(pn,pv);{const n=Math.max(...pn.textContent.split(/\s+/).map(m=>m.length));if(n>9)pn.style.fontSize=Math.max(7,Math.min(10.5,(90-n*.7)/(n*.74))).toFixed(1)+'px'}
  gauche.append(av,pc);c.append(gauche,t);
  // v1.203 : retiré de la table, son portrait pâlit ; chez le MJ, un clic dessus le ramène sur la carte, comme sur l'ancienne fiche.
  if(av.classList.contains('hors-table')){av.setAttribute('role','button');av.tabIndex=0;av.setAttribute('aria-label','Ramener '+a.name+' sur la table');av.onclick=e=>{e.stopPropagation();ramenerSurLaTable(a);renderHeroes()};av.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();ramenerSurLaTable(a);renderHeroes()}}}

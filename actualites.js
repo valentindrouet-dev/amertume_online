@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.216","d":"2026-10-29","t":"Boutons des vignettes fixes"},
 {"v":"1.215","d":"2026-10-29","t":"En-tête de fiche sans Réinitialiser ni Redimensionner"},
 {"v":"1.214","d":"2026-10-29","t":"Le réglage du coût se referme d'un clic ailleurs"},
 {"v":"1.213","d":"2026-10-29","t":"Coût en Marques au clavier"},

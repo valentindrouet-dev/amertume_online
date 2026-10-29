@@ -4377,3 +4377,7 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .die-pick.cout-pick .cout-saisie::-webkit-inner-spin-button,.die-pick.cout-pick .cout-saisie::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 /* v1.215 — L'en-tête d'une fiche d'aventurier sans « Réinitialiser l'arbre » ni « Redimensionner ». */
 #arbres.fiche-aventurier .dialog-head>#arbres-reset,#arbres.fiche-aventurier .dialog-head>.arbres-redim-btn{display:none!important}
+/* v1.216 — Vignette : colonne portrait + pastille de largeur fixe, les boutons ne bougent plus quel que soit le nom de la classe. */
+#hero-grid .vignette-gauche{width:100px;min-width:100px;max-width:100px}
+#hero-grid .vignette-classe{box-sizing:border-box;width:100%;min-width:0;padding:4px 5px 5px}
+#hero-grid .vignette-classe b{max-width:100%;overflow:hidden;letter-spacing:.7px}
