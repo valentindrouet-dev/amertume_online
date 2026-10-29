@@ -4297,3 +4297,8 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .vie-ligne.zero b{color:color-mix(in srgb,var(--muted) 60%,transparent)}
 .vie-ligne.vie-rar span,.vie-ligne.vie-rar b{color:var(--rarete)}
 .vie-ligne.vie-rar{box-shadow:inset 4px 0 0 var(--rarete)}
+/* v1.206 — Les Marques à dépenser au-dessus de l'arbre ; « Réinitialiser l'arbre » dans son coin. */
+.arbres-v2 .arbre-titre.a-xp .arbres-pt.marques-dispo{display:flex;align-items:center;justify-content:center;gap:8px;width:auto}
+.arbres-pt.marques-dispo .marque-ico{width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--ink) 50%,transparent))}
+.arbres-pt.marques-dispo b{font:900 24px/1 'Killam',system-ui;letter-spacing:0;color:#fff;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill}
+#arbres #arbres-reset.dans-arbre{position:absolute;left:10px;top:8px;z-index:3;margin:0;padding:4px 10px;border-radius:8px;font:600 12px/1.2 system-ui;letter-spacing:0;text-transform:none;color:var(--ink);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid color-mix(in srgb,var(--ink) 20%,transparent);box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 25%,transparent)}

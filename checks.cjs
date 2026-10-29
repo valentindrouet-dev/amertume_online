@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.206 — Les Marques à dépenser au-dessus de l'arbre ; le bouton de réinitialisation dans son coin ; cocher ramène sur la table. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("s.className='arbres-pt marques-dispo';")&&ed.includes("band.prepend(arbresReset);arbresReset.classList.add('dans-arbre')")&&ed.includes("if(part.checked&&a.horsCarte)ramenerSurLaTable(a);"),'v1.206');}
 /* v1.205 — L'onglet Statistiques en lignes, sur deux colonnes. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const r=el('div','vie-stats vie-colonnes'),cols=[el('div','vie-colonne'),el('div','vie-colonne')];"),'v1.205');
 /* v1.204 — Les boutons des vignettes au look des cases d'équipement, et leur icône réglable. */

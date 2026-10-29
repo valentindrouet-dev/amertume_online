@@ -6698,7 +6698,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(a){const dispo=xpDisponible(a,catalog.talents),total=marquesGagnees(a),s=document.createElement('div');s.className='arbres-pt';
   // v1.184 : la jauge se remplit des Marques dépensées sur celles gagnées, « 3 / 10 Marques ».
   const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+texteMarques(total);
-  s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';if(V2)barreXp=s;else tete.append(s)}
+  s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';
+  // v1.206 : au-dessus de l'arbre, plus de jauge — l'icône des Marques et le nombre qui reste à dépenser.
+  if(V2){s.className='arbres-pt marques-dispo';const b=document.createElement('b');b.textContent=String(dispo);s.replaceChildren(iconeMarque('marque-ico'),b);s.setAttribute('aria-label',texteMarques(dispo)+' à dépenser');barreXp=s}else tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  tete.classList.toggle('v2',V2);corps.append(tete);
  // v2 : les chiffres de l'aventurier dans la tête de la fenêtre, à côté du nom de la classe.
@@ -9525,7 +9527,8 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  if(estMort(a)){c.classList.add('mort');av.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}))}
  // Ce que la fiche donnait au MJ hors d'elle : la case de l'aventure, l'accueil d'un aventurier en attente.
  const fiche=heroCard(a,i),part=fiche.querySelector('.hero-aventure'),attente=fiche.querySelector('.hero-attente');
- if(part){part.onclick=e=>e.stopPropagation();part.addEventListener('change',()=>setTimeout(renderHeroes,0));c.append(part)}
+ // v1.206 : coché pour l'aventure, un aventurier retiré de la table y revient.
+ if(part){part.onclick=e=>e.stopPropagation();part.addEventListener('change',()=>{if(part.checked&&a.horsCarte)ramenerSurLaTable(a);setTimeout(renderHeroes,0)});c.append(part)}
  if(attente){c.classList.add('en-attente');attente.onclick=e=>e.stopPropagation();c.append(attente)}
  const ouvre=()=>{if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(arbresDialog.open){arbresOnglet='stats';renderArbres()}};
  c.onclick=e=>{if(e.target.closest('input,button'))return;ouvre()};c.onkeydown=e=>{if(e.target===c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ouvre()}};
@@ -9574,3 +9577,7 @@ function iconesFiche(a){const g=document.createElement('span');g.className='fich
   if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));else b.title=nom;
   b.onclick=ev=>{ev.stopPropagation();if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(!arbresDialog.open)return;if(dispo.has(k)){arbresOnglet=k;renderArbres()}};g.append(b)});
  return g}
+// v1.206 : « Réinitialiser l'arbre » dans le coin supérieur gauche du bandeau de l'arbre ; ailleurs, en tête de la fenêtre.
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x),band=arbresDialog.querySelector('.arbres-v2 .arbre-titre.a-xp'),head=arbresDialog.querySelector('.dialog-head');
+ if(band&&!arbresReset.hidden){band.prepend(arbresReset);arbresReset.classList.add('dans-arbre')}
+ else if(head&&arbresReset.parentElement!==head){head.insertBefore(arbresReset,arbresVue);arbresReset.classList.remove('dans-arbre')}return r}}
