@@ -1,7 +1,8 @@
 /* ---------- v1.144 : les gemmes gagnées en jouant ----------
    Chaque aventurier a sa bourse de gemmes, qui ne se partage pas : ce sont ses actions qui la remplissent. Quand il réussit une
    action liée à une couleur — un déclencheur —, il lance un dé de gemme : sur le seuil du déclencheur ou plus (5+ de base), une
-   Brisure de la couleur, jamais plus d'une (v1.155) ; un critique fait lancer plusieurs dés. En combat, au plus tant de Brisures de chaque
+   Brisure de la couleur, jamais plus d'une (v1.155) ; un déclencheur peut lancer plusieurs dés, réglés un à un par le MJ, et une
+   même action ne donne qu'une gemme de chaque couleur (v1.157). En combat, au plus tant de Brisures de chaque
    couleur par combat ; hors combat, chaque déclencheur ne joue qu'une fois par zone de la carte. Un boss vaincu vaut à chacun un
    Éclat de la couleur qu'il a le plus déclenchée. Tout se règle dans l'onglet Gemmes du MJ (catalog.gemmesRegles) ; le dé part
    de lui-même après chaque action que l'appli voit, et le MJ lance les autres à la main depuis la fiche. */
@@ -51,7 +52,7 @@ const nbEntier=(v,lo,hi,d)=>{const n=Math.trunc(Number(v));return Number.isFinit
 /* v1.155 : plus de table des faces ; chaque déclencheur a son seuil — la plus petite face qui donnait quelque chose dans la table
    d'avant, s'il y en avait une, sinon 5+ (6+ pour le Diamant, comme la table d'avant). */
 const seuilDesFaces=(g,c)=>{const l=COULEURS_GEMMES.includes(c)?(Array.isArray(g.faces&&g.faces[c])?g.faces[c]:FACES_GEMMES_DEFAUT[c]):null;if(!l)return 5;const i=l.findIndex(n=>Number(n)>0);return i<0?6:i+1};
-function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const out={critique:nbEntier(g.critique,1,6,2),plafond:nbEntier(g.plafond,0,99,3),
+function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const out={plafond:nbEntier(g.plafond,0,99,3),
  boss:{taille:['brisure','eclat','brome'].includes(g.boss&&g.boss.taille)?g.boss.taille:'eclat',n:nbEntier(g.boss&&g.boss.n,0,20,1)},
  fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{}};
  DECLENCHEURS_GEMMES.forEach(d=>{const x=g.declencheurs&&g.declencheurs[d.cle]||{},couleur=COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'||x.couleur==='etat'?x.couleur:d.couleur;
@@ -75,7 +76,7 @@ function couleurDeclencheur(cle,opts){const d=declencheurGemme(cle);if(!d)return
  if(r.couleur==='etat')return typeof varieteBonus==='function'?varieteBonus({carac:'etat',etat:opts&&opts.etat}):'rubis';
  return r.couleur}
 // Un même déclencheur, pour un même aventurier, ne joue qu'une fois par geste : les crans d'un état, les dés d'un coup.
-const gemmesCeGeste=new Set();
+const gemmesCeGeste=new Set(),gemmesCetteAction=new Set();
 function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&spectateur())return null;const d=declencheurGemme(cle);if(!d)return null;
  const R=reglesGemmes(),r=R.declencheurs[cle];if(!r.actif&&!opts.manuel)return null;
  const combat=opts.phase?opts.phase==='combat':typeof enCombat==='function'&&enCombat();
@@ -84,9 +85,12 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  const couleur=couleurDeclencheur(cle,opts),s=suiviGemmes(a);if(!couleur)return null;
  s.decl[couleur]=(s.decl[couleur]||0)+1;
  if(!combat||d.phase==='hors'){const sc=cleSceneGemme(a)+'|'+k;if(s.scenes.includes(sc)&&!opts.manuel)return null;s.scenes=[...s.scenes.filter(x=>x!==sc),sc].slice(-80)}
- const des=Math.max(1,Math.min(12,(opts.des||r.des)*(opts.critique?R.critique:1)));
+ const des=Math.max(1,Math.min(12,opts.des||r.des));
  const faces=Array.from({length:des},()=>typeof d6==='function'?d6():1+Math.floor(Math.random()*6));
  let gagne=faces.some(f=>f>=r.seuil)?1:0;
+ /* v1.157 : une même action — un coup, un talent et toutes ses cibles — ne donne qu'une gemme de chaque couleur : chaque
+    déclencheur lance ses dés, mais si deux d'une même couleur réussissent, une seule se garde. Le dé du MJ n'y est pas tenu. */
+ if(gagne&&!opts.manuel){const kc=a.id+'|'+couleur;if(gemmesCetteAction.has(kc))gagne=0;else{gemmesCetteAction.add(kc);queueMicrotask(()=>gemmesCetteAction.delete(kc))}}
  // Le plafond du combat : ce qui dépasse ne tombe pas.
  if(combat&&d.phase==='combat'){const deja=s.brisures[couleur]||0;gagne=Math.max(0,Math.min(gagne,R.plafond-deja));s.brisures[couleur]=deja+gagne}
  if(gagne>0){const cg=cleGemme('brisure',couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+gagne;
@@ -210,10 +214,10 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
  const nombre=(v,lo,hi,f)=>{const i=document.createElement('input');i.type='number';i.min=lo;i.max=hi;i.value=v;i.onchange=()=>{poseReglesGemmes(g=>f(g,nbEntier(i.value,lo,hi,v)));renderGemmes()};return i};
  const icone=(taille,c)=>{const im=document.createElement('img');im.src=imgUrl(iconeGemme(taille,c)+'.png');im.alt='';im.className='gemmes-icone';return im};
  // 1. Le dé.
- h('Le dé de gemme','Sur le seuil de son déclencheur ou plus, une Brisure de sa couleur ; jamais plus d’une.');
+ h('Le dé de gemme','Sur le seuil de son déclencheur ou plus, une Brisure de sa couleur ; jamais plus d’une, ni plus d’une de chaque couleur par action.');
  {const l=document.createElement('div');l.className='gemmes-reglage';
   const li=(txt,el)=>{const lab=document.createElement('label');lab.append(txt,el);l.append(lab)};
-  li('Dés sur un critique ',nombre(R.critique,1,6,(g,n)=>{g.critique=n}));li('Plafond de Brisures par couleur et par combat ',nombre(R.plafond,0,99,(g,n)=>{g.plafond=n}));
+  li('Plafond de Brisures par couleur et par combat ',nombre(R.plafond,0,99,(g,n)=>{g.plafond=n}));
   const p=document.createElement('span');p.className='muted';p.textContent='Hors combat : chaque déclencheur joue une fois par zone de la carte.';l.append(p);boite.append(l)}
  // 2. Les déclencheurs.
  h('Les déclencheurs','Ce qui fait lancer le dé, et de quelle couleur. L’appli lance elle-même ceux qu’elle voit ; les autres, le MJ les lance depuis la fiche de l’aventurier (🎲 Dé de gemme).');

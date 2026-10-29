@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.157","d":"2026-10-29","t":"Gemmes : une par couleur et par action"},
 {"v":"1.156","d":"2026-10-29","t":"Table : zoom borné à la carte entière"},
 {"v":"1.155","d":"2026-10-29","t":"Gemmes : seuils, une sphère par déclencheur, nouveaux déclencheurs"},
 {"v":"1.154","d":"2026-10-29","t":"Gemmes : couleurs par groupes, une par état"},
