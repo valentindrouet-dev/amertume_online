@@ -1861,7 +1861,9 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  if(!a.hero)marques.push(['Niveau '+a.level,'level','chip-niveau','Modifier le niveau de '+a.name],
   [(a.xp||0)+' XP','xp','chip-xp','Modifier l’XP de '+a.name]);
  // v1.184 : les Marques d'un aventurier — celles qu'il peut dépenser sur celles qu'il a gagnées.
- if(a.hero){const p=document.createElement('span');p.className='chip chip-marques';p.append(iconeMarque('marque-ico'),xpDisponible(a,catalog.talents)+' / '+marquesGagnees(a));p.title='Marques à dépenser / gagnées (1 par 100 XP)';puces.append(p)}
+ if(a.hero){const p=document.createElement('span');p.className='chip chip-marques';p.append(iconeMarque('marque-ico'),xpDisponible(a,catalog.talents)+' / '+marquesGagnees(a));p.title='Marques à dépenser / gagnées (1 par 100 XP)';
+  // v1.192 : sur la ligne du niveau, juste après la classe.
+  const cl=puces.querySelector('.hero-identite>.sheet-class');if(cl)cl.after(p);else puces.append(p)}
  marques.forEach(([t,cle,marque,titre])=>{const p=document.createElement('span');
   p.className='chip'+(marque?' '+marque:'');p.textContent=t;
   if(cle)champVif(p,()=>a[cle]||0,v=>poserCarac(a,cle,v,c),titre,'petit');

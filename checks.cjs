@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(heroCard(a,actors.indexOf(a)))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.192 — Les Marques sur la ligne du niveau, après la classe. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const cl=puces.querySelector('.hero-identite>.sheet-class');if(cl)cl.after(p);else puces.append(p)}"),'v1.192');}
 /* v1.191 — Stats de Combat : les titres à Brisure sur une ligne, les autres sur une seconde ; la fenêtre plus large. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("const r=el('div','stats-rang'+(d?' dorees':''));r.style.setProperty('--n',n);")&&ed.includes("c.append(jeton,t);rang.get(p.dore).append(c)});corps.append(g)}")
  &&css.includes("#stats-combat{width:min(1240px,96vw)}")&&css.includes(".stats-rang{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:10px}"),'v1.191');}
