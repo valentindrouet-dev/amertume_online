@@ -209,7 +209,7 @@ function ouvreDeGemme(a){if(view!=='mj'||!a||!a.hero)return;deGemmeActeur=a;cons
  if(acts&&!acts.querySelector('.de-gemme-bouton')){const b=document.createElement('button');b.type='button';b.className='de-gemme-bouton';b.textContent='🎲 Dé de gemme';b.onclick=()=>{richessesDialog.close();ouvreDeGemme(richessesActeur)};acts.prepend(b)}return r}}
 /* ---------- L'onglet Gemmes du MJ ---------- */
 const gemmesPage=document.createElement('main');gemmesPage.id='gemmes-page';
-gemmesPage.innerHTML='<section class="cat-panel panel"><header class="cat-head"><h2>Gemmes</h2></header>'
+gemmesPage.innerHTML='<section class="cat-panel panel"><header class="cat-head"><h2>Sphères</h2></header>'
  +'<p class="muted">Les gemmes se gagnent en jouant : chaque action réussie liée à une couleur fait lancer un dé de gemme. Ici se règlent les déclencheurs, leurs couleurs et leurs seuils, le plafond par combat, la récompense d’un boss, les ratios de fusion et la couleur de chaque caractéristique et compétence.</p>'
  +'<div id="gemmes-regles"></div></section>';
 document.querySelector('main.layout').after(gemmesPage);

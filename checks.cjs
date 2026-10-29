@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.161 — Le sphérier s'agrandit sous le geste ; l'onglet Gemmes s'appelle Sphères. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const versGauche=()=>{const k=4*GRILLE_SPHERE;decale+=k;")&&ed.includes("if(bouge){if(decale)l.forEach(x=>{if(!els.has(x.id))x.sphere={x:x.sphere.x+decale,y:x.sphere.y}});")
+ &&fs.readFileSync('gemmes.js','utf8').includes('<h2>Sphères</h2>'),'v1.161');}
 /* v1.160 — Les sphères du combat au bilan ; l'or et les gemmes sur une ligne ; les déclenchements comptés ; Ctrl+Z au sphérier. */
 {const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes("a.gemmesSuivi.combat===numeroCombat&&a.gemmesSuivi.gagnes&&Object.keys(a.gemmesSuivi.gagnes).length?{sph:{...a.gemmesSuivi.gagnes}}:{})}}")
@@ -5429,7 +5432,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("if(gm){gm.classList.add(
 {const g=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(g.includes("function deGemme(a,cle,opts={})")&&g.includes("const DECLENCHEURS_GEMMES=[")&&g.includes("function renderGemmes(){")
   &&page.includes("if(typeof gemmesApresCoup==='function')gemmesApresCoup(a,b,r,hpAvantCoup,lost);")&&page.includes('<script src="./gemmes.js?v=')
-  &&fs.readFileSync('maps.js','utf8').includes('<button data-page="gemmes">Gemmes</button>')&&fs.readFileSync('editor.js','utf8').includes("k!=='maps'&&k!=='gemmes'&&(k==='regles'||l.includes(k))"),'v1.144');
+  &&fs.readFileSync('maps.js','utf8').includes('<button data-page="gemmes">Sphères</button>')&&fs.readFileSync('editor.js','utf8').includes("k!=='maps'&&k!=='gemmes'&&(k==='regles'||l.includes(k))"),'v1.144');
  const vm=require('vm'),ctx={VARIETES_GEMMES:[['citrine','Citrine'],['emeraude','Émeraude'],['saphir','Saphir'],['rubis','Rubis'],['diamant','Diamant']]};
  vm.runInNewContext(g.slice(0,g.indexOf('function reglesGemmes()'))+';this.n=normaliseReglesGemmes',ctx);
  const R=ctx.n({faces:{diamant:[0,0,0,1,0,3]},critique:9,plafond:-1,declencheurs:{tuer:{couleur:'saphir',des:2,actif:false},'def-tient':{seuil:9}}});
