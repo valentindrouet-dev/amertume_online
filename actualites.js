@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.201","d":"2026-10-29","t":"Silhouette, Actifs / Inactifs, icône de l'or"},
 {"v":"1.200","d":"2026-10-29","t":"Mystique : onglets raccordés"},
 {"v":"1.199","d":"2026-10-29","t":"Bourse : lignes nommées et alignées"},
 {"v":"1.198","d":"2026-10-29","t":"Caractéristiques : deux colonnes, sans livre"},

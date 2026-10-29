@@ -1955,7 +1955,10 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
  $('hero-filtres').hidden=true;
  const heros=trieHeros(troupe.filter(a=>!q||a.name.toLowerCase().includes(q)));
  grille.classList.toggle('une-fiche',heros.length===1);
- grille.classList.add('en-vignettes');heros.forEach((a,i)=>grille.append(vignetteHeros(a,i)));
+ grille.classList.add('en-vignettes');
+ // v1.201 : deux groupes — les Actifs (cochés pour l'aventure), puis les Inactifs.
+ [['Actifs',heros.filter(a=>a.enAventure===true)],['Inactifs',heros.filter(a=>a.enAventure!==true)]].forEach(([t,l])=>{if(!l.length)return;
+  const h=document.createElement('h3');h.className='heros-groupe-titre';h.textContent=t;grille.append(h);l.forEach(a=>grille.append(vignetteHeros(a,heros.indexOf(a))))});
  if(!heros.length&&!invitEnLigne()){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
 /* Redessiner la troupe garde la page où elle est : la grille se vidait un instant, et la page remontait tout en haut sous les
@@ -9511,7 +9514,7 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  if(estMort(a)){c.classList.add('mort');av.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}))}
  // Ce que la fiche donnait au MJ hors d'elle : la case de l'aventure, l'accueil d'un aventurier en attente.
  const fiche=heroCard(a,i),part=fiche.querySelector('.hero-aventure'),attente=fiche.querySelector('.hero-attente');
- if(part){part.onclick=e=>e.stopPropagation();c.append(part)}
+ if(part){part.onclick=e=>e.stopPropagation();part.addEventListener('change',()=>setTimeout(renderHeroes,0));c.append(part)}
  if(attente){c.classList.add('en-attente');attente.onclick=e=>e.stopPropagation();c.append(attente)}
  const ouvre=()=>{if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(arbresDialog.open){arbresOnglet='stats';renderArbres()}};
  c.onclick=e=>{if(e.target.closest('input,button'))return;ouvre()};c.onkeydown=e=>{if(e.target===c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ouvre()}};
@@ -9533,3 +9536,13 @@ const arbresEnLecture=()=>!!arbresActeur&&view!=='mj'&&!tientAventurier(arbresAc
  const t=e.target;if(t===arbresDialog||(t.closest&&t.closest('.arbres-onglets,.arbres-fleche,[data-close]')))return;if(ev==='keydown'&&!['Enter',' '].includes(e.key))return;
  e.stopPropagation();e.preventDefault()},true));
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);arbresDialog.classList.toggle('en-lecture',arbresEnLecture());return r}}
+/* v1.201 — L'icône de l'or : celle des planches nommée « Or », partout où paraît la pièce — bourse, prix, bulles des objets,
+   menus, journal. Tant qu'elle n'est pas découpée, la pièce dessinée reste. */
+let idOrCache='',urlOrPosee='';
+function idIconeOr(){const P=typeof planchesDuCatalogue==='function'?planchesDuCatalogue():[];idOrCache='';
+ P.some(pl=>(pl.icones||[]).some((x,i)=>{if(x&&String(x.nom||'').trim().toLowerCase()==='or'){idOrCache=pl.fichier+'#'+(i+1);return true}return false}));return idOrCache}
+function majIconeOr(){const id=idIconeOr(),r=document.documentElement;if(!id||typeof urlIcone!=='function'){if(urlOrPosee){r.classList.remove('icone-or');urlOrPosee=''}return}
+ urlIcone(id).then(u=>{if(!u||u===urlOrPosee)return;urlOrPosee=u;r.style.setProperty('--icone-or','url("'+u+'")');r.classList.add('icone-or')}).catch(()=>{})}
+['amertume-content-changed','amertume-partie-chargee'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(majIconeOr,0)));
+[0,1500,5000,15000].forEach(t=>setTimeout(majIconeOr,t));
+{const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);majIconeOr();return r}}

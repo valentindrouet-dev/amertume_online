@@ -4254,3 +4254,8 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .corps .place.p-bourse .bourse-items{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;min-width:0}
 /* v1.200 — L'en-tête de l'arbre dont tout est caché (le choix d'élément d'un Mystique, masqué) ne prend pas de place : les onglets se raccordent comme pour les autres classes. */
 #arbres.v2 .arbres-tete.v2:not(:has(>:not([hidden]))){display:none}
+.inv-schema .corps .silhouette{object-position:center top}
+/* v1.201 — Les deux groupes de la page Aventuriers ; l'icône de l'or des planches. */
+#hero-grid .heros-groupe-titre{grid-column:1 / -1;display:flex;align-items:center;gap:10px;margin:6px 0 -4px;font:600 10px/1 system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+#hero-grid .heros-groupe-titre::after{content:'';flex:1;height:1px;background:var(--line)}
+:root.icone-or :is(.piece-or,.richesse-or .piece){background:var(--icone-or) center / contain no-repeat;border-radius:0;box-shadow:none}
