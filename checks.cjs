@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.180 — Un rond de remplissage se supprime depuis son choix ; celui du centre se clique aussi. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function supprimeRondVide(v){")&&ed.includes("x.textContent='🗑 Supprimer ce rond';")&&ed.includes("type:'act',centreGroupe:true,remplace:centre.id})};"),'v1.180');}
 /* v1.179 — L'arbre d'une colonne prend toute la place de son bloc ; la fenêtre remonte jusqu'au dernier rond, dans chaque onglet. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const k=Math.max(.3,Math.min(3,(cw-2*G)/bw,dispoH/bh));")&&ed.includes("h:Math.round(arbresTaille?Math.max(r.height,arbresTaille.h):r.height)"),'v1.179');}
 /* v1.178 — Les icônes d'états recentrées dans leur rond ; le sphérier remonte de deux lignes. */

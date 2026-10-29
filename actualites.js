@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.180","d":"2026-10-29","t":"Supprimer les ronds de remplissage"},
 {"v":"1.179","d":"2026-10-29","t":"Arbre plein bloc, fenêtre ajustée au contenu"},
 {"v":"1.178","d":"2026-10-29","t":"États centrés, sphérier plus haut"},
 {"v":"1.177","d":"2026-10-29","t":"Ronds de l'arbre à la taille du bloc"},

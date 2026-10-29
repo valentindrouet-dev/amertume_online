@@ -5883,6 +5883,13 @@ function laisseCaseVide(t){if(!t||estVide(t)||t.horsArbre)return null;const c=li
   const k=lisChemin(x);if(k&&k.de===t.id)x.chemin={...k,de:v.id}});
  delete t.liens;delete t.niveaux;delete t.pos;delete t.chemin;
  catalog.talents.push(v);return v}
+/* v1.180 — Supprimer un rond de remplissage : il quitte l'arbre et ses liens ; ce qui pendait à lui sur un chemin s'en va s'il est vide,
+   sort de l'arbre s'il est un vrai talent. */
+function supprimeRondVide(v){if(view!=='mj'||!estVide(v))return;const k=catalog.talents.indexOf(v);if(k<0)return;catalog.talents.splice(k,1);
+ [...(catalog.talents||[])].forEach(x=>{if(!x)return;if(liensDe(x).includes(v.id))x.liens=liensDe(x).filter(id=>id!==v.id);
+  if(x.niveaux&&v.id in x.niveaux){const n={...x.niveaux};delete n[v.id];x.niveaux=n}
+  const c=lisChemin(x);if(c&&c.de===v.id){if(estVide(x))supprimeRondVide(x);else{delete x.chemin;x.horsArbre=true}}});
+ arbreChange()}
 // Retirer de l'arbre en y laissant sa case vide.
 function videDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;laisseCaseVide(t);return retireDeLArbre(t)}
 // La case vide reprise : ses lignes, ses niveaux, ce qui y menait et ses petits ronds passent au talent ; elle s'efface.
@@ -6248,6 +6255,9 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
  // v1.140 : sur un chemin, une amélioration seulement — les bonus ne s'obtiennent plus que dans l'onglet Bonus.
  if(petit)boite.append(neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))
  else boite.append(neuf('✚ Créer un nouveau talent',{...dest}));
+ // v1.180 : un rond de remplissage se supprime d'ici : la place redevient libre.
+ {const v=dest.remplace&&talent(dest.remplace);if(v&&estVide(v)){const x=document.createElement('button');x.type='button';x.className='arbre-choix-neuf arbre-choix-supprime';x.textContent='🗑 Supprimer ce rond';
+  x.onclick=()=>{choixArbreDialog.close();supprimeRondVide(v)};boite.append(x)}}
  {const r=document.createElement('div');r.className='bonus-generiques remplissages';
   COULEURS_REMPLISSAGE.forEach(k=>{const b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud remplissage t-'+k+(petit?' petit':'');
    const rond=document.createElement('span');rond.className='arbre-rond';rond.append(iconeRemplissage());b.append(rond);b.setAttribute('aria-label','Remplissage');
@@ -6936,7 +6946,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(i){const avant=sh(plans[i-1].c0);lien(avant,c0,plans[i-1].g,g);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
     if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true);if(niveauA<suivant)svg.lastChild.classList.add('gris');pastille(suivant,p.x,p.y,niveauA<suivant)}
     // Le centre : le talent initial du palier.
-    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===0);if(x.centre===initial)el.classList.add('racine');
+    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===0);
+     else if(mj){const t=x.centre;el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:'act',centreGroupe:true,remplace:t.id})}}if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
     else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
     const rond=(ligne,t,p)=>{let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne,i%2===0)}else{el=noeudVide(t,c,false);
@@ -6972,7 +6983,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     W=xM2+D.moyen/2+MARGE;H=yMid+(R-1)*PY/2+D.gros/2+MARGE;dy=0}
    const roue=document.createElement('div');roue.className='arbre-roue';if(mj)ecouteRoue(roue);roue.style.width=W+'px';roue.style.height=H+'px';
    const pose=(el,p,cls)=>{el.classList.add('roue-'+cls);el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';roue.append(el)};
-   if(centre){const el=estVide(centre)?noeudVide(centre,c,false):noeudArbre(centre,c,libre);if(!estVide(centre))satellites(el,centre,'centre');if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
+   if(centre){const el=estVide(centre)?noeudVide(centre,c,false):noeudArbre(centre,c,libre);if(!estVide(centre))satellites(el,centre,'centre');
+    else if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(centre),groupe:g,ordreArbre:ordreArbre(centre),type:'act',centreGroupe:true,remplace:centre.id})};if(centre===initial)el.classList.add('racine');if(mj)surDepot(el,g,'centre',centre===initial?null:centre);pose(el,caseG(0),'centre')}
    else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),caseG(0),'centre');
    /* v0.9997 : un rond de remplissage (« ? ») tient sa place comme un talent ; chez le MJ, un clic y pose un talent, qui le
       remplace, ou change sa couleur. */
