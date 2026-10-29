@@ -8719,7 +8719,7 @@ poseIndicePerf();document.addEventListener('amertume-mj-change',poseIndicePerf);
    de départ (t.spherier, t.sphere {x,y}, t.liensSphere, t.departSphere). Un aventurier achète un bonus de départ, ou un bonus relié
    à un bonus qu'il tient ; rendu, ce qui n'est plus relié à un départ tenu tombe avec lui. Les métiers : une liste que le MJ nomme
    (catalog.metiers), un champ de la fiche (a.metier), un arbre par métier — celui d'une classe, famille « Métier · nom ». */
-let arbresOnglet='classe',arbresMetierMJ='',sphereSel=null,sphereLier=false;
+let arbresOnglet='classe',arbresMetierMJ='',sphereSel=null,sphereLier=false,sphereClic=null;
 const estSphere=t=>!!t&&t.spherier===true;
 const talentsSphere=classe=>(catalog.talents||[]).filter(t=>estSphere(t)&&talentFamily(t)===classe);
 const voisinsSphere=(t,liste)=>liste.filter(x=>x!==t&&((x.liensSphere||[]).includes(t.id)||(t.liensSphere||[]).includes(x.id)));
@@ -8813,8 +8813,13 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
     const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);
      if(bouge){t.sphere={x:Math.round(Math.max(30,parseFloat(el.style.left))),y:Math.round(Math.max(30,parseFloat(el.style.top)))};sphereSel=t.id;arbreChange();return}
      const s=l.find(x=>x.id===sphereSel);
-     // v1.133 : Maj + clic sur un autre rond le relie au rond choisi, qui passe à celui-ci : on trace un chemin de proche en proche.
-     if(e.shiftKey&&s&&s!==t){if(!voisinsSphere(t,l).includes(s))s.liensSphere=[...(s.liensSphere||[]),t.id];sphereSel=t.id;arbreChange();return}
+     /* v1.133 : Maj + clic sur un autre rond le relie au rond choisi, qui passe à celui-ci : on trace un chemin de proche en proche.
+        v1.135 : déjà reliés, Maj + clic défait le lien. */
+     if(e.shiftKey&&s&&s!==t){if(voisinsSphere(t,l).includes(s)){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}
+      else s.liensSphere=[...(s.liensSphere||[]),t.id];sphereSel=t.id;arbreChange();return}
+     /* v1.136 : un double-clic sur un bonus ouvre son éditeur. Le premier clic redessine le plan : les deux clics se comptent ici,
+        sur le même bonus, à moins de 450 ms. */
+     {const now=performance.now(),d=sphereClic;sphereClic={id:t.id,at:now};if(d&&d.id===t.id&&now-d.at<450&&!sphereLier){sphereClic=null;sphereSel=t.id;openTalent(catalog.talents.indexOf(t),renderArbres);return}}
      if(sphereLier&&s&&s!==t){const lie=voisinsSphere(t,l).includes(s);if(lie){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}else s.liensSphere=[...(s.liensSphere||[]),t.id];arbreChange();return}
      sphereSel=t.id;renderArbres()};
     addEventListener('pointermove',mv);addEventListener('pointerup',up)})}
@@ -8889,3 +8894,10 @@ function choisirBonusSphere(classe,pos){if(view!=='mj'||!classe||!pos)return;con
  const autre=document.createElement('button');autre.type='button';autre.className='arbre-choix-neuf';autre.textContent='✚ Autre bonus';
  autre.onclick=()=>{const t=pose({carac:'orbe',valeur:1},'Bonus');openTalent(catalog.talents.indexOf(t),renderArbres)};
  boite.append(h,rang,autre);choixSphereDialog.showModal()}
+
+/* v1.136 — Sur l'arbre Bonus, chez le MJ, la touche Suppr (ou Effacer) supprime le bonus choisi, comme le bouton Supprimer ; jamais
+   dans un champ. */
+document.addEventListener('keydown',e=>{if((e.key!=='Delete'&&e.key!=='Backspace')||e.altKey||e.ctrlKey||e.metaKey||!arbresDialog.open||view!=='mj'||arbresOnglet!=='bonus'||!sphereSel)return;
+ if([...document.querySelectorAll('dialog[open]')].some(d=>d!==arbresDialog))return;
+ if(e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"]'))return;
+ const b=arbresDialog.querySelector('.spherier-outils button.danger');if(!b||b.disabled)return;e.preventDefault();b.click()});

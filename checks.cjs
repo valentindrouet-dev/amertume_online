@@ -5368,12 +5368,15 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.136 — Sphérier : Suppr supprime le bonus choisi ; Maj + clic lie ou délie ; double-clic ouvre l'éditeur. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const b=arbresDialog.querySelector('.spherier-outils button.danger');if(!b||b.disabled)return;e.preventDefault();b.click()});")
+ &&ed.includes("if(d&&d.id===t.id&&now-d.at<450&&!sphereLier){sphereClic=null;sphereSel=t.id;openTalent(catalog.talents.indexOf(t),renderArbres);return}"),'v1.136');}
 /* v1.134 — Tab cache l'interface de la Table en plein écran ; changer d'onglet la rend. */
 assert.ok(fs.readFileSync('maps.js','utf8').includes("m.textContent='Appuyez sur Tab ⇥ pour faire réapparaître l’interface.';")&&fs.readFileSync('maps.js','utf8').includes("{const sp=showPage;showPage=function(...x){cacheInterfaceTable(false);return sp.apply(this,x)}}"),'v1.134');
 /* v1.133 — Le sphérier : icônes définitives des bonus, clic sur le fond, Maj + clic pour lier, choix des bonus, coût sous le rond. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("function logoBonusFixe(carac){const n={vie:1,endu:2,pv:3,xp:4,dmg:5}[carac],id=n?'planches/caracteristiques_2.webp#'+n:'';")
-  &&ed.includes("if(e.shiftKey&&s&&s!==t){if(!voisinsSphere(t,l).includes(s))s.liensSphere=[...(s.liensSphere||[]),t.id];sphereSel=t.id;arbreChange();return}")
+  &&ed.includes("if(e.shiftKey&&s&&s!==t){if(voisinsSphere(t,l).includes(s)){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}")
   &&ed.includes("const choixSphereDialog=dialog('sphere-choix','Ajouter un bonus',")&&ed.includes("c.className='sphere-cout'+(paliersDe(t)>1&&a?' sous-paliers':'');"),'v1.133');}
 /* v1.131 / v1.132 — La carte plein écran sur la Table, sa zone libre, ses panneaux flottants, déplaçables et rangés en colonne. */
 {const mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
