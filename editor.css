@@ -4021,3 +4021,19 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .sphere-noeud.selec.acquis .sphere-rond{box-shadow:0 0 0 2px color-mix(in srgb,#58b09f 40%,transparent),0 2px 6px rgba(0,0,0,.2)}
 .sphere-noeud:is(.choisi,.selec)::before{content:'';position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 18px 7px color-mix(in srgb,#c99a3c 55%,transparent);pointer-events:none}
 .sphere-noeud.selec::before{box-shadow:0 0 14px 6px color-mix(in srgb,#c99a3c 70%,transparent)}
+/* v1.152 : l'éditeur en place d'un bonus du sphérier — ses natures en icônes, ses pastilles comme celles des dés. */
+.arbres-detail .sphere-editeur{margin:12px 0 4px;display:flex;flex-direction:column;gap:10px}
+.sphere-types{display:flex;flex-wrap:wrap;gap:6px}
+.sphere-type{width:38px;height:38px;padding:0;margin:0;border:0;background:none;cursor:pointer;opacity:.5;transition:opacity .15s}
+.sphere-type .sphere-rond{width:100%;height:100%;border-width:2.5px}
+.sphere-type .sphere-rond>:is(.logo-bonus,.logo-equip){width:76%;height:76%}
+.sphere-type:is(.on,:hover){opacity:1}
+.sphere-type.on .sphere-rond{box-shadow:0 0 0 2px var(--panel-2),0 0 0 4px #c99a3c}
+.sphere-editeur .sphere-etat{width:auto;margin:0;align-self:flex-start}
+.sphere-pastilles{display:flex;flex-wrap:wrap;gap:8px}
+.sphere-pastilles .die-pick{flex:1 1 auto;min-width:0}
+.sphere-pastilles .die-pick .die-sq{display:grid;place-items:center;background:none}
+.sphere-pastilles .die-pick .die-sq>:is(img,svg,span){width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
+.sphere-pastilles .die-pick .die-sq .bonus-lettres{font:800 11px system-ui;color:#f4f0e6}
+.sphere-pastilles .sphere-val{flex:1;min-width:0;text-align:center;font:800 15px/1 system-ui;color:#f4f0e6;white-space:nowrap}
+.sphere-pastilles .die-pick.clair .sphere-val,.sphere-pastilles .die-pick.clair .die-sq .bonus-lettres{color:#1b2124}

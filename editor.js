@@ -844,6 +844,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // v1.142 : son prix en gemmes — une taille, une quantité ; la variété vient de sa caractéristique.
   if(t.spherier!==true){delete t.spherier;delete t.sphere;delete t.liensSphere;delete t.departSphere;delete t.prixGemmes}
   else{{const g=t.prixGemmes&&typeof t.prixGemmes==='object'?t.prixGemmes:{};t.prixGemmes={taille:['brisure','eclat','brome'].includes(g.taille)?g.taille:'brisure',n:Math.max(1,Math.min(99,Math.trunc(Number(g.n))||1))}}
+   // v1.152 : un bonus du sphérier n'a plus de paliers.
+   delete t.paliersActifs;delete t.paliers;
    const s=t.sphere&&typeof t.sphere==='object'?t.sphere:{};t.sphere={x:Math.max(30,Math.min(4000,Math.round(Number(s.x)||0))),y:Math.max(30,Math.min(4000,Math.round(Number(s.y)||0)))};
    t.liensSphere=[...new Set((Array.isArray(t.liensSphere)?t.liensSphere:[]).filter(id=>typeof id==='string'&&id&&id!==t.id))].slice(0,12);if(!t.liensSphere.length)delete t.liensSphere;if(t.departSphere!==true)delete t.departSphere}
   if(t.orbite){const d=Math.hypot(t.orbite.dx,t.orbite.dy),f=d>400?400/d:1;t.orbite={dx:Math.round(t.orbite.dx*f),dy:Math.round(t.orbite.dy*f)}}
@@ -4398,7 +4400,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  // « Paliers » d'un bonus : la valeur du palier 2 se propose au double de la première.
  if(champs.b_paliers)champs.b_paliers.onchange=()=>{$('b-paliers').hidden=!champs.b_paliers.checked;
   if(champs.b_paliers.checked&&!champs.b_valeur_2.value)champs.b_valeur_2.value=Math.min(20,2*num(champs.b_valeur.value,1,20))};
- if(t.spherier===true){const l=champs.b_cout&&champs.b_cout.closest('label');if(l)l.classList.add('talent-cache')}
+ if(t.spherier===true){const l=champs.b_cout&&champs.b_cout.closest('label');if(l)l.classList.add('talent-cache');const lp=champs.b_paliers&&champs.b_paliers.closest('label');if(lp)lp.classList.add('talent-cache');const bp=$('b-paliers');if(bp)bp.hidden=true}
  [...champs.nature].forEach(r=>r.onchange=poseNature);champs.b_carac.onchange=apercuBonus;champs.b_valeur.oninput=apercuBonus;champs.b_comp.onchange=apercuBonus;if(champs.b_etat)champs.b_etat.onchange=apercuBonus;
  poseNature();
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
@@ -8897,6 +8899,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,nat,desc);
   tete.append(pile,droite);panneau.append(tete);
   if(a){const bi=boutonInfuser(ctx,t,l);if(bi)panneau.append(bi);const bd=boutonDesacheter(ctx,t,l);if(bd)panneau.append(bd)}
+  else if(mj)panneau.append(editeurSphere(t));
   if(mj&&!a){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
   else if(a){const ok=k<max&&(k>0||sphereOuverte(a,t,l));tete.classList.add(k>0?'acquise':ok?'achetable':'fermee')}
   tete.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&tete.onclick){e.preventDefault();tete.onclick()}}};
@@ -9051,3 +9054,38 @@ function ouvreGemmesBonus(){if(view!=='mj')return;const boite=$('gemmes-bonus-li
   s.onchange=()=>{catalog.gemmesBonus={...(catalog.gemmesBonus||{}),[k]:s.value};pose();renderArbres();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   r.append(im,nom,s);boite.append(r)});
  gemmesBonusDialog.showModal()}
+
+/* v1.152 — Sous le bloc d'un bonus, au MJ, sur le plan d'une classe : l'éditeur en place. La nature du bonus se choisit parmi ses
+   icônes ; la valeur, le prix et la taille des gemmes se règlent dans des pastilles, celles des dés. Rien ne s'ouvre ; chaque
+   changement se garde aussitôt. Un bonus d'état choisit son état dans un menu. */
+const TEINTES_GEMMES={citrine:'#d9b45a',emeraude:'#2f7a4b',saphir:'#3a6fc2',rubis:'#b8352f',diamant:'#8fa3ad'};
+function editeurSphere(t){const p=paramsTalent(t)||{},box=document.createElement('div');box.className='sphere-editeur';
+ const sauve=()=>{t.params=paramsTalent({effet:'bonus',params:t.params});t.name=libelleBonus(t.params);delete t.paliersActifs;delete t.paliers;t.couts=[0,0,0];arbreChange()};
+ // La nature : une icône par bonus proposé, celle du bonus en relief.
+ const types=document.createElement('div');types.className='sphere-types';
+ BONUS_PROPOSES().forEach(([carac,nom,k])=>{const params={carac,valeur:1,...(carac==='comp'?{comp:String(k)}:{}),...(carac==='etat'?{etat:p.etat||'Rage'}:{})};
+  const estCe=p.carac===carac&&(carac!=='comp'||String(p.comp)===String(k)),b=document.createElement('button');b.type='button';b.className='sphere-type'+(estCe?' on':'');
+  const r=document.createElement('span');r.className='sphere-rond';poseLogoBonus(r,{effet:'bonus',params});const v=r.querySelector('.bonus-valeur');if(v)v.remove();b.append(r);
+  teinteSphere({effet:'bonus',params},x=>b.style.setProperty('--tint',x));b.title=nom;b.setAttribute('aria-label',nom);
+  b.onclick=()=>{if(estCe)return;t.params={...(t.params||{}),carac,...(carac==='comp'?{comp:String(k)}:{}),...(carac==='etat'?{etat:(t.params&&t.params.etat)||'Rage'}:{})};t.logo='';sauve()};
+  types.append(b)});
+ box.append(types);
+ if(p.carac==='etat'){const s=document.createElement('select');s.className='sphere-etat';s.setAttribute('aria-label','État');ETATS_JEU.forEach(e=>s.add(new Option(e,e)));s.value=p.etat||'Rage';s.onchange=()=>{t.params={...(t.params||{}),etat:s.value};sauve()};box.append(s)}
+ // Les pastilles : la valeur du bonus, le prix en gemmes, la taille des gemmes.
+ const pr=prixSphere(t),teinteGemme=TEINTES_GEMMES[pr.variete]||'#8fa3ad',clairGemme=pr.variete==='citrine'||pr.variete==='diamant';
+ const pastille=(teinte,clair,icone,texte,nom,moins,plus)=>{const d=document.createElement('div');d.className='die-pick'+(clair?' clair':'');d.style.setProperty('--teinte',teinte);d.title=nom;
+  const i=document.createElement('i');i.className='die-sq';i.setAttribute('aria-hidden','true');if(icone)i.append(icone);
+  const bm=document.createElement('button');bm.type='button';bm.textContent='−';bm.setAttribute('aria-label',nom+' : moins');bm.onclick=moins;
+  const val=document.createElement('b');val.className='sphere-val';val.textContent=texte;
+  const bp=document.createElement('button');bp.type='button';bp.textContent='+';bp.setAttribute('aria-label',nom+' : plus');bp.onclick=plus;
+  d.append(i,bm,val,bp);return d};
+ const pastilles=document.createElement('div');pastilles.className='sphere-pastilles';
+ {const ic=document.createElement('span');poseLogoBonus(ic,t);const v=ic.querySelector('.bonus-valeur');if(v)v.remove();
+  const n=Math.max(1,(p.valeur|0)||1),pose=k=>{t.params={...(t.params||{}),valeur:Math.max(1,Math.min(20,k))};sauve()};
+  let tint='150,150,150';teinteSphere(t,x=>{tint=x});
+  pastilles.append(pastille('rgb('+tint+')',['comp','pv'].includes(p.carac)?false:false,ic,'+'+n,'Valeur du bonus',()=>pose(n-1),()=>pose(n+1)))}
+ {const im=document.createElement('img');im.src=imgUrl(iconeGemme(pr.taille,pr.variete)+'.png');im.alt='';const pose=k=>{t.prixGemmes={...t.prixGemmes,n:Math.max(1,Math.min(99,k))};sauve()};
+  pastilles.append(pastille(teinteGemme,clairGemme,im,String(pr.n),'Prix en gemmes',()=>pose(pr.n-1),()=>pose(pr.n+1)))}
+ {const im=document.createElement('img');im.src=imgUrl(iconeGemme(pr.taille,pr.variete)+'.png');im.alt='';const i=TAILLES_GEMMES.findIndex(([k])=>k===pr.taille),pose=k=>{const j=Math.max(0,Math.min(TAILLES_GEMMES.length-1,k));t.prixGemmes={...t.prixGemmes,taille:TAILLES_GEMMES[j][0]};sauve()};
+  pastilles.append(pastille(teinteGemme,clairGemme,im,TAILLES_GEMMES[i][2],'Taille des gemmes',()=>pose(i-1),()=>pose(i+1)))}
+ box.append(pastilles);return box}
