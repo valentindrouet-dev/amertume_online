@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.140","d":"2026-10-29","t":"DEF au nouveau bouclier ; bonus seulement dans l'onglet Bonus"},
 {"v":"1.139","d":"2026-10-29","t":"Arbre Bonus : nature, trait, usage des compétences"},
 {"v":"1.138","d":"2026-10-29","t":"Arbre Bonus : un seul bloc à droite, achat d'un clic"},
 {"v":"1.137","d":"2026-10-29","t":"Bonus : DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier"},

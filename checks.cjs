@@ -2218,7 +2218,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
    police, pour n'importe quelle valeur — deux chiffres se serrent. Une fois par valeur ; en
    attendant la police et l'écu vide, l'écu peint, puis tout se redessine. */
 assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessines.has(texte))return ecusDessines.get(texte);")
- &&page.includes("if(!ecuPret){preparerEcus();return imgUrl('DEF '+(Number.isInteger(n)&&n>=0&&n<=6?n:'VIDE')+'.png')}")
+ &&page.includes("if(!ecuPret){preparerEcus();return imgUrl('BONUS_DEF.webp')}")
  &&page.includes("ctx.font='700 100px Killam';const m=ctx.measureText(texte);")
  &&page.includes("ctx.fillStyle='#000';ctx.textAlign='center';ctx.textBaseline='alphabetic';")
  &&page.includes("const police=document.fonts&&document.fonts.load?document.fonts.load('700 100px Killam'):Promise.resolve();")
@@ -2255,7 +2255,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("const defCible=hasState(b,'Au sol')||briseO.ignore?0:defOf(b),solide=soliditeDe(b);")
   &&page.includes("const passe=d=>l.def===undefined||l.def===null||d[1]==='plasma'||d[1]>6||passeDef(d,l.def,l.solidite||false);"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
  assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide,...(pj?{plasma:pj.des}:{})},a,b)")
-  &&page.includes("im.className='rate';im.src=imgUrl('DEF VIDE.png');")&&page.includes(".board-die .rate{")&&page.includes("if(calme){marque();return}")
+  &&page.includes("im.className='rate';im.src=imgUrl('BONUS_DEF.webp');")&&page.includes(".board-die .rate{")&&page.includes("if(calme){marque();return}")
   &&!page.includes('board-def')&&!page.includes('reduction'),'la piste barre d’un écu vide les dés qui ne passent pas la DEF, plus de « − DEF »');
  assert.ok(page.includes("const arrete=!barre&&defJ!==null&&!passeDef([v,c],defJ,detail.solidite||false);")&&!page.includes('.j-plus.def{')
   &&page.includes("bonus:r.hit?bonus:0,saignee:r.bleed,faille:r.failleFace,def,solidite:solide,double,total}")
@@ -4995,7 +4995,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.559 — Un bonus d'Endurance posé dans l'arbre vaut +2 ; le compteur des bonus de l'arbre tient sur trois lignes :
    caractéristiques (Vie, Endu, PV, Dégâts, DEF), orbes et propres à une classe, compétences par ordre alphabétique. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("const v=carac==='endu'?2:1,params={carac,valeur:v,")&&src.includes("name:libelleBonus(params),"),'Endurance à +2');
+ assert.ok(src.includes("const v=carac==='endu'?2:1,params={carac,valeur:v,")&&src.includes("b.onclick=()=>pose(params,libelleBonus(params));"),'Endurance à +2');
  assert.ok(src.includes("const CARACS=['vie','endu','pv','dmg','def'],")&&src.includes("groupes[k.startsWith('comp:')?2:CARACS.includes(k)?0:1].push(e)")
   &&src.includes(".localeCompare(nomComp('comp:'+y.p.comp),'fr')")&&feuille.includes('#arbres .dialog-head .arbres-bonus-ligne{display:flex;'),'trois lignes');}
 /* v0.558 — La piste des dés : une ligne qui ne tient pas passe à la rangée suivante, le « + » du critique avec ses dés ; la
@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.140 — L'écu de DEF partout au nouveau bouclier ; PA et PM à leurs bulles ; plus de bonus dans les arbres de talents. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(Array.isArray(c.semisForge)&&!c.semisForge.includes('sans-bonus-arbres')){c.talents=(c.talents||[]).filter(t=>!(t&&t.effet==='bonus'&&t.spherier!==true));")
+ &&ed.includes("if(carac==='pa'||carac==='pm'){el=document.createElement('img');el.src=imgUrl('points/'+carac+'.webp');")&&fs.readFileSync('index.html','utf8').includes("im.src=imgUrl('BONUS_DEF.webp')});"),'v1.140');}
 /* v1.139 — Le bloc d'un bonus : sa nature sous le nom, le trait, l'usage des tests d'une compétence. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function natureBonus(p){const c=p&&p.carac||'pv';return c==='comp'?'Compétence':['pv','endu','vie','def','dmg'].includes(c)?'Caractéristique':'Bonus'}"),'v1.139');
 /* v1.138 — Sphérier : un seul bloc à droite, sa description en italique, son coût sous le rond ; un clic achète, le reclic rend. */
@@ -5630,7 +5633,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
 /* v0.810 — Plus de petits ronds dans l'arbre v2 : améliorations et bonus vivent dans le panneau, s'y achètent, s'y ajoutent et s'y
    réordonnent ; ils restent au catalogue avec leur chemin. La vue joueur de l'éditeur suit celle d'un aventurier. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("ch[d].petits.forEach(s=>{if(V2)return;")&&src.includes("section('Améliorations',tousP.filter(x=>!estBonus(x)));")&&src.includes("section('Bonus',tousP.filter(estBonus));")
+ assert.ok(src.includes("ch[d].petits.forEach(s=>{if(V2)return;")&&src.includes("section('Améliorations',tousP.filter(x=>!estBonus(x)));")&&!src.includes("section('Bonus',tousP.filter(estBonus));")
   &&src.includes("const places=gens.map(y=>({...lisChemin(y)}));l2.forEach((y,m)=>{y.chemin=places[m]});")&&src.includes("function petitsHorsDesLignes(x){if(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)return;"),'le panneau porte les petits ronds');}
 /* v0.809 — L'éditeur des arbres en v2, éditable ; plus de noms sous les ronds ; les lignes à niveau invisibles partout. */
 {const src=fs.readFileSync('editor.js','utf8');

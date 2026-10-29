@@ -742,6 +742,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   Object.entries(l).slice(0,60).forEach(([k,v])=>{if(typeof k==='string'&&k&&v===true)c.arbresLibres[k.slice(0,60)]=true});if(!Object.keys(c.arbresLibres).length)delete c.arbresLibres}
  // v1.129 : six métiers d'office, une fois ; chacun en une seule colonne.
  // v1.137 : les bonus des sphériers se posent sur le quadrillage, une fois.
+ /* v1.140 : les bonus ne s'obtiennent plus que dans l'onglet Bonus : ceux des arbres de talents s'en vont, une fois. Ce qu'un
+    aventurier y avait dépensé lui revient : son XP dépensée se lit sur ce qu'il tient encore. */
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('sans-bonus-arbres')){c.talents=(c.talents||[]).filter(t=>!(t&&t.effet==='bonus'&&t.spherier!==true));c.semisForge.push('sans-bonus-arbres')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('grille-sphere')){(c.talents||[]).forEach(t=>{if(t&&t.spherier===true&&t.sphere)t.sphere={x:surGrille(t.sphere.x),y:surGrille(t.sphere.y)}});c.semisForge.push('grille-sphere')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('metiers-6')){const l=Array.isArray(c.metiers)?c.metiers:[];
   ['Alchimiste','Forgeron','Tanneur','Mineur','Herboriste','Arcaniste'].forEach(n=>{if(!l.some(m=>m&&m.nom===n))l.push({nom:n});c.nbArbres=c.nbArbres&&typeof c.nbArbres==='object'&&!Array.isArray(c.nbArbres)?c.nbArbres:{};c.nbArbres['Métier · '+n]=1});
@@ -5628,9 +5631,11 @@ function iconeStat(tuile,carac){const ic=logoBonus({carac});if(!tuile||!ic)retur
 function logoBonusFixe(carac){const n={vie:1,endu:2,pv:3,xp:4,dmg:5}[carac],id=n?'planches/caracteristiques_2.webp#'+n:'';
  return id&&typeof iconeDe==='function'&&iconeDe(id)?id:''}
 // v1.137 : les icônes que rien ne change — les cinq de la planche, la DEF, les mètres, l'Armure, l'état.
-const iconeBonusFigee=carac=>!!logoBonusFixe(carac)||['def','metres','armure','etat'].includes(carac);
+const iconeBonusFigee=carac=>!!logoBonusFixe(carac)||['def','metres','armure','etat','pa','pm'].includes(carac);
 function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
  {const fixe=logoBonusFixe(carac),im=fixe&&logoImage(fixe,LOGOS_TOUS);if(im){im.classList.add('logo-bonus');return im}}
+ // v1.140 : un point d'Action, un point de Mouvement — la bulle bleue, la bulle brune, celles du jeu.
+ if(carac==='pa'||carac==='pm'){el=document.createElement('img');el.src=imgUrl('points/'+carac+'.webp');el.alt='';el.draggable=false;el.classList.add('logo-bonus');return el}
  if(carac==='def'||carac==='armure'){el=document.createElement('img');el.src=imgUrl(carac==='def'?'BONUS_DEF.webp':'weapon_armure.png');el.alt='';el.draggable=false;el.classList.add('logo-bonus');return el}
  if(carac==='etat'){const e=p&&p.etat||'Rage',im=typeof imageEtat==='function'?imageEtat(e):null;if(im){im.classList.add('logo-bonus');return im}
   el=document.createElement('span');el.className='bonus-lettres logo-bonus';el.textContent=e.slice(0,2);return el}
@@ -6193,16 +6198,8 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
  /* Sur un chemin, les bonus génériques, communs à tous les arbres : un bouton chacun, qui le pose
     aussitôt — PV, Endurance, Vie, Dégâts et chaque compétence ; l'Endurance à +2, les autres à +1.
     L'orbe, et toute autre valeur, passent par « Autre bonus ». */
- if(petit){const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent='Bonus';
-  const rang=document.createElement('div');rang.className='bonus-generiques';
-  BONUS_PROPOSES().forEach(([carac,nom,k])=>{
-   const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{}),...(carac==='etat'?{etat:k}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
-   const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});
-   b.setAttribute('aria-label','+'+v+' '+nom);b.title='+'+v+' '+nom;
-   b.onclick=()=>{const t={id:crypto.randomUUID(),name:libelleBonus(params),famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[0,0,0]};
-    catalog.talents.push(t);choixArbreDialog.close();if(placerTalent(t.id,dest))arbreChange()};
-   rang.append(b)});
-  boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[0,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
+ // v1.140 : sur un chemin, une amélioration seulement — les bonus ne s'obtiennent plus que dans l'onglet Bonus.
+ if(petit)boite.append(neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))
  else boite.append(neuf('✚ Créer un nouveau talent',{...dest}));
  {const r=document.createElement('div');r.className='bonus-generiques remplissages';
   COULEURS_REMPLISSAGE.forEach(k=>{const b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud remplissage t-'+k+(petit?' petit':'');
@@ -7123,7 +7120,6 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
        const b2=document.createElement('b');b2.append(libelleBonusEl(pb,{talent:xp}));t.append(b2);d.append(t);ouvrirBulle(c,d,'bulle-talent')})}
      panneau.append(c)}})};
   section('Améliorations',tousP.filter(x=>!estBonus(x)));
-  section('Bonus',tousP.filter(estBonus));
   {const bs=[...panneau.querySelectorAll(':scope>.detail-bonus')];if(bs.length){const g=document.createElement('div');g.className='detail-bonus-grille';bs[0].before(g);g.append(...bs)}}
 };
  const grille=document.createElement('div');grille.className='arbres-cols';
