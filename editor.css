@@ -4053,3 +4053,17 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .sphere-editeur .sphere-ajoute{align-self:flex-start;margin:0}
 .sphere-cout .puce-gemme+.puce-gemme,.detail-prix .puce-gemme+.puce-gemme,.desacheter .puce-gemme+.puce-gemme,.infuser .puce-gemme+.puce-gemme{margin-left:4px}
 .sphere-pastilles .die-pick .die-sq span>img{width:22px;height:22px;object-fit:contain;display:block}
+/* v1.160 : l'or et les gemmes sur une ligne, au bas du schéma ; la colonne des sphères des stats ; le tableau des déclencheurs
+   plus large, sa détection sur une ligne, et le compte de ses déclenchements. */
+.corps .richesses-corps{position:absolute;left:6px;right:4px;bottom:6px;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;z-index:1;pointer-events:none}
+.corps .richesses-corps .gemmes-corps{flex:1 1 auto;min-width:0;gap:1px 4px}.corps .richesses-corps .gemmes-corps .gem-vive{gap:1px}
+.corps .richesses-corps .gemmes-corps .gem-ico{width:14px;height:14px}.corps .richesses-corps .gemmes-corps b{font-size:12px}
+.corps .richesses-corps>*{pointer-events:auto}
+.corps .richesses-corps .or-corps,.corps .richesses-corps .gemmes-corps{position:static;margin:0}
+.corps:has(.richesses-corps .gemmes-corps),.corps-sac>.corps:has(.richesses-corps .gemmes-corps){padding-bottom:30px}
+.stats-sph .gemmes-ligne{justify-content:flex-end;margin:0;gap:2px 8px;flex-wrap:nowrap}.stats-sph .gemmes-ligne .gem-ico{width:18px;height:18px}.stats-sph .gemmes-ligne b{font-size:13px}
+#gemmes-page .cat-panel{max-width:1560px}
+#gemmes-page .gemmes-decl .gemmes-note{max-width:none;white-space:nowrap}
+.gemmes-fois{font:700 14px system-ui;text-align:right;min-width:44px}.gemmes-fois.zero{color:var(--muted);font-weight:400}
+.gemmes-decl th:last-child{text-align:right}
+.gemmes-rafraichir{margin:6px 0 2px}

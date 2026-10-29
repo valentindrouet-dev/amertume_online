@@ -66,8 +66,10 @@ function poseReglesGemmes(f){catalog.gemmesRegles=reglesGemmes();f(catalog.gemme
    ses déclencheurs par couleur, s'il est tombé dans le coma ; et, hors combat, les déclencheurs déjà joués par zone. */
 function suiviGemmes(a){let s=a.gemmesSuivi;if(!s||typeof s!=='object')s=a.gemmesSuivi={};
  const n=typeof numeroCombat!=='undefined'?numeroCombat:0;
- if(s.combat!==n&&typeof enCombat==='function'&&enCombat()){s.combat=n;s.brisures={};s.decl={};delete s.coma}
- if(!s.brisures||typeof s.brisures!=='object')s.brisures={};if(!s.decl||typeof s.decl!=='object')s.decl={};if(!Array.isArray(s.scenes))s.scenes=[];return s}
+ if(s.combat!==n&&typeof enCombat==='function'&&enCombat()){s.combat=n;s.brisures={};s.decl={};s.gagnes={};delete s.coma}
+ if(!s.brisures||typeof s.brisures!=='object')s.brisures={};
+ // v1.160 : les gemmes gagnées pendant le combat, pour son bilan ; et chaque déclenchement compté, depuis le début.
+ if(!s.gagnes||typeof s.gagnes!=='object')s.gagnes={};if(!s.compte||typeof s.compte!=='object')s.compte={};if(!s.decl||typeof s.decl!=='object')s.decl={};if(!Array.isArray(s.scenes))s.scenes=[];return s}
 // La zone de la carte où se tient l'aventurier : la scène des déclencheurs hors combat.
 function cleSceneGemme(a){const m=typeof currentMap==='function'?currentMap():null,id=typeof currentMapId!=='undefined'?currentMapId||'':'';
  const z=m&&typeof zonesDe==='function'?zonesDe(m):null;return id+':'+(z&&typeof zoneAu==='function'?zoneAu(z,a.x,a.y):0)}
@@ -85,6 +87,7 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  const couleur=couleurDeclencheur(cle,opts),s=suiviGemmes(a);if(!couleur)return null;
  s.decl[couleur]=(s.decl[couleur]||0)+1;
  if(!combat||d.phase==='hors'){const sc=cleSceneGemme(a)+'|'+k;if(s.scenes.includes(sc)&&!opts.manuel)return null;s.scenes=[...s.scenes.filter(x=>x!==sc),sc].slice(-80)}
+ s.compte[cle]=(Math.trunc(Number(s.compte[cle]))||0)+1;
  const des=Math.max(1,Math.min(12,opts.des||r.des));
  const faces=Array.from({length:des},()=>typeof d6==='function'?d6():1+Math.floor(Math.random()*6));
  let gagne=faces.some(f=>f>=r.seuil)?1:0;
@@ -94,7 +97,7 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  // Le plafond du combat : ce qui dépasse ne tombe pas.
  if(combat&&d.phase==='combat'){const deja=s.brisures[couleur]||0;gagne=Math.max(0,Math.min(gagne,R.plafond-deja));s.brisures[couleur]=deja+gagne}
  if(gagne>0){const cg=cleGemme('brisure',couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+gagne;
-  flotteGemme(a,'brisure',couleur,gagne);
+  flotteGemme(a,'brisure',couleur,gagne);if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne;
   if(typeof log==='function')log(nomNum(a)+' a acquis une sphère.',{ton:'talent',toujours:true})}
  if(typeof scheduleSave==='function')scheduleSave();return {faces,gagne,couleur}}
 // La petite sphère qui monte au-dessus du socle quand une Brisure tombe.
@@ -178,13 +181,14 @@ let larcinGemme=null;
 {const ca=comaAventuriers;comaAventuriers=function(...x){const r=ca(...x);if(typeof enCombat==='function'&&enCombat())actors.forEach(a=>{if(a&&a.hero){const s=suiviGemmes(a);if(a.comaVie)s.coma=numeroCombat}});return r}}
 /* La fin du combat : à chaque aventurier debout de bout en bout, son dé ; un boss vaincu vaut à chacun un Éclat (ou ce que le MJ
    a réglé) de la couleur qu'il a le plus déclenchée. */
+/* v1.160 : elles tombent juste avant que le combat se ferme : le bilan de fin de combat les compte. */
 {const bm=basculerMode;basculerMode=function(neuf,...x){const finit=mode==='combat'&&neuf!=='combat',spect=typeof spectateur==='function'&&spectateur(),n=numeroCombat;
- const r=bm(neuf,...x);if(!finit||spect)return r;const R=reglesGemmes(),presents=actors.filter(a=>a&&a.hero&&!a.horsCarte&&!estMort(a)&&!sortiDuCombat(a));
+ if(!finit||spect)return bm(neuf,...x);const R=reglesGemmes(),presents=actors.filter(a=>a&&a.hero&&!a.horsCarte&&!estMort(a)&&!sortiDuCombat(a));
  presents.forEach(a=>{const s=suiviGemmes(a);if(s.combat===n&&s.coma!==n)deGemme(a,'combat-sans-coma',{phase:'combat'})});
  if(bossVaincuCombat===n&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
-  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);
+  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n;
   if(typeof log==='function')log(nomNum(a)+' a acquis '+(R.boss.n>1?R.boss.n+' sphères':'une sphère')+'.',{ton:'talent',toujours:true})});bossVaincuCombat=0}
- if(typeof scheduleSave==='function')scheduleSave();return r}}
+ const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
 const deGemmeDialog=dialog('de-gemme','Dé de gemme','<form id="de-gemme-form"><div class="edit-grid"><label>Déclencheur<select name="decl" id="de-gemme-decl"></select></label>'
  +'<label>Dés<input name="des" type="number" min="1" max="12" value="1"></label><label>Compétence<select name="comp" id="de-gemme-comp"></select></label><label>État<select name="etat" id="de-gemme-etat"></select></label></div>'
@@ -221,8 +225,12 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
   const p=document.createElement('span');p.className='muted';p.textContent='Hors combat : chaque déclencheur joue une fois par zone de la carte.';l.append(p);boite.append(l)}
  // 2. Les déclencheurs.
  h('Les déclencheurs','Ce qui fait lancer le dé, et de quelle couleur. L’appli lance elle-même ceux qu’elle voit ; les autres, le MJ les lance depuis la fiche de l’aventurier (🎲 Dé de gemme).');
+ /* v1.160 : au bout de chaque ligne, combien de fois le déclencheur a joué depuis le début, tous aventuriers réunis ; le bouton
+    relit les comptes, qui arrivent des fiches. */
+ {const bt=document.createElement('button');bt.type='button';bt.className='gemmes-rafraichir';bt.textContent='Rafraîchir les stats de déclenchement';bt.onclick=()=>renderGemmes();boite.append(bt)}
+ const fois=cle=>actors.reduce((n,a)=>n+(a&&a.hero&&a.gemmesSuivi&&a.gemmesSuivi.compte?Math.max(0,Math.trunc(Number(a.gemmesSuivi.compte[cle]))||0):0),0);
  [['combat','En combat'],['hors','Hors combat']].forEach(([ph,nom])=>{const t=document.createElement('table');t.className='gemmes-table gemmes-decl';const cap=document.createElement('caption');cap.textContent=nom;t.append(cap);
-  const tr=document.createElement('tr');['Actif','Déclencheur','Couleur','Dés','Seuil','Détection'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
+  const tr=document.createElement('tr');['Actif','Déclencheur','Couleur','Dés','Seuil','Détection','Fois'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
   DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).forEach(d=>{const r=R.declencheurs[d.cle],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
    const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].actif=cb.checked});renderGemmes()};c1.append(cb);
    const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d.nom;
@@ -231,7 +239,8 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
    const c4=document.createElement('td');c4.append(nombre(r.des,1,6,(g,n)=>{g.declencheurs[d.cle].des=n}));
    const c6=document.createElement('td');const ss=document.createElement('select');ss.className='gemmes-seuil';[1,2,3,4,5,6].forEach(n=>ss.add(new Option(n+'+',String(n))));ss.value=String(r.seuil);ss.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].seuil=Number(ss.value)});renderGemmes()};c6.append(ss);
    const c5=document.createElement('td');c5.className='muted gemmes-note';c5.textContent=d.auto?('Automatique'+(d.note?' — '+d.note:'')):'À la main (🎲 sur la fiche)';
-   row.append(c1,c2,c3,c4,c6,c5);t.append(row)});boite.append(t)});
+   const c7=document.createElement('td');c7.className='gemmes-fois';const nf=fois(d.cle);c7.textContent=String(nf);if(!nf)c7.classList.add('zero');
+   row.append(c1,c2,c3,c4,c6,c5,c7);t.append(row)});boite.append(t)});
  // 3. Les récompenses et la fusion.
  h('Récompenses et fusion');
  {const l=document.createElement('div');l.className='gemmes-reglage';

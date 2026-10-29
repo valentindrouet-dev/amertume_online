@@ -1226,7 +1226,8 @@ const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-for
    d'un autre appareil parfois : il est relu, chiffres et noms bornés, avant d'être montré. */
 function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return null;const n=v=>Math.max(0,Math.min(1e6,Math.trunc(Number(v))||0));
  return {tours:n(o.tours),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
-  inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic)}))}}
+  inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),
+  sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0))}))}}
 const statsDialog=dialog('stats-combat','Stats de Combat','<div id="stats-combat-corps"></div>');
 const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['sub','🩸','Le plus éprouvé','PV perdus'],['soin','✚','Meilleur soigneur','PV soignés'],
  ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','Mise à Mort'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus']];
@@ -1251,12 +1252,16 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
  const maxInf=Math.max(1,...b.liste.map(x=>x.inf)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
  [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
-  ['',...COLONNES_STATS.map(c=>c[1])].forEach(x=>th.append(el('th','',x)));
+  ['',...COLONNES_STATS.map(c=>c[1]),...(k==='troupe'?['Sphères']:[])].forEach(x=>th.append(el('th','',x)));
+  // v1.160 : chez les aventuriers, une colonne de plus — les sphères que chacun a gagnées pendant le combat.
+  const sph=(d,compte)=>{d.className='stats-n stats-sph';const g=Object.keys(compte).length?ligneGemmes(compte,null):null;if(g)d.append(g);else{d.textContent='0';d.classList.add('zero')}};
   const tb=t.createTBody();[...l].sort((x,y)=>y.inf-x.inf||y.sub-x.sub).forEach(x=>{const r=tb.insertRow(),n=r.insertCell(),nom=el('span','stats-nom');
    nom.append(portraitStats(x),el('span','',x.nom));n.append(nom);
    COLONNES_STATS.forEach(([c])=>{const d=r.insertCell();d.className='stats-n '+c+(x[c]?'':' zero');d.textContent=valeur(c,x[c]);
-    if(c==='inf'&&x.inf){const barre=el('i','stats-barre');barre.style.width=Math.round(x.inf/maxInf*100)+'%';d.append(barre)}})});
+    if(c==='inf'&&x.inf){const barre=el('i','stats-barre');barre.style.width=Math.round(x.inf/maxInf*100)+'%';d.append(barre)}});
+   if(k==='troupe')sph(r.insertCell(),x.sph||{})});
   const tf=t.createTFoot().insertRow();tf.insertCell().textContent='Total';COLONNES_STATS.forEach(([c])=>{const d=tf.insertCell();d.className='stats-n';d.textContent=valeur(c,somme(l,c))});
+  if(k==='troupe'){const tot={};l.forEach(x=>Object.entries(x.sph||{}).forEach(([g,v])=>{tot[g]=(tot[g]||0)+v}));sph(tf.insertCell(),tot)}
   s.append(t);corps.append(s)});
  statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */
@@ -2766,9 +2771,9 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
   const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
   if(view==='mj'){or.classList.add('cliquable');or.setAttribute('role','button');or.tabIndex=0;or.onclick=()=>openRichesses(a);or.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
-  corps.append(or);
-  // v1.145 : à droite de l'or, ses gemmes — chaque taille et chaque couleur qu'il tient, avec son compte.
-  const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');corps.append(gm)}}
+  // v1.160 : l'or et, à sa droite sur la même ligne, ses gemmes — chaque taille et chaque couleur qu'il tient, avec son compte.
+  const rang=document.createElement('div');rang.className='richesses-corps';rang.append(or);
+  const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');rang.append(gm)}corps.append(rang)}
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
@@ -8960,6 +8965,24 @@ function choisirBonusSphere(classe,pos){if(view!=='mj'||!classe||!pos)return;con
 
 /* v1.136 — Sur l'arbre Bonus, chez le MJ, la touche Suppr (ou Effacer) supprime le bonus choisi, comme le bouton Supprimer ; jamais
    dans un champ. */
+/* v1.160 — Ctrl (⌘) + Z dans l'éditeur du sphérier, chez le MJ : chaque état des bonus du sphérier qu'affiche le plan se garde
+   (jusqu'à cinquante) ; la touche revient au précédent — un ajout, un déplacement, un lien, une suppression, un réglage.
+   L'état se photographie à chaque dessin du plan : ce qui a changé depuis le dessin d'avant fait un pas. */
+let spheresHisto=[],spheresPhoto=null,spheresRetour=false;
+const photoSpheres=()=>JSON.stringify((catalog.talents||[]).filter(t=>t&&t.spherier===true));
+const enEditionSphere=()=>arbresDialog.open&&view==='mj'&&arbresOnglet==='bonus'&&!!arbresClasse&&!arbresActeur&&!arbresVueJoueur;
+{const ra=renderArbres;renderArbres=function(...x){if(enEditionSphere()){const p=photoSpheres();
+  if(spheresPhoto!==null&&p!==spheresPhoto&&!spheresRetour){spheresHisto.push(spheresPhoto);if(spheresHisto.length>50)spheresHisto.shift()}spheresPhoto=p}
+ return ra(...x)}}
+arbresDialog.addEventListener('close',()=>{spheresHisto=[];spheresPhoto=null});
+function annuleSphere(){if(!enEditionSphere()||!spheresHisto.length)return false;const avant=spheresHisto.pop(),l=JSON.parse(avant);
+ catalog.talents=[...(catalog.talents||[]).filter(t=>!(t&&t.spherier===true)),...l];
+ const ids=new Set(l.map(t=>t.id));if(sphereSel&&!ids.has(sphereSel))sphereSel=null;sphereSels=new Set([...sphereSels].filter(id=>ids.has(id)));
+ spheresRetour=true;try{arbreChange()}finally{spheresRetour=false}spheresPhoto=photoSpheres();return true}
+document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.shiftKey||e.altKey||String(e.key).toLowerCase()!=='z'||!enEditionSphere())return;
+ if([...document.querySelectorAll('dialog[open]')].some(d=>d!==arbresDialog))return;
+ if(e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"]'))return;
+ e.preventDefault();annuleSphere()});
 document.addEventListener('keydown',e=>{if((e.key!=='Delete'&&e.key!=='Backspace')||e.altKey||e.ctrlKey||e.metaKey||!arbresDialog.open||view!=='mj'||arbresOnglet!=='bonus'||!sphereSel)return;
  if([...document.querySelectorAll('dialog[open]')].some(d=>d!==arbresDialog))return;
  if(e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"]'))return;

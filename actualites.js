@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.160","d":"2026-10-29","t":"Gemmes : stats, déclenchements comptés ; Ctrl+Z au sphérier"},
 {"v":"1.159","d":"2026-10-29","t":"Table : glissement d'un socle plus fluide"},
 {"v":"1.158","d":"2026-10-29","t":"Plasma : plus de chevauchement avec le mouvement"},
 {"v":"1.157","d":"2026-10-29","t":"Gemmes : une par couleur et par action"},

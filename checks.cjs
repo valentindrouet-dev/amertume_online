@@ -5368,6 +5368,12 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.160 — Les sphères du combat au bilan ; l'or et les gemmes sur une ligne ; les déclenchements comptés ; Ctrl+Z au sphérier. */
+{const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("a.gemmesSuivi.combat===numeroCombat&&a.gemmesSuivi.gagnes&&Object.keys(a.gemmesSuivi.gagnes).length?{sph:{...a.gemmesSuivi.gagnes}}:{})}}")
+  &&ed.includes("['',...COLONNES_STATS.map(c=>c[1]),...(k==='troupe'?['Sphères']:[])]")&&ed.includes("rang.className='richesses-corps';rang.append(or);")
+  &&gm.includes(" s.compte[cle]=(Math.trunc(Number(s.compte[cle]))||0)+1;")&&gm.includes("bt.textContent='Rafraîchir les stats de déclenchement';")
+  &&ed.includes("function annuleSphere(){")&&ed.includes("String(e.key).toLowerCase()!=='z'||!enEditionSphere())return;"),'v1.160');}
 /* v1.159 — Le glissement d'un socle allégé : la nuit à demi-résolution pendant le geste, le rectangle englobant des polygones de vue,
    la liste des adversaires des contacts gardée une image, la barre de mouvement recalée seulement quand elle change. */
 {const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
@@ -5418,7 +5424,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function desacheteSphere
 /* v1.146 — Infuser sous le bloc du bonus ; l'icône d'un bonus au logo choisi grisée comme les autres. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function boutonInfuser(ctx,t,l){")&&fs.readFileSync('editor.css','utf8').includes(".sphere-noeud:is(.dispo,.verrou) .sphere-rond>:is(.logo-bonus,.logo-equip){filter:grayscale(1);opacity:.75}"),'v1.146');
 /* v1.145 — La bourse de gemmes d'un aventurier : dans son inventaire, et en tête de son arbre Bonus. */
-assert.ok(fs.readFileSync('editor.js','utf8').includes("if(gm){gm.classList.add('gemmes-corps');corps.append(gm)}}")&&fs.readFileSync('editor.js','utf8').includes("bourse.className='sphere-bourse';"),'v1.145');
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(gm){gm.classList.add('gemmes-corps');rang.append(gm)}corps.append(rang)}")&&fs.readFileSync('editor.js','utf8').includes("bourse.className='sphere-bourse';"),'v1.145');
 /* v1.144 — Les gemmes gagnées en jouant : l'onglet Gemmes, le dé, les déclencheurs ; le moteur appelle le dé. */
 {const g=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(g.includes("function deGemme(a,cle,opts={})")&&g.includes("const DECLENCHEURS_GEMMES=[")&&g.includes("function renderGemmes(){")
