@@ -5368,6 +5368,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.154 — Le tableau des couleurs en quatre groupes ; chaque état sa couleur ; « Infliger un état » à la couleur de l'état. */
+{const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');
+ assert.ok(ed.includes("function GROUPES_GEMMES_BONUS(){")&&ed.includes("['Bonus',['metres','armure'].map(k=>[k,nom(k)])],['États infligés',ETATS_JEU.map(e=>['etat:'+e,e])]]}")
+  &&ed.includes("c==='etat'?'etat:'+(ETATS_JEU.includes(p.etat)?p.etat:'Rage'):c};")&&gm.includes("remplitGemmesBonus(g,()=>renderGemmes())")&&ed.includes("if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){")
+  &&gm.includes("{cle:'etat-elementaire',nom:'Infliger un état',phase:'combat',couleur:'etat',auto:true,")&&gm.includes("if(r.couleur==='etat')return typeof varieteBonus==='function'?varieteBonus({carac:'etat',etat:opts&&opts.etat}):'rubis';"),'v1.154');}
 /* v1.153 — Les pastilles de l'éditeur en place sont pâles. */
 {const css=fs.readFileSync('editor.css','utf8');assert.ok(css.includes(".sphere-pastilles .die-pick{background:color-mix(in srgb,var(--teinte) 22%,var(--panel-2))"),'v1.153');}
 /* v1.152 — L'éditeur en place d'un bonus du sphérier ; plus de paliers à ces bonus. */

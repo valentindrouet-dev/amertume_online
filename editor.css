@@ -4043,3 +4043,6 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .sphere-pastilles .die-pick .die-sq>:is(img,svg,span){filter:none}
 .sphere-pastilles .die-pick button,.sphere-pastilles .die-pick.clair button{background:color-mix(in srgb,var(--teinte) 16%,var(--panel));color:var(--ink);border:1px solid color-mix(in srgb,var(--teinte) 40%,var(--panel-2))}
 .sphere-pastilles .die-pick button:hover,.sphere-pastilles .die-pick.clair button:hover{background:color-mix(in srgb,var(--teinte) 32%,var(--panel))}
+/* v1.154 : le tableau des couleurs des gemmes, en groupes — un titre en séparateur sur toute la largeur. */
+.gemmes-bonus-groupe{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font:700 12px system-ui;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.gemmes-bonus-groupe:first-child{margin-top:0;padding-top:0;border-top:0}

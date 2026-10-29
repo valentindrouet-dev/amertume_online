@@ -179,7 +179,7 @@ REGLES_SECTIONS.push(
     'Un <b>boss vaincu</b> : '+(R.boss.n?R.boss.n+' '+(TAILLES_GEMMES.find(([k])=>k===R.boss.taille)||[])[R.boss.n>1?1:2]+' de la couleur la plus déclenchée pendant le combat, à chacun.':'rien.'),
     'Fusion : '+R.fusion.eclat+' Brisures font 1 Éclat, '+R.fusion.brome+' Éclats font 1 Brôme (avec l’Arcaniste).']:[]),
     ...(R?['citrine','emeraude','saphir','rubis','diamant'].map(parCouleur):[]),
-    'Les tests de compétence réussis hors combat donnent la couleur de la compétence (voir les bonus). Ce que l’appli ne voit pas — intimider, négocier, escalader, lire un grimoire… —, le MJ le lance depuis la fiche.']))},
+    'Les tests de compétence réussis hors combat donnent la couleur de la compétence, un état infligé à un adversaire celle de l’état (tableau des couleurs du MJ). Ce que l’appli ne voit pas — intimider, négocier, escalader, lire un grimoire… —, le MJ le lance depuis la fiche.']))},
  // 12. Les adversaires.
  ()=>rgSection('adversaires','Les adversaires',RG.rouge,'👹','Un adversaire a ses PV, sa DEF, ses Dégâts, ses attaques, sa Vitesse et son XP.',
   rgEl('div','rg-puces',...Object.values(typeof TYPE_NOMS!=='undefined'?TYPE_NOMS:{}).map(n=>rgEl('span','rg-puce',n))),

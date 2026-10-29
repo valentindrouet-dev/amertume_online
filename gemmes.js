@@ -8,7 +8,7 @@
 const COULEURS_GEMMES=VARIETES_GEMMES.map(([k])=>k);
 const NOM_COULEUR_GEMME=Object.fromEntries(VARIETES_GEMMES);
 /* Les déclencheurs que le moteur connaît. « auto » : l'appli le voit et lance le dé elle-même ; sinon, le MJ le lance à la main.
-   « competence » : la couleur de la compétence testée, celle du tableau des gemmes des bonus. */
+   « competence » : la couleur de la compétence testée, celle du tableau des gemmes des bonus ; « etat » : celle de l'état posé (v1.154). */
 const DECLENCHEURS_GEMMES=[
  {cle:'critique',nom:'Faire un critique',phase:'combat',couleur:'rubis',auto:true,note:'Un critique à l’attaque ou à l’orbe.'},
  {cle:'tuer',nom:'Tuer un adversaire',phase:'combat',couleur:'rubis',auto:true,note:'Le coup ou l’orbe qui met un adversaire à 0 PV.'},
@@ -20,7 +20,7 @@ const DECLENCHEURS_GEMMES=[
  {cle:'utiliser-objet',nom:'Utiliser un objet, un piège ou une invention',phase:'combat',couleur:'citrine',auto:true,note:'Un objet employé, ou une invention qui touche.'},
  {cle:'reperer-cache',nom:'Repérer un adversaire caché',phase:'combat',couleur:'citrine',auto:true,note:'Un test de Perception en combat qui révèle un adversaire.'},
  {cle:'sort-touche',nom:'Lancer un sort ou un talent mystique qui touche',phase:'combat',couleur:'saphir',auto:true,note:'Un orbe qui passe la DEF.'},
- {cle:'etat-elementaire',nom:'Infliger un état élémentaire',phase:'combat',couleur:'saphir',auto:true,note:'Feu, Gel, Foudre… posé sur un autre.'},
+ {cle:'etat-elementaire',nom:'Infliger un état',phase:'combat',couleur:'etat',auto:true,note:'Feu, Gel, Poison… posé sur un adversaire ; la couleur est celle de l’état (tableau des couleurs).'},
  {cle:'reveler-faiblesse',nom:'Révéler une faiblesse',phase:'combat',couleur:'saphir',auto:true,note:'Une Analyse qui apprend quelque chose.'},
  {cle:'def-tient',nom:'Une attaque adverse ne passe pas votre DEF',phase:'combat',couleur:'diamant',auto:true,note:'Les dés adverses tous arrêtés par la DEF.'},
  {cle:'proteger-allie',nom:'Protéger un allié à sa place',phase:'combat',couleur:'diamant',auto:true,note:'Gardien, Rempart ou Garde rapprochée qui prend le coup.'},
@@ -47,7 +47,7 @@ function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:
  fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{}};
  COULEURS_GEMMES.forEach(c=>{const l=Array.isArray(g.faces&&g.faces[c])?g.faces[c]:FACES_GEMMES_DEFAUT[c];out.faces[c]=[0,1,2,3,4,5].map(i=>nbEntier(l[i],0,9,FACES_GEMMES_DEFAUT[c][i]))});
  DECLENCHEURS_GEMMES.forEach(d=>{const x=g.declencheurs&&g.declencheurs[d.cle]||{};
-  out.declencheurs[d.cle]={couleur:COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'?x.couleur:d.couleur,des:nbEntier(x.des,1,6,1),actif:x.actif!==false}});
+  out.declencheurs[d.cle]={couleur:COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'||x.couleur==='etat'?x.couleur:d.couleur,des:nbEntier(x.des,1,6,1),actif:x.actif!==false}});
  return out}
 function reglesGemmes(){return normaliseReglesGemmes(typeof catalog!=='undefined'&&catalog?catalog.gemmesRegles:null)}
 function poseReglesGemmes(f){catalog.gemmesRegles=reglesGemmes();f(catalog.gemmesRegles);catalog.gemmesRegles=normaliseReglesGemmes(catalog.gemmesRegles);
@@ -64,6 +64,7 @@ function cleSceneGemme(a){const m=typeof currentMap==='function'?currentMap():nu
  const z=m&&typeof zonesDe==='function'?zonesDe(m):null;return id+':'+(z&&typeof zoneAu==='function'?zoneAu(z,a.x,a.y):0)}
 function couleurDeclencheur(cle,opts){const d=declencheurGemme(cle);if(!d)return null;const r=reglesGemmes().declencheurs[cle];
  if(r.couleur==='competence'){const k=Math.max(0,Math.min(7,Number(opts&&opts.comp)||0));return typeof varieteBonus==='function'?varieteBonus({carac:'comp',comp:String(k)}):'citrine'}
+ if(r.couleur==='etat')return typeof varieteBonus==='function'?varieteBonus({carac:'etat',etat:opts&&opts.etat}):'rubis';
  return r.couleur}
 // Un même déclencheur, pour un même aventurier, ne joue qu'une fois par geste : les crans d'un état, les dés d'un coup.
 const gemmesCeGeste=new Set();
@@ -71,7 +72,7 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  const R=reglesGemmes(),r=R.declencheurs[cle];if(!r.actif&&!opts.manuel)return null;
  const combat=opts.phase?opts.phase==='combat':typeof enCombat==='function'&&enCombat();
  if(!opts.manuel&&d.phase==='combat'&&!combat)return null;if(!opts.manuel&&d.phase==='hors'&&combat)return null;
- const k=cle+(opts.comp!==undefined?':'+opts.comp:'');if(gemmesCeGeste.has(a.id+'|'+k))return null;gemmesCeGeste.add(a.id+'|'+k);queueMicrotask(()=>gemmesCeGeste.delete(a.id+'|'+k));
+ const k=cle+(opts.comp!==undefined?':'+opts.comp:'')+(opts.etat!==undefined?':'+opts.etat:'');if(gemmesCeGeste.has(a.id+'|'+k))return null;gemmesCeGeste.add(a.id+'|'+k);queueMicrotask(()=>gemmesCeGeste.delete(a.id+'|'+k));
  const couleur=couleurDeclencheur(cle,opts),s=suiviGemmes(a);if(!couleur)return null;
  s.decl[couleur]=(s.decl[couleur]||0)+1;
  if(!combat||d.phase==='hors'){const sc=cleSceneGemme(a)+'|'+k;if(s.scenes.includes(sc)&&!opts.manuel)return null;s.scenes=[...s.scenes.filter(x=>x!==sc),sc].slice(-80)}
@@ -112,8 +113,9 @@ function gemmesProtege(b,partage){if(!b||!partage||typeof enCombat!=='function'|
  if(h&&h.hero&&h!==o&&memeCamp(h,o))deGemme(h,'soigner-allie')}return g}}
 // Un état élémentaire posé sur un autre, en combat : à qui l'a posé.
 {const ie=infligeEtat;infligeEtat=function(o,etat,...x){const r=ie(o,etat,...x);
- if(r===true&&typeof ELEMENTS!=='undefined'&&ELEMENTS.some(e=>e.etat===etat)&&typeof enCombat==='function'&&enCombat()){const s=(typeof auteurCoup!=='undefined'&&auteurCoup)||(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.a)||null;
-  if(s&&s.hero&&s!==o)deGemme(s,'etat-elementaire')}return r}}
+ // v1.154 : tout état posé sur un adversaire, à la couleur de l'état.
+ if(r===true&&o&&!o.hero&&typeof enCombat==='function'&&enCombat()){const s=(typeof auteurCoup!=='undefined'&&auteurCoup)||(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.a)||null;
+  if(s&&s.hero&&s!==o)deGemme(s,'etat-elementaire',{etat})}return r}}
 // Quitter le contact sans rien perdre.
 {const dO=degatsOpportunite;degatsOpportunite=function(a,avant,...x){const hp=a&&a.hp,menace=typeof enCombat==='function'&&enCombat()&&a&&a.hero&&alive(a)&&(avant||[]).some(e=>peutFrapperOpportunite(e)&&hostiles(e,a));
  const r=dO(a,avant,...x);if(menace&&alive(a)&&a.hp===hp){const apres=new Set(contactsDe(a));if((avant||[]).some(e=>!apres.has(e)&&peutFrapperOpportunite(e)&&hostiles(e,a)))deGemme(a,'degager-sans-do')}return r}}
@@ -154,16 +156,16 @@ let larcinGemme=null;
  if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
 const deGemmeDialog=dialog('de-gemme','Dé de gemme','<form id="de-gemme-form"><div class="edit-grid"><label>Déclencheur<select name="decl" id="de-gemme-decl"></select></label>'
- +'<label>Dés<input name="des" type="number" min="1" max="12" value="1"></label><label>Compétence<select name="comp" id="de-gemme-comp"></select></label></div>'
+ +'<label>Dés<input name="des" type="number" min="1" max="12" value="1"></label><label>Compétence<select name="comp" id="de-gemme-comp"></select></label><label>État<select name="etat" id="de-gemme-etat"></select></label></div>'
  +'<p class="muted" id="de-gemme-dit"></p><div class="form-actions"><button class="primary">Lancer</button></div></form>');
 let deGemmeActeur=null;
-function ouvreDeGemme(a){if(view!=='mj'||!a||!a.hero)return;deGemmeActeur=a;const f=$('de-gemme-form'),sd=$('de-gemme-decl'),sc=$('de-gemme-comp');sd.replaceChildren();sc.replaceChildren();
+function ouvreDeGemme(a){if(view!=='mj'||!a||!a.hero)return;deGemmeActeur=a;const f=$('de-gemme-form'),sd=$('de-gemme-decl'),sc=$('de-gemme-comp'),se=$('de-gemme-etat');sd.replaceChildren();sc.replaceChildren();se.replaceChildren();ETATS_JEU.forEach(e=>se.add(new Option(e,e)));
  [['combat','En combat'],['hors','Hors combat']].forEach(([ph,nom])=>{const g=document.createElement('optgroup');g.label=nom;DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).forEach(d=>g.append(new Option(d.nom+(d.auto?'':' (à la main)'),d.cle)));sd.append(g)});
  skillNames.forEach((n,k)=>sc.add(new Option(n,String(k))));f.des.value='1';
- const maj=()=>{const d=declencheurGemme(sd.value),r=reglesGemmes().declencheurs[sd.value];sc.closest('label').hidden=!(r&&r.couleur==='competence');
-  const c=couleurDeclencheur(sd.value,{comp:sc.value});$('de-gemme-dit').textContent=(d?d.nom:'')+' → '+(c?NOM_COULEUR_GEMME[c]:'')+(r&&!r.actif?' (déclencheur désactivé)':'')};
- sd.onchange=maj;sc.onchange=maj;maj();
- f.onsubmit=e=>{e.preventDefault();const res=deGemme(deGemmeActeur,sd.value,{manuel:true,des:nbEntier(f.des.value,1,12,1),comp:sc.value});deGemmeDialog.close();
+ const maj=()=>{const d=declencheurGemme(sd.value),r=reglesGemmes().declencheurs[sd.value];sc.closest('label').hidden=!(r&&r.couleur==='competence');se.closest('label').hidden=!(r&&r.couleur==='etat');
+  const c=couleurDeclencheur(sd.value,{comp:sc.value,etat:se.value});$('de-gemme-dit').textContent=(d?d.nom:'')+' → '+(c?NOM_COULEUR_GEMME[c]:'')+(r&&!r.actif?' (déclencheur désactivé)':'')};
+ sd.onchange=maj;sc.onchange=maj;se.onchange=maj;maj();
+ f.onsubmit=e=>{e.preventDefault();const res=deGemme(deGemmeActeur,sd.value,{manuel:true,des:nbEntier(f.des.value,1,12,1),comp:sc.value,etat:se.value});deGemmeDialog.close();
   if(res&&!res.gagne&&typeof log==='function')log(nomNum(deGemmeActeur)+' · dé de gemme ⦃'+res.faces.join(',')+'⦄ : rien.',{ton:'talent',local:true});
   if(typeof render==='function')render();if(typeof renderHeroes==='function')renderHeroes()};
  deGemmeDialog.showModal()}
@@ -196,8 +198,8 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
   DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).forEach(d=>{const r=R.declencheurs[d.cle],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
    const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].actif=cb.checked});renderGemmes()};c1.append(cb);
    const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d.nom;
-   const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));if(d.couleur==='competence'||d.cle==='test-competence')s.add(new Option('Compétence testée','competence'));
-   s.value=r.couleur;const im=icone('brisure',r.couleur==='competence'?'citrine':r.couleur);if(r.couleur==='competence')im.hidden=true;s.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].couleur=s.value});renderGemmes()};c3.append(im,s);
+   const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));if(d.couleur==='competence'||d.cle==='test-competence')s.add(new Option('Compétence testée','competence'));if(d.couleur==='etat')s.add(new Option('Couleur de l’état','etat'));
+   s.value=r.couleur;const im=icone('brisure',['competence','etat'].includes(r.couleur)?'citrine':r.couleur);if(['competence','etat'].includes(r.couleur))im.hidden=true;s.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].couleur=s.value});renderGemmes()};c3.append(im,s);
    const c4=document.createElement('td');c4.append(nombre(r.des,1,6,(g,n)=>{g.declencheurs[d.cle].des=n}));
    const c5=document.createElement('td');c5.className='muted gemmes-note';c5.textContent=d.auto?('Automatique'+(d.note?' — '+d.note:'')):'À la main (🎲 sur la fiche)';
    row.append(c1,c2,c3,c4,c5);t.append(row)});boite.append(t)});
@@ -208,11 +210,6 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
   const f1=document.createElement('label');f1.append('Fusion : ',nombre(R.fusion.eclat,1,99,(g,n)=>{g.fusion.eclat=n}),' Brisures → 1 Éclat ; ',nombre(R.fusion.brome,1,99,(g,n)=>{g.fusion.brome=n}),' Éclats → 1 Brôme');l.append(f1);
   const p=document.createElement('span');p.className='muted';p.textContent='La fusion se règle ici ; elle se branchera avec l’Arcaniste.';l.append(p);boite.append(l)}
  // 4. Les couleurs des caractéristiques et des compétences : ce que coûtent les bonus, et ce que rapportent les tests.
- h('Couleur de chaque caractéristique et compétence','Ce que paie un bonus du sphérier, et ce que rapporte un test de compétence réussi.');
- {const g=document.createElement('div');g.className='gemmes-bonus-liste';
-  const lignes=[...(TALENTS_CODES.bonus.params.find(p=>p.cle==='carac').options||[]).filter(([k])=>k!=='comp').map(([k,n])=>[k,n]),...skillNames.map((n,i)=>['comp:'+i,n])];
-  lignes.forEach(([k,n])=>{const r=document.createElement('label');r.className='gemmes-bonus-ligne';const nom=document.createElement('span');nom.textContent=n;
-   const p=k.startsWith('comp:')?{carac:'comp',comp:k.slice(5)}:{carac:k},s=document.createElement('select');VARIETES_GEMMES.forEach(([v,nv])=>s.add(new Option(nv,v)));s.value=varieteBonus(p);
-   const im=icone('brisure',s.value);s.onchange=()=>{catalog.gemmesBonus={...(catalog.gemmesBonus||{}),[k]:s.value};scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderGemmes()};
-   r.append(im,nom,s);g.append(r)});boite.append(g)}}
+ h('Couleur de chaque caractéristique et compétence','Ce que paie un bonus du sphérier, et ce que rapporte un test de compétence réussi ou un état infligé.');
+ {const g=document.createElement('div');g.className='gemmes-bonus-liste';remplitGemmesBonus(g,()=>renderGemmes());boite.append(g)}}
 {const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='gemmes')renderGemmes();return r}}

@@ -746,8 +746,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
     aventurier y avait dépensé lui revient : son XP dépensée se lit sur ce qu'il tient encore. */
  // v1.142 : les bonus du sphérier se paient en gemmes : leur prix en XP s'efface, une fois ; ce qu'ils avaient coûté revient en XP.
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('gemmes-bonus')){(c.talents||[]).forEach(t=>{if(t&&t.spherier===true)t.couts=[0,0,0]});c.semisForge.push('gemmes-bonus')}
+ // v1.154 : « Infliger un état » prend la couleur de l'état posé ; l'ancienne couleur fixe de ce déclencheur cède la place.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['etat-elementaire'];if(d&&typeof d==='object')d.couleur='etat';c.semisForge.push('etat-couleur')}
  {const g=c.gemmesBonus&&typeof c.gemmesBonus==='object'&&!Array.isArray(c.gemmesBonus)?c.gemmesBonus:{};c.gemmesBonus={};
-  Object.entries(g).forEach(([k,v])=>{if(/^([a-z]+|comp:[0-7])$/.test(k)&&['citrine','emeraude','saphir','rubis','diamant'].includes(v))c.gemmesBonus[k]=v});if(!Object.keys(c.gemmesBonus).length)delete c.gemmesBonus}
+  Object.entries(g).forEach(([k,v])=>{if((/^([a-z]+|comp:[0-7])$/.test(k)||k.startsWith('etat:')&&ETATS_JEU.includes(k.slice(5)))&&['citrine','emeraude','saphir','rubis','diamant'].includes(v))c.gemmesBonus[k]=v});if(!Object.keys(c.gemmesBonus).length)delete c.gemmesBonus}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('sans-bonus-arbres')){c.talents=(c.talents||[]).filter(t=>!(t&&t.effet==='bonus'&&t.spherier!==true));c.semisForge.push('sans-bonus-arbres')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('grille-sphere')){(c.talents||[]).forEach(t=>{if(t&&t.spherier===true&&t.sphere)t.sphere={x:surGrille(t.sphere.x),y:surGrille(t.sphere.y)}});c.semisForge.push('grille-sphere')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('metiers-6')){const l=Array.isArray(c.metiers)?c.metiers:[];
@@ -8987,8 +8989,23 @@ function descriptionBonus(p){const c=p&&p.carac||'pv',e=p&&p.etat||'Rage';
    quantité (t.prixGemmes). Un clic marque un bonus — de départ, ou relié à un bonus tenu ou marqué — ou le démarque, avec ce qui
    ne tenait plus que par lui ; « Infuser les Sphères » apprend tout ce qui est marqué et consomme les gemmes : sans retour. */
 const GEMMES_BONUS_DEFAUT={vie:'diamant',pv:'rubis',endu:'emeraude',def:'saphir',dmg:'rubis',orbe:'saphir',pa:'diamant',pm:'emeraude',metres:'emeraude',armure:'saphir',etat:'rubis'};
-const cleGemmeBonus=p=>{const c=p&&p.carac||'pv';return c==='comp'?'comp:'+Math.max(0,Math.min(7,Number(p.comp)||0)):c};
-function varieteBonus(p){const k=cleGemmeBonus(p),v=(catalog.gemmesBonus||{})[k];return VARIETES_GEMMES.some(([x])=>x===v)?v:k.startsWith('comp:')?'citrine':GEMMES_BONUS_DEFAUT[k]||'citrine'}
+// v1.154 : chaque état a sa couleur (clé « etat:Feu »…) ; sinon la proposition ci-dessous, puis celle des états en général.
+const GEMMES_ETATS_DEFAUT={Feu:'rubis',Gel:'saphir',Foudre:'citrine',Poison:'emeraude',Nécrose:'emeraude',Corruption:'emeraude',Saignée:'rubis',Affaibli:'diamant','Au sol':'diamant',Immobilisé:'diamant',Entravé:'diamant',Aveugle:'citrine',Surpris:'citrine',Charme:'saphir',Sommeil:'saphir',Faille:'saphir'};
+const cleGemmeBonus=p=>{const c=p&&p.carac||'pv';return c==='comp'?'comp:'+Math.max(0,Math.min(7,Number(p.comp)||0)):c==='etat'?'etat:'+(ETATS_JEU.includes(p.etat)?p.etat:'Rage'):c};
+function varieteBonus(p){const k=cleGemmeBonus(p),v=(catalog.gemmesBonus||{})[k];return VARIETES_GEMMES.some(([x])=>x===v)?v:k.startsWith('comp:')?'citrine':k.startsWith('etat:')?GEMMES_ETATS_DEFAUT[k.slice(5)]||GEMMES_BONUS_DEFAUT.etat:GEMMES_BONUS_DEFAUT[k]||'citrine'}
+/* v1.154 : le tableau des couleurs, en quatre groupes — les caractéristiques, les compétences, les bonus, les états infligés
+   (chacun sa couleur : ce que paie « + état au début du combat », ce que rapporte l'état posé sur un adversaire). */
+function GROUPES_GEMMES_BONUS(){const o=TALENTS_CODES.bonus.params.find(p=>p.cle==='carac').options||[],nom=k=>(o.find(([x])=>x===k)||[])[1]||k;
+ return [['Caractéristiques',['pv','endu','vie','def','dmg','orbe','pa','pm'].map(k=>[k,nom(k)])],['Compétences',skillNames.map((n,i)=>['comp:'+i,n])],
+  ['Bonus',['metres','armure'].map(k=>[k,nom(k)])],['États infligés',ETATS_JEU.map(e=>['etat:'+e,e])]]}
+const paramsCleGemme=k=>k.startsWith('comp:')?{carac:'comp',comp:k.slice(5)}:k.startsWith('etat:')?{carac:'etat',etat:k.slice(5)}:{carac:k};
+// Remplit une boîte des lignes du tableau, groupe par groupe, un titre en séparateur ; « apres » joue après chaque changement.
+function remplitGemmesBonus(boite,apres){boite.replaceChildren();GROUPES_GEMMES_BONUS().forEach(([titre,lignes])=>{const h=document.createElement('div');h.className='gemmes-bonus-groupe';h.textContent=titre;boite.append(h);
+  lignes.forEach(([k,n])=>{const r=document.createElement('label');r.className='gemmes-bonus-ligne';const nom=document.createElement('span');nom.textContent=n;
+   const s=document.createElement('select');VARIETES_GEMMES.forEach(([v,nv])=>s.add(new Option(nv,v)));s.value=varieteBonus(paramsCleGemme(k));
+   const im=document.createElement('img');im.alt='';im.className='gemmes-icone';const pose=()=>{im.src=imgUrl(iconeGemme('brisure',s.value)+'.png')};pose();
+   s.onchange=()=>{catalog.gemmesBonus={...(catalog.gemmesBonus||{}),[k]:s.value};pose();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));apres()};
+   r.append(im,nom,s);boite.append(r)})})}
 function prixSphere(t){const g=t&&t.prixGemmes||{},taille=['brisure','eclat','brome'].includes(g.taille)?g.taille:'brisure',variete=varieteBonus(paramsTalent(t)||{});
  return {taille,variete,n:Math.max(1,Math.trunc(Number(g.n))||1),cle:cleGemme(taille,variete,false)}}
 // Une gemme et sa quantité : « 2 » puis l'icône, son nom au survol.
@@ -9046,14 +9063,7 @@ function infuseSpheres(ctx,l,seul){const {a,poserPalier,note,majTable}=ctx;if(!a
  note('');majTable()}
 // Le tableau du MJ : la variété de chaque caractéristique et de chaque compétence.
 const gemmesBonusDialog=dialog('gemmes-bonus','Gemmes des bonus','<div id="gemmes-bonus-liste" class="gemmes-bonus-liste"></div>');
-function ouvreGemmesBonus(){if(view!=='mj')return;const boite=$('gemmes-bonus-liste');boite.replaceChildren();
- const lignes=[...(TALENTS_CODES.bonus.params.find(p=>p.cle==='carac').options||[]).filter(([k])=>k!=='comp').map(([k,n])=>[k,n]),...skillNames.map((n,i)=>['comp:'+i,n])];
- lignes.forEach(([k,n])=>{const r=document.createElement('label');r.className='gemmes-bonus-ligne';const nom=document.createElement('span');nom.textContent=n;
-  const p=k.startsWith('comp:')?{carac:'comp',comp:k.slice(5)}:{carac:k},s=document.createElement('select');VARIETES_GEMMES.forEach(([v,nv])=>s.add(new Option(nv,v)));s.value=varieteBonus(p);
-  const im=document.createElement('img');im.alt='';const pose=()=>{im.src=imgUrl(iconeGemme('brisure',s.value)+'.png')};pose();
-  s.onchange=()=>{catalog.gemmesBonus={...(catalog.gemmesBonus||{}),[k]:s.value};pose();renderArbres();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
-  r.append(im,nom,s);boite.append(r)});
- gemmesBonusDialog.showModal()}
+function ouvreGemmesBonus(){if(view!=='mj')return;remplitGemmesBonus($('gemmes-bonus-liste'),()=>renderArbres());gemmesBonusDialog.showModal()}
 
 /* v1.152 — Sous le bloc d'un bonus, au MJ, sur le plan d'une classe : l'éditeur en place. La nature du bonus se choisit parmi ses
    icônes ; la valeur, le prix et la taille des gemmes se règlent dans des pastilles, celles des dés. Rien ne s'ouvre ; chaque
