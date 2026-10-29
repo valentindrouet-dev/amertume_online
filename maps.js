@@ -805,7 +805,7 @@ function recolteFaite(a,o){if(!o||o.pris)return;const r=normaliseRecolte(o.recol
  log(nomNum(a)+' - ⟬t'+k+'|'+total+'|'+jet.des.slice(0,40).join(',')+'⟭');
  o.pris=true;const gains=new Map();
  [n,n+1,2*n].forEach((s,j)=>{if(total<s)return;r.paliers[j].forEach(x=>{const it=(catalog.items||[]).find(i=>i&&i.id===x.id);if(!it)return;
-  const q=tireQuantite(x.q,d6);let mis=0;for(let c=0;c<q;c++){if(typeof ajouterInventaire!=='function'||!ajouterInventaire(a,it))break;mis++}
+  const q=tireQuantite(x.q,d6);let mis=0;for(let c=0;c<q;c++){if(typeof ajouterInventaire!=='function'||!ajouterInventaire(a,it))break;mis++}if(typeof noteTrouve==='function')noteTrouve(a,it,mis);
   if(mis)gains.set(it.id,(gains.get(it.id)||0)+mis)})});
  if(gains.size)log(nomNum(a)+' récolte '+[...gains].map(([id,q])=>'⟦'+id+'⟧'+(q>1?' ×'+q:'')).join(' ')+'.',{ton:'butin'});
  render();saveMaps();scheduleSave()}
@@ -822,7 +822,7 @@ function recupererObjet(a,o){if(!a||!o||o.pris||o.indice||o.groupe===true||o.res
 function recupereObjetFait(a,o,rang){if(o&&o.indice)return;
  const r=Number.isInteger(rang)?rang:Math.max(0,Math.trunc(Number(o.prisN))||0),vus=new Map();
  const pieces=(o.items||[]).filter(id=>{const k=(vus.get(id)||0)+1;vus.set(id,k);return k===r+1}).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
- pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
+ pieces.forEach(it=>{if(typeof ajouterInventaire==='function'){if(ajouterInventaire(a,it)!==false&&typeof noteTrouve==='function')noteTrouve(a,it)}else noteInventaire(a,it.name)});
  const tresor=r===0?o.tresor:'';if(tresor)noteInventaire(a,tresor);
  if(r+1>=toursObjet(o)){o.pris=true;delete o.prisN}else o.prisN=r+1;
  /* v1.041 — Prises répétées sur un même objet, l'une après l'autre : une seule ligne au journal, le nombre de chaque pièce
@@ -956,7 +956,7 @@ function noteInventaire(a,texte){a.notes=(a.notes?a.notes.replace(/\s+$/,'')+'\n
    la place est vide ; sinon, et pour tout le reste, une ligne à l'inventaire. */
 function prendreObjet(a,o,it){const k=(o.items||[]).indexOf(it.id);if(k<0)return;
  // Toute pièce prise va à l'inventaire de l'aventurier : on l'équipe ensuite sur sa fiche.
- if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name);
+ if(typeof ajouterInventaire==='function'){if(ajouterInventaire(a,it)!==false&&typeof noteTrouve==='function')noteTrouve(a,it)}else noteInventaire(a,it.name);
  o.items.splice(k,1);
  log(nomNum(a)+' prend '+it.name+' — '+o.nom+' — à l’inventaire.',{ton:'carte'});
  render();saveMaps();scheduleSave()}
@@ -1222,7 +1222,7 @@ function ouvreCoffreFait(c,h){if(h&&!payeAction(h))return;
  c.ouvert=true;c.deverrouille=true;
  const pieces=(c.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean),rich={...(c.richesses||{})},gains=[];
  Object.entries(tireBourse(c.bourse)).forEach(([k,v])=>{rich[k]=(Math.trunc(Number(rich[k]))||0)+v});
- if(h){const parPiece=new Map();pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(h,it);else noteInventaire(h,it.name);parPiece.set(it.id,(parPiece.get(it.id)||0)+1)});
+ if(h){const parPiece=new Map();pieces.forEach(it=>{if(typeof ajouterInventaire==='function'){if(ajouterInventaire(h,it)!==false&&typeof noteTrouve==='function')noteTrouve(h,it)}else noteInventaire(h,it.name);parPiece.set(it.id,(parPiece.get(it.id)||0)+1)});
   parPiece.forEach((n,id)=>gains.push((n>1?n+' × ':'')+'⟦'+id+'⟧'));
   if(rich.or>0)ajouteOr(h,rich.or);
   h.richesses={...(h.richesses||{})};CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number(rich[k]))||0;if(v>0)h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v});

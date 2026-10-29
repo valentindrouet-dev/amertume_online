@@ -7253,9 +7253,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   else if(arbresOnglet==='inventaire'&&a){g.classList.add('arbres-inventaire');const inv=corpsEtSac(a,true);
    if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='inv-plus';plus.textContent='+ Ajouter';plus.title='Ajouter à l’inventaire de '+a.name;plus.onclick=()=>openPicker(a,'gear');const d=inv.querySelector('.inv-droite');if(d)d.prepend(plus)}
    g.append(inv)}
+  else if(arbresOnglet==='statistiques'&&a){g.classList.add('arbres-statistiques');g.append(statsVieEl(a))}
   else if(arbresOnglet==='metier'&&!famMetier){if(a){const m=document.createElement('p');m.className='arbres-sans-metier';m.textContent='Vous n’avez pas encore de Métier, rendez-vous au Domaine pour en apprendre un !';g.append(m)}}
   else g.append(grille);
-  const panneau=document.createElement('aside');panneau.className='arbres-detail';if((arbresOnglet==='metier'&&!famMetier&&a)||arbresOnglet==='stats'||arbresOnglet==='inventaire')panneau.style.display='none';cadre.append(g,panneau);corps.append(cadre);
+  const panneau=document.createElement('aside');panneau.className='arbres-detail';if((arbresOnglet==='metier'&&!famMetier&&a)||arbresOnglet==='stats'||arbresOnglet==='inventaire'||arbresOnglet==='statistiques')panneau.style.display='none';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);
   /* v0.840 : un bonus du panneau lâché sur le grand rond d'un autre talent de l'arbre s'y copie, paliers et prix compris, à
      son premier chemin libre. */
@@ -7268,7 +7269,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;
     k.chemin=d?{de:T.id,dir:d,rang:1}:{de:T.id,dir:'so',rang:petitsDe(T,'so').length+1};k.ligneAuto=0;
     catalog.talents.push(k);arbreChange()},true)}
-  if(sphere)sphere.detail(panneau);else if((arbresOnglet==='metier'&&!famMetier)||arbresOnglet==='stats'||arbresOnglet==='inventaire'){}else{
+  if(sphere)sphere.detail(panneau);else if((arbresOnglet==='metier'&&!famMetier)||arbresOnglet==='stats'||arbresOnglet==='inventaire'||arbresOnglet==='statistiques'){}else{
   const tous=tEsp.length?tEsp:colonnesArbre(classe).flatMap(c=>c.liste).filter(t=>!estVide(t));
   const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT){remplitDetail(panneau,vuT);const e=g.querySelector('.arbre-noeud-espece[data-id="'+vuT.id+'"]');if(e)e.classList.add('choisi')}}}
  else corps.append(grille);
@@ -7922,11 +7923,11 @@ function butinDesRetires(partants,tirage=Math.random,pour=null){const heros=acto
      h.forges=[...(h.forges||[]),rec];h.inventaire=[...(h.inventaire||[]),rec.id];syncForges();donne=objetDe(rec.id)||o}}}
    // v1.077 : un reste donne sa quantité, tirée pour chaque exemplaire qui tombe.
    const qte=f.quantites&&f.quantites[o.id]&&donne===o&&o.category==='restes'?Math.max(1,Math.min(99,tireDegats(f.quantites[o.id],tirage).total)):1;
-   if(donne===o)for(let i=0;i<qte;i++)ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(donne.id,(g.objets.get(donne.id)||0)+qte);g.de.add(f);
+   if(donne===o)for(let i=0;i<qte;i++)ajouterInventaire(h,o);if(typeof noteTrouve==='function')noteTrouve(h,donne,qte);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(donne.id,(g.objets.get(donne.id)||0)+qte);g.de.add(f);
    // Qui l'a laissée tomber : son modèle au Bestiaire et son nom, pour la bulle de la pièce au journal.
    if(!g.src.has(donne.id))g.src.set(donne.id,[]);g.src.get(donne.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})});
   // L'or et les gemmes de sa bourse, tirés aux dés : au même aventurier.
-  plantes.forEach(o=>{if(!ajouterInventaire(h,o))return;if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f);
+  plantes.forEach(o=>{if(!ajouterInventaire(h,o))return;if(typeof noteTrouve==='function')noteTrouve(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f);
    if(!g.src.has(o.id))g.src.set(o.id,[]);g.src.get(o.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})});
   if(pour)f.bourse=[];
   Object.entries(tire).forEach(([k,v])=>{if(k==='or')ajouteOr(h,v);else{h.richesses={...(h.richesses||{})};h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v}
@@ -8857,11 +8858,11 @@ function familleMetierVue(a){const l=metiersJeu();if(a)return a.metier&&l.some(m
  if(!l.some(m=>m.nom===arbresMetierMJ))arbresMetierMJ=l[0]?l[0].nom:'';return familleMetier(arbresMetierMJ)}
 // v1.130 : chaque onglet à la teinte de ce qu'il ouvre — la classe, l'espèce, le métier ; Bonus en or. Un aventurier a toujours son onglet Métier.
 function ongletsArbre(a,classe){if(!a&&estFamilleMetier(classe)){const n=classe.slice(PREFIXE_METIER.length);return [['classe',n,teinteMetier(n)]]}
- // v1.187 : pour un aventurier, ses Stats d'abord, son Inventaire en dernier.
- const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=[...(a?[['stats','Stats','']]:[]),['classe',classe||'Classe',teinteClasse(classe)]];
+ // v1.190 : pour un aventurier — Caractéristiques, Inventaire, Talents, Bonus, Espèce, Métier, Statistiques.
+ const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];
  if(classe&&(plan||talentsSphere(classe).length))l.push(['bonus','Bonus','#c99a3c']);
- const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece',e.nom,e.teinte]);
- if(a)l.push(['metier',fm?a.metier:'Métier',fm?teinteMetier(a.metier):''],['inventaire','Inventaire','']);
+ const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece','Espèce',e.teinte]);
+ if(a)l.push(['metier','Métier',fm?teinteMetier(a.metier):''],['statistiques','Statistiques','']);
  return l}
 function barreOngletsArbre(onglets){const b=document.createElement('div');b.className='vit-onglets arbres-onglets';b.setAttribute('role','tablist');
  onglets.forEach(([k,n,teinte])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;if(teinte)t.style.setProperty('--teinte',teinte);t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));t.dataset.onglet=k;
@@ -9289,8 +9290,8 @@ function arbreSansDefilement(){const D=arbresDialog;if(!D.open||!arbresTaille||a
  const fixe=arbresOnglet!=='bonus'?(aBonus&&arbresHB?arbresHB.h:arbresTaille.h):arbresTaille.h;
  const pose=h=>{D.style.height=h+'px';D.style.minHeight=h+'px'};pose(fixe);arbresCible=fixe;
  const zone=D.querySelector('.arbres-v2-arbre'),v2=zone&&zone.closest('.arbres-v2');if(v2)v2.style.removeProperty('min-height');
- if(zone&&arbresOnglet==='inventaire'){const cs=getComputedStyle(D),bas=fixe-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0),h=bas-(zone.getBoundingClientRect().top-D.getBoundingClientRect().top+D.scrollTop);
-  zone.style.height=Math.max(200,Math.floor(h))+'px';cadreInventaire()}
+ if(zone&&(arbresOnglet==='inventaire'||arbresOnglet==='statistiques')){const cs=getComputedStyle(D),bas=fixe-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0),h=bas-(zone.getBoundingClientRect().top-D.getBoundingClientRect().top+D.scrollTop);
+  zone.style.height=Math.max(200,Math.floor(h))+'px';if(arbresOnglet==='inventaire')cadreInventaire();else cadreStatsVie(zone)}
  else if(zone&&arbresOnglet!=='bonus'){try{if(!cadreRoue(zone))reduitArbre(zone)}catch(e){}
   // Le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre, comme le sphérier.
   if(v2){const cs=getComputedStyle(D),bas=fixe-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0),h=bas-(v2.getBoundingClientRect().top-D.getBoundingClientRect().top+D.scrollTop);
@@ -9410,5 +9411,30 @@ function cadreInventaire(){const sch=arbresDialog.querySelector('.inv-schema'),g
  const k=Math.max(.3,Math.min(gw/W,gh/H));sch.style.transformOrigin='0 0';sch.style.transform='translate('+((gw-W*k)/2).toFixed(1)+'px,'+Math.max(0,(gh-H*k)/2).toFixed(1)+'px) scale('+k.toFixed(4)+')'}
 // La fiche et l'inventaire, dans la fenêtre, suivent ce qui change sur la page des Aventuriers.
 let enRenduArbres=false;
-{const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);if(arbresDialog.open&&arbresActeur&&(arbresOnglet==='stats'||arbresOnglet==='inventaire')&&!enRenduArbres){enRenduArbres=true;try{renderArbres()}finally{enRenduArbres=false}}return r}}
+{const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);if(arbresDialog.open&&arbresActeur&&(arbresOnglet==='stats'||arbresOnglet==='inventaire'||arbresOnglet==='statistiques')&&!enRenduArbres){enRenduArbres=true;try{renderArbres()}finally{enRenduArbres=false}}return r}}
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='inventaire')cadreInventaire()});
+/* v1.190 — L'onglet Statistiques : ce que l'aventurier a fait depuis sa création, groupé, une tuile par chiffre. */
+let orSansGain=false;
+function noteTrouve(a,o,n=1){if(a&&o)ajouteVie(a,'rar_'+rareteDe(o),Math.max(0,Math.trunc(n)||0))}
+const STATS_VIE=[['Combat',[['combats','Combats'],['inf','Dégâts infligés'],['pic','Coup le plus fort'],['coups','Coups portés'],['crit','Critiques'],['abat','Mises à Mort'],['tir','Dégâts à distance'],['etats','États infligés'],['bloc','Dégâts bloqués par la DEF'],['titres','Titres']]],
+ ['Survie',[['sub','Dégâts subis'],['soin','PV récupérés'],['donne','PV soignés aux autres'],['chutes','Comas'],['morts','Morts'],['repos','Repos courts'],['objets','Objets utilisés']]],
+ ['Exploration',[['dist','Distance parcourue'],['tests','Tests'],['reussis','Tests réussis']]],
+ ['Richesses',[['or','Or gagné'],['gemmes','Sphères gagnées'],['xp','XP'],['marques','Marques gagnées']]]];
+function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsVie:{},n=k=>Math.max(0,Math.floor(Number(s[k])||0));
+ const val=k=>k==='xp'?Math.max(0,Math.trunc(Number(a.xp))||0):k==='marques'?marquesGagnees(a):n(k);
+ const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
+ const tuile=(v,libelle,cls)=>{const t=el('div','vie-tuile'+(cls?' '+cls:'')+(v?'':' zero'));t.append(el('b','',v),el('span','',libelle));return t};
+ const r=el('div','vie-stats'),groupe=(titre,tuiles)=>{const g=el('section','vie-groupe');g.append(el('h3','',titre));const l=el('div','vie-grille');l.append(...tuiles);g.append(l);r.append(g)};
+ STATS_VIE.forEach(([titre,l])=>groupe(titre,l.map(([k,lib])=>tuile(k==='dist'?val(k)+' m':String(val(k)),lib))));
+ groupe('Objets trouvés',[...RARETES.map(([k])=>k),'ressource'].map(k=>tuile(String(n('rar_'+k)),NOM_RARETE(k),'vie-rar r-'+k)));
+ return r}
+// Le contenu tient dans le bloc, sans barre de défilement : trop haut, il se réduit.
+function cadreStatsVie(zone){const c=zone&&zone.querySelector('.vie-stats');if(!c)return;c.style.zoom='';const h=zone.clientHeight,ch=c.scrollHeight;if(h>0&&ch>h)c.style.zoom=String(Math.max(.5,h/ch).toFixed(3))}
+// Ce qui se compte ailleurs : l'or gagné (pas celui repris du Coffre, ni l'or rendu, ni la bourse de départ), les repos courts, les comas et les morts.
+{const ao=ajouteOr;ajouteOr=function(a,d,...x){const avant=a?orDe(a):0,r=ao(a,d,...x);if(a&&a.hero&&!orSansGain&&actors.includes(a)){const g=orDe(a)-avant;if(g>0)ajouteVie(a,'or',g)}return r}}
+{const rc=reposCourt;reposCourt=function(a,...x){const mort=estMort(a),r=rc(a,...x);if(a&&!mort)ajouteVie(a,'repos',1);return r}}
+function noteChutes(fn){return function(...x){const avant=new Map(actors.filter(a=>a&&a.hero).map(a=>[a,{coma:a.comaVie===true,mort:estMort(a)}])),r=fn.apply(this,x);
+ avant.forEach((v,a)=>{if(!v.coma&&a.comaVie===true&&!estMort(a))ajouteVie(a,'chutes',1);if(!v.mort&&estMort(a))ajouteVie(a,'morts',1)});return r}}
+comaAventuriers=noteChutes(comaAventuriers);appliqueNecrose=noteChutes(appliqueNecrose);
+{const na=normalizeActor;normalizeActor=function(a,...x){const r=na(a,...x);if(a){if(a.statsVie&&typeof a.statsVie==='object'&&!Array.isArray(a.statsVie)){const s={};
+ Object.entries(a.statsVie).forEach(([k,v])=>{if(/^[a-z_]{1,24}$/.test(k)&&Number(v)>0)s[k]=Math.min(1e9,Number(v))});a.statsVie=s}else delete a.statsVie}return r}}

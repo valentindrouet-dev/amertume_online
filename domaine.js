@@ -890,7 +890,7 @@ function donneRecompense(q){if(q.donnee)return;q.donnee=true;const tire=tireBour
  const gains=new Map(qui.map(a=>[a,{or:0,rich:{},objets:[]}]));let k=0;
  Object.entries(tire).forEach(([cle,v])=>{if(cle==='or'){const part=Math.floor(v/qui.length);let reste=v-part*qui.length;qui.forEach(a=>{const n=part+(reste>0?1:0);if(reste>0)reste--;if(n){ajouteOr(a,n);gains.get(a).or+=n}})}
   else for(let i=0;i<v;i++){const a=qui[k++%qui.length];a.richesses={...(a.richesses||{})};a.richesses[cle]=(Math.trunc(Number(a.richesses[cle]))||0)+1;gains.get(a).rich[cle]=(gains.get(a).rich[cle]||0)+1}});
- items.forEach(o=>{const a=qui[k++%qui.length];if(ajouterInventaire(a,o))gains.get(a).objets.push(o.id)});
+ items.forEach(o=>{const a=qui[k++%qui.length];if(ajouterInventaire(a,o)){gains.get(a).objets.push(o.id);if(typeof noteTrouve==='function')noteTrouve(a,o)}});
  gains.forEach((g,a)=>{const dits=[...g.objets.map(id=>'⟦'+id+'⟧'),...phraseRichesses({or:g.or,...g.rich})];if(dits.length)log(a.name+' reçoit '+dits.join(', ')+' ('+q.titre+').',{ton:'butin'})});
  if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave()}
 const finieQuete=q=>q.statut==='reussie'||q.statut==='echouee';
@@ -1044,7 +1044,8 @@ function versCoffre(a,op){const e={...op,id:idDomaine(),t:Date.now()};
    rattrape sur l'aventurier, et le journal le dit. Deux joueurs ont pris la même dernière pièce ou le même or : le second les
    rend. Un dépôt dans un onglet devenu plein revient dans son sac. Un onglet acheté deux fois : le second achat est remboursé.
    Un achat que l'or du coffre ne couvrait plus : la bourse de l'acheteur paie le reste, sinon la pièce lui est reprise. */
-function resoudreOpCoffre(c,op,h){if(!op)return;const r=jugeOpCoffre(c,op),nom=h?nomNum(h):'';
+function resoudreOpCoffre(c,op,h){orSansGain=true;try{resoudreOpCoffreBrut(c,op,h)}finally{orSansGain=false}}
+function resoudreOpCoffreBrut(c,op,h){if(!op)return;const r=jugeOpCoffre(c,op),nom=h?nomNum(h):'';
  if(!h||!Object.keys(r).length)return;
  const o=op.item?objetDe(op.item):null,quoi=k=>o?(k>1?k+' × ':'')+o.name:'';
  if(r.ongletRefuse){if(!(op.or<0)&&op.prix>0){ajouteOr(h,op.prix);log(nom+' : l’onglet était déjà acheté, '+op.prix+' or rendus.')}return}
@@ -1096,7 +1097,8 @@ function prendreAuCoffre(a,id,tous){const c=coffreVue(),tab=coffreGroupeOnglet,t
  const voulu=tous?t.filter(x=>x===id).length:1,forge=c.forges.find(f=>f.id===id);if(forge&&!(a.forges||[]).some(f=>f.id===id))a.forges=[...(a.forges||[]),forge];
  let n=0;for(let i=0;i<voulu;i++){if(!ajouterInventaire(a,o))break;n++}
  if(!n){log('L’inventaire de '+a.name+' ne prend plus '+o.name+'.',{local:true});return}versCoffre(a,{item:id,tab,n:-n});apresCoffre()}
-function orAuCoffre(a,n,sens){n=Math.max(0,Math.trunc(Number(n))||0);if(!n||!agitPour(a))return;
+function orAuCoffre(a,n,sens){orSansGain=true;try{orAuCoffreBrut(a,n,sens)}finally{orSansGain=false}}
+function orAuCoffreBrut(a,n,sens){n=Math.max(0,Math.trunc(Number(n))||0);if(!n||!agitPour(a))return;
  if(sens>0){n=Math.min(n,orDe(a));if(!n)return;ajouteOr(a,-n);versCoffre(a,{or:n})}else{n=Math.min(n,coffreVue().or);if(!n)return;ajouteOr(a,n);versCoffre(a,{or:-n})}apresCoffre()}
 function acheterOnglet(a,parCoffre){const c=coffreVue();if(!agitPour(a)||c.onglets>=COFFRE_ONGLETS_MAX)return;const prix=PRIX_ONGLETS[c.onglets];
  if(parCoffre){if(c.or<prix)return;versCoffre(a,{onglet:1,pour:c.onglets,prix,or:-prix})}else{if(orDe(a)<prix)return;ajouteOr(a,-prix);versCoffre(a,{onglet:1,pour:c.onglets,prix})}

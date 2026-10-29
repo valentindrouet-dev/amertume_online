@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.190","d":"2026-10-29","t":"Onglets réordonnés, Statistiques de l'aventurier"},
 {"v":"1.189","d":"2026-10-29","t":"Titres à Brisure en tête, entre aventuriers"},
 {"v":"1.188","d":"2026-10-29","t":"Rien du sphérier ni de la Tour au journal"},
 {"v":"1.187","d":"2026-10-29","t":"L'aventurier en onglets : Stats et Inventaire"},

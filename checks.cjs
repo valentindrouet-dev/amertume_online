@@ -5374,9 +5374,15 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 /* v1.188 — Le sphérier et la Tour Mystique n'écrivent rien au journal du combat. */
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');assert.ok(!ed.includes("' infuse les Sphères : '")&&!ed.includes("' désacheté : '")&&!dm.includes("apprend de l’Arcaniste")&&dm.includes(" const fini=()=>apresMagasin();"),'v1.188');}
 /* v1.187 — L'aventurier en onglets : Stats, classe, Bonus, espèce, métier, Inventaire ; le prix du talent lu sans aventurier ; le sac en cinq catégories. */
-{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=[...(a?[['stats','Stats','']]:[]),['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['inventaire','Inventaire','']);")
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(heroCard(a,actors.indexOf(a)))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.190 — Les onglets d'aventurier dans l'ordre Caractéristiques, Inventaire, Talents, Bonus, Espèce, Métier, Statistiques ; les statistiques d'une vie. */
+{const ed=fs.readFileSync('editor.js','utf8'),pg=fs.readFileSync('index.html','utf8'),lv=fs.readFileSync('live.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
+ assert.ok(pg.includes("function ajouteBilan(a,k,n){if(!a||!(n>0))return;ajouteVie(a,k,n);if(!enCombat())return;")&&pg.includes("ajouteVie(a,'tests',1);if(jet.reussites>0)ajouteVie(a,'reussis',1);")
+  &&pg.includes("if(h)ajouteVie(h,'combats',1)")&&lv.includes("CHAMPS_VIVANTS.push('statsVie');")&&dm.includes("function orAuCoffre(a,n,sens){orSansGain=true;")
+  &&ed.includes("else if(arbresOnglet==='statistiques'&&a){g.classList.add('arbres-statistiques');g.append(statsVieEl(a))}")&&ed.includes("comaAventuriers=noteChutes(comaAventuriers);")
+  &&ed.includes("l.push(['espece','Espèce',e.teinte]);")&&ed.includes("['metier','Métier',fm?teinteMetier(a.metier):'']"),'v1.190');}
 /* v1.186 — Le texte des joueurs par déclencheur (Connaissance) ; un déclencheur connu réussit un point plus bas. */
 {const g=fs.readFileSync('gemmes.js','utf8');assert.ok(g.includes("const TEXTES_JOUEURS_GEMMES={")&&g.includes("function seuilGemme(cle){const r=reglesGemmes().declencheurs[cle];if(!r)return 5;return Math.max(1,r.seuil-(declencheurConnu(cle)?1:0))}")
  &&g.includes("const seuil=seuilGemme(cle);let gagne=faces.some(f=>f>=seuil)?1:0;")&&fs.readFileSync('domaine.js','utf8').includes("const ch=vitEl('textarea','vit-savoir-texte');"),'v1.186');

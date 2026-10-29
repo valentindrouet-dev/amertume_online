@@ -222,7 +222,7 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  // Le plafond du combat : ce qui dépasse ne tombe pas.
  if(combat&&d.phase==='combat'){const deja=s.brisures[couleur]||0;gagne=Math.max(0,Math.min(gagne,R.plafond-deja));s.brisures[couleur]=deja+gagne}
  if(gagne>0){const cg=cleGemme('brisure',couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+gagne;
-  flotteGemme(a,'brisure',couleur,gagne);if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne}
+  flotteGemme(a,'brisure',couleur,gagne);if(typeof ajouteVie==='function')ajouteVie(a,'gemmes',gagne);if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne}
  if(typeof scheduleSave==='function')scheduleSave();return {faces,gagne,couleur}}
 // La petite sphère qui monte au-dessus du socle quand une Brisure tombe.
 /* v1.166 : la sphère gagnée — des éclats de sa couleur jaillissent tout autour du socle, puis se rassemblent à sa droite, à mi-hauteur,
@@ -334,7 +334,7 @@ let larcinGemme=null;
  // v1.169 : personne dans le coma au moment où le combat se ferme : chacun son dé.
  if(presents.length&&!presents.some(a=>a.comaVie||a.hp<=0||hasState(a,'Coma')))presents.forEach(a=>deGemme(a,'groupe-sans-coma',{phase:'combat'}));
  if(bossVaincuCombat===n&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
-  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n});bossVaincuCombat=0}
+  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);if(typeof ajouteVie==='function')ajouteVie(a,'gemmes',R.boss.n);s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n});bossVaincuCombat=0}
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
 const deGemmeDialog=dialog('de-gemme','Dé de gemme','<form id="de-gemme-form"><div class="edit-grid"><label>Déclencheur<select name="decl" id="de-gemme-decl"></select></label>'
@@ -570,6 +570,7 @@ function titresDuCombat(){const R=reglesGemmes(),b=typeof bilanDuCombat==='funct
  TITRES_GEMMES.forEach(([k])=>{const t=R.titres[k];if(!t||!t.actif)return;const min=k==='intouch',l=b.liste.filter(x=>x.camp==='troupe'&&actors.some(o=>o&&o.id===x.id&&o.hero));
   const top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];if(!top||(!min&&!(top[k]>0)))return;const a=actors.find(o=>o&&o.id===top.id&&o.hero);if(!a)return;
   const cg=cleGemme('brisure',t.couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+1;flotteGemme(a,'brisure',t.couleur,1);
+  if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',1);ajouteVie(a,'titres',1)}
   const s=suiviGemmes(a);s.gagnes[cg]=(s.gagnes[cg]||0)+1;out[k]={id:a.id,couleur:t.couleur}});
  return out}
 {const bm=basculerMode;basculerMode=function(neuf,...x){const finit=mode==='combat'&&neuf!=='combat',spect=typeof spectateur==='function'&&spectateur();

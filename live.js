@@ -1015,6 +1015,8 @@ function majSas(){const attente=sasEnAttente();document.body.classList.toggle('s
    Au premier combat, chaque aventurier en scène devient Actif : son arbre — talents et caractéristiques — se fige jusqu'à son
    prochain repos, court ou long. Il s'ouvre et se lit ; un essai de changement le dit. Le MJ, lui, passe outre. */
 CHAMPS_VIVANTS.push('actif');
+// v1.190 : les statistiques d'une vie d'aventurier.
+CHAMPS_VIVANTS.push('statsVie');
 {const basculerSansActif=basculerMode;basculerMode=function(){const avant=enCombat(),r=basculerSansActif.apply(this,arguments);
  if(!avant&&enCombat()&&!(typeof spectateur==='function'&&spectateur())){let n=0;
   actors.forEach(a=>{if(a&&a.hero&&!a.horsCarte&&a.actif!==true&&(typeof prendPartAventure!=='function'||prendPartAventure(a))){a.actif=true;n++}});if(n)scheduleSave()}
