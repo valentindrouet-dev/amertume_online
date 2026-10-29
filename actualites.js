@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.193","d":"2026-10-29","t":"Onglet Caractéristiques en deux blocs"},
 {"v":"1.192","d":"2026-10-29","t":"Marques sur la ligne du niveau"},
 {"v":"1.191","d":"2026-10-29","t":"Titres sur deux lignes"},
 {"v":"1.190","d":"2026-10-29","t":"Onglets réordonnés, Statistiques de l'aventurier"},

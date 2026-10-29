@@ -5375,8 +5375,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');assert.ok(!ed.includes("' infuse les Sphères : '")&&!ed.includes("' désacheté : '")&&!dm.includes("apprend de l’Arcaniste")&&dm.includes(" const fini=()=>apresMagasin();"),'v1.188');}
 /* v1.187 — L'aventurier en onglets : Stats, classe, Bonus, espèce, métier, Inventaire ; le prix du talent lu sans aventurier ; le sac en cinq catégories. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
- &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(heroCard(a,actors.indexOf(a)))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
+ &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.193 — L'onglet Caractéristiques en deux blocs de vignettes, les talents centrés dessous, sans le bloc Inventaire. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('fiche-onglet');")&&ed.includes("c.querySelectorAll(':scope>.titre-comps,:scope>.titre-kit,:scope>.bloc-inventaire').forEach(x=>x.remove());"),'v1.193');}
 /* v1.192 — Les Marques sur la ligne du niveau, après la classe. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const cl=puces.querySelector('.hero-identite>.sheet-class');if(cl)cl.after(p);else puces.append(p)}"),'v1.192');}
 /* v1.191 — Stats de Combat : les titres à Brisure sur une ligne, les autres sur une seconde ; la fenêtre plus large. */

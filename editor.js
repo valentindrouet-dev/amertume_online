@@ -1926,6 +1926,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  bInv.onclick=e=>{e.stopPropagation();fermerBulle();openInventaire(a)};blocInv.append(bInv);
  {const n=orDe(a),or=document.createElement('span');or.className='or-fiche'+(n?'':' zero');const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);blocInv.append(or)}
  titreKit.classList.add('ouvre-arbre');titreKit.onclick=e=>{if(e.target.closest('button'))return;fermerBulle();openInventaire(a)};
+ titreComp.classList.add('titre-comps');titreKit.classList.add('titre-kit');
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}
 /* L'ordre des fiches : libre, comme le MJ les a rangées en les glissant par leur poignée, ou par nom, niveau, classe, XP.
    Le choix reste sur l'appareil ; l'ordre libre, sur chaque aventurier. */
@@ -7252,7 +7253,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));g.append(ge)}
   else if(sphere)g.append(sphere.el);
   // v1.187 : la fiche de l'aventurier, et son inventaire en deux parties.
-  else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(heroCard(a,actors.indexOf(a)))}
+  else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}
   else if(arbresOnglet==='inventaire'&&a){g.classList.add('arbres-inventaire');const inv=corpsEtSac(a,true);
    if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='inv-plus';plus.textContent='+ Ajouter';plus.title='Ajouter à l’inventaire de '+a.name;plus.onclick=()=>openPicker(a,'gear');const d=inv.querySelector('.inv-droite');if(d)d.prepend(plus)}
    g.append(inv)}
@@ -9293,8 +9294,8 @@ function arbreSansDefilement(){const D=arbresDialog;if(!D.open||!arbresTaille||a
  const fixe=arbresOnglet!=='bonus'?(aBonus&&arbresHB?arbresHB.h:arbresTaille.h):arbresTaille.h;
  const pose=h=>{D.style.height=h+'px';D.style.minHeight=h+'px'};pose(fixe);arbresCible=fixe;
  const zone=D.querySelector('.arbres-v2-arbre'),v2=zone&&zone.closest('.arbres-v2');if(v2)v2.style.removeProperty('min-height');
- if(zone&&(arbresOnglet==='inventaire'||arbresOnglet==='statistiques')){const cs=getComputedStyle(D),bas=fixe-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0),h=bas-(zone.getBoundingClientRect().top-D.getBoundingClientRect().top+D.scrollTop);
-  zone.style.height=Math.max(200,Math.floor(h))+'px';if(arbresOnglet==='inventaire')cadreInventaire();else cadreStatsVie(zone)}
+ if(zone&&(arbresOnglet==='inventaire'||arbresOnglet==='statistiques'||arbresOnglet==='stats')){const cs=getComputedStyle(D),bas=fixe-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0),h=bas-(zone.getBoundingClientRect().top-D.getBoundingClientRect().top+D.scrollTop);
+  zone.style.height=Math.max(200,Math.floor(h))+'px';if(arbresOnglet==='inventaire')cadreInventaire();else cadreStatsVie(zone,arbresOnglet==='stats'?'.fiche-onglet':'.vie-stats')}
  else if(zone&&arbresOnglet!=='bonus'){try{if(!cadreRoue(zone))reduitArbre(zone)}catch(e){}
   // Le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre, comme le sphérier.
   if(v2){const cs=getComputedStyle(D),bas=fixe-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0),h=bas-(v2.getBoundingClientRect().top-D.getBoundingClientRect().top+D.scrollTop);
@@ -9432,7 +9433,7 @@ function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsV
  groupe('Objets trouvés',[...RARETES.map(([k])=>k),'ressource'].map(k=>tuile(String(n('rar_'+k)),NOM_RARETE(k),'vie-rar r-'+k)));
  return r}
 // Le contenu tient dans le bloc, sans barre de défilement : trop haut, il se réduit.
-function cadreStatsVie(zone){const c=zone&&zone.querySelector('.vie-stats');if(!c)return;c.style.zoom='';const h=zone.clientHeight,ch=c.scrollHeight;if(h>0&&ch>h)c.style.zoom=String(Math.max(.5,h/ch).toFixed(3))}
+function cadreStatsVie(zone,sel='.vie-stats'){const c=zone&&zone.querySelector(sel);if(!c)return;c.style.zoom='';const h=zone.clientHeight,ch=c.scrollHeight;if(h>0&&ch>h)c.style.zoom=String(Math.max(.5,h/ch).toFixed(3))}
 // Ce qui se compte ailleurs : l'or gagné (pas celui repris du Coffre, ni l'or rendu, ni la bourse de départ), les repos courts, les comas et les morts.
 {const ao=ajouteOr;ajouteOr=function(a,d,...x){const avant=a?orDe(a):0,r=ao(a,d,...x);if(a&&a.hero&&!orSansGain&&actors.includes(a)){const g=orDe(a)-avant;if(g>0)ajouteVie(a,'or',g)}return r}}
 {const rc=reposCourt;reposCourt=function(a,...x){const mort=estMort(a),r=rc(a,...x);if(a&&!mort)ajouteVie(a,'repos',1);return r}}
@@ -9441,3 +9442,14 @@ function noteChutes(fn){return function(...x){const avant=new Map(actors.filter(
 comaAventuriers=noteChutes(comaAventuriers);appliqueNecrose=noteChutes(appliqueNecrose);
 {const na=normalizeActor;normalizeActor=function(a,...x){const r=na(a,...x);if(a){if(a.statsVie&&typeof a.statsVie==='object'&&!Array.isArray(a.statsVie)){const s={};
  Object.entries(a.statsVie).forEach(([k,v])=>{if(/^[a-z_]{1,24}$/.test(k)&&Number(v)>0)s[k]=Math.min(1e9,Number(v))});a.statsVie=s}else delete a.statsVie}return r}}
+/* v1.193 — L'onglet Caractéristiques : la fiche de l'aventurier en deux blocs — à gauche ses six caractéristiques, à droite
+   ses huit compétences, chacune en vignette, son icône et sa valeur à côté — puis ses talents, centrés. L'inventaire a son onglet. */
+function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('fiche-onglet');
+ const vignette=(el,val)=>{const w=document.createElement('div');w.className='vignette';el.before(w);const v=document.createElement('b');v.className='vignette-val';v.textContent=val;w.append(el,v)};
+ const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
+ if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'')});
+ if(cp)[...cp.querySelectorAll(':scope>.comp-carte')].forEach(k=>{const v=k.querySelector('.comp-val');k.classList.add('vignette');const b=document.createElement('b');b.className='vignette-val';b.textContent=v?v.textContent:'';k.append(b)});
+ c.querySelectorAll(':scope>.titre-comps,:scope>.titre-kit,:scope>.bloc-inventaire').forEach(x=>x.remove());
+ const pv=c.querySelector(':scope>.hero-pv'),blocs=document.createElement('div');blocs.className='fiche-blocs';
+ if(ch){ch.before(blocs);blocs.append(ch)}if(cp)blocs.append(cp);if(pv)blocs.before(pv);
+ return c}

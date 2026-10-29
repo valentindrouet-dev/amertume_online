@@ -4171,3 +4171,14 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .vie-tuile.zero b{color:color-mix(in srgb,var(--muted) 60%,transparent)}
 .vie-tuile.vie-rar{border-color:color-mix(in srgb,var(--rarete) 45%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--rarete) 14%,transparent),transparent 85%)}
 .vie-tuile.vie-rar b{color:var(--rarete)}.vie-tuile.vie-rar span{color:var(--rarete)}
+/* v1.193 — L'onglet Caractéristiques : deux blocs de vignettes, les talents centrés dessous. */
+.fiche-onglet .hero-pv{margin:10px 0 12px}
+.fiche-onglet .fiche-blocs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start}
+.fiche-onglet .fiche-blocs>.stat-row.en-icones,.fiche-onglet .fiche-blocs>.comp-ronds.cadre-comps{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:10px}
+.fiche-onglet .vignette{display:grid;grid-template-columns:56px 1fr;align-items:center;min-height:52px;padding:3px 10px;border-radius:10px;border:1px solid var(--line-strong);background:color-mix(in srgb,var(--panel) 70%,transparent)}
+.fiche-onglet .vignette>.stat-tile,.fiche-onglet .vignette>.comp-rond{justify-self:center}
+.fiche-onglet .vignette-val{justify-self:center;font:700 22px/1 'Killam',Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+.hero-card.fiche-onglet .talent-grille{display:flex;flex-direction:column;align-items:center;gap:10px}
+.hero-card.fiche-onglet .talent-grille>*{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;width:auto;grid-column:auto}
+.fiche-onglet .talent-case-vide{display:none}
+.hero-card.fiche-onglet .talent-grille>*{width:100%}.hero-card.fiche-onglet .talent-grille>*>*{flex:0 0 calc((100% - 140px) / 6);min-width:0}
