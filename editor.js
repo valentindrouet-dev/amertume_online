@@ -9601,7 +9601,9 @@ function iconesFiche(a){const g=document.createElement('span');g.className='fich
 // v1.206 : « Réinitialiser l'arbre » dans le coin supérieur gauche du bandeau de l'arbre ; ailleurs, en tête de la fenêtre.
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x),band=arbresDialog.querySelector('.arbres-v2 .arbre-titre.a-xp'),head=arbresDialog.querySelector('.dialog-head');
  if(band&&!arbresReset.hidden){band.prepend(arbresReset);arbresReset.classList.add('dans-arbre')}
- else if(head&&arbresReset.parentElement!==head){head.insertBefore(arbresReset,arbresVue);arbresReset.classList.remove('dans-arbre')}return r}}
+ else if(head&&arbresReset.parentElement!==head){head.insertBefore(arbresReset,arbresVue);arbresReset.classList.remove('dans-arbre')}
+ // v1.215 : sur la fiche d'un aventurier, ni « Réinitialiser l'arbre » hors de son bandeau, ni « Redimensionner » dans l'en-tête.
+ const fiche=!!arbresActeur;arbresDialog.classList.toggle('fiche-aventurier',fiche);return r}}
 /* v1.209 — Le coût en Marques d'un talent et de chacune de ses améliorations se règle dans le panneau de l'arbre, sans passer
    par l'éditeur : chez le MJ, un clic sur sa pastille l'ouvre en − / +, comme le prix d'un bonus ; un clic sur le chiffre la referme. */
 let coutEdite='';
