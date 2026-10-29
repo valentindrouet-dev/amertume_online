@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.138","d":"2026-10-29","t":"Arbre Bonus : un seul bloc à droite, achat d'un clic"},
 {"v":"1.137","d":"2026-10-29","t":"Bonus : DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier"},
 {"v":"1.136","d":"2026-10-29","t":"Sphérier : Suppr, Maj + clic lie ou délie, double-clic édite"},
 {"v":"1.135","d":"2026-10-29","t":"Sphérier : valeur des bonus sur leur icône"},

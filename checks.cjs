@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.138 — Sphérier : un seul bloc à droite, sa description en italique, son coût sous le rond ; un clic achète, le reclic rend. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function basculeSphere(ctx,t,l){const {a,classe,majTable,poserPalier,note}=ctx;")&&ed.includes("desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);")
+ &&ed.includes("else el.onclick=()=>{sphereSel=t.id;if(!(a&&basculeSphere(ctx,t,l)))renderArbres()};"),'v1.138');}
 /* v1.137 — Bonus DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier ; bonus de compétence plus petits. */
 {const C=require('./combat.js'),pt=[{code:{cle:'bonus'},params:{carac:'armure',valeur:5}},{code:{cle:'bonus'},params:{carac:'etat',valeur:2,etat:'Rage'}},{code:{cle:'bonus'},params:{carac:'metres',valeur:3}}];
  assert.deepEqual(C.bonusDebutCombat(pt),{armure:5,etats:{Rage:2}});assert.equal(C.metresBonus(pt),3);

@@ -8831,34 +8831,39 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
         v1.135 : déjà reliés, Maj + clic défait le lien. */
      if(e.shiftKey&&s&&s!==t){if(voisinsSphere(t,l).includes(s)){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}
       else s.liensSphere=[...(s.liensSphere||[]),t.id];sphereSel=t.id;arbreChange();return}
+     // v1.138 : chez le MJ qui regarde un aventurier, le clic achète ou rend, comme chez le joueur.
+     if(a&&!e.shiftKey&&!sphereLier){sphereSel=t.id;if(!basculeSphere(ctx,t,l))renderArbres();return}
      /* v1.136 : un double-clic sur un bonus ouvre son éditeur. Le premier clic redessine le plan : les deux clics se comptent ici,
         sur le même bonus, à moins de 450 ms. */
      {const now=performance.now(),d=sphereClic;sphereClic={id:t.id,at:now};if(d&&d.id===t.id&&now-d.at<450&&!sphereLier){sphereClic=null;sphereSel=t.id;openTalent(catalog.talents.indexOf(t),renderArbres);return}}
      if(sphereLier&&s&&s!==t){const lie=voisinsSphere(t,l).includes(s);if(lie){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}else s.liensSphere=[...(s.liensSphere||[]),t.id];arbreChange();return}
      sphereSel=t.id;renderArbres()};
     addEventListener('pointermove',mv);addEventListener('pointerup',up)})}
-  else el.onclick=()=>{sphereSel=t.id;renderArbres()};
+  // v1.138 : chez un aventurier, un clic achète le bonus — ou son palier suivant — et le reclic le rend.
+  else el.onclick=()=>{sphereSel=t.id;if(!(a&&basculeSphere(ctx,t,l)))renderArbres()};
   plan.append(el)});
  // v1.133 : chez le MJ, un clic sur le fond du plan y pose un bonus, choisi parmi ceux qui existent.
  if(mj)plan.addEventListener('click',e=>{if(e.target!==plan&&e.target!==svg)return;const r=plan.getBoundingClientRect();
   choisirBonusSphere(classe,{x:Math.max(GRILLE_SPHERE,surGrille(e.clientX-r.left)),y:Math.max(GRILLE_SPHERE,surGrille(e.clientY-r.top))})});
  const cadre=document.createElement('div');cadre.className='spherier-cadre';cadre.append(plan);zone.append(cadre);
- // Le panneau de droite : le bonus choisi, palier par palier — acheter le suivant, rendre le dernier ; chez le MJ, un clic l'édite.
+ /* v1.138 — Le panneau de droite : un seul bloc — le grand rond et, dessous, son coût ; à droite, le bonus sur une ligne et, en
+    italique, ce que fait sa caractéristique. Chez le MJ, sur le plan d'une classe, un clic l'édite ; chez un aventurier, un clic
+    l'achète ou le rend, comme sur son rond. */
  const detail=aside=>{aside.replaceChildren();const t=l.find(x=>x.id===sphereSel)||l.find(x=>x.departSphere)||l[0];if(!t)return;
   const panneau=document.createElement('div');panneau.className='detail-defile';aside.append(panneau);const max=paliersDe(t),k=a?palierDe(a,t):0;
-  const ferme=!a||!sphereOuverte(a,t,l)||(estMort(a)&&view!=='mj')||figeEnCombat(a);
-  const tete=document.createElement('div');tete.className='detail-tete';const rond=document.createElement('span');rond.className='sphere-rond detail-sphere';poseLogoBonus(rond,t);teinteSphere(t,v=>rond.style.setProperty('--tint',v));
-  const droite=document.createElement('div');droite.className='detail-droite';const nom=document.createElement('h3'),ligne=document.createElement('div');ligne.className='detail-nom-ligne';ligne.append(nom);droite.append(ligne);nom.append(libelleBonusEl(paramsTalent(talentAuPalier(t,Math.max(1,k)))||{},{talent:talentAuPalier(t,Math.max(1,k))}));tete.append(rond,droite);panneau.append(tete);
-  for(let n=1;n<=max;n++){const c=document.createElement('div'),prix=coutPalier(t,n),suivante=!!a&&n===k+1&&!ferme&&prix<=dispo;
-   c.className='detail-amelioration detail-bonus'+(k>=n?' acquise':'')+(suivante?' achetable':'');
-   const p=document.createElement('p');p.className='detail-am-nom';const b=document.createElement('b');const xp=talentAuPalier(t,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}));p.append(b);
-   if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';p.append(pr)}c.append(p);
-   if(suivante){c.tabIndex=0;c.setAttribute('role','button');c.onclick=()=>{if(n===1)a.talents=[...a.talents,t.id];else poserPalier(t,n);note('');majTable()}}
-   if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){c.classList.add('rendable');c.tabIndex=0;c.setAttribute('role','button');
-    const rendre=()=>{if(k>1)poserPalier(t,k-1);else{a.talents=a.talents.filter(id=>id!==t.id);const garde=spheresTenues(a,classe);a.talents=a.talents.filter(id=>{const x=talent(id);return !(x&&estSphere(x)&&talentFamily(x)===classe)||garde.has(id)})}
-     a.paliersTalents=normalisePaliersActeur(a);note('');majTable()};c.onclick=rendre;c.oncontextmenu=e=>{e.preventDefault();rendre()}}
-   if(mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
-   panneau.append(c)}};
+  const vu=talentAuPalier(t,Math.max(1,k)),p=paramsTalent(vu)||{};
+  const tete=document.createElement('div');tete.className='detail-tete detail-tete-sphere';const rond=document.createElement('span');rond.className='sphere-rond detail-sphere';poseLogoBonus(rond,vu);teinteSphere(t,v=>rond.style.setProperty('--tint',v));
+  const pile=document.createElement('span');pile.className='detail-gauche';pile.append(rond);
+  const prix=a?(k<max?coutPalier(t,k+1):coutPalier(t,max)):coutPalier(t,1);
+  if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(a&&k>=max?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';pile.append(pr)}
+  const droite=document.createElement('div');droite.className='detail-droite';const nom=document.createElement('h3');nom.className='detail-nom-bonus';nom.append(libelleBonusEl(p,{talent:vu}));
+  {const L=String(nom.textContent||'').length;if(L>12)nom.style.fontSize=(L>26?17:L>20?20:L>16?23:26)+'px'}
+  const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,desc);
+  tete.append(pile,droite);panneau.append(tete);
+  if(mj&&!a){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
+  else if(a){const ok=k>0||(sphereOuverte(a,t,l)&&prix<=dispo);tete.classList.add('cliquable',k>0?'acquise':ok?'achetable':'fermee');
+   if(ok){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>basculeSphere(ctx,t,l)}}
+  tete.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&tete.onclick){e.preventDefault();tete.onclick()}}};
  return {el:zone,detail}}
 // Les bonus du sphérier et l'arbre du métier restent à l'aventurier au chargement, s'ils tiennent encore à un départ.
 {const tds=talentsDuSpherier;talentsDuSpherier=function(a){const r=tds(a);if(!r||!a)return r;const garde=new Set(r);
@@ -8922,3 +8927,22 @@ document.addEventListener('keydown',e=>{if((e.key!=='Delete'&&e.key!=='Backspace
 const GRILLE_SPHERE=40;
 function surGrille(v){return Math.round((Number(v)||0)/40)*40}
 function BONUS_PROPOSES(){return [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['metres','m de mouvement'],['armure','Armure au début du combat'],['etat','Rage au début du combat','Rage'],...skillNames.map((n,k)=>['comp',n,k])]}
+
+/* v1.138 — Acheter ou rendre un bonus du sphérier d'un clic. Pas encore tenu, ou pas à son dernier palier : le palier suivant,
+   s'il est ouvert et que l'XP suffit. Sinon, tenu : il est rendu tout entier, avec ce qui ne tient plus à un départ. */
+function basculeSphere(ctx,t,l){const {a,classe,majTable,poserPalier,note}=ctx;if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return false;
+ const k=palierDe(a,t),max=paliersDe(t),dispo=xpDisponible(a,catalog.talents);
+ if(k<max&&sphereOuverte(a,t,l)&&coutPalier(t,k+1)<=dispo){if(k===0)a.talents=[...(a.talents||[]),t.id];else poserPalier(t,k+1)}
+ else if(k>0){poserPalier(t,1);a.talents=(a.talents||[]).filter(id=>id!==t.id);const garde=spheresTenues(a,classe);
+  a.talents=a.talents.filter(id=>{const x=talent(id);return !(x&&estSphere(x)&&talentFamily(x)===classe)||garde.has(id)})}
+ else return false;
+ a.paliersTalents=normalisePaliersActeur(a);note('');majTable();return true}
+// Ce que fait la caractéristique d'un bonus, en une phrase.
+function descriptionBonus(p){const c=p&&p.carac||'pv',e=p&&p.etat||'Rage';
+ if(c==='comp')return 'Un point de plus en '+(skillNames[Math.max(0,Math.min(7,Number(p.comp)||0))]||'')+', pour ses tests.';
+ if(c==='etat')return 'L’aventurier commence chaque combat avec '+e+(cumulable(e)?', autant de crans que le bonus.':'.');
+ return ({pv:'Les PV maximum : ce que l’aventurier encaisse avant de tomber.',vie:'La VIE : à 0 PV, l’aventurier en perd 1 ; à 0 VIE, il meurt.',
+  endu:'L’Endurance : sa ténacité, qui mesure bien des talents et l’aide à se relever.',def:'La DEF : elle s’ajoute à celle de ses armures et de son bouclier contre les coups.',
+  dmg:'Le bonus de Dégâts s’ajoute à chaque coup qui porte.',orbe:'Un Orbe mystique de plus à lancer, pour qui a un talent d’orbes.',
+  pa:'Un point d’Action de plus à chaque tour.',pm:'Un point de Mouvement de plus à chaque tour.',metres:'Des mètres de plus à chaque mouvement.',
+  armure:'De l’Armure au début de chaque combat : elle encaisse avant les PV et tombe à la fin du combat.'})[c]||''}

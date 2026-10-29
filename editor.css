@@ -3932,3 +3932,10 @@ body:not(.carte-pleine) .interface-message{display:none}
 .sphere-noeud.competence .sphere-rond>.bonus-valeur::before{font-size:10px;-webkit-text-stroke-width:2px}
 .sphere-rond>.bonus-lettres{font:800 16px system-ui;color:rgb(var(--tint,150,150,150))}
 .spherier.grille{min-width:100%;min-height:100%}
+/* v1.138 : le panneau d'un bonus du sphérier — un seul bloc ; le bonus sur une ligne ; ce qu'il fait, en italique ; son coût sous le rond. */
+.arbres-detail .detail-tete-sphere .detail-droite{min-width:0;flex:1}
+.arbres-detail .detail-tete-sphere h3.detail-nom-bonus{white-space:nowrap;font-size:26px}
+.arbres-detail .detail-desc-bonus{margin:6px 0 0;font-style:italic;color:var(--muted);font-size:14px;line-height:1.4}
+.arbres-detail .detail-tete-sphere .detail-prix-rond{margin-top:-14px}
+.sphere-rond>.bonus-lettres{position:static;transform:none;margin:0}
+.sphere-rond.detail-sphere>.bonus-lettres{font-size:28px}
