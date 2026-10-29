@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.176 — Le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre, comme le sphérier. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(h>v2.offsetHeight)v2.style.minHeight=Math.floor(h)+'px'}}}"),'v1.176');
 /* v1.175 — La partie des talents s'étend jusqu'au panneau de droite, sans vide, dans tous les onglets. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(css.includes("#arbres .arbres-v2,#arbres.taille-mj .arbres-v2{column-gap:0}")&&css.includes("#arbres .arbres-v2 .arbres-v2-arbre>.arbres-cols>.arbre-col{flex:1 0 auto}")

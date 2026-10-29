@@ -9200,7 +9200,12 @@ function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.cl
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}});
 /* v1.174 — Aucun onglet de la fenêtre des arbres ne défile vers le bas : l'arbre qui dépasse se réduit, d'un bloc, jusqu'à tenir. */
 function arbreSansDefilement(){if(!arbresDialog.open||arbresOnglet==='bonus'||!arbresTaille||arbresMesure)return;
- const zone=arbresDialog.querySelector('.arbres-v2-arbre');if(!zone)return;
+ const zone=arbresDialog.querySelector('.arbres-v2-arbre');if(!zone)return;const v2=zone.closest('.arbres-v2');if(v2)v2.style.removeProperty('min-height');
+ try{reduitArbre(zone)}finally{
+  // v1.176 : comme le sphérier, le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre.
+  if(v2){const d=arbresDialog.getBoundingClientRect(),cs=getComputedStyle(arbresDialog),bas=d.top+arbresDialog.offsetHeight-(parseFloat(cs.paddingBottom)||0)-8,h=bas-v2.getBoundingClientRect().top;
+   if(h>v2.offsetHeight)v2.style.minHeight=Math.floor(h)+'px'}}}
+function reduitArbre(zone){
  const roues=[...zone.querySelectorAll('.arbre-roue')],blocs=roues.length?roues:[...zone.children].filter(e=>e.offsetHeight);if(!blocs.length)return;
  // v1.175 : un arbre d'une seule colonne tient aussi en largeur, sans défiler de côté.
  const cols=[...zone.querySelectorAll('.arbres-cols>.arbre-col')],seul=cols.length<=1;
