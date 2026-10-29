@@ -1289,7 +1289,9 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
   ['',...COLONNES_STATS.map(c=>c[1]),...(k==='troupe'?['Sphères']:[])].forEach(x=>th.append(el('th','',x)));
   // v1.160 : chez les aventuriers, une colonne de plus — les sphères que chacun a gagnées pendant le combat.
-  const sph=(d,compte)=>{d.className='stats-n stats-sph';const g=Object.keys(compte).length?ligneGemmes(compte,null):null;if(g)d.append(g);else{d.textContent='0';d.classList.add('zero')}};
+  const sph=(d,compte)=>{d.className='stats-n stats-sph';const g=Object.keys(compte).length?ligneGemmes(compte,null):null;if(g){d.append(g);
+   // v1.202 : au bout de la ligne, le total des sphères gagnées.
+   const n=Object.values(compte).reduce((s,v)=>s+(Number(v)||0),0),t=document.createElement('b');t.className='stats-sph-total';t.textContent='= '+n;g.append(t)}else{d.textContent='0';d.classList.add('zero')}};
   const tb=t.createTBody();[...l].sort((x,y)=>y.inf-x.inf||y.sub-x.sub).forEach(x=>{const r=tb.insertRow(),n=r.insertCell(),nom=el('span','stats-nom');
    nom.append(portraitStats(x),el('span','',x.nom));n.append(nom);
    COLONNES_STATS.forEach(([c])=>{const d=r.insertCell();d.className='stats-n '+c+(x[c]?'':' zero');d.textContent=valeur(c,x[c]);
@@ -9510,7 +9512,8 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  const d=document.createElement('small');d.className='accueil-classe';d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'Niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
  const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
  const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
- t.append(n,d,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';c.append(av,t,fl);
+ // v1.202 : sous le nom, six icônes, une par onglet de la fiche ; chacune l'ouvre sur son onglet.
+ t.append(n,iconesFiche(a));c.append(av,t);
  if(estMort(a)){c.classList.add('mort');av.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}))}
  // Ce que la fiche donnait au MJ hors d'elle : la case de l'aventure, l'accueil d'un aventurier en attente.
  const fiche=heroCard(a,i),part=fiche.querySelector('.hero-aventure'),attente=fiche.querySelector('.hero-attente');
@@ -9546,3 +9549,18 @@ function majIconeOr(){const id=idIconeOr(),r=document.documentElement;if(!id||ty
 ['amertume-content-changed','amertume-partie-chargee'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(majIconeOr,0)));
 [0,1500,5000,15000].forEach(t=>setTimeout(majIconeOr,t));
 {const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);majIconeOr();return r}}
+/* v1.202 — Les six icônes d'une vignette de la page Aventuriers : Caractéristiques, Inventaire, Talents, Bonus, Espèce, Métier.
+   Chacune ouvre la fiche sur son onglet ; celle d'un onglet que l'aventurier n'a pas est pâle. */
+const ICONES_FICHE=[['stats','Caractéristiques','<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.6-4 3.4-6.2 7-6.2s6.4 2.2 7 6.2"/>'],
+ ['inventaire','Inventaire','<path d="M7 9V7a5 5 0 0 1 10 0v2"/><rect x="4.5" y="9" width="15" height="11.5" rx="2.5"/><path d="M9 13h6"/>'],
+ ['classe','Talents','<path d="M12 21v-7M12 14l-5-5M12 14l5-5M12 10V4"/><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.8"/><circle cx="17.5" cy="8.5" r="1.8"/>'],
+ ['bonus','Bonus','<path d="M12 3 20 9.5 12 21 4 9.5Z"/><path d="M4 9.5h16M9 9.5 12 21l3-11.5M9 9.5 12 3l3 6.5"/>'],
+ ['espece','Espèce','<circle cx="7" cy="9" r="1.9"/><circle cx="11" cy="6" r="1.9"/><circle cx="15.5" cy="7" r="1.9"/><circle cx="18.5" cy="11" r="1.9"/><path d="M8.5 18.5c-1.2-3 1.2-6 4.2-6s4.8 2.6 3.6 5.2c-.8 1.8-2.6 1.2-4 1.2s-3.2.9-3.8-.4Z"/>'],
+ ['metier','Métier','<path d="m14 6 4 4-9.5 9.5a2.1 2.1 0 0 1-3-3Z"/><path d="m12.5 4.5 2-1.5 6.5 6.5-1.5 2"/>']];
+function iconesFiche(a){const g=document.createElement('span');g.className='fiche-icones';const cl=classeDuHeros(a),dispo=new Set(ongletsArbre(a,cl).map(([k])=>k));
+ const e=especeDe(a.espece),teintes={stats:actorTint(a),inventaire:'',classe:teinteClasse(cl)||actorTint(a),bonus:'#c99a3c',espece:e&&e.teinte||'',metier:a.metier?teinteMetier(a.metier):''};
+ ICONES_FICHE.forEach(([k,nom,svg])=>{const b=document.createElement('button');b.type='button';b.className='fiche-icone'+(dispo.has(k)?'':' absente');b.setAttribute('aria-label',nom+' de '+a.name);
+  if(teintes[k])b.style.setProperty('--teinte',teintes[k]);b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+svg+'</svg>';
+  if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));else b.title=nom;
+  b.onclick=ev=>{ev.stopPropagation();if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(!arbresDialog.open)return;if(dispo.has(k)){arbresOnglet=k;renderArbres()}};g.append(b)});
+ return g}

@@ -4259,3 +4259,17 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 #hero-grid .heros-groupe-titre{grid-column:1 / -1;display:flex;align-items:center;gap:10px;margin:6px 0 -4px;font:600 10px/1 system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
 #hero-grid .heros-groupe-titre::after{content:'';flex:1;height:1px;background:var(--line)}
 :root.icone-or :is(.piece-or,.richesse-or .piece){background:var(--icone-or) center / contain no-repeat;border-radius:0;box-shadow:none}
+/* v1.202 — Le total des sphères ; les six icônes d'une vignette ; les en-têtes ornés de l'onglet Caractéristiques. */
+.stats-sph .stats-sph-total{margin-left:6px;font:700 15px/1 'Killam',Georgia,serif;color:var(--ink);white-space:nowrap}
+#hero-grid .fiche-icones{display:grid;grid-template-columns:repeat(3,38px);gap:7px;margin-top:4px}
+#hero-grid .fiche-icone{--teinte:var(--accent);display:grid;place-items:center;width:38px;height:38px;padding:0;border-radius:11px;cursor:pointer;
+ border:1px solid color-mix(in srgb,var(--teinte) 70%,var(--ink));background:linear-gradient(155deg,color-mix(in srgb,var(--teinte) 55%,#fff),var(--teinte) 62%,color-mix(in srgb,var(--teinte) 75%,var(--ink)));
+ box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 55%,transparent),0 2px 4px color-mix(in srgb,var(--ink) 30%,transparent);transition:transform .12s,box-shadow .12s,filter .12s}
+#hero-grid .fiche-icone svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px color-mix(in srgb,var(--ink) 55%,transparent))}
+#hero-grid .fiche-icone:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 55%,transparent),0 4px 9px color-mix(in srgb,var(--ink) 35%,transparent);filter:brightness(1.06)}
+#hero-grid .fiche-icone.absente{filter:grayscale(.85);opacity:.45}
+.fiche-onglet .fiche-titre{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 4px;font:700 26px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;text-transform:none;color:color-mix(in srgb,var(--classe,var(--accent)) 55%,var(--ink));text-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent)}
+.fiche-onglet .page-droite .fiche-titre{color:color-mix(in srgb,var(--accent) 45%,var(--ink))}
+.fiche-onglet .fiche-titre::before,.fiche-onglet .fiche-titre::after{content:'';flex:0 1 120px;height:12px;
+ background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) right center / 12px 12px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 16px) 1.5px no-repeat}
+.fiche-onglet .fiche-titre::after{background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) left center / 12px 12px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 16px) 1.5px no-repeat}
