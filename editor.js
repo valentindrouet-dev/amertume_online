@@ -9514,6 +9514,8 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
  // v1.202 : sous le nom, six icônes, une par onglet de la fiche ; chacune l'ouvre sur son onglet.
  t.append(n,iconesFiche(a));c.append(av,t);
+ // v1.203 : retiré de la table, son portrait pâlit ; chez le MJ, un clic dessus le ramène sur la carte, comme sur l'ancienne fiche.
+ if(av.classList.contains('hors-table')){av.setAttribute('role','button');av.tabIndex=0;av.setAttribute('aria-label','Ramener '+a.name+' sur la table');av.onclick=e=>{e.stopPropagation();ramenerSurLaTable(a);renderHeroes()};av.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();ramenerSurLaTable(a);renderHeroes()}}}
  if(estMort(a)){c.classList.add('mort');av.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}))}
  // Ce que la fiche donnait au MJ hors d'elle : la case de l'aventure, l'accueil d'un aventurier en attente.
  const fiche=heroCard(a,i),part=fiche.querySelector('.hero-aventure'),attente=fiche.querySelector('.hero-attente');

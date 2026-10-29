@@ -4200,7 +4200,7 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 #hero-grid.en-vignettes .accueil-heros{min-height:120px;gap:14px;padding:14px 36px 14px 14px}
 #hero-grid.en-vignettes .accueil-avatar{position:relative;width:88px;height:88px;font-size:34px;overflow:visible}
 #hero-grid.en-vignettes .accueil-avatar img{border-radius:50%}
-#hero-grid.en-vignettes .accueil-avatar.hors-table{opacity:.5}
+#hero-grid.en-vignettes .accueil-avatar.hors-table{opacity:.5;filter:grayscale(1);cursor:pointer}#hero-grid.en-vignettes .accueil-avatar.hors-table:hover{opacity:.8}
 #hero-grid.en-vignettes .accueil-avatar .crane{position:absolute;right:-4px;bottom:-4px;font-size:22px}
 #hero-grid.en-vignettes .accueil-heros-texte{gap:6px}
 #hero-grid.en-vignettes .accueil-heros-texte b{font-size:21px}

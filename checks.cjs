@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.203 — Le portrait pâle d'un aventurier retiré de la table le ramène d'un clic, chez le MJ. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("av.onclick=e=>{e.stopPropagation();ramenerSurLaTable(a);renderHeroes()};"),'v1.203');
 /* v1.202 — Le total des sphères aux Stats de Combat ; six icônes par vignette d'aventurier ; les en-têtes ornés de l'onglet Caractéristiques. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("t.className='stats-sph-total';t.textContent='= '+n;")&&ed.includes("function iconesFiche(a){")&&ed.includes("t.append(n,iconesFiche(a));c.append(av,t);")
  &&css.includes(".fiche-onglet .fiche-titre{display:flex;align-items:center;justify-content:center;gap:12px;"),'v1.202');}
