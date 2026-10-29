@@ -1296,7 +1296,8 @@ function vitTour(corps,b,client,onglet){const R=reglesGemmes(),T=R.tour,cle=b.id
  const icone=(t,c,cls)=>{const im=document.createElement('img');im.src=imgUrl(iconeGemme(t,c)+'.png');im.alt='';im.draggable=false;if(cls)im.className=cls;return im};
  const unNom=(t,c)=>nomGemme(t,c,false).replace(/^\S+/,(TAILLES_GEMMES.find(([k])=>k===t)||[])[2]||'');
  const donne=(a,k,n)=>{a.richesses={...(a.richesses||{})};const v=(Math.trunc(Number(a.richesses[k]))||0)+n;if(v>0)a.richesses[k]=v;else delete a.richesses[k]};
- const fini=texte=>{log(texte);apresMagasin()};
+ // v1.188 : rien au journal — c'est celui du combat.
+ const fini=()=>apresMagasin();
  if(onglet==='connaissance'){vitSavoir(corps,client,R);return}
  corps.className='vit-corps vit-a-grille';const gauche=vitEl('div','vit-gauche'),droite=vitEl('aside','vit-fiche');corps.append(gauche,droite);
  const items=[];
@@ -1346,4 +1347,4 @@ function vitSavoir(corps,client,R){corps.className='vit-corps';const mj=mjDom(),
  const ok=!!client&&inconnus.length>0&&or>=prix,raison=!client?'Il faut être à la Tour Mystique pour apprendre.':!inconnus.length?'L’Arcaniste n’a plus rien à apprendre à la troupe.':'Il manque '+(prix-or)+' or.';
  const agir=vitEl('button','vit-agir','Acheter une ligne de savoir — '+prix+' or');agir.type='button';if(!ok){agir.classList.add('inactif');agir.setAttribute('aria-disabled','true')}vitRefus(agir,ok?'':raison);
  agir.onclick=()=>{if(!ok)return;const d=inconnus[Math.floor(Math.random()*inconnus.length)];ajouteOr(client,-prix);domaine.savoirSpheres=[...connu,d.cle];sauveDomaine();
-  log(nomNum(client)+' apprend de l’Arcaniste, pour '+prix+' or : « '+d.nom+' » — '+couleurDe(d.cle)+', '+R.declencheurs[d.cle].seuil+'+.');apresMagasin()};corps.append(agir)}
+  apresMagasin()};corps.append(agir)}

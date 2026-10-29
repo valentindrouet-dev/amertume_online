@@ -5369,6 +5369,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.188 — Le sphérier et la Tour Mystique n'écrivent rien au journal du combat. */
+{const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');assert.ok(!ed.includes("' infuse les Sphères : '")&&!ed.includes("' désacheté : '")&&!dm.includes("apprend de l’Arcaniste")&&dm.includes(" const fini=()=>apresMagasin();"),'v1.188');}
 /* v1.187 — L'aventurier en onglets : Stats, classe, Bonus, espèce, métier, Inventaire ; le prix du talent lu sans aventurier ; le sac en cinq catégories. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=[...(a?[['stats','Stats','']]:[]),['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['inventaire','Inventaire','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(heroCard(a,actors.indexOf(a)))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")

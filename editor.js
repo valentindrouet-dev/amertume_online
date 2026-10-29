@@ -9190,7 +9190,7 @@ function desacheteSphere(ctx,t,l){const {a,classe,poserPalier,note,majTable}=ctx
   l.forEach(x=>{if(x!==t&&tientSphere(a,x)&&!garde.has(x.id)){rend(x,palierDe(a,x));a.talents=a.talents.filter(id=>id!==x.id);poserPalier(x,1)}})}
  a.richesses={...(a.richesses||{})};rendus.forEach((n,cle)=>{a.richesses[cle]=(Math.trunc(Number(a.richesses[cle]))||0)+n});
  a.paliersTalents=normalisePaliersActeur(a);marquesDe(a).clear();
- if(typeof log==='function')log(nomNum(a)+' · '+libelleBonus(paramsTalent(t)||{})+' désacheté : '+[...rendus].map(([cle,n])=>{const [ta,v]=cle.split('-');return '+'+n+' '+nomGemme(ta,v,false).toLowerCase()}).join(', ')+'.',{ton:'talent'});
+
  note('');majTable()}
 function infuseSpheres(ctx,l,seul){const {a,poserPalier,note,majTable}=ctx;if(!a)return;const m=marquesDe(a),marques=seul?[seul]:l.filter(t=>m.has(t.id));
  const tm=new Map();marques.forEach(t=>prixSpheres(t).forEach(p=>{const e=tm.get(p.cle)||{...p,n:0};e.n+=p.n;tm.set(p.cle,e)}));const tot=[...tm.values()];
@@ -9198,7 +9198,6 @@ function infuseSpheres(ctx,l,seul){const {a,poserPalier,note,majTable}=ctx;if(!a
  a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});
  marques.forEach(t=>{const k=palierDe(a,t);if(k===0)a.talents=[...(a.talents||[]),t.id];else poserPalier(t,k+1)});
  m.clear();a.paliersTalents=normalisePaliersActeur(a);
- if(typeof log==='function')log(nomNum(a)+' infuse les Sphères : '+marques.map(t=>libelleBonus(paramsTalent(t)||{})).join(', ')+'.',{ton:'talent'});
  note('');majTable()}
 // Le tableau du MJ : la variété de chaque caractéristique et de chaque compétence.
 const gemmesBonusDialog=dialog('gemmes-bonus','Gemmes des bonus','<div id="gemmes-bonus-liste" class="gemmes-bonus-liste"></div>');
