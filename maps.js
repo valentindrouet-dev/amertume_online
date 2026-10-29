@@ -4167,3 +4167,75 @@ function lancerEnZone(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la c
   finPotion(a,o,'lancé'+(gomme.length?', '+gomme.join(', ')+' gommé':'')+(t.length?', '+p.etat+(crans>1?' '+crans:'')+' sur '+t.map(nomNum).join(', '):'')+(!gomme.length&&!t.length?', sans effet':''))},o.name+' : geste annulé.');
  montreApercuZone(a,p)}
 {const lp=lancerPotion;lancerPotion=function(a,o,p){if(p&&aireLancer(p)&&p.seuil!=='oui')return lancerEnZone(a,o,p);return lp(a,o,p)}}
+/* ---------- v1.131 : la carte plein écran, ses panneaux flottants ----------
+   Sur la Table (MJ et joueurs, écran de plus de 900 px), la carte prend toute la page sous le menu, d'un bord à l'autre et
+   jusqu'en bas ; sa barre flotte en haut, entre les deux colonnes. Les panneaux — le tour, les combattants, les points de vie,
+   les dés, la fiche, le journal — flottent par-dessus, rangés en colonnes comme avant. Chacun se prend par son titre ou par la
+   barrette de son bord haut et se pose où l'on veut ; sa place se garde sur l'appareil. Un double-clic sur sa prise le rend à
+   sa colonne. Rien ne se mesure pendant qu'on le promène : une image sur deux au plus, sa seule position. */
+const FENETRES_CLE='amertume-fenetres';
+const cartePleine=()=>document.body.classList.contains('carte-pleine');
+function lisFenetres(){try{const t=JSON.parse(localStorage.getItem(FENETRES_CLE)||'{}');return t&&typeof t==='object'?t:{}}catch(e){return {}}}
+function gardeFenetres(t){try{localStorage.setItem(FENETRES_CLE,JSON.stringify(t))}catch(e){}}
+function fenetresTable(){const L=document.querySelector('main.layout');if(!L)return [];
+ return [['tour','#round'],['combattants','#actors'],['pv','#pv-panel'],['des','#piste-des'],['fiche','#sheet'],['journal','#journal']]
+  .map(([k,s])=>{const e=L.querySelector(s);return [k,e&&e.closest('.panel')]}).filter(([,p])=>p&&p.parentElement&&p.parentElement.matches('.stack.left,.stack.right'))}
+// Une fenêtre posée : sa place, gardée par rapport au cadre de la carte, se rapporte à sa colonne, qui la porte.
+function poseFenetre(p,s,L){const r=L.getBoundingClientRect(),c=p.parentElement.getBoundingClientRect();
+ const w=Math.min(Math.max(170,s.w||p.offsetWidth),r.width-16),x=Math.max(0,Math.min(r.width-60,s.x)),y=Math.max(0,Math.min(r.height-40,s.y));
+ p.classList.add('flottante');p.style.width=Math.round(w)+'px';p.style.height=s.h?Math.round(Math.min(s.h,r.height-y))+'px':'';
+ p.style.left=Math.round(r.left+x-c.left)+'px';p.style.top=Math.round(r.top+y-c.top)+'px'}
+function rendFenetre(p){p.classList.remove('flottante','tenue');['left','top','width','height','zIndex'].forEach(k=>p.style[k]='')}
+let hautTable=-1,modePlein=null;
+function placeTablePleine(){const L=document.querySelector('main.layout');if(!L)return;
+ const on=innerWidth>900,change=on!==modePlein;modePlein=on;document.body.classList.toggle('carte-pleine',on);
+ if(!on){fenetresTable().forEach(([,p])=>rendFenetre(p));if(change)redessineCarte();return}
+ if(!L.offsetParent)return;
+ const haut=Math.max(0,Math.round(L.getBoundingClientRect().top+scrollY));
+ if(haut!==hautTable){hautTable=haut;L.style.setProperty('--haut-table',haut+'px')}
+ const r=L.getBoundingClientRect(),g=L.querySelector(':scope>.stack.left'),d=L.querySelector(':scope>.stack.right');
+ if(g)L.style.setProperty('--barre-g',Math.round(g.getBoundingClientRect().right-r.left+12)+'px');
+ if(d)L.style.setProperty('--barre-d',Math.round(r.right-d.getBoundingClientRect().left+12)+'px');
+ const t=lisFenetres();fenetresTable().forEach(([k,p])=>{if(p.classList.contains('tenue'))return;const s=t[k];
+  if(s&&Number.isFinite(s.x)&&Number.isFinite(s.y))poseFenetre(p,s,L);else rendFenetre(p)});
+ if(change||haut!==redessinePour)redessineCarte()}
+// La carte change de cadre : elle se remesure et se repeint, une fois, à l'image suivante.
+let redessinePour=-1,redessinePrevu=0;
+function redessineCarte(){redessinePour=hautTable;if(redessinePrevu)return;redessinePrevu=requestAnimationFrame(()=>{redessinePrevu=0;
+ if(document.body.classList.contains('page-maps'))return;applyMapRatio();applyMapZoom();render()})}
+// La hauteur de la carte : celle de son panneau, toute la page sous le menu.
+{const h0=hauteurDispoCarte;hauteurDispoCarte=function(el){if(cartePleine()&&el&&el.offsetParent){const p=el.closest('.map-panel');if(p&&p.clientHeight)return p.clientHeight}
+ return h0.apply(this,arguments)}}
+// La colonne de droite prend toute la hauteur : la fiche en haut, le journal tout le reste.
+{const c0=calerColonnes;calerColonnes=function(){if(!cartePleine())return c0();
+ const L=document.querySelector('main.layout'),d=document.querySelector('.stack.right'),g=document.querySelector('.stack.left');if(!L||!d||!L.offsetParent)return;
+ const cs=getComputedStyle(L),h=Math.round(L.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)),H=h+'px';
+ if(!d.classList.contains('calee'))d.classList.add('calee');if(d.style.height!==H)d.style.height=H;if(g&&!g.classList.contains('calee'))g.classList.add('calee')}}
+{const a0=appliqueTailles;appliqueTailles=function(){const r=a0.apply(this,arguments);if(cartePleine())placeTablePleine();return r}}
+{const sp=showPage;showPage=function(...x){const r=sp.apply(this,x);requestAnimationFrame(placeTablePleine);return r}}
+// La prise : la barrette du haut, le titre du panneau ; ni un bouton, ni un champ. La fenêtre prise passe devant les autres.
+let fenetreDevant=3;
+function prendFenetres(){const L=document.querySelector('main.layout');if(!L)return;
+ fenetresTable().forEach(([k,p])=>{if(p.querySelector(':scope>.prise-fenetre'))return;
+  const prise=document.createElement('div');prise.className='prise-fenetre';prise.setAttribute('aria-hidden','true');p.prepend(prise);
+  const estPrise=e=>{if(!cartePleine()||e.target.closest('button,input,select,textarea,a,label,summary,[draggable="true"]'))return false;
+   const h=e.target.closest('.prise-fenetre,h2,.eyebrow');return !!h&&(h.parentElement===p||h.parentElement.parentElement===p)};
+  p.addEventListener('pointerdown',e=>{if(!cartePleine())return;
+   const devant=()=>{p.style.zIndex=String(++fenetreDevant);const c=p.parentElement;L.querySelectorAll(':scope>.stack.left,:scope>.stack.right').forEach(s=>s.style.zIndex=s===c?'6':'')};
+   if(p.classList.contains('flottante'))devant();
+   if(e.button!==0||!estPrise(e))return;e.preventDefault();
+   const x0=e.clientX,y0=e.clientY,pr=p.getBoundingClientRect();let parti=false,prevu=0,dernier=null;
+   const bouge=ev=>{dernier=ev;if(!parti){if(Math.hypot(ev.clientX-x0,ev.clientY-y0)<4)return;parti=true;try{p.setPointerCapture(e.pointerId)}catch(err){}
+     const r=L.getBoundingClientRect();poseFenetre(p,{x:pr.left-r.left,y:pr.top-r.top,w:pr.width,h:k==='journal'?pr.height:0},L);p.classList.add('tenue');devant()}
+    if(prevu)return;prevu=requestAnimationFrame(()=>{prevu=0;const r=L.getBoundingClientRect(),c=p.parentElement.getBoundingClientRect();
+     const x=Math.max(0,Math.min(r.width-60,pr.left-r.left+dernier.clientX-x0)),y=Math.max(0,Math.min(r.height-40,pr.top-r.top+dernier.clientY-y0));
+     p.style.left=Math.round(r.left+x-c.left)+'px';p.style.top=Math.round(r.top+y-c.top)+'px'})};
+   const fin=()=>{removeEventListener('pointermove',bouge);removeEventListener('pointerup',fin);removeEventListener('pointercancel',fin);
+    if(prevu){cancelAnimationFrame(prevu);prevu=0}if(!parti)return;p.classList.remove('tenue');
+    const r=L.getBoundingClientRect(),q=p.getBoundingClientRect(),t=lisFenetres();
+    t[k]={x:Math.round(q.left-r.left),y:Math.round(q.top-r.top),w:Math.round(q.width),...(k==='journal'?{h:Math.round(q.height)}:{})};gardeFenetres(t)};
+   addEventListener('pointermove',bouge);addEventListener('pointerup',fin);addEventListener('pointercancel',fin)});
+  p.addEventListener('dblclick',e=>{if(!estPrise(e)||!p.classList.contains('flottante'))return;const t=lisFenetres();delete t[k];gardeFenetres(t);rendFenetre(p)})})}
+prendFenetres();placeTablePleine();
+addEventListener('resize',placeTablePleine);
+if(typeof ResizeObserver==='function'){const h=document.querySelector('header');if(h)new ResizeObserver(()=>placeTablePleine()).observe(h)}

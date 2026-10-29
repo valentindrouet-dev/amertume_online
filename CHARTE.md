@@ -278,6 +278,8 @@ Une page est faite de panneaux `.panel` (fond `--panel`, bord `--line`). Une col
 
 ![Fiche d'aventurier](img/charte/fiche.webp)
 
+**Table plein écran** (écran de plus de 900 px, MJ et joueurs) : la carte prend toute la page sous le menu, d'un bord à l'autre et jusqu'en bas, sur le fond `--map-bg`. Sa barre (titre, outils, zoom) flotte en haut, entre les deux colonnes, panneau `--panel` à liseré `--line`. Les panneaux de la Table flottent par-dessus, rangés en colonnes, avec une ombre portée ; chacun se prend par son titre ou par la barrette qui paraît sur son bord haut au survol (`.prise-fenetre`), se pose où l'on veut et y reste sur l'appareil ; un double-clic sur sa prise le rend à sa colonne. Aucun texte n'est ajouté.
+
 ---
 
 ## 10. Champs

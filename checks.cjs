@@ -5368,6 +5368,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.131 — La carte plein écran sur la Table, ses panneaux flottants et déplaçables. */
+{const mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(mp.includes("const FENETRES_CLE='amertume-fenetres';")&&mp.includes("const on=innerWidth>900,change=on!==modePlein;")&&mp.includes("prise.className='prise-fenetre';")
+  &&css.includes('body.carte-pleine .map-panel{position:absolute;inset:0;')&&css.includes('body.carte-pleine main.layout>.stack>.panel.flottante{position:absolute;'),'v1.131');}
 /* v0.888 — Charte graphique (CHARTE.md, § 13) : bulles connues, couleurs de la charte, charte présente ; boutons de suppression rouges,
    action secondaire des fenêtres de réaction en relief neutre. */
 {const charte=fs.readFileSync('CHARTE.md','utf8');

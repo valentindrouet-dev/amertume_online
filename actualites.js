@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.131","d":"2026-10-29","t":"Table : carte plein écran, panneaux flottants"},
 {"v":"1.130","d":"2026-10-29","t":"Arbre : onglet Métier toujours visible, onglets aux teintes"},
 {"v":"1.129","d":"2026-10-28","t":"Catégorie Métiers et six métiers"},
 {"v":"1.128","d":"2026-10-28","t":"Arbre de talents : onglets, sphérier des Bonus, métiers"},
