@@ -9202,10 +9202,14 @@ addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='bonus'){con
 function arbreSansDefilement(){if(!arbresDialog.open||arbresOnglet==='bonus'||!arbresTaille||arbresMesure)return;
  const zone=arbresDialog.querySelector('.arbres-v2-arbre');if(!zone)return;
  const roues=[...zone.querySelectorAll('.arbre-roue')],blocs=roues.length?roues:[...zone.children].filter(e=>e.offsetHeight);if(!blocs.length)return;
- blocs.forEach(e=>{e.style.removeProperty('transform');e.style.removeProperty('transform-origin');e.style.removeProperty('margin-bottom')});
- const H=Math.max(...blocs.map(e=>e.offsetHeight));let k=1;
- for(let i=0;i<6;i++){const trop=arbresDialog.scrollHeight-arbresDialog.clientHeight;if(trop<=1||!H)break;k=Math.max(.3,k*(1-trop/(H*k)));
-  blocs.forEach(e=>{const h=e.offsetHeight;e.style.transformOrigin='top center';e.style.transform='scale('+k+')';e.style.marginBottom=(-h*(1-k))+'px'})}
+ // v1.175 : un arbre d'une seule colonne tient aussi en largeur, sans défiler de côté.
+ const cols=[...zone.querySelectorAll('.arbres-cols>.arbre-col')],seul=cols.length<=1;
+ blocs.forEach(e=>{['transform','transform-origin','margin-bottom','margin-left','margin-right'].forEach(k=>e.style.removeProperty(k))});cols.forEach(c=>c.style.removeProperty('min-width'));
+ const H=Math.max(...blocs.map(e=>e.offsetHeight)),L=Math.max(...blocs.map(e=>e.offsetWidth));let k=1;
+ for(let i=0;i<8;i++){const trop=arbresDialog.scrollHeight-arbresDialog.clientHeight,large=seul?zone.scrollWidth-zone.clientWidth:0;if((trop<=1&&large<=1)||!H)break;
+  k=Math.max(.3,Math.min(trop>1?k*(1-trop/(H*k)):k,large>1&&L?k*(1-large/(L*k)):k));if(seul&&large>1)cols.forEach(c=>c.style.minWidth='0');
+  blocs.forEach(e=>{const h=e.offsetHeight,w=e.offsetWidth;e.style.transformOrigin='top center';e.style.transform='scale('+k+')';e.style.marginBottom=(-h*(1-k))+'px';
+   if(seul){e.style.marginLeft=e.style.marginRight=(-w*(1-k)/2)+'px'}})}
  if(k<1)arbresDialog.scrollTop=0}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);try{arbreSansDefilement()}catch(e){}return r}}
 addEventListener('resize',()=>{try{arbreSansDefilement()}catch(e){}});

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.175","d":"2026-10-29","t":"Talents jusqu'au panneau de droite"},
 {"v":"1.174","d":"2026-10-29","t":"Sphérier sans vide, arbres sans défilement"},
 {"v":"1.173","d":"2026-10-29","t":"Exports complets : cartes, talents, sauvegarde globale"},
 {"v":"1.172","d":"2026-10-29","t":"Talents sans améliorations ; Joueurs connectés en ligne seulement"},

@@ -4093,6 +4093,9 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 #arbres .arbres-v2{position:relative}
 /* v1.174 : le sphérier sans vide jusqu'au panneau de droite ; son quadrillage sur tout le cadre. */
 .arbres-v2.sphere-plein,#arbres.taille-mj .arbres-v2.sphere-plein{column-gap:0}
+/* v1.175 : dans tous les onglets, la partie des talents s'étend jusqu'au panneau de droite, sans vide ; ses colonnes en prennent toute la largeur. */
+#arbres .arbres-v2,#arbres.taille-mj .arbres-v2{column-gap:0}
+#arbres .arbres-v2 .arbres-v2-arbre>.arbres-cols>.arbre-col{flex:1 0 auto}
 .arbres-v2.sphere-plein .spherier-cadre.grille{background-image:linear-gradient(to right,color-mix(in srgb,var(--line) 70%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--line) 70%,transparent) 1px,transparent 1px);background-size:var(--pas,40px) var(--pas,40px)}
 .arbres-v2.sphere-plein .spherier-cadre.grille>.spherier.grille{background-image:none}
 .poignee-fenetre-arbres{position:absolute;right:3px;bottom:3px;width:22px;height:22px;cursor:nwse-resize;z-index:20;border-radius:4px;
