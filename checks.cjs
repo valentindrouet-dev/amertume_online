@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.134 — Tab cache l'interface de la Table en plein écran ; changer d'onglet la rend. */
+assert.ok(fs.readFileSync('maps.js','utf8').includes("m.textContent='Appuyez sur Tab ⇥ pour faire réapparaître l’interface.';")&&fs.readFileSync('maps.js','utf8').includes("{const sp=showPage;showPage=function(...x){cacheInterfaceTable(false);return sp.apply(this,x)}}"),'v1.134');
 /* v1.133 — Le sphérier : icônes définitives des bonus, clic sur le fond, Maj + clic pour lier, choix des bonus, coût sous le rond. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("function logoBonusFixe(carac){const n={vie:1,endu:2,pv:3,xp:4,dmg:5}[carac],id=n?'planches/caracteristiques_2.webp#'+n:'';")

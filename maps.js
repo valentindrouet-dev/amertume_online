@@ -4285,3 +4285,21 @@ function prendFenetres(){const L=document.querySelector('main.layout');if(!L)ret
 prendFenetres();placeTablePleine();
 addEventListener('resize',placeTablePleine);
 if(typeof ResizeObserver==='function'){const h=document.querySelector('header');if(h)new ResizeObserver(()=>placeTablePleine()).observe(h)}
+/* v1.134 — Tab ⇥, la touche au-dessus du verrouillage des majuscules, cache l'interface de la Table en plein écran : les panneaux
+   et la barre de la carte s'effacent, la barre d'actions du bas reste. Un message, en haut de la carte, dit comment la rendre ;
+   Tab la rend. Changer d'onglet, ou quitter la page du navigateur, la rend aussi. Rien ne bouge dessous : les panneaux gardent
+   leur place, la carte la sienne — rien à remesurer, rien à repeindre. Ni dans un champ, ni fenêtre ouverte. */
+let interfaceCachee=false;
+function cacheInterfaceTable(on){if(on===interfaceCachee)return;interfaceCachee=on;document.body.classList.toggle('interface-cachee',on);
+ let m=document.getElementById('interface-message');
+ if(on&&!m){const p=document.querySelector('.map-panel');if(p){m=document.createElement('div');m.id='interface-message';m.className='interface-message';m.setAttribute('role','status');
+  m.textContent='Appuyez sur Tab ⇥ pour faire réapparaître l’interface.';p.append(m)}}
+ if(m)m.hidden=!on;if(on&&typeof fermerBulle==='function')fermerBulle()}
+addEventListener('keydown',e=>{if(e.key!=='Tab'||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||e.repeat)return;
+ const L=document.querySelector('main.layout'),c=e.target;
+ if(!cartePleine()||!L||!L.offsetParent||document.body.classList.contains('page-maps')||document.querySelector('dialog[open]'))return;
+ if(c&&c.closest&&c.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"],dialog,[popover]'))return;
+ e.preventDefault();cacheInterfaceTable(!interfaceCachee)});
+{const sp=showPage;showPage=function(...x){cacheInterfaceTable(false);return sp.apply(this,x)}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cacheInterfaceTable(false)});
+addEventListener('resize',()=>{if(!cartePleine())cacheInterfaceTable(false)});

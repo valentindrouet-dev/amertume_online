@@ -3911,3 +3911,9 @@ body.carte-pleine main.layout>.stack>.place-fenetre{display:block;flex:none;bord
 .sphere-cout.sous-paliers{margin-top:14px}
 .sphere-noeud.dispo .sphere-cout{color:var(--ink)}
 .sphere-noeud:hover{background:none}
+/* v1.134 : l'interface de la Table cachée (Tab) — panneaux et barre de la carte effacés, la barre d'actions reste ; le message en haut. */
+body.carte-pleine.interface-cachee main.layout>:is(.stack.left,.stack.right),body.carte-pleine.interface-cachee .map-panel>.mapbar{visibility:hidden}
+.interface-message{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:8;padding:8px 18px;border-radius:12px;background:#1b1410f2;color:#f6e9d8;
+ border:1px solid #d29180;box-shadow:0 10px 28px rgba(0,0,0,.45);font:600 14px system-ui;white-space:nowrap;pointer-events:none;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+.interface-message[hidden]{display:none}
+body:not(.carte-pleine) .interface-message{display:none}
