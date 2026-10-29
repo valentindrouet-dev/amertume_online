@@ -9466,11 +9466,13 @@ comaAventuriers=noteChutes(comaAventuriers);appliqueNecrose=noteChutes(appliqueN
 /* v1.193 — L'onglet Caractéristiques : la fiche de l'aventurier en deux blocs — à gauche ses six caractéristiques, à droite
    ses huit compétences, chacune en vignette, son icône et sa valeur à côté — puis ses talents, centrés. L'inventaire a son onglet. */
 function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('fiche-onglet');
+ // v1.198 : le fond des talents prend la teinte de la classe, comme le cadre des caractéristiques.
+ {const t=typeof actorTint==='function'&&actorTint(a);if(t)c.style.setProperty('--classe',t)}
  const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
  /* v1.196 : chaque vignette dit ce que dit le panneau du sphérier — l'icône, le nom à sa couleur, sa nature, ce qu'elle fait en
     italique — et la valeur, à droite. */
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
-  const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h,el('span','vignette-nature',nature));if(desc)m.append(el('span','vignette-desc',desc));
+  const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
  const CARACS_FICHE={vie:['Vie',descriptionBonus({carac:'vie'})],endu:['Endurance',descriptionBonus({carac:'endu'})],pv:['PV max',descriptionBonus({carac:'pv'})],def:['DEF',descriptionBonus({carac:'def'})],
   dmg:['Dégâts',descriptionBonus({carac:'dmg'})],xp:['XP','Tous les '+XP_PAR_MARQUE+' XP, une Marque, qui paie les talents.']};

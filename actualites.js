@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.198","d":"2026-10-29","t":"Caractéristiques : deux colonnes, sans livre"},
 {"v":"1.197","d":"2026-10-29","t":"Bourse, Armes / Équipements, fiches des autres"},
 {"v":"1.196","d":"2026-10-29","t":"Fiche en livre, Bibliothèque, Ouvrir la Carte"},
 {"v":"1.195","d":"2026-10-29","t":"Planche et icônes des sphères"},
