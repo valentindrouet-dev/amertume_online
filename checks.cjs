@@ -1609,7 +1609,7 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
    d'une page dessinée avant tenait l'ancienne, et restait muet chez un joueur. La fiche se
    retrouve par son identifiant. */
 assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}')
- &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&tientAventurier(a)}')
+ &&src.includes("function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(tientAventurier(a)||view!=='mj')}")
  &&src.includes(' if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);')
  &&fs.readFileSync('shared.js','utf8').includes("if(typeof renderCatalogPages==='function')renderCatalogPages();")
  &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
@@ -4398,7 +4398,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("floatNumber(a,'Plus de Mouvement','nul',true)")&&carto.includes("floatNumber(a,'Action déjà dépensée','nul',true)"),'les mots flottants partagés, les refus gardés');
  assert.ok(vif.includes("const GLISSE_RETARD=220,glissements=new Map();")&&vif.includes("  if(glissements.has(a.id)){const v=glissements.get(a.id).cible;e.x=v.x;e.y=v.y}")
   &&vif.indexOf("aGlisser.forEach(a=>{const e=d.actors[a.id];glisseVers(a,e.x,e.y)});")<vif.indexOf("  base=etatVivant();\n  const change=complet"),'les socles reçus glissent, la vraie position repart');
- assert.ok(src.includes("const troupe=actors.filter(a=>a.hero&&voitAventurier(a));")&&src.includes(" $('bloc-sauvegarde-globale').hidden=view!=='mj';"),'un joueur assis : son aventurier seul, pas de sauvegarde globale');
+ assert.ok(src.includes("const troupe=actors.filter(a=>a.hero&&herosDeLaPage(a));")&&src.includes(" $('bloc-sauvegarde-globale').hidden=view!=='mj';"),'un joueur assis : son aventurier seul, pas de sauvegarde globale');
  // Le flou à la main : une marche devient une pente, et l'encre ne se perd pas.
  const ctxF={};vm.createContext(ctxF);vm.runInContext(carto.slice(carto.indexOf('function boiteFlou('),carto.indexOf('// Dessine « src » flouté')),ctxF);
  const w=40,h=3,a=new Float32Array(w*h);for(let y=0;y<h;y++)for(let x=20;x<w;x++)a[y*w+x]=255;const total=a.reduce((s,v)=>s+v,0);
@@ -5376,7 +5376,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 /* v1.187 — L'aventurier en onglets : Stats, classe, Bonus, espèce, métier, Inventaire ; le prix du talent lu sans aventurier ; le sac en cinq catégories. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
- &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+ &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.197 — Bourse : les sphères possédées, leur nombre sur l'icône ; Armes / Équipements par rareté ; la fiche des autres, en lecture. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(!n)return;const el=document.createElement('span');el.className='gem-vive gem-chiffree g-'+v;")&&ed.includes("function herosDeLaPage(a){")
+ &&ed.includes("const arbresEnLecture=()=>!!arbresActeur&&view!=='mj'&&!tientAventurier(arbresActeur);")&&ed.includes("estEq=o=>['weapon','armor','ammo'].includes(o.category)"),'v1.197');}
 /* v1.196 — L'onglet Caractéristiques en livre ; la Bibliothèque et son Bestiaire ; « Ouvrir la Carte » d'un bâtiment, et dans l'onglet Cartes. */
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),rg=fs.readFileSync('regles.js','utf8');
  assert.ok(ed.includes("const livre=el('div','fiche-livre'),pg=el('section','fiche-page page-gauche'),pd=el('section','fiche-page page-droite');")&&cb.includes("['tour','Tour Mystique'],['bibliotheque','Bibliothèque']];")
@@ -5389,7 +5392,7 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
   &&!/\.src=imgUrl\(iconeGemme\(/.test(ed+gm+fs.readFileSync('domaine.js','utf8'))&&ed.includes("iconesGemmes:structuredClone(catalog.iconesGemmes||{})"),'v1.195');}
 /* v1.194 — Flèches entre aventuriers, schéma en haut, bourse en quatre lignes, sac à huit colonnes, place qui brille, vignettes, carte Sphères. */
 {const ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(ed.includes("const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&voitAventurier(a)&&peutVoirArbres(a)));")&&ed.includes("grille.classList.add('en-vignettes');heros.forEach((a,i)=>grille.append(vignetteHeros(a,i)));")
+ assert.ok(ed.includes("const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&herosDeLaPage(a)&&peutVoirArbres(a)));")&&ed.includes("grille.classList.add('en-vignettes');heros.forEach((a,i)=>grille.append(vignetteHeros(a,i)));")
   &&ed.includes("rang.className='bourse-corps bourse-lignes';")&&ed.includes("if(boite)boite.dataset.brille=placeDe(o)")&&pl.includes("const CARTE_SPHERES='__spheres';")
   &&css.includes(".inv-fenetre .sac .sac-ligne{grid-template-columns:repeat(8,minmax(0,1fr));")&&!ed.includes("if(boite)boite.className='corps-sac'"),'v1.194');}
 /* v1.193 — L'onglet Caractéristiques en deux blocs de vignettes, les talents centrés dessous, sans le bloc Inventaire. */

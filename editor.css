@@ -4245,3 +4245,8 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 #dom-fiche-fenetre .dom-cartes-menu{position:absolute;top:100%;right:48px;z-index:5;display:flex;flex-direction:column;gap:2px;min-width:200px;padding:6px;border:1px solid var(--line-strong);border-radius:10px;background:var(--panel);box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 30%,transparent)}
 #dom-fiche-fenetre .dom-cartes-menu button{text-align:left;padding:7px 10px;border:0;border-radius:7px;background:none;font:600 13px system-ui;color:var(--ink);cursor:pointer}
 #dom-fiche-fenetre .dom-cartes-menu button:hover{background:var(--panel-2)}
+/* v1.197 — La bourse : le nombre d'une sphère posé sur son icône, sans cadre ; la fiche d'un autre aventurier, en lecture. */
+.corps .place.p-bourse .bourse-ligne .gem-vive.gem-chiffree{position:relative;display:inline-block;gap:0;padding:0;margin:0 4px 0 0;background:none;border:0;box-shadow:none}
+.corps .place.p-bourse .bourse-ligne .gem-chiffree .gem-ico{display:block;width:34px;height:34px}
+.corps .place.p-bourse .bourse-ligne .gem-chiffree b{position:absolute;right:-5px;bottom:-4px;margin:0;color:#fff;font:900 15px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+#arbres.en-lecture :is(.inv-plus,.vide.equipable,#arbres-reset){display:none}

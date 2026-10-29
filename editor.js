@@ -1948,7 +1948,7 @@ function deplaceFiche(x,cible,apres){const l=trieHeros(actors.filter(a=>a&&a.her
 function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  /* À une table en ligne, un joueur ne voit que ses aventuriers : ceux qu'il a créés, ou que le MJ lui a confiés. */
- const troupe=actors.filter(a=>a.hero&&voitAventurier(a));
+ const troupe=actors.filter(a=>a.hero&&herosDeLaPage(a));
  // La maîtrise d'une classe s'acquiert avec la classe : on la pose avant de dessiner.
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
  // v0.967 : le champ de recherche ne sert pas : il reste caché.
@@ -2777,7 +2777,7 @@ const SILHOUETTE='<img class="silhouette" src="'+imgUrl('PERSO.png')+'" alt="" a
    ancienne. */
 /* v1.185 : en fenêtre (« fenetre »), le même corps et le même sac, mais en deux parties — le schéma à gauche, avec la bourse
    dessous ; le sac à droite, pièce par pièce, rangé par catégories, les noms toujours écrits. */
-const CATEGORIES_SAC=[['equipement','Équipement',o=>['weapon','armor','ammo'].includes(o.category)],['object','Objets',o=>['object','potion','cle','recette'].includes(o.category)],['treasure','Trésors',o=>o.category==='treasure'],
+const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],['object','Objets',o=>['object','potion','cle','recette'].includes(o.category)],['treasure','Trésors',o=>o.category==='treasure'],
  ['restes','Restes',o=>typeof estReste==='function'?estReste(o):o.category==='restes'],['ressource','Ressources',o=>o.category==='ressource'||o.category==='herbe']];
 function corpsEtSac(a,fenetre){const out=document.createElement('div');out.className='corps-sac'+(fenetre?' inv-fenetre':'');
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&tientAventurier(a));
@@ -2825,10 +2825,11 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
   // La bourse : un emplacement sous le schéma, l'or et les sphères ; le MJ y ajoute ou retire d'un clic.
   const pl=document.createElement('div');pl.className='place p-bourse';pl.dataset.place='bourse';const l=document.createElement('span');l.className='nom-place';l.textContent='Bourse';pl.append(l);
   const rang=document.createElement('div');rang.className='bourse-corps bourse-lignes';const lo=document.createElement('div');lo.className='bourse-ligne';lo.append(or);rang.append(lo);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
-  // v1.194 : quatre lignes — l'or, puis les Brisures, les Éclats, les Brômes, chaque couleur avec son compte.
+  /* v1.194 : l'or, puis une ligne par taille — Brisures, Éclats, Brômes. v1.197 : seules les sphères qu'il possède, leur nombre
+     posé sur l'icône comme celui d'un bonus ; une taille dont il n'a rien ne fait pas de ligne. */
   TAILLES_GEMMES.forEach(([ta,nomT])=>{const l=document.createElement('div');l.className='bourse-ligne gemmes-corps';l.setAttribute('aria-label',nomT);
-   VARIETES_GEMMES.forEach(([v])=>{const k=cleGemme(ta,v,false),n=Math.max(0,Math.trunc(Number(a.richesses[k]))||0),el=document.createElement('span');el.className='gem-vive g-'+v+(n?'':' zero');
-    const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,false),b);el.title=nomGemme(ta,v,false);l.append(el)});rang.append(l)});
+   VARIETES_GEMMES.forEach(([v])=>{const k=cleGemme(ta,v,false),n=Math.max(0,Math.trunc(Number(a.richesses[k]))||0);if(!n)return;const el=document.createElement('span');el.className='gem-vive gem-chiffree g-'+v;
+    const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,false),b);el.title=n+' '+nomGemme(ta,v,false);l.append(el)});if(l.childElementCount)rang.append(l)});
   if(view==='mj'){pl.classList.add('cliquable');pl.setAttribute('role','button');pl.tabIndex=0;pl.title='Or et sphères de '+a.name;pl.onclick=()=>openRichesses(a);pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
   pl.append(rang);corps.append(pl)}
  else if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
@@ -2850,7 +2851,9 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
  const lignes=new Map(LIGNES_SAC.map(([k,nom])=>{const l=document.createElement('div');l.className='sac-ligne sac-'+k;
   const t=document.createElement('span');t.className='sac-ligne-titre';t.textContent=nom;l.append(t);return [k,l]}));
  const ligneDe=o=>lignes.get((LIGNES_SAC.find(([,,f])=>f(o))||LIGNES_SAC.find(([k])=>k==='object')||LIGNES_SAC[1])[0]);
- [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
+ // v1.197 : armes et équipements par rareté croissante, dans la fenêtre.
+ const rangRar=o=>{const r=rareteDe(o),i=RARETES.findIndex(([k])=>k===r);return i<0?RARETES.length:i},estEq=o=>['weapon','armor','ammo'].includes(o.category),entrees=[...comptes.entries()];
+ (fenetre?[...entrees.filter(([o])=>estEq(o)).sort(([x],[y])=>rangRar(x)-rangRar(y)),...entrees.filter(([o])=>!estEq(o))]:entrees).forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
   const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
   /* Au survol, une petite croix rouge retire de l'inventaire — après confirmation ; s'il y en a plusieurs, on choisit
@@ -6247,7 +6250,7 @@ function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hi
 function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}
 // Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
 // Seul un aventurier a un arbre : un adversaire prend ses talents dans une liste.
-function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&tientAventurier(a)}
+function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(tientAventurier(a)||view!=='mj')}
 // Seule une classe du jeu a un arbre : ni les génériques, ni les familles d'adversaires.
 function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}
 function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;arbresEspece=false;arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height');
@@ -6263,7 +6266,7 @@ const flechesArbres=[-1,1].map(sens=>{const b=document.createElement('button');b
   if(arbresActeur){const l=herosVoisins(),i=l.indexOf(arbresActeur);if(i<0||l.length<2)return;const o=arbresOnglet;openArbres(l[(i+sens+l.length)%l.length]);arbresOnglet=o;renderArbres();return}
   const l=talentFamilies().filter(aUnArbre),i=l.indexOf(arbresClasse);
   if(i>=0&&l.length>1)openArbresClasse(l[(i+sens+l.length)%l.length])};arbresDialog.append(b);return b});
-const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&voitAventurier(a)&&peutVoirArbres(a)));
+const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&herosDeLaPage(a)&&peutVoirArbres(a)));
 function placeFlechesArbres(){if(arbresDialog.open&&arbresActeur){const l=herosVoisins(),i=l.indexOf(arbresActeur);flechesArbres.forEach(b=>b.hidden=i<0||l.length<2);if(i<0||l.length<2)return;
   const r=arbresDialog.getBoundingClientRect(),w=44;flechesArbres.forEach((b,k)=>{const v=l[(i+(k?1:-1)+l.length)%l.length];b.setAttribute('aria-label','Fiche de '+v.name);
    b.style.setProperty('--encre',(typeof actorTint==='function'&&actorTint(v))||'var(--ink)');b.style.top=(r.top+r.height/2)+'px';b.style.left=(k?Math.min(innerWidth-w-4,r.right+10):Math.max(4,r.left-w-10))+'px'});return}
@@ -9517,3 +9520,11 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
 // v1.195 : l'image d'une sphère, partout où elle paraît (img/ressource_*), suit l'icône que le MJ lui a choisie dans l'onglet Sphères.
 {const pl=poseLogo;poseLogo=function(im,l,...x){const g=/^ressource_([a-z]+)_([a-z]+)$/.exec(String(l||''));
  if(g){const t=(TAILLES_GEMMES.find(([k])=>(FICHIERS_TAILLES[k]||k)===g[1])||[])[0],c=t?logoGemmeChoisi(t,g[2]):'';if(c&&c!==l)l=c}return pl(im,l,...x)}}
+/* v1.197 — Chaque joueur ouvre aussi la fiche des autres aventuriers, depuis la page Aventuriers : il la lit sans rien y changer
+   ni rien équiper. Un aventurier en attente ne paraît qu'à son joueur. */
+function herosDeLaPage(a){return !!a&&!!a.hero&&(voitAventurier(a)||(view!=='mj'&&a.enAttente!==true))}
+const arbresEnLecture=()=>!!arbresActeur&&view!=='mj'&&!tientAventurier(arbresActeur);
+['click','dblclick','contextmenu','dragstart','drop','change','input','keydown'].forEach(ev=>arbresDialog.addEventListener(ev,e=>{if(!arbresEnLecture())return;
+ const t=e.target;if(t===arbresDialog||(t.closest&&t.closest('.arbres-onglets,.arbres-fleche,[data-close]')))return;if(ev==='keydown'&&!['Enter',' '].includes(e.key))return;
+ e.stopPropagation();e.preventDefault()},true));
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);arbresDialog.classList.toggle('en-lecture',arbresEnLecture());return r}}
