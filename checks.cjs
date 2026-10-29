@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.150 — Vert émeraude pâle ; fond vert ou doré pâle des accessibles ; le clic dans le vide décoche. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes(".spherier-lien.pris{stroke:#58b09f;stroke-opacity:.9}")&&fs.readFileSync('editor.js','utf8').includes("if(!mj)plan.addEventListener('click',e=>{if(e.target!==plan&&e.target!==svg)return;sphereSel=null;sphereSels=new Set();renderArbres()});"),'v1.150');
 /* v1.149 — Plus de marquage au clic ; tenu en vert, accessible en doré, lien tenu-tenu vert, tenu-libre doré. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const pr=prixSphere(t),accessible=k>0||ouvert,cher=!!a&&gemmesDe(a,pr.cle)<pr.n;")&&fs.readFileSync('editor.css','utf8').includes(".spherier-lien.pris{stroke:var(--green);stroke-opacity:.85}"),'v1.149');
 /* v1.148 — Au MJ, Désacheter un bonus infusé rend ses gemmes ; Infuser centré. */

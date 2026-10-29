@@ -8878,11 +8878,13 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
    addEventListener('pointermove',mv);addEventListener('pointerup',up)});
   plan.addEventListener('click',e=>{if(lassoFait){lassoFait=false;return}if(e.target!==plan&&e.target!==svg)return;const r=plan.getBoundingClientRect();
    choisirBonusSphere(classe,{x:Math.max(GRILLE_SPHERE,surGrille(e.clientX-r.left)),y:Math.max(GRILLE_SPHERE,surGrille(e.clientY-r.top))})})}
+ if(!mj)plan.addEventListener('click',e=>{if(e.target!==plan&&e.target!==svg)return;sphereSel=null;sphereSels=new Set();renderArbres()});
  const cadre=document.createElement('div');cadre.className='spherier-cadre';cadre.append(plan);zone.append(cadre);
  /* v1.138 — Le panneau de droite : un seul bloc — le grand rond et, dessous, son coût ; à droite, le bonus sur une ligne et, en
     italique, ce que fait sa caractéristique. Chez le MJ, sur le plan d'une classe, un clic l'édite ; chez un aventurier, un clic
     l'achète ou le rend, comme sur son rond. */
- const detail=aside=>{aside.replaceChildren();const t=l.find(x=>x.id===sphereSel)||l.find(x=>x.departSphere)||l[0];if(!t)return;
+ // v1.150 : chez un aventurier, rien de choisi laisse le panneau vide ; un clic dans le vide du plan décoche.
+ const detail=aside=>{aside.replaceChildren();const t=l.find(x=>x.id===sphereSel)||(a?null:l.find(x=>x.departSphere)||l[0]);if(!t)return;
   const panneau=document.createElement('div');panneau.className='detail-defile';aside.append(panneau);const max=paliersDe(t),k=a?palierDe(a,t):0;
   const vu=talentAuPalier(t,Math.max(1,k)),p=paramsTalent(vu)||{};
   const tete=document.createElement('div');tete.className='detail-tete detail-tete-sphere';const rond=document.createElement('span');rond.className='sphere-rond detail-sphere';poseLogoBonus(rond,vu);teinteSphere(t,v=>rond.style.setProperty('--tint',v));
