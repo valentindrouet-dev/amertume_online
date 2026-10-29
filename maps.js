@@ -302,6 +302,11 @@ function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)
    les portes closes. Rien ne s'en garde : il se referme derrière l'aventurier. Chez le MJ, c'est un voile. Il ne se repeint
    qu'au changement, et suit le socle qu'on glisse, image après image. */
 function toileNuit(){let cv=$('nuit');if(!cv){cv=document.createElement('canvas');cv.id='nuit';cv.setAttribute('aria-hidden','true');$('fog').after(cv)}return cv}
+/* v1.159 : la copie réduite d'un calque de la nuit, refaite quand le calque change (sa clé) ou la taille voulue. */
+const copiesNuit=new WeakMap();
+function reduiteNuit(src,W,H,cleSrc){const o0=src===nuitFondue.cv?nuitFondue:src===nuitPercee.cv?nuitPercee:null;let o=copiesNuit.get(src);
+ if(!o){o={cle:'',cv:document.createElement('canvas')};copiesNuit.set(src,o)}const k=(cleSrc!==undefined?cleSrc:o0?o0.cle:'')+'|'+src.width+'x'+src.height+'|'+W+'x'+H;
+ if(o.cle!==k){o.cle=k;o.cv.width=W;o.cv.height=H;const x=o.cv.getContext('2d');x.clearRect(0,0,W,H);x.drawImage(src,0,0,W,H)}return o.cv}
 function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
  if(!m||!size.width||!carteObscure()){cv.style.display='none';cv._peinte='';return}
  // La toile couvre la carte : sa taille est celle du cadre, déjà mesuré pendant un rendu.
@@ -309,10 +314,15 @@ function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
  const ech=Math.min(2,window.devicePixelRatio||1),NW=Math.max(1,Math.min(2048,Math.round(large*ech))),NH=Math.max(1,Math.round(NW*haut/large));
  const nuit=calqueNuit(NW,NH);if(!nuit)return;
  const joueur=oeilJoueur(),yeux=joueur?fogSeers().map(o=>({o,r:rayonVision(o)})).filter(y=>y.r>0):[];
- const cle=[nuitPercee.cle,NW,NH,joueur,fogCalcul,yeux.map(({o,r})=>o.x.toFixed(2)+','+o.y.toFixed(2)+','+(Number.isFinite(r)?Math.round(r):'∞')).join(';')].join('|');
+ /* v1.159 : pendant le glissement d'un socle, la toile se peint à demi-résolution — le noir a le bord fondu, la différence ne se
+    voit pas, et il y a quatre fois moins à peindre ; au lâcher, le rendu la repeint nette. */
+ const red=window.socleEnMain?.5:1,W=Math.max(1,Math.round(NW*red)),H=Math.max(1,Math.round(NH*red));
+ const cle=[nuitPercee.cle,NW,NH,red,joueur,fogCalcul,yeux.map(({o,r})=>o.x.toFixed(2)+','+o.y.toFixed(2)+','+(Number.isFinite(r)?Math.round(r):'∞')).join(';')].join('|');
  if(cv._peinte===cle)return;cv._peinte=cle;
- if(cv.width!==NW||cv.height!==NH){cv.width=NW;cv.height=NH}
- const c=cv.getContext('2d');c.globalCompositeOperation='source-over';c.clearRect(0,0,NW,NH);c.drawImage(nuit,0,0);
+ if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ // Sous le geste, les calques se lisent dans leurs copies réduites, faites une fois : chaque image copie pixel pour pixel.
+ const R=t=>red<1?reduiteNuit(t,W,H):t;
+ const c=cv.getContext('2d');c.setTransform(1,0,0,1,0,0);c.globalCompositeOperation='source-over';c.clearRect(0,0,W,H);c.setTransform(red,0,0,red,0,0);c.drawImage(R(nuit),0,0,NW,NH);
  if(joueur){const formes=obstaclesVue();c.globalCompositeOperation='destination-out';c.fillStyle='#000';
   // Ce que l'œil voit dans le noir se fond vers son bord, du même dégradé qu'une lumière.
   const kk=NW/size.width,demi=tokenPx()*.5;
@@ -324,11 +334,11 @@ function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
   c.globalCompositeOperation='source-over'}
  /* Ce que la lumière éclaire hors de la vue de la troupe se grise, comme ce dont on se souvient : la part éclairée du noir,
     hors des champs de vision, reprend la moitié de son noir. */
- if(fogVis&&fogVis.length&&nuitFondue.cv){const g=toileCache(nuitGrise,NW,NH),gc=g.getContext('2d');
-  gc.globalCompositeOperation='source-over';gc.clearRect(0,0,NW,NH);gc.drawImage(nuitFondue.cv,0,0);gc.globalCompositeOperation='destination-out';gc.drawImage(nuit,0,0);gc.fillStyle='#000';
+ if(fogVis&&fogVis.length&&nuitFondue.cv){const g=toileCache(nuitGrise,W,H),gc=g.getContext('2d');
+  gc.setTransform(1,0,0,1,0,0);gc.globalCompositeOperation='source-over';gc.clearRect(0,0,W,H);gc.setTransform(red,0,0,red,0,0);gc.drawImage(R(nuitFondue.cv),0,0,NW,NH);gc.globalCompositeOperation='destination-out';gc.drawImage(R(nuit),0,0,NW,NH);gc.fillStyle='#000';
   fogVis.forEach(poly=>{if(!poly||poly.length<3)return;gc.beginPath();poly.forEach((q,k)=>gc[k?'lineTo':'moveTo'](q[0]/100*NW,q[1]/100*NH));gc.closePath();gc.fill()});
-  gc.globalCompositeOperation='source-over';c.globalAlpha=.5;c.drawImage(g,0,0);c.globalAlpha=1}
- cv.style.opacity=joueur?'1':'.5'}
+  gc.globalCompositeOperation='source-over';gc.setTransform(1,0,0,1,0,0);c.setTransform(1,0,0,1,0,0);c.globalAlpha=.5;c.drawImage(g,0,0);c.globalAlpha=1}
+ c.setTransform(1,0,0,1,0,0);cv.style.opacity=joueur?'1':'.5'}
 // Un combattant dans le noir : sur une case obscure que rien n'éclaire.
 function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}
 /* Jusqu'où un combattant voit dans le noir, en pixels : sa zone de contact ; plus loin avec Vision dans le noir ; sans limite
@@ -551,17 +561,20 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
     plus la finesse gagnée. */
  const zoom=Math.max(1,typeof mapZoom==='number'&&mapZoom>0?mapZoom:1);
  const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
- if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ /* v1.159 : pendant le glissement d'un socle, la toile se peint à demi-résolution, comme le noir ; tout se trace aux mêmes
+    coordonnées, à l'échelle ; au lâcher, le rendu la repeint nette. */
+ const red=window.socleEnMain?.5:1,CW=Math.max(1,Math.round(W*red)),CH=Math.max(1,Math.round(H*red));
+ if(cv.width!==CW||cv.height!==CH){cv.width=CW;cv.height=CH}
  const ctx=cv.getContext('2d');
  /* Rien ne se repeint tant que rien n'a bougé : ni le calcul du brouillard, ni la mémoire, ni le cadre, ni le noir. Chaque
     rendu de la table repeignait la toile entière, flou de la mémoire compris. */
  const mem=memoryCanvas(d);
- const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur()].join('|');
+ const peinte=[m.id,fogCalcul,fogMemTick,W,H,red,view,owner,oeilJoueur()].join('|');
  if(cv._peinte===peinte)return;cv._peinte=peinte;
  // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
  const inconnu=oeilJoueur()?255:110,memoire=oeilJoueur()?150:40;
  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
- ctx.clearRect(0,0,W,H);
+ ctx.clearRect(0,0,CW,CH);ctx.setTransform(red,0,0,red,0,0);
  ctx.fillStyle='rgba(6,9,11,'+(inconnu/255).toFixed(3)+')';ctx.fillRect(0,0,W,H);
  ctx.globalCompositeOperation='destination-out';
  /* La mémoire est une grille de bits ; agrandie telle quelle jusqu'à l'écran, sa
@@ -577,7 +590,7 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
   if(!memFloue||memFloue._cle!==cleFlou){if(!memFloue)memFloue=document.createElement('canvas');if(memFloue.width!==W||memFloue.height!==H){memFloue.width=W;memFloue.height=H}
    const mc=memFloue.getContext('2d');mc.clearRect(0,0,W,H);mc.imageSmoothingEnabled=true;mc.imageSmoothingQuality='high';
    dessineFloute(mc,mem,0,0,W,H,Math.max(1,W/d.w*.7),[0,0,0]);memFloue._cle=cleFlou}
-  ctx.drawImage(memFloue,0,0)}
+  if(red<1)ctx.drawImage(reduiteNuit(memFloue,CW,CH,memFloue._cle),0,0,W,H);else ctx.drawImage(memFloue,0,0)}
  ctx.globalAlpha=1;ctx.fillStyle='#000';
  const trace=(c,poly)=>{c.beginPath();c.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
   for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);c.closePath()};
@@ -600,7 +613,7 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  const retenues=portes.filter(p=>!doorInSight(p)&&doorRemembered(p));
  if(retenues.length){ctx.globalAlpha=1-memoire/inconnu;retenues.forEach(rect);ctx.globalAlpha=1}
  portes.filter(doorInSight).forEach(rect);
- ctx.globalCompositeOperation='source-over';
+ ctx.globalCompositeOperation='source-over';ctx.setTransform(1,0,0,1,0,0);
  // Le noir se peint à part, sur sa toile (renderNuit).
 }
 /* Chaque remise à zéro du brouillard se compte : le numéro voyage par la table, et les

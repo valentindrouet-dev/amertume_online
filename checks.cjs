@@ -4535,9 +4535,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 {const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
  assert.ok(carto.includes("function lumiereEnVue(l){const m=currentMap();if(!fogVis||!m||m.fogOff)return true;")
   &&carto.includes("  const enVue=lumiereEnVue(l),vuTroupe=enVue||seenAt(l.x,l.y);")&&carto.includes("t.className='token lumiere'+(!enVue?' veiled':'')+(l.eteinte?' eteinte':'');")
-  &&carto.includes("gc.drawImage(nuitFondue.cv,0,0);gc.globalCompositeOperation='destination-out';gc.drawImage(nuit,0,0);")
-  &&carto.includes("gc.globalCompositeOperation='source-over';c.globalAlpha=.5;c.drawImage(g,0,0);c.globalAlpha=1}")
-  &&carto.includes(" const cle=[nuitPercee.cle,NW,NH,joueur,fogCalcul,yeux.map("),'la lumière hors de vue, grisée');
+  &&carto.includes("gc.drawImage(R(nuitFondue.cv),0,0,NW,NH);gc.globalCompositeOperation='destination-out';gc.drawImage(R(nuit),0,0,NW,NH);")
+  &&carto.includes("gc.globalCompositeOperation='source-over';gc.setTransform(1,0,0,1,0,0);c.setTransform(1,0,0,1,0,0);c.globalAlpha=.5;c.drawImage(g,0,0);c.globalAlpha=1}")
+  &&carto.includes(" const cle=[nuitPercee.cle,NW,NH,red,joueur,fogCalcul,yeux.map("),'la lumière hors de vue, grisée');
  assert.ok(page.includes("const apercusEnGeste=new Set();\nfunction visibilitesEnGeste(){")
   &&page.includes("const cls=joueur?'unseen':(a.hidden?'cachemj':'veiled');t.classList.toggle(cls,cache);if(t._pv)t._pv.classList.toggle(cls,cache)})}")
   &&page.includes("||troupeVoit(a)||apercusEnGeste.has(a.id)));\n apercusEnGeste.clear();")
@@ -4602,7 +4602,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const g=ctx.lumiereDegrade(132,22);assert.equal(g[0].join(),'0,1');assert.equal(g[g.length-1].join(),'1,0');
  assert.ok(g.every((s,i)=>!i||(s[0]>g[i-1][0]&&s[1]<g[i-1][1])),'un dégradé qui ne fait que s’assombrir');
  assert.ok(Math.abs(g[2][0]-(132-22)/132)<1e-9&&g[2][1]>.5,'encore clair à un demi-mètre du bord');assert.equal(ctx.lumiereDegrade(10,22).length,3,'une toute petite lumière');
- assert.ok(carto.includes(" const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur()].join('|');\n if(cv._peinte===peinte)return;cv._peinte=peinte;")
+ assert.ok(carto.includes(" const peinte=[m.id,fogCalcul,fogMemTick,W,H,red,view,owner,oeilJoueur()].join('|');\n if(cv._peinte===peinte)return;cv._peinte=peinte;")
   &&carto.includes(" fogKey=cle;fogCalcul++;")&&carto.includes("c.putImageData(img,0,0);fogDirty=false;fogMemTick++}")
   &&carto.includes("+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;"),'rien ne se repeint sans changement');
  assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitGrise={cle:'',cv:null};")
@@ -4725,7 +4725,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&carto.includes("function voitSocle(o,b){")&&carto.includes("function voitPoint(o,x,y){")&&carto.includes("function eclaireA(x,y){")&&carto.includes("function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}")
   &&carto.includes("return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")&&carto.includes("return fogTroupePx.some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")
   &&carto.includes("  if(!voitPoint(o.qui,x,y))return false;")&&carto.includes("neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&M.data[j*d.w+i]!==1)return false;if(!aveugle)return true;")
-  &&carto.includes("  ctx.save();trace(ctx,poly);ctx.clip();ctx.beginPath();ctx.arc(o.x/100*W,o.y/100*H,rayonVision(o)*k,0,Math.PI*2);ctx.fill();ctx.restore()});")&&carto.includes(" cv.style.opacity=joueur?'1':'.5'}"),'la vision dans le noir, et son rendu');
+  &&carto.includes("  ctx.save();trace(ctx,poly);ctx.clip();ctx.beginPath();ctx.arc(o.x/100*W,o.y/100*H,rayonVision(o)*k,0,Math.PI*2);ctx.fill();ctx.restore()});")&&carto.includes(" c.setTransform(1,0,0,1,0,0);cv.style.opacity=joueur?'1':'.5'}"),'la vision dans le noir, et son rendu');
  assert.ok(page.includes("if(typeof voitSocle==='function'&&!voitSocle(a,b))return {ok:false,ranged:true,text:'cible dans le noir'};")
   &&page.includes(" ||(a.hero&&view!=='mj'&&owner!==i&&typeof carteObscure==='function'&&carteObscure()&&typeof partySees==='function'&&!partySees(a))}")
   &&page.includes(" if(blinded(a)&&loin&&!mapSize().width)return 'Aveugle : ne voit rien au-delà de sa zone de contact.';")
@@ -5368,6 +5368,19 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.159 — Le glissement d'un socle allégé : la nuit à demi-résolution pendant le geste, le rectangle englobant des polygones de vue,
+   la liste des adversaires des contacts gardée une image, la barre de mouvement recalée seulement quand elle change. */
+{const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(carto.includes(" const red=window.socleEnMain?.5:1,W=Math.max(1,Math.round(NW*red)),H=Math.max(1,Math.round(NH*red));")
+  &&carto.includes(" const red=window.socleEnMain?.5:1,CW=Math.max(1,Math.round(W*red)),CH=Math.max(1,Math.round(H*red));")&&carto.includes("if(red<1)ctx.drawImage(reduiteNuit(memFloue,CW,CH,memFloue._cle),0,0,W,H);else ctx.drawImage(memFloue,0,0)}")
+  &&cb.includes(" {const b=boitePoly(poly);if(c[0]+r<b.x0||c[0]-r>b.x1||c[1]+r<b.y0||c[1]-r>b.y1)return false}")
+  &&page.includes("&&!(view!=='mj'&&cachePour(o,i)));ramasseListe={a,t:now,l:adversaires}}")&&page.includes("if(window.socleEnMain&&k===placeMvtCle)return;placeMvtCle=k}"),'v1.159');
+ // Le rectangle ne change aucune réponse : mêmes résultats que sans lui, sur des disques au hasard.
+ const {polyTouchesDisc}=require('./combat.js');const poly=[[10,10],[60,15],[70,60],[30,80],[5,40]];
+ const brut=(p,c,r)=>{const pin=(c,p)=>{let d=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const [xi,yi]=p[i],[xj,yj]=p[j];if((yi>c[1])!==(yj>c[1])&&c[0]<(xj-xi)*(c[1]-yi)/(yj-yi)+xi)d=!d}return d};
+  if(pin(c,p))return true;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[j],b=p[i],dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((c[0]-a[0])*dx+(c[1]-a[1])*dy)/(dx*dx+dy*dy)));if(Math.hypot(c[0]-a[0]-t*dx,c[1]-a[1]-t*dy)<=r)return true}return false};
+ let s=7;const rnd=()=>{s=(s*16807)%2147483647;return s/2147483647};
+ for(let n=0;n<400;n++){const c=[rnd()*110-10,rnd()*110-10],r=rnd()*15;assert.equal(polyTouchesDisc(poly,c,r),brut(poly,c,r),'rectangle englobant '+c+' '+r)}}
 /* v1.158 — La Cellule à Plasma ne chevauche plus la barre de mouvement. */
 assert.ok(fs.readFileSync('index.html','utf8').includes(" if(rm.right+ec+w<=rp.right-4)c.style.left=Math.round(rm.right+ec-rb.left)+'px';"),'v1.158');
 /* v1.157 — Une même action, une gemme de chaque couleur au plus ; plus de dés en plus sur un critique. */

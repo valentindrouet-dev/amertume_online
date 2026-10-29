@@ -1000,12 +1000,21 @@ function reachPolygon(o,shapes,rayon,largeur,hauteur,pas){
   pts.push((t=>[o.x+t*dx,o.y+t*dy])(rayonContre(idx,o.x,o.y,dx,dy,rayon,exclues)))}
  return pts}
 // Un socle est vu dès qu'il mord sur la zone éclairée, pas seulement par son centre.
+/* v1.159 : chaque polygone garde son rectangle englobant ; un disque qui en est loin ne le touche pas, sans parcourir ses bords.
+   Le rectangle se refait si le polygone change de longueur. */
+const boitesPoly=new WeakMap();
+function boitePoly(poly){let b=boitesPoly.get(poly);if(b&&b.n===poly.length)return b;let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+ for(const q of poly){if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1]}b={n:poly.length,x0,y0,x1,y1};boitesPoly.set(poly,b);return b}
 function polyTouchesDisc(poly,c,r){if(!poly||poly.length<3)return false;
- if(pointInPolygon(c,poly))return true;
- for(let i=0,j=poly.length-1;i<poly.length;j=i++){
-  const p=closestOnSegment(c,poly[j],poly[i]);
-  if(Math.hypot(c[0]-p[0],c[1]-p[1])<=r)return true}
- return false}
+ {const b=boitePoly(poly);if(c[0]+r<b.x0||c[0]-r>b.x1||c[1]+r<b.y0||c[1]-r>b.y1)return false}
+ /* v1.159 : un seul tour des bords, sans tableau intermédiaire — dedans (parité des croisements) ou un bord à moins de r ; mêmes
+    calculs que pointInPolygon et closestOnSegment. */
+ const cx=c[0],cy=c[1],r2=r*r;let inside=false;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+  if((yi>cy)!==(yj>cy)&&cx<(xj-xi)*(cy-yi)/(yj-yi)+xi)inside=!inside;
+  const dx=xi-xj,dy=yi-yj,l2=dx*dx+dy*dy,t=l2?Math.max(0,Math.min(1,((cx-xj)*dx+(cy-yj)*dy)/l2)):0,ex=xj+t*dx-cx,ey=yj+t*dy-cy;
+  if(ex*ex+ey*ey<=r2)return true}
+ return inside}
 // Aire d'un polygone : sert à comparer une vision à celle d'une carte dégagée.
 function polygonArea(poly){let a=0;
  for(let i=0,j=poly.length-1;i<poly.length;j=i++)a+=(poly[j][0]+poly[i][0])*(poly[j][1]-poly[i][1]);
