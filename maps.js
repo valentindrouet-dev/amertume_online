@@ -1721,10 +1721,10 @@ function ouvreCarte(m,reprendre){const id=m.id;
 const tabs=document.createElement('nav');tabs.className='tabs';
 tabs.innerHTML='<button data-page="accueil">Accueil</button><button data-page="table" class="on">Table</button><button data-page="maps">Cartes</button>'
  +'<button data-page="domaine">Domaine</button><button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
- +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button><button data-page="icones">Icônes</button>'
+ +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button><button data-page="icones">Icônes</button><button data-page="gemmes">Gemmes</button>'
  +'<button data-page="regles">Règles</button><button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
-const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','regles','settings'];
+const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','gemmes','regles','settings'];
 /* Sous l'onglet ouvert, chez le MJ seul et pendant une table en ligne : un petit viseur. Un clic envoie tous les joueurs
    connectés sur cet onglet, s'il leur est ouvert. */
 const envoiOngletBtn=document.createElement('button');envoiOngletBtn.type='button';envoiOngletBtn.className='envoi-onglet';envoiOngletBtn.textContent='⌖';envoiOngletBtn.hidden=true;let envoiOngletPage=null;

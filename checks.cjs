@@ -1960,7 +1960,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
    la sauvegarde qui l'emporte. Le domaine ne se publie pas et ne va pas à la table. */
 {const fief=fs.readFileSync('domaine.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(page.includes('<script src="./maps.js?v=')&&/maps\.js\?v=[\d.]+"><\/script><script src="\.\/domaine\.js\?v=/.test(page),'domaine.js se charge après maps.js');
- assert.ok(cartes.includes("const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','regles','settings'];")
+ assert.ok(cartes.includes("const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','gemmes','regles','settings'];")
   &&cartes.includes('<button data-page="domaine">Domaine</button>')&&cartes.includes("else if(p==='domaine')renderDomaine();")
   &&cartes.includes("if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}")
   &&cartes.includes("const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;")
@@ -4166,7 +4166,7 @@ assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySe
   &&page.includes("(neufs.length?'\\n'+neufs.map(x=>'- '+dit[x]()).join('\\n'):'\\nAucune information nouvelle.')")
   &&page.includes("const k=skillNames.indexOf('Savoir'),jet=skillRoll(valeurCompetence(a,k)-1,d6);")
   &&page.includes("const gain=neufs.length*Math.max(1,Math.round((Math.trunc(Number(o.xp))||0)/10))")
-  &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];"),'l’Analyse par le Savoir');
+  &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier','gemmesSuivi'];"),'l’Analyse par le Savoir');
  assert.ok(src.includes("function bulleCombattant(o){")&&src.includes("const sait=k=>typeof connait!=='function'||connait(o,k);")&&src.includes("'Analysez un adversaire pour en savoir davantage à son sujet !'")
   &&page.includes("if(typeof bulleCombattant==='function'){t.removeAttribute('title');if(!a.hero)survolToken(t,a)}")&&src.includes("function oublierAnalyses(){delete catalog.analyses;")
   &&src.includes("id=\"bestiary-analyses\""),'la bulle du token, le Bestiaire qui oublie');
@@ -4217,12 +4217,12 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(page.includes('<button class="btn-action btn-crier rond" id="crier" hidden>📢</button>')&&page.includes(" if(typeof faisBruit==='function')faisBruit(a,[{x:a.x,y:a.y}],BRUIT_CRI);render();scheduleSave()};")
   &&page.includes("  actors.forEach(a=>{delete a.crie;delete a.entendu;delete a.ecoutes;delete a.analysesFaites})}")&&css.includes('button.btn-crier{--fond:#b9772c;color:#fff}'),'Crier, une fois entre deux combats');
  assert.ok(page.includes("if(a.entendu&&!a.vu&&campDe(a)==='adverse'&&!t.classList.contains('unseen')){const e=document.createElement('span');e.className='entendu'")&&css.includes('#pv-layer .entendu{')
-  &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];"),'le « ! », sur toutes les tables');}
+  &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier','gemmesSuivi'];"),'le « ! », sur toutes les tables');}
 /* v0.621 — Happé par un piège toujours actif, un combattant y est tenu : il n'en sort qu'en l'enjambant, et un enjambement
    réussi le libère pour de bon. Le MJ l'en sort toujours à la main, même au sol, sans règle de mouvement ni point dépensé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
  assert.ok(carto.includes("function tenuParPiege(o){if(!o||!o.tenuPar)return null;")&&carto.includes("o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}")
-  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];"),'tenu par le piège, libéré par l’enjambement');
+  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier','gemmesSuivi'];"),'tenu par le piège, libéré par l’enjambement');
  assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!gelImmobile(actors[i])))&&!gelDebut(actors[i])}")
   &&page.includes("const libere=view==='mj'&&typeof tenuParPiege==='function'&&!!tenuParPiege(a);")&&page.includes("   else if(!libere)lot.forEach(k=>{const o=actors[k];if(o)depensePoint(o,'mouvement')});")
   &&page.includes("   if(libere&&typeof tenuParPiege==='function')tenuParPiege(a);"),'le MJ l’en sort toujours');}
@@ -4281,7 +4281,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(carto.includes("if(etats.length&&!enCombat())o.etatsPieges=")&&page.includes("if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true,a.etatsPieges);a.ignition=''});"),'les états d’un piège passent le début du combat');
  const ctxL={statesOf:a=>a.states.slice(),setState:(a,e,on)=>{if(!on)a.states=a.states.filter(x=>x!==e)}};vm.createContext(ctxL);vm.runInContext(page.match(/function leveEtats\(a,finCombat,garder\)\{[^\n]*\n[^\n]*/)[0]+';this.leveEtats=leveEtats',ctxL);
  const h={states:['Saignée','Feu'],etatsPieges:['Saignée']};assert.equal(ctxL.leveEtats(h,true,h.etatsPieges).join(),'Feu');assert.equal(h.states.join(),'Saignée');assert.ok(!('etatsPieges' in h));
- assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
+ assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier','gemmesSuivi'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
   &&vif.includes("gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});"),'l’état d’un piège ne revient pas en arrière');}
 /* v0.615 — Pièges : un outil de l'éditeur de cartes. Un piège de toute taille, en jeton, en jeton imagé ou en image seule ;
    visible ou caché ; déclenché au contact ou à distance par une zone ou un fil liés ; détecté par Perception ou Ruse ;
@@ -5104,7 +5104,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier'];")&&vivant.includes("const detail={...(meta&&meta.bilan?{bilan:meta.bilan}:{}),")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier','gemmesSuivi'];")&&vivant.includes("const detail={...(meta&&meta.bilan?{bilan:meta.bilan}:{}),")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
@@ -5368,6 +5368,16 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.144 — Les gemmes gagnées en jouant : l'onglet Gemmes, le dé, les déclencheurs ; le moteur appelle le dé. */
+{const g=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(g.includes("function deGemme(a,cle,opts={})")&&g.includes("const DECLENCHEURS_GEMMES=[")&&g.includes("function renderGemmes(){")
+  &&page.includes("if(typeof gemmesApresCoup==='function')gemmesApresCoup(a,b,r,hpAvantCoup,lost);")&&page.includes('<script src="./gemmes.js?v=')
+  &&fs.readFileSync('maps.js','utf8').includes('<button data-page="gemmes">Gemmes</button>')&&fs.readFileSync('editor.js','utf8').includes("k!=='maps'&&k!=='gemmes'&&(k==='regles'||l.includes(k))"),'v1.144');
+ const vm=require('vm'),ctx={VARIETES_GEMMES:[['citrine','Citrine'],['emeraude','Émeraude'],['saphir','Saphir'],['rubis','Rubis'],['diamant','Diamant']]};
+ vm.runInNewContext(g.slice(0,g.indexOf('function reglesGemmes()'))+';this.n=normaliseReglesGemmes',ctx);
+ const R=ctx.n({faces:{diamant:[0,0,0,0,0,3]},critique:9,plafond:-1,declencheurs:{tuer:{couleur:'saphir',des:2,actif:false}}});
+ const J=JSON.stringify;assert.equal(J(R.faces.diamant),'[0,0,0,0,0,3]');assert.equal(J(R.faces.rubis),'[0,0,0,0,1,2]');assert.equal(R.critique,6);assert.equal(R.plafond,0);
+ assert.equal(J(R.declencheurs.tuer),J({couleur:'saphir',des:2,actif:false}));assert.equal(J(R.declencheurs.critique),J({couleur:'rubis',des:1,actif:true}));}
 /* v1.143 — Sur la fiche et les cartes d'aventurier, l'écu de DEF à la taille des autres icônes, son chiffre à celle des autres chiffres. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("const k=im.closest('.stat-row.en-icones')?CHIFFRE_ECU_FICHE:1;")&&fs.readFileSync('editor.css','utf8').includes('.stat-row.en-icones .stat-tile .ecu{width:36px;height:44px}'),'v1.143');
 /* v1.141 — Le chiffre de l'écu de DEF en blanc, cerné de sombre. */

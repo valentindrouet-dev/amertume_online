@@ -199,7 +199,7 @@ function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famill
  return change}
 /* Les onglets, et ceux que le MJ ouvre aux joueurs : la Table de jeu toujours, les Cartes jamais. Le
    choix voyage avec le contenu publié ; sans choix, les onglets d'avant. */
-const ONGLETS=[['accueil','Accueil'],['table','Table'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['regles','Règles'],['settings','Paramètres']];
+const ONGLETS=[['accueil','Accueil'],['table','Table'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['gemmes','Gemmes'],['regles','Règles'],['settings','Paramètres']];
 const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
 /* La page d'accueil des joueurs. Au premier chargement d'une session de navigation, un joueur arrive sur l'onglet que le MJ
    a choisi, dès que le contenu publié est là ; recharger la page garde l'onglet en cours. Le MJ n'est jamais déplacé. */
@@ -211,7 +211,7 @@ function accueilDeSession(){if(!accueilAFaire)return;
 function ongletsJoueurs(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs)?catalog.ongletsJoueurs:ONGLETS_JOUEURS_DEFAUT;
  // L'Accueil et la Table sont toujours ouverts : on y crée son aventurier, on y joue.
  // v0.924 : les Règles aussi, pour tout le monde.
- return ['accueil','table',...ONGLETS.map(([k])=>k).filter(k=>k!=='accueil'&&k!=='table'&&k!=='maps'&&(k==='regles'||l.includes(k)))]}
+ return ['accueil','table',...ONGLETS.map(([k])=>k).filter(k=>k!=='accueil'&&k!=='table'&&k!=='maps'&&k!=='gemmes'&&(k==='regles'||l.includes(k)))]}
 /* Lamevent s'appelle Ombrelame : la classe, ses arbres et leurs voies, la classe de ses effets, ses talents et
    leurs textes. Rien ne se perd : ce qui portait l'ancien nom porte le nouveau. */
 function ombrelame(s){return typeof s==='string'&&s.includes('Lamevent')?s.replace(/Lamevent/g,'Ombrelame'):s}
@@ -665,7 +665,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(Array.isArray(c.niveauxXp)&&c.niveauxXp.length===20&&niveauxXpValides([...c.niveauxXp,...NIVEAUX_XP.slice(20).map((v,k)=>c.niveauxXp[19]+v-NIVEAUX_XP[19])]))c.niveauxXp=[...c.niveauxXp,...NIVEAUX_XP.slice(20).map(v=>c.niveauxXp[19]+v-NIVEAUX_XP[19])];
  // Les paliers d'XP réglés à la main : gardés s'ils tiennent et diffèrent de ceux d'origine.
  if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;
- if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
+ if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&k!=='gemmes'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
  // La page d'accueil des joueurs : un onglet connu, jamais les Cartes.
  if(typeof c.pageAccueil!=='string'||!ONGLETS.some(([k])=>k===c.pageAccueil)||c.pageAccueil==='maps')delete c.pageAccueil;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
@@ -7263,7 +7263,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  // Les onglets ouverts aux joueurs : une case par onglet ; la Table cochée, les Cartes non, sans y toucher.
  $('bloc-onglets').hidden=view!=='mj';
  {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');
-  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='accueil'||k==='table'||k==='maps'||k==='regles';
+  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='accueil'||k==='table'||k==='maps'||k==='gemmes'||k==='regles';
   c.onchange=()=>{catalog.ongletsJoueurs=[...$('onglets-joueurs').querySelectorAll('input:checked')].map(x=>x.value);normalizeCatalog(catalog);
    scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets();majPageAccueil()};
   l.append(c,' '+nom);return l}))}

@@ -34,7 +34,7 @@ const {execFile}=require('child_process'),JEUX=['checks.cjs','des-checks.cjs','s
 /* Un jeu déjà passé sur les mêmes sources ne se rejoue pas : son empreinte — ce qu'il lit, lui compris — est gardée
    dans .git, hors du dépôt. La conversion des dés ne lit que le moteur ; les autres, toutes les sources. Une source
    touchée, et le jeu repart. « --tout » rejoue tout. */
-const crypto=require('crypto'),CACHE='.git/verif-cache.json',SOURCES=['index.html','combat.js','editor.js','maps.js','live.js','shared.js','domaine.js','editor.css','catalog.js','campagnes.js','planches.js','planches-calcul.js','shared-data.js','ia.js','planches-worker.js','firestore-online.rules','verif.cjs'];
+const crypto=require('crypto'),CACHE='.git/verif-cache.json',SOURCES=['index.html','combat.js','editor.js','maps.js','live.js','shared.js','domaine.js','editor.css','catalog.js','campagnes.js','planches.js','planches-calcul.js','shared-data.js','ia.js','planches-worker.js','gemmes.js','firestore-online.rules','verif.cjs'];
 /* Sur un échec, toutes les chaînes devenues absentes des sources, d'un coup, pas seulement celles du premier test qui
    tombe : une seule passe suffit à les remettre à jour. */
 function chainesAbsentes(){const srcs=SOURCES.filter(x=>fs.existsSync(x)).map(x=>fs.readFileSync(x,'utf8')),out=[];
