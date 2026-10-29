@@ -2832,7 +2832,7 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
  if(a.hero&&fenetre){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
   const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
   // La bourse : un emplacement sous le schéma, l'or et les sphères ; le MJ y ajoute ou retire d'un clic.
-  const pl=document.createElement('div');pl.className='place p-bourse';pl.dataset.place='bourse';const l=document.createElement('span');l.className='nom-place';l.textContent='Bourse';pl.append(l);
+  const pl=document.createElement('div');pl.className='place p-bourse';pl.dataset.place='bourse';const l=document.createElement('span');l.className='nom-place bourse-titre';l.textContent='Richesses';pl.append(l);
   const rang=document.createElement('div');rang.className='bourse-corps bourse-lignes';const lo=document.createElement('div');lo.className='bourse-ligne';
   // v1.199 : chaque ligne porte son nom à gauche, et ses icônes s'alignent d'une ligne à l'autre ; l'or s'écrit « Or : 248 » puis la pièce.
   const nomLigne=t=>{const s=document.createElement('span');s.className='bourse-nom';s.textContent=t;return s},contenu=()=>{const d=document.createElement('div');d.className='bourse-items';return d};
@@ -2843,7 +2843,7 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
    VARIETES_GEMMES.forEach(([v])=>{const k=cleGemme(ta,v,false),n=Math.max(0,Math.trunc(Number(a.richesses[k]))||0);if(!n)return;const el=document.createElement('span');el.className='gem-vive gem-chiffree g-'+v;
     const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,false),b);el.title=n+' '+nomGemme(ta,v,false);d.append(el)});if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});
   if(view==='mj'){pl.classList.add('cliquable');pl.setAttribute('role','button');pl.tabIndex=0;pl.title='Or et sphères de '+a.name;pl.onclick=()=>openRichesses(a);pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
-  pl.append(rang);corps.append(pl)}
+  if(l.classList.contains('bourse-titre'))rang.prepend(l);pl.append(rang);corps.append(pl)}
  else if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
   const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
   if(view==='mj'){or.classList.add('cliquable');or.setAttribute('role','button');or.tabIndex=0;or.onclick=()=>openRichesses(a);or.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}

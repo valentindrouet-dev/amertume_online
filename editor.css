@@ -4302,3 +4302,16 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .arbres-pt.marques-dispo .marque-ico{width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--ink) 50%,transparent))}
 .arbres-pt.marques-dispo b{font:900 24px/1 'Killam',system-ui;letter-spacing:0;color:#fff;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill}
 #arbres #arbres-reset.dans-arbre{position:absolute;left:10px;top:8px;z-index:3;margin:0;padding:4px 10px;border-radius:8px;font:600 12px/1.2 system-ui;letter-spacing:0;text-transform:none;color:var(--ink);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid color-mix(in srgb,var(--ink) 20%,transparent);box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 25%,transparent)}
+/* v1.207 — Les Richesses : un vrai bloc, bord plein, son titre orné ; de l'air autour des icônes et entre elles. */
+.corps .place.p-bourse .nom-place.bourse-titre{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:0 0 6px;font:700 17px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1px;text-transform:none;color:color-mix(in srgb,var(--accent) 45%,var(--ink))}
+.corps .place.p-bourse .nom-place.bourse-titre::before,.corps .place.p-bourse .nom-place.bourse-titre::after{content:'';flex:0 1 80px;height:10px;
+ background:radial-gradient(circle,var(--accent) 0 2.2px,transparent 2.8px) right center / 10px 10px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 13px) 1.5px no-repeat}
+.corps .place.p-bourse .nom-place.bourse-titre::after{background:radial-gradient(circle,var(--accent) 0 2.2px,transparent 2.8px) left center / 10px 10px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 13px) 1.5px no-repeat}
+.corps .place.p-bourse .bourse-corps.bourse-lignes{gap:12px;padding:14px 18px 16px;border:1px solid var(--line-strong);border-radius:12px;background:var(--panel-2);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 40%,transparent),0 2px 6px color-mix(in srgb,var(--ink) 18%,transparent)}
+.corps .place.p-bourse.cliquable:hover .bourse-corps.bourse-lignes{border-color:var(--accent)}
+.corps .place.p-bourse .bourse-corps.bourse-lignes .bourse-ligne{grid-template-columns:70px minmax(0,1fr);gap:12px}
+.corps .place.p-bourse .bourse-lignes .bourse-items{gap:12px 20px;padding:2px 10px 4px 0}
+.corps .place.p-bourse .bourse-ligne .gem-vive.gem-chiffree{margin:0}
+.corps .place.p-bourse .bourse-lignes .or-corps{margin:0;padding-right:0}
+.corps .place.p-bourse .bourse-lignes .or-corps b{left:16px;right:auto}
+.corps .place.p-bourse .bourse-corps.bourse-lignes>.bourse-titre{margin:0 0 2px}
