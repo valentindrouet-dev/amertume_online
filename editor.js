@@ -9200,7 +9200,7 @@ function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.cl
  const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;
  /* v1.174 : la fenêtre a sa taille — le cadre du sphérier remplit sa colonne jusqu'au panneau de droite et jusqu'en bas, sans vide ;
     le plan s'y centre, et le quadrillage passe sur tout le cadre, au pas du plan. */
- if(arbresTaille&&!arbresMesure){const zw=(cad.closest('.arbres-v2-arbre')||{}).clientWidth||0,cw=Math.max(W*k+2,dispoW,zw),ch=Math.max(H*k+2,dispoH),tx=Math.round((cw-2-W*k)/2),ty=Math.max(0,Math.round((ch-2-H*k)/2-2*GRILLE_SPHERE*k));
+ if(arbresTaille&&!arbresMesure){const zw=(cad.closest('.arbres-v2-arbre')||{}).clientWidth||0,cw=Math.max(W*k+2,dispoW,zw),ch=H*k+2,tx=Math.round((cw-2-W*k)/2),ty=0;
   plan.style.transform='translate('+tx+'px,'+ty+'px)'+(k<1?' scale('+k+')':'');cad.style.width=Math.floor(cw)+'px';cad.style.height=Math.floor(ch)+'px';
   const bp=String(plan.style.backgroundPosition||'0px 0px').split(' ').map(v=>parseFloat(v)||0),pas=(parseFloat(plan.style.getPropertyValue('--pas'))||40)*k;
   cad.classList.toggle('grille',plan.classList.contains('grille'));cad.style.setProperty('--pas',pas+'px');cad.style.backgroundPosition=(tx+bp[0]*k-.5)+'px '+(ty+(bp[1]||0)*k-.5)+'px';
@@ -9210,24 +9210,29 @@ function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.cl
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}return r}}
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}});
 /* v1.174 — Aucun onglet de la fenêtre des arbres ne défile vers le bas : l'arbre qui dépasse se réduit, d'un bloc, jusqu'à tenir. */
-function arbreSansDefilement(){if(!arbresDialog.open||arbresOnglet==='bonus'||!arbresTaille||arbresMesure)return;
- const zone=arbresDialog.querySelector('.arbres-v2-arbre');if(!zone)return;const v2=zone.closest('.arbres-v2');if(v2)v2.style.removeProperty('min-height');
- try{reduitArbre(zone)}finally{
-  // v1.176 : comme le sphérier, le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre.
-  if(v2){const d=arbresDialog.getBoundingClientRect(),cs=getComputedStyle(arbresDialog),bas=d.top+arbresDialog.offsetHeight-(parseFloat(cs.paddingBottom)||0)-8,h=bas-v2.getBoundingClientRect().top;
-   if(h>v2.offsetHeight)v2.style.minHeight=Math.floor(h)+'px'}
-  try{agranditArbre(zone)}catch(e){}}}
-/* v1.177 — Les ronds de l'arbre prennent la place de leur bloc : un arbre d'une seule colonne qui tient sans réduction grandit, d'un bloc,
-   jusqu'au bas du bloc ou jusqu'à ses bords, le premier atteint. */
-function agranditArbre(zone){const roues=[...zone.querySelectorAll('.arbre-roue')],cols=[...zone.querySelectorAll('.arbres-cols>.arbre-col')];
- if(roues.length!==1||cols.length>1)return;const e=roues[0];if(e.style.transform)return;
- const H=e.offsetHeight,L=e.offsetWidth;if(!H||!L)return;const r=e.getBoundingClientRect(),z=zone.getBoundingClientRect(),c=(cols[0]||zone).getBoundingClientRect();
- const kH=(H+z.bottom-12-r.bottom)/H,kW=(L+2*Math.min(r.left-c.left,c.right-r.right)-16)/L,k=Math.min(2.5,kH,kW);if(!(k>1.02))return;
- const pose=k=>{e.style.transformOrigin='top center';e.style.transform='scale('+k+')';e.style.marginBottom=(H*(k-1))+'px';e.style.marginLeft=e.style.marginRight=(L*(k-1)/2)+'px'};
- // Grandi, l'arbre ne doit rien faire défiler : s'il déborde, il se reprend d'autant ; s'il déborde encore, il garde sa taille.
- let g=k;for(let i=0;i<4;i++){pose(g);const trop=arbresDialog.scrollHeight-arbresDialog.clientHeight,large=zone.scrollWidth-zone.clientWidth;if(trop<=1&&large<=1)return;
-  g=Math.min(g-Math.max(0,trop+2)/H,g-Math.max(0,large+2)/L);if(!(g>1.02))break}
- ['transform','transform-origin','margin-bottom','margin-left','margin-right'].forEach(k=>e.style.removeProperty(k))}
+function arbreSansDefilement(){const D=arbresDialog;if(!D.open||!arbresTaille||arbresMesure)return;
+ // v1.179 : la fenêtre repart de sa pleine hauteur, l'arbre s'y cale, puis elle remonte jusqu'au dernier rond.
+ const mj=D.classList.contains('taille-mj');if(mj)D.style.height=arbresTaille.h+'px';else D.style.minHeight=arbresTaille.h+'px';
+ const zone=D.querySelector('.arbres-v2-arbre'),v2=zone&&zone.closest('.arbres-v2');if(v2)v2.style.removeProperty('min-height');
+ if(zone&&arbresOnglet!=='bonus'){try{if(!cadreRoue(zone))reduitArbre(zone)}catch(e){}}
+ if(!v2)return;const cs=getComputedStyle(D),bas=v2.getBoundingClientRect().bottom-D.getBoundingClientRect().top+D.scrollTop+(parseFloat(cs.paddingBottom)||0)+8+(parseFloat(cs.borderBottomWidth)||0);
+ const h=Math.ceil(Math.min(arbresTaille.h,bas));if(mj)D.style.height=h+'px';else D.style.minHeight=h+'px';D.scrollTop=0}
+/* v1.179 — Un arbre d'une seule colonne prend toute la place de son bloc : ses ronds visibles (pas les places vides du plan) se
+   mesurent, et l'arbre grandit ou rapetisse d'un bloc jusqu'aux bords de sa colonne, ou jusqu'au bas de la fenêtre, le premier atteint. */
+function cadreRoue(zone){const roues=[...zone.querySelectorAll('.arbre-roue')],cols=[...zone.querySelectorAll('.arbres-cols>.arbre-col')];
+ if(roues.length!==1||cols.length>1)return false;const e=roues[0],col=cols[0]||zone,D=arbresDialog;
+ ['transform','transform-origin','margin-bottom','margin-left','margin-right','align-self'].forEach(k=>e.style.removeProperty(k));cols.forEach(c=>c.style.minWidth='0');
+ const W=e.offsetWidth,H=e.offsetHeight;if(!W||!H)return false;const R=e.getBoundingClientRect();let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+ e.querySelectorAll('*').forEach(n=>{if(n.tagName.toLowerCase()==='svg')return;const q=n.getBoundingClientRect();if(q.width<1||q.height<1||q.width*q.height>W*H*.8)return;
+  const c=getComputedStyle(n);if(c.visibility==='hidden'||Number(c.opacity)===0)return;x0=Math.min(x0,q.left);y0=Math.min(y0,q.top);x1=Math.max(x1,q.right);y1=Math.max(y1,q.bottom)});
+ if(!(x1>x0&&y1>y0))return false;const bx=x0-R.left,by=y0-R.top,bw=x1-x0,bh=y1-y0,G=14;
+ const cc=col.getBoundingClientRect(),ccs=getComputedStyle(col),cl=cc.left+(parseFloat(ccs.paddingLeft)||0)+(parseFloat(ccs.borderLeftWidth)||0),cw=col.clientWidth-(parseFloat(ccs.paddingLeft)||0)-(parseFloat(ccs.paddingRight)||0);
+ let ext=0;for(let n=e.parentElement;n&&n!==zone;n=n.parentElement){const c=getComputedStyle(n);ext+=(parseFloat(c.paddingBottom)||0)+(parseFloat(c.borderBottomWidth)||0)}
+ const cs=getComputedStyle(D),haut=R.top-D.getBoundingClientRect().top+D.scrollTop,dispoH=arbresTaille.h-(parseFloat(cs.paddingBottom)||0)-8-(parseFloat(cs.borderBottomWidth)||0)-haut-ext-2*G;
+ const k=Math.max(.3,Math.min(3,(cw-2*G)/bw,dispoH/bh));
+ e.style.alignSelf='flex-start';e.style.marginLeft='0px';e.style.marginRight=(-W)+'px';e.style.marginBottom=(2*G+bh*k-H)+'px';
+ const R2=e.getBoundingClientRect(),tx=cl+(cw-bw*k)/2-R2.left-bx*k,ty=G-by*k;
+ e.style.transformOrigin='0 0';e.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+k.toFixed(4)+')';return true}
 function reduitArbre(zone){
  const roues=[...zone.querySelectorAll('.arbre-roue')],blocs=roues.length?roues:[...zone.children].filter(e=>e.offsetHeight);if(!blocs.length)return;
  // v1.175 : un arbre d'une seule colonne tient aussi en largeur, sans défiler de côté.
@@ -9282,7 +9287,7 @@ arbresDialog.querySelector('.dialog-head').insertBefore(arbresRedimBtn,arbresDia
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresAutoBtn,arbresDialog.querySelector('[data-close]'));
 const poigneeFenetre=document.createElement('div');poigneeFenetre.className='poignee-fenetre-arbres';poigneeFenetre.title='Tirer pour redimensionner la fenêtre';arbresDialog.append(poigneeFenetre);
 function sauveTailleArbres(){const r=arbresDialog.getBoundingClientRect(),d=parseFloat(getComputedStyle(arbresDialog).getPropertyValue('--detail-w'))||360;
- catalog.tailleArbres={w:Math.round(r.width),h:Math.round(r.height),detail:Math.round(d)};scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+ catalog.tailleArbres={w:Math.round(r.width),h:Math.round(arbresTaille?Math.max(r.height,arbresTaille.h):r.height),detail:Math.round(d)};scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function majRedim(){const mj=view==='mj';arbresRedimBtn.hidden=!mj;arbresAutoBtn.hidden=!mj||!arbresRedim;arbresRedimBtn.classList.toggle('on',arbresRedim);
  arbresDialog.classList.toggle('redim',mj&&arbresRedim);poigneeFenetre.hidden=!(mj&&arbresRedim);
  // Le séparateur, entre l'arbre et le panneau : refait à chaque dessin.
