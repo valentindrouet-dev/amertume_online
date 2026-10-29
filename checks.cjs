@@ -2058,7 +2058,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.equal(C.vieDe(a,cat),8);assert.equal(C.enduDe(a,cat),4);assert.equal(C.vieDe({vie:'x'},cat),0);
  assert.equal(C.libelleBonus({carac:'comp',valeur:2,comp:'1'}),'+2 Force');assert.equal(C.libelleBonus({carac:'pv',valeur:4}),'+4 PV max');assert.equal(C.libelleBonus({carac:'pv',valeur:4},true),'+4 PV');
  assert.equal(C.libelleBonus({carac:'dmg',valeur:1},true),'+1 Dég.');assert.equal(C.libelleBonus({}),'+1 PV max');
- assert.deepEqual(C.paramsTalent({effet:'bonus',params:{carac:'zzz',valeur:99,comp:'9'}}),{carac:'pv',valeur:20,comp:'0'},'relu au travers de la déclaration');
+ assert.deepEqual(C.paramsTalent({effet:'bonus',params:{carac:'zzz',valeur:99,comp:'9'}}),{carac:'pv',valeur:20,comp:'0',etat:'Rage'},'relu au travers de la déclaration');
  assert.deepEqual(C.bonusDe({talents:['b1']},[]),{pv:0,endu:0,vie:0,def:0,dmg:0,skills:[0,0,0,0,0,0,0,0]},'un nœud absent du catalogue ne donne rien');
  assert.equal(C.COMPETENCES.length,8);assert.ok(page.includes('const skillNames=COMPETENCES;'));
  assert.match(C.phraseTalent('bonus',{carac:'endu',valeur:2}),/<b>\+2 Endurance<\/b>/);}
@@ -2342,7 +2342,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&!estVide(t)&&(famille===FAMILLE_METIERS?talentFamily(t).startsWith(PREFIXE_METIER):talentFamily(t)===famille)")
   &&src.includes(".filter(t=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
  assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
-  &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});")
+  &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value,etat:f.b_etat?f.b_etat.value:'Rage'}});")
   &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
 }
 /* v0.264 — Le domaine part avec le contenu publié et se lit chez les joueurs, sans édition ; les
@@ -2640,10 +2640,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  // Les images sans préfixe sont toutes déclarées, extension comprise.
  const lire=nom=>JSON.parse(src.match(new RegExp('const '+nom+'=(\\[[^\\]]*\\]);'))[1].replace(/'/g,'"'));
- const ext=l=>l==='DEGATS'?'.webp':'.png';
+ const ext=l=>l==='DEGATS'||l==='BONUS_DEF'?'.webp':'.png';
  const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack|ressource)_/.test(f)).sort();
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
- assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
+ assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp',BONUS_DEF:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
   &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],...DOSSIERS_LOGOS.map(([d,nom])=>[nom,LOGOS_DOSSIERS[d]]),['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
@@ -3733,7 +3733,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const C26=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.deepEqual([C26.TALENTS_CODES.pointsaction.type,C26.TALENTS_CODES.pointsmouvement.phrase({x:2})],['pass','Le porteur dispose de <b>+2 points de Mouvement</b> à chaque tour.']);
  assert.ok(page.includes("+c.filter(t=>t.code.cle===(quoi==='action'?'pointsaction':quoi==='mouvement'?'pointsmouvement':'')).reduce(")
-  &&ed.includes("[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])]"),'points de talent');}
+  &&ed.includes("[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['metres','m de mouvement'],['armure','Armure au début du combat'],['etat','Rage au début du combat','Rage'],...skillNames.map((n,k)=>['comp',n,k])]"),'points de talent');}
 /* v0.699 — Le carré de blocage et le carré impraticable : seul le contour, de l'épaisseur d'une ligne. */
 {const mp=fs.readFileSync('maps.js','utf8');const C25=require('./combat.js');
  const f=new Function('TRAIT_EPAISSEUR','rectPolygon',mp.match(/function cadreFormes\(r,ratio\)\{[^\n]*\n[^\n]*\n/)[0]+'return cadreFormes')(C25.TRAIT_EPAISSEUR,C25.rectPolygon);
@@ -4995,7 +4995,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.559 — Un bonus d'Endurance posé dans l'arbre vaut +2 ; le compteur des bonus de l'arbre tient sur trois lignes :
    caractéristiques (Vie, Endu, PV, Dégâts, DEF), orbes et propres à une classe, compétences par ordre alphabétique. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("const v=carac==='endu'?2:1,params={carac,valeur:v,")&&src.includes("name:'+'+v+' '+nom,"),'Endurance à +2');
+ assert.ok(src.includes("const v=carac==='endu'?2:1,params={carac,valeur:v,")&&src.includes("name:libelleBonus(params),"),'Endurance à +2');
  assert.ok(src.includes("const CARACS=['vie','endu','pv','dmg','def'],")&&src.includes("groupes[k.startsWith('comp:')?2:CARACS.includes(k)?0:1].push(e)")
   &&src.includes(".localeCompare(nomComp('comp:'+y.p.comp),'fr')")&&feuille.includes('#arbres .dialog-head .arbres-bonus-ligne{display:flex;'),'trois lignes');}
 /* v0.558 — La piste des dés : une ligne qui ne tient pas passe à la rangée suivante, le « + » du critique avec ses dés ; la
@@ -5368,6 +5368,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.137 — Bonus DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier ; bonus de compétence plus petits. */
+{const C=require('./combat.js'),pt=[{code:{cle:'bonus'},params:{carac:'armure',valeur:5}},{code:{cle:'bonus'},params:{carac:'etat',valeur:2,etat:'Rage'}},{code:{cle:'bonus'},params:{carac:'metres',valeur:3}}];
+ assert.deepEqual(C.bonusDebutCombat(pt),{armure:5,etats:{Rage:2}});assert.equal(C.metresBonus(pt),3);
+ assert.equal(C.libelleBonus({carac:'etat',valeur:2,etat:'Rage'}),'+2 Rage au début du combat');assert.equal(C.libelleBonus({carac:'metres',valeur:3}),'+3 m de mouvement');
+ const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function surGrille(v){return Math.round((Number(v)||0)/40)*40}")&&fs.readFileSync('index.html','utf8').includes("actors.forEach(carapaceDepart);actors.forEach(bonusDepart)"),'v1.137');}
 /* v1.136 — Sphérier : Suppr supprime le bonus choisi ; Maj + clic lie ou délie ; double-clic ouvre l'éditeur. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const b=arbresDialog.querySelector('.spherier-outils button.danger');if(!b||b.disabled)return;e.preventDefault();b.click()});")
  &&ed.includes("if(d&&d.id===t.id&&now-d.at<450&&!sphereLier){sphereClic=null;sphereSel=t.id;openTalent(catalog.talents.indexOf(t),renderArbres);return}"),'v1.136');}

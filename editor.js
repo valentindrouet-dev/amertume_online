@@ -741,6 +741,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  {const l=c.arbresLibres&&typeof c.arbresLibres==='object'&&!Array.isArray(c.arbresLibres)?c.arbresLibres:{};c.arbresLibres={};
   Object.entries(l).slice(0,60).forEach(([k,v])=>{if(typeof k==='string'&&k&&v===true)c.arbresLibres[k.slice(0,60)]=true});if(!Object.keys(c.arbresLibres).length)delete c.arbresLibres}
  // v1.129 : six métiers d'office, une fois ; chacun en une seule colonne.
+ // v1.137 : les bonus des sphériers se posent sur le quadrillage, une fois.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('grille-sphere')){(c.talents||[]).forEach(t=>{if(t&&t.spherier===true&&t.sphere)t.sphere={x:surGrille(t.sphere.x),y:surGrille(t.sphere.y)}});c.semisForge.push('grille-sphere')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('metiers-6')){const l=Array.isArray(c.metiers)?c.metiers:[];
   ['Alchimiste','Forgeron','Tanneur','Mineur','Herboriste','Arcaniste'].forEach(n=>{if(!l.some(m=>m&&m.nom===n))l.push({nom:n});c.nbArbres=c.nbArbres&&typeof c.nbArbres==='object'&&!Array.isArray(c.nbArbres)?c.nbArbres:{};c.nbArbres['Métier · '+n]=1});
   c.metiers=l;c.semisForge.push('metiers-6')}
@@ -2352,7 +2354,7 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  return p}
 /* Un bonus en bulle : « + 4 » à l'encre, puis la caractéristique en capitales, à sa couleur —
    « + 4 ENDU », « + 1 FORCE ». */
-const NOM_BONUS_BULLE={pv:'PV',endu:'ENDU',vie:'VIE',def:'DEF',dmg:'DÉGÂTS',pa:'PA',pm:'PM'};
+const NOM_BONUS_BULLE={pv:'PV',endu:'ENDU',vie:'VIE',def:'DEF',dmg:'DÉGÂTS',pa:'PA',pm:'PM',metres:'M',armure:'ARMURE'};
 /* Dans la bulle d'un bonus de talent (« talent » : le bonus lui-même, ou le premier des bonus
    additionnés), son icône vient devant, et la compétence s'écrit comme sur la fiche : « Mysticisme ». */
 // Le nom d'une caractéristique ou d'une compétence de bonus, la première lettre seule en majuscule : « Endu », « Mysticisme ».
@@ -2371,8 +2373,11 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
  // Une compétence prend la couleur de son rond sur la fiche : celle de son logo, la sienne à défaut.
  if(c==='comp'){nom.classList.add('bonus-comp');nom.style.setProperty('--tint',tint);nom.style.color='rgb(var(--tint))';
   const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;if(ico)teinteLogoSur(nom,ico,l)}
- s.append(plus,' ',nom);
- if(talent){const ic=(talent.logo&&logoTalent(talent))||logoBonus(p);if(ic){const boite=document.createElement('span');boite.className='bonus-ico';boite.append(remplitCase(ic));plus.after(' ',boite)}}
+ // v1.137 : « + 2 m de mouvement », « + 5 Armure au début du combat », « + 1 Rage au début du combat ».
+ if(c==='metres')nom.textContent='m de mouvement';
+ if(c==='etat'){nom.textContent=p&&p.etat||'Rage';nom.style.color=''}
+ s.append(plus,' ',nom);if(c==='armure'||c==='etat')s.append(' au début du combat');
+ if(talent){const ic=(talent.logo&&!iconeBonusFigee(c)&&logoTalent(talent))||logoBonus(p);if(ic){const boite=document.createElement('span');boite.className='bonus-ico';boite.append(remplitCase(ic));plus.after(' ',boite)}}
  return s}
 /* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme ou d'une armure — les
    dés et la DEF sont sur le carré —, l'état qu'elle inflige s'il y en a un. */
@@ -4349,6 +4354,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
   +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
   +sel('Compétence','b_comp',pb.comp,optBonus('comp'))
+  +sel('État','b_etat',pb.etat,optBonus('etat'))
   +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')
   +'<label class="field-check"><input type="checkbox" name="b_paliers" '+(t.paliersActifs===true&&t.effet==='bonus'?'checked':'')+'>Paliers</label>'
   +'<div id="b-paliers" class="b-paliers-grille"'+(t.paliersActifs===true&&t.effet==='bonus'?'':' hidden')+'>'+[2,3].map(n=>{const q=t.paliers&&t.paliers[n]&&t.paliers[n].params;
@@ -4369,8 +4375,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value);if($('debut-combat'))$('debut-combat').hidden=champs.type.value==='ame';if($('debut-tour'))$('debut-tour').hidden=champs.type.value==='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
-  {const lg=champs.b_logo&&champs.b_logo.closest('.bonus-logo-choix');if(lg)lg.classList.toggle('talent-cache',!!logoBonusFixe(champs.b_carac.value))}
-  $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
+  {const lg=champs.b_logo&&champs.b_logo.closest('.bonus-logo-choix');if(lg)lg.classList.toggle('talent-cache',iconeBonusFigee(champs.b_carac.value))}
+  {const le=champs.b_etat&&champs.b_etat.closest('label');if(le)le.classList.toggle('talent-cache',champs.b_carac.value!=='etat')}
+  $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value,etat:champs.b_etat&&champs.b_etat.value})};
  const poseNature=()=>{const b=champs.nature.value==='bonus';
   $('talent-fields').querySelectorAll('.t-seul').forEach(el=>{el.classList.toggle('talent-cache',b);el.querySelectorAll('input,select,textarea').forEach(c=>c.disabled=b)});
   $('talent-fields').querySelectorAll('.b-seul').forEach(el=>{el.classList.toggle('talent-cache',!b);el.querySelectorAll('input,select,textarea').forEach(c=>c.disabled=!b)});
@@ -4378,7 +4385,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  // « Paliers » d'un bonus : la valeur du palier 2 se propose au double de la première.
  if(champs.b_paliers)champs.b_paliers.onchange=()=>{$('b-paliers').hidden=!champs.b_paliers.checked;
   if(champs.b_paliers.checked&&!champs.b_valeur_2.value)champs.b_valeur_2.value=Math.min(20,2*num(champs.b_valeur.value,1,20))};
- [...champs.nature].forEach(r=>r.onchange=poseNature);champs.b_carac.onchange=apercuBonus;champs.b_valeur.oninput=apercuBonus;champs.b_comp.onchange=apercuBonus;
+ [...champs.nature].forEach(r=>r.onchange=poseNature);champs.b_carac.onchange=apercuBonus;champs.b_valeur.oninput=apercuBonus;champs.b_comp.onchange=apercuBonus;if(champs.b_etat)champs.b_etat.onchange=apercuBonus;
  poseNature();
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
     connue le referme, et ce qui y était tapé ne compte plus. */
@@ -4487,12 +4494,12 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(t.effet&&Array.isArray(TALENTS_CODES[t.effet].volets))t.volets=voletsDe({effet:t.effet,volets:talentDraft.volets});else delete t.volets;
  /* Un bonus de caractéristique : sa caractéristique et sa valeur font tout — le nom s'écrit
     seul, la nature est passive, rien à la table, pas de logo. */
- if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
+ if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value,etat:f.b_etat?f.b_etat.value:'Rage'}});
   t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.effects='';
   /* Le logo choisi : pour ce bonus seul, ou, la case cochée, pour tous ceux de sa caractéristique
      — ce bonus suit alors ce choix commun. Aucun : l'icône du jeu. */
   {const l=f.b_logo&&logoValide(f.b_logo.value)?f.b_logo.value:'',k=cleLogoBonus(t.params);
-   if(logoBonusFixe(t.params.carac))t.logo='';
+   if(iconeBonusFigee(t.params.carac))t.logo='';
    else if(f.b_logo_tous&&f.b_logo_tous.checked){const o={...(catalog.logosBonus||{})};if(l)o[k]=l;else delete o[k];catalog.logosBonus=o;t.logo=''}else t.logo=l}
   // Ses paliers : la valeur et le coût de chacun ; un palier sans valeur garde celle d'en dessous.
   const pal=!!(f.b_paliers&&f.b_paliers.checked);t.couts=[num(f.b_cout.value,0,999999),...[2,3].map(n=>pal&&f['b_cout_'+n]?num(f['b_cout_'+n].value,0,999999):0)];t.paliers={};
@@ -5604,7 +5611,9 @@ const peutEtrePetit=t=>!!t&&(estBonus(t)||t.type==='ame');
    défaut ses deux lettres. Son chiffre en pastille. */
 const SVG_BONUS={pa:'<circle cx="12" cy="12" r="8.5" fill="#3f8fe0" stroke="#fff" stroke-width="2"/>',pm:'<circle cx="12" cy="12" r="8.5" fill="#cf9152" stroke="#fff" stroke-width="2"/>',xp:'<circle cx="12" cy="12" r="10" fill="#d9b45a" stroke="#7a5a12" stroke-width="1.2"/><text x="12" y="15.6" text-anchor="middle" font-size="9.5" font-weight="800" font-family="system-ui,sans-serif" fill="#4a3508">XP</text>',pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
  endu:'<path d="M13.5 2 5 13.2h5.6L9.4 22 19 10.4h-5.8z" fill="#2c8c85" stroke="#12423f" stroke-width="1.2" stroke-linejoin="round"/>',
- vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>'};
+ vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>',
+ // v1.137 : les mètres de mouvement, deux empreintes de pas.
+ metres:'<ellipse cx="8" cy="8.5" rx="3.2" ry="4.6" fill="#cf9152" stroke="#6b4320" stroke-width="1.1"/><ellipse cx="8" cy="15.6" rx="2" ry="1.7" fill="#cf9152" stroke="#6b4320" stroke-width="1.1"/><ellipse cx="16" cy="11.5" rx="3.2" ry="4.6" fill="#cf9152" stroke="#6b4320" stroke-width="1.1"/><ellipse cx="16" cy="18.6" rx="2" ry="1.7" fill="#cf9152" stroke="#6b4320" stroke-width="1.1"/>'};
 // La clé du logo commun d'un bonus : sa caractéristique, et sa compétence s'il en vise une.
 function cleLogoBonus(p){const c=(p&&p.carac)||'pv';return c+(c==='comp'?':'+(p&&p.comp!==undefined?p.comp:'0'):'')}
 /* L'icône d'un chiffre de fiche, devant laquelle il se lit. Sa couleur — celle de l'image choisie,
@@ -5618,8 +5627,13 @@ function iconeStat(tuile,carac){const ic=logoBonus({carac});if(!tuile||!ic)retur
    Elles passent devant tout autre choix : modifier un bonus ne change plus son icône. Tant que la planche n'est pas découpée, l'icône du jeu. */
 function logoBonusFixe(carac){const n={vie:1,endu:2,pv:3,xp:4,dmg:5}[carac],id=n?'planches/caracteristiques_2.webp#'+n:'';
  return id&&typeof iconeDe==='function'&&iconeDe(id)?id:''}
+// v1.137 : les icônes que rien ne change — les cinq de la planche, la DEF, les mètres, l'Armure, l'état.
+const iconeBonusFigee=carac=>!!logoBonusFixe(carac)||['def','metres','armure','etat'].includes(carac);
 function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
  {const fixe=logoBonusFixe(carac),im=fixe&&logoImage(fixe,LOGOS_TOUS);if(im){im.classList.add('logo-bonus');return im}}
+ if(carac==='def'||carac==='armure'){el=document.createElement('img');el.src=imgUrl(carac==='def'?'BONUS_DEF.webp':'weapon_armure.png');el.alt='';el.draggable=false;el.classList.add('logo-bonus');return el}
+ if(carac==='etat'){const e=p&&p.etat||'Rage',im=typeof imageEtat==='function'?imageEtat(e):null;if(im){im.classList.add('logo-bonus');return im}
+  el=document.createElement('span');el.className='bonus-lettres logo-bonus';el.textContent=e.slice(0,2);return el}
  // Le logo que le MJ a donné à tous les bonus de cette caractéristique passe devant l'icône du jeu.
  const perso=(typeof catalog!=='undefined'&&catalog.logosBonus||{})[cleLogoBonus(p)];if(perso){const im=logoImage(perso,LOGOS_TOUS);if(im)return im}
  if(SVG_BONUS[carac]){el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.innerHTML=SVG_BONUS[carac]}
@@ -5628,7 +5642,7 @@ function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
   if(!el){el=document.createElement('span');el.className='bonus-lettres';el.textContent=skillNames[k].slice(0,2)}}
  if(el)el.classList.add('logo-bonus');return el}
 // L'icône choisie par le MJ passe devant ; celle du bonus ne vient qu'à défaut.
-function poseLogoBonus(rond,t){const p=paramsTalent(t),l=(t.logo&&!logoBonusFixe((p&&p.carac)||'pv')&&logoTalent(t))||logoBonus(p);if(!l)return;
+function poseLogoBonus(rond,t){const p=paramsTalent(t),l=(t.logo&&!iconeBonusFigee((p&&p.carac)||'pv')&&logoTalent(t))||logoBonus(p);if(!l)return;
  const n=document.createElement('b');n.className='bonus-valeur';n.textContent=String(Math.max(1,(p&&p.valeur)|0));rond.replaceChildren(l,n)}
 // Les petits ronds d'un chemin, du rang 1 au dernier.
 function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);return !!c&&c.de===de.id&&c.dir===dir}).sort((x,y)=>lisChemin(x).rang-lisChemin(y).rang)}
@@ -6181,11 +6195,11 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
     L'orbe, et toute autre valeur, passent par « Autre bonus ». */
  if(petit){const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent='Bonus';
   const rang=document.createElement('div');rang.className='bonus-generiques';
-  [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])].forEach(([carac,nom,k])=>{
-   const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
+  BONUS_PROPOSES().forEach(([carac,nom,k])=>{
+   const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{}),...(carac==='etat'?{etat:k}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
    const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});
    b.setAttribute('aria-label','+'+v+' '+nom);b.title='+'+v+' '+nom;
-   b.onclick=()=>{const t={id:crypto.randomUUID(),name:'+'+v+' '+nom,famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[0,0,0]};
+   b.onclick=()=>{const t={id:crypto.randomUUID(),name:libelleBonus(params),famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[0,0,0]};
     catalog.talents.push(t);choixArbreDialog.close();if(placerTalent(t.id,dest))arbreChange()};
    rang.append(b)});
   boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[0,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
@@ -7844,8 +7858,8 @@ const LOGOS_ATTAQUE=['attack_griffes'];
    dégâts, vie, personnage. Un talent ou une attaque spéciale peut les prendre pour logo.
    Leur fichier garde son nom en capitales ; DEGATS seul est en .webp. */
 const LOGOS_ETATS=['AU SOL','AVEUGLE','BLINDAGE INITIAL','CIBLAGE','FAILLE','FEU','FOUDRE','GEL','ONDE','POISON','SAIGNEE'];
-const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE'];
-const EXTENSIONS_LOGO={DEGATS:'.webp'};
+const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE','BONUS_DEF'];
+const EXTENSIONS_LOGO={DEGATS:'.webp',BONUS_DEF:'.webp'};
 /* Les dossiers d'icônes : on y dépose des images, et elles paraissent seules dans le bon menu,
    sans rien déclarer — img/talents pour les logos de talents, img/equipement pour tout ce que
    l'Armurerie range (armes, armures, munitions, objets). Les attaques spéciales et les talents
@@ -8764,20 +8778,20 @@ function outilsMetier(){const o=document.createElement('div');o.className='arbre
    arbresMetierMJ='';arbresDialog.close();arbreChange()}))}
  return o}
 // La teinte d'un bonus : celle de sa caractéristique ; d'une compétence, celle de son logo ; d'un orbe, le violet.
-function teinteSphere(t,f){const p=paramsTalent(t)||{},c=p.carac||'pv';if(c==='comp'){const k=Math.max(0,Math.min(7,Number(p.comp)||0));f(SKILL_TINTS[k]);teinteCompetence(k,f)}else f(c==='orbe'?'138,99,201':STAT_TINTS[c]||'150,150,150')}
+function teinteSphere(t,f){const p=paramsTalent(t)||{},c=p.carac||'pv';if(c==='comp'){const k=Math.max(0,Math.min(7,Number(p.comp)||0));f(SKILL_TINTS[k]);teinteCompetence(k,f)}else f(c==='orbe'||c==='etat'?'138,99,201':c==='metres'?STAT_TINTS.pm:c==='armure'?STAT_TINTS.def:STAT_TINTS[c]||'150,150,150')}
 function bulleSphere(el,t,n){surveille(el,()=>{const xp=talentAuPalier(t,Math.max(1,n||1)),p=paramsTalent(xp)||{},d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+(p.carac||'pv');
  const l=document.createElement('p');l.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(p,{talent:xp}));l.append(b);d.append(l);ouvrirBulle(el,d,'bulle-talent')})}
 /* Le sphérier d'une classe : le plan (ses ronds, ses liens) et le panneau de droite. « ctx » vient de renderArbres. */
 function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=talentsSphere(classe),tient=t=>!!a&&(a.talents||[]).includes(t.id);
  if(!l.some(t=>t.id===sphereSel))sphereSel=null;
  const zone=document.createElement('div');zone.className='spherier-zone';
- const plan=document.createElement('div');plan.className='spherier'+(sphereLier?' lier':'');
+ const plan=document.createElement('div');plan.className='spherier'+(sphereLier?' lier':'')+(mj?' grille':'');plan.style.setProperty('--pas',GRILLE_SPHERE+'px');
  const W=Math.max(880,...l.map(t=>t.sphere.x+90)),H=Math.max(620,...l.map(t=>t.sphere.y+90));plan.style.width=W+'px';plan.style.height=H+'px';
  // Chez le MJ : ajouter, lier, marquer le départ, supprimer, copier le sphérier d'une autre classe.
  if(mj){const o=document.createElement('div');o.className='arbres-outils spherier-outils';const sel=l.find(t=>t.id===sphereSel)||null;
   o.append(boutonOutil('+ Bonus',()=>{const g=zone.querySelector('.spherier'),cx=g?Math.round(g.parentElement.scrollLeft+g.parentElement.clientWidth/2):W/2,cy=g?Math.round(g.parentElement.scrollTop+Math.min(g.parentElement.clientHeight,H)/2):H/2;
    // La place libre la plus proche du milieu de la vue : un nouveau rond ne se pose pas sur un autre.
-   let px=Math.max(60,cx),py=Math.max(60,cy);for(let k=0;k<200&&l.some(o=>Math.hypot(o.sphere.x-px,o.sphere.y-py)<80);k++){px+=90;if(px>W-60){px=60;py+=90}}
+   let px=surGrille(Math.max(60,cx)),py=surGrille(Math.max(60,cy));for(let k=0;k<200&&l.some(o=>Math.hypot(o.sphere.x-px,o.sphere.y-py)<80);k++){px+=2*GRILLE_SPHERE;if(px>W-60){px=surGrille(60);py+=2*GRILLE_SPHERE}}
    choisirBonusSphere(classe,{x:px,y:py})}));
   o.append(boutonOutil('Lier',()=>{sphereLier=!sphereLier;renderArbres()},sphereLier));
   const dep=boutonOutil('Départ',()=>{if(!sel)return;if(sel.departSphere)delete sel.departSphere;else sel.departSphere=true;arbreChange()},!!(sel&&sel.departSphere));dep.disabled=!sel;o.append(dep);
@@ -8800,7 +8814,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
  const dispo=a?xpDisponible(a,catalog.talents):0;
  l.forEach(t=>{const el=document.createElement('button');el.type='button';el.dataset.id=t.id;const k=a?palierDe(a,t):0,ouvert=!!a&&sphereOuverte(a,t,l);
   const etat=!a?'':k?'acquis':ouvert&&coutPalier(t,1)<=dispo?'dispo':'verrou';
-  el.className='sphere-noeud'+(etat?' '+etat:'')+(t.departSphere?' depart':'')+(t.id===sphereSel?' choisi':'');el.style.left=t.sphere.x+'px';el.style.top=t.sphere.y+'px';
+  el.className='sphere-noeud'+(etat?' '+etat:'')+(t.departSphere?' depart':'')+(t.id===sphereSel?' choisi':'')+(((paramsTalent(t)||{}).carac)==='comp'?' competence':'');el.style.left=t.sphere.x+'px';el.style.top=t.sphere.y+'px';
   const r=document.createElement('span');r.className='sphere-rond';poseLogoBonus(r,t);el.append(r);teinteSphere(t,v=>el.style.setProperty('--tint',v));
   if(paliersDe(t)>1&&a){const p=document.createElement('span');p.className='sphere-paliers';for(let n=1;n<=paliersDe(t);n++){const i=document.createElement('i');if(k>=n)i.className='on';p.append(i)}el.append(p)}
   // v1.133 : sous le rond, son coût — celui du palier suivant chez un aventurier, rien quand il les tient tous.
@@ -8809,9 +8823,9 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   // Chez le MJ, un rond se prend et se pose où l'on veut ; un clic le choisit ; en mode Lier, un clic lie (ou délie) le rond choisi à celui-ci.
   if(mj){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;const x0=e.clientX,y0=e.clientY,s0={...t.sphere};let bouge=false;
     const mv=ev=>{const dx=ev.clientX-x0,dy=ev.clientY-y0;if(!bouge&&Math.hypot(dx,dy)<5)return;if(!bouge){bouge=true;el.classList.add('tire');if(typeof fermerBulle==='function')fermerBulle()}
-     el.style.left=Math.max(30,s0.x+dx)+'px';el.style.top=Math.max(30,s0.y+dy)+'px'};
+     el.style.left=Math.max(GRILLE_SPHERE,surGrille(s0.x+dx))+'px';el.style.top=Math.max(GRILLE_SPHERE,surGrille(s0.y+dy))+'px'};
     const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);
-     if(bouge){t.sphere={x:Math.round(Math.max(30,parseFloat(el.style.left))),y:Math.round(Math.max(30,parseFloat(el.style.top)))};sphereSel=t.id;arbreChange();return}
+     if(bouge){t.sphere={x:Math.max(GRILLE_SPHERE,surGrille(parseFloat(el.style.left))),y:Math.max(GRILLE_SPHERE,surGrille(parseFloat(el.style.top)))};sphereSel=t.id;arbreChange();return}
      const s=l.find(x=>x.id===sphereSel);
      /* v1.133 : Maj + clic sur un autre rond le relie au rond choisi, qui passe à celui-ci : on trace un chemin de proche en proche.
         v1.135 : déjà reliés, Maj + clic défait le lien. */
@@ -8827,7 +8841,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   plan.append(el)});
  // v1.133 : chez le MJ, un clic sur le fond du plan y pose un bonus, choisi parmi ceux qui existent.
  if(mj)plan.addEventListener('click',e=>{if(e.target!==plan&&e.target!==svg)return;const r=plan.getBoundingClientRect();
-  choisirBonusSphere(classe,{x:Math.max(30,Math.round(e.clientX-r.left)),y:Math.max(30,Math.round(e.clientY-r.top))})});
+  choisirBonusSphere(classe,{x:Math.max(GRILLE_SPHERE,surGrille(e.clientX-r.left)),y:Math.max(GRILLE_SPHERE,surGrille(e.clientY-r.top))})});
  const cadre=document.createElement('div');cadre.className='spherier-cadre';cadre.append(plan);zone.append(cadre);
  // Le panneau de droite : le bonus choisi, palier par palier — acheter le suivant, rendre le dernier ; chez le MJ, un clic l'édite.
  const detail=aside=>{aside.replaceChildren();const t=l.find(x=>x.id===sphereSel)||l.find(x=>x.departSphere)||l[0];if(!t)return;
@@ -8887,10 +8901,10 @@ function choisirBonusSphere(classe,pos){if(view!=='mj'||!classe||!pos)return;con
   spherier:true,sphere:{x:pos.x,y:pos.y},...(l.length?{}:{departSphere:true})};catalog.talents.push(t);sphereSel=t.id;choixSphereDialog.close();arbreChange();return t};
  const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent='Bonus';
  const rang=document.createElement('div');rang.className='bonus-generiques';
- [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])].forEach(([carac,nom,k])=>{
-  const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
+ BONUS_PROPOSES().forEach(([carac,nom,k])=>{
+  const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{}),...(carac==='etat'?{etat:k}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
   const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});b.setAttribute('aria-label','+'+v+' '+nom);b.title='+'+v+' '+nom;
-  b.onclick=()=>pose(params,'+'+v+' '+nom);rang.append(b)});
+  b.onclick=()=>pose(params,libelleBonus(params));rang.append(b)});
  const autre=document.createElement('button');autre.type='button';autre.className='arbre-choix-neuf';autre.textContent='✚ Autre bonus';
  autre.onclick=()=>{const t=pose({carac:'orbe',valeur:1},'Bonus');openTalent(catalog.talents.indexOf(t),renderArbres)};
  boite.append(h,rang,autre);choixSphereDialog.showModal()}
@@ -8901,3 +8915,10 @@ document.addEventListener('keydown',e=>{if((e.key!=='Delete'&&e.key!=='Backspace
  if([...document.querySelectorAll('dialog[open]')].some(d=>d!==arbresDialog))return;
  if(e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"]'))return;
  const b=arbresDialog.querySelector('.spherier-outils button.danger');if(!b||b.disabled)return;e.preventDefault();b.click()});
+
+/* v1.137 — Le quadrillage du sphérier : 40 px ; un bonus posé, glissé ou ajouté s'y accroche, pour des lignes droites et des
+   figures symétriques. Les bonus proposés, dans l'onglet Talents comme dans le sphérier : PV max, Endurance, Vie, DEF, Dégâts,
+   mètres de mouvement, Armure au début du combat, Rage au début du combat — l'état se change à l'édition —, puis chaque compétence. */
+const GRILLE_SPHERE=40;
+function surGrille(v){return Math.round((Number(v)||0)/40)*40}
+function BONUS_PROPOSES(){return [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['metres','m de mouvement'],['armure','Armure au début du combat'],['etat','Rage au début du combat','Rage'],...skillNames.map((n,k)=>['comp',n,k])]}

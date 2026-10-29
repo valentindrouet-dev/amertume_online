@@ -3923,3 +3923,12 @@ body:not(.carte-pleine) .interface-message{display:none}
 .sphere-rond>.bonus-valeur::before{content:'+';position:absolute;right:100%;top:50%;transform:translateY(-52%);margin-right:-1px;font-size:12px;-webkit-text-stroke-width:2.4px;letter-spacing:0}
 .sphere-rond.detail-sphere>.bonus-valeur{font-size:28px;-webkit-text-stroke-width:5px}
 .sphere-rond.detail-sphere>.bonus-valeur::before{font-size:18px;-webkit-text-stroke-width:3.4px}
+/* v1.137 : le quadrillage du sphérier, chez le MJ ; les bonus de compétence, plus petits que les autres. */
+.spherier.grille{background-image:linear-gradient(to right,color-mix(in srgb,var(--line) 70%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--line) 70%,transparent) 1px,transparent 1px);
+ background-size:var(--pas,40px) var(--pas,40px);background-position:-.5px -.5px}
+.sphere-noeud.competence{width:46px;height:46px}
+.sphere-noeud.competence .sphere-rond{border-width:2.5px}
+.sphere-noeud.competence .sphere-rond>.bonus-valeur{font-size:15px;-webkit-text-stroke-width:3px}
+.sphere-noeud.competence .sphere-rond>.bonus-valeur::before{font-size:10px;-webkit-text-stroke-width:2px}
+.sphere-rond>.bonus-lettres{font:800 16px system-ui;color:rgb(var(--tint,150,150,150))}
+.spherier.grille{min-width:100%;min-height:100%}
