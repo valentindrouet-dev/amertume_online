@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.208 — Les en-têtes Équipements et Inventaire au-dessus des blocs de l'inventaire. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("out.append(titre('Équipements'),titre('Inventaire'),partGauche,partDroite)"),'v1.208');
 /* v1.207 — Les Richesses en vrai bloc, titre orné, sans pointillés. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("l.className='nom-place bourse-titre';l.textContent='Richesses';")&&fs.readFileSync('editor.css','utf8').includes(".corps .place.p-bourse .bourse-corps.bourse-lignes{gap:12px;padding:14px 18px 16px;border:1px solid var(--line-strong);"),'v1.207');
 /* v1.206 — Les Marques à dépenser au-dessus de l'arbre ; le bouton de réinitialisation dans son coin ; cocher ramène sur la table. */

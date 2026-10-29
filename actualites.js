@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.208","d":"2026-10-29","t":"En-têtes Équipements et Inventaire"},
 {"v":"1.207","d":"2026-10-29","t":"Le bloc Richesses"},
 {"v":"1.206","d":"2026-10-29","t":"Marques au-dessus de l'arbre, réinitialiser dans son coin"},
 {"v":"1.205","d":"2026-10-29","t":"Statistiques en lignes, deux colonnes"},

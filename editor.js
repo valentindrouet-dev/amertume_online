@@ -2851,7 +2851,9 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
   const rang=document.createElement('div');rang.className='richesses-corps';rang.append(or);
   const gm=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);if(gm){gm.classList.add('gemmes-corps');rang.append(gm)}corps.append(rang)}
  let partDroite=null;if(fenetre){const partGauche=document.createElement('div');partGauche.className='inv-gauche';const schema=document.createElement('div');schema.className='inv-schema';schema.append(corps);partGauche.append(schema);
-  partDroite=document.createElement('div');partDroite.className='inv-droite';out.append(partGauche,partDroite)}else out.append(corps);
+  partDroite=document.createElement('div');partDroite.className='inv-droite';
+  // v1.208 : au-dessus de chaque bloc, son en-tête orné — Équipements, Inventaire.
+  const titre=t=>{const h=document.createElement('h3');h.className='inv-titre';h.textContent=t;return h};out.append(titre('Équipements'),titre('Inventaire'),partGauche,partDroite)}else out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
  // Son titre, « Inventaire » et le « + » du MJ, est celui du bloc, au-dessus du corps et du sac.
