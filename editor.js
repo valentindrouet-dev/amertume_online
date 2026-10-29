@@ -9249,7 +9249,8 @@ function cadreRoue(zone){const roues=[...zone.querySelectorAll('.arbre-roue')],c
  if(roues.length!==1||cols.length>1)return false;const e=roues[0],col=cols[0]||zone,D=arbresDialog;
  ['transform','transform-origin','margin-bottom','margin-left','margin-right','align-self'].forEach(k=>e.style.removeProperty(k));cols.forEach(c=>c.style.minWidth='0');
  const W=e.offsetWidth,H=e.offsetHeight;if(!W||!H)return false;const R=e.getBoundingClientRect();let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
- e.querySelectorAll('*').forEach(n=>{if(n.tagName.toLowerCase()==='svg')return;const q=n.getBoundingClientRect();if(q.width<1||q.height<1||q.width*q.height>W*H*.8)return;
+ // Le conteneur d'un talent est bien plus large que son rond (son nom caché s'y étale) : seuls ses enfants comptent.
+ e.querySelectorAll('*').forEach(n=>{if(n.tagName.toLowerCase()==='svg'||n.classList.contains('arbre-noeud'))return;const q=n.getBoundingClientRect();if(q.width<1||q.height<1||q.width*q.height>W*H*.8)return;
   const c=getComputedStyle(n);if(c.visibility==='hidden'||Number(c.opacity)===0)return;x0=Math.min(x0,q.left);y0=Math.min(y0,q.top);x1=Math.max(x1,q.right);y1=Math.max(y1,q.bottom)});
  if(!(x1>x0&&y1>y0))return false;const bx=x0-R.left,by=y0-R.top,bw=x1-x0,bh=y1-y0,G=14;
  const cc=col.getBoundingClientRect(),ccs=getComputedStyle(col),cl=cc.left+(parseFloat(ccs.paddingLeft)||0)+(parseFloat(ccs.borderLeftWidth)||0),cw=col.clientWidth-(parseFloat(ccs.paddingLeft)||0)-(parseFloat(ccs.paddingRight)||0);

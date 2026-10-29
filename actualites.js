@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.182","d":"2026-10-29","t":"L'arbre de talents remplit son bloc"},
 {"v":"1.181","d":"2026-10-29","t":"Taille de l'onglet Bonus pour tous les onglets"},
 {"v":"1.180","d":"2026-10-29","t":"Supprimer les ronds de remplissage"},
 {"v":"1.179","d":"2026-10-29","t":"Arbre plein bloc, fenêtre ajustée au contenu"},

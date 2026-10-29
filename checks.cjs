@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.182 — L'arbre se mesure sur ses ronds, pas sur les conteneurs des talents (larges de leur nom caché). */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(n.tagName.toLowerCase()==='svg'||n.classList.contains('arbre-noeud'))return;"),'v1.182');
 /* v1.181 — Tous les onglets des arbres ont la taille de l'onglet Bonus, verrouillée. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("const fixe=arbresOnglet!=='bonus'?(aBonus&&arbresHB?arbresHB.h:arbresTaille.h):arbresTaille.h;")
  &&ed.includes("const h=Math.ceil(Math.min(arbresTaille.h,bas));arbresHB={h,cle};pose(h)}")&&css.includes("#arbres .arbres-v2 .arbres-detail{min-height:0}"),'v1.181');}
