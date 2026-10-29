@@ -30,9 +30,12 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
     pas. Le Lourd (rouge) et le Mortel (noir) passent toujours ; sous Solidité, le Lourd la
     subit comme les autres. Sans un dé qui passe, pas de coup : ni bonus, ni saignée. */
  const seuil=defPlafonnee(def);let damage=0,hit=false,poison=0;
- kept.forEach(d=>{if(!passeDef(d,seuil,solidite))return;const [v,c]=d;hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1);if(c===7)poison+=v});
+ // v1.170 : « mystique » — un dé Mystique a doublé (sa face répétée par un autre dé, et il passe la DEF) ; les sphères le lisent.
+ let mystique=false;
+ kept.forEach(d=>{if(!passeDef(d,seuil,solidite))return;const [v,c]=d;hit=true;if(c===3&&remaining[v]>1)mystique=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1);if(c===7)poison+=v});
  const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
- return {dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit,poison};
+ // Hors des champs comptés : le résultat se compare toujours tel quel.
+ return Object.defineProperty({dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit,poison},'mystique',{value:mystique,enumerable:false});
 }
 /* La DEF va de 0 à 6 : à 6, plus aucune face ne la passe, seuls le Lourd et le Mortel. */
 const DEF_MAX=6;

@@ -9192,7 +9192,7 @@ function boutonCoutsSphere(){const b=boutonOutil('Coûts',()=>{try{localStorage.
    naturelle, sans être montré (tout se fait avant la peinture suivante) ; la fenêtre prend la plus grande largeur et la plus grande
    hauteur, bornées à l'écran, et ne change plus d'un onglet à l'autre. Le sphérier s'y cale, réduit s'il le faut. */
 let arbresTaille=null,arbresMesure=false;
-function tailleCommuneArbres(){if(!arbresDialog.open||arbresMesure)return;arbresMesure=true;
+function tailleCommuneArbres(){if(!arbresDialog.open||arbresMesure)return;if(appliqueTailleArbres()){renderArbres();return}arbresMesure=true;
  const garde={onglet:arbresOnglet,sel:sphereSel,sels:new Set(sphereSels),lier:sphereLier,haut:arbresDialog.scrollTop};
  try{arbresTaille=null;const cles=[...arbresDialog.querySelectorAll('.arbres-onglets [data-onglet]')].map(b=>b.dataset.onglet);if(!cles.length)cles.push(arbresOnglet);
   let w=0,h=0;
@@ -9206,3 +9206,49 @@ function tailleCommuneArbres(){if(!arbresDialog.open||arbresMesure)return;arbres
 ['openArbres','openArbresClasse','openArbresMetier'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(...x){arbresTaille=null;const r=f(...x);tailleCommuneArbres();return r}});
 arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresTaille=null});
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresTaille)tailleCommuneArbres()});
+
+/* v1.170 — La taille de la fenêtre des arbres, à la main du MJ. « Redimensionner » fait paraître deux poignées : le coin en bas à
+   droite règle la fenêtre, le séparateur entre l'arbre et le panneau règle la largeur du panneau. Au lâcher, la taille se garde
+   dans le contenu (catalog.tailleArbres) : chaque appareil, joueurs compris, ouvre la fenêtre à cette taille, bornée à son écran.
+   « Taille auto » l'oublie : la fenêtre reprend la taille commune de ses onglets. */
+let arbresRedim=false;
+function tailleArbresMJ(){const t=typeof catalog!=='undefined'&&catalog&&catalog.tailleArbres;if(!t||typeof t!=='object')return null;
+ const n=(v,lo,hi)=>Math.max(lo,Math.min(hi,Math.round(Number(v))||0));return {w:n(t.w,480,4000),h:n(t.h,360,3000),detail:n(t.detail,240,1200)}}
+function appliqueTailleArbres(){const T=tailleArbresMJ();arbresDialog.classList.toggle('taille-mj',!!T);if(!T){arbresDialog.style.removeProperty('--detail-w');return false}
+ const w=Math.min(T.w,Math.round(innerWidth*.98)),h=Math.min(T.h,Math.round(innerHeight*.98));
+ arbresDialog.style.width=w+'px';arbresDialog.style.height=h+'px';arbresDialog.style.removeProperty('min-height');
+ arbresDialog.style.setProperty('--detail-w',Math.min(T.detail,Math.max(240,w-360))+'px');arbresTaille={w,h};return true}
+const arbresRedimBtn=document.createElement('button');arbresRedimBtn.type='button';arbresRedimBtn.className='arbres-vue arbres-redim-btn';arbresRedimBtn.textContent='⤡ Redimensionner';
+const arbresAutoBtn=document.createElement('button');arbresAutoBtn.type='button';arbresAutoBtn.className='arbres-vue arbres-redim-btn';arbresAutoBtn.textContent='Taille auto';
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresRedimBtn,arbresDialog.querySelector('[data-close]'));
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresAutoBtn,arbresDialog.querySelector('[data-close]'));
+const poigneeFenetre=document.createElement('div');poigneeFenetre.className='poignee-fenetre-arbres';poigneeFenetre.title='Tirer pour redimensionner la fenêtre';arbresDialog.append(poigneeFenetre);
+function sauveTailleArbres(){const r=arbresDialog.getBoundingClientRect(),d=parseFloat(getComputedStyle(arbresDialog).getPropertyValue('--detail-w'))||360;
+ catalog.tailleArbres={w:Math.round(r.width),h:Math.round(r.height),detail:Math.round(d)};scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+function majRedim(){const mj=view==='mj';arbresRedimBtn.hidden=!mj;arbresAutoBtn.hidden=!mj||!arbresRedim;arbresRedimBtn.classList.toggle('on',arbresRedim);
+ arbresDialog.classList.toggle('redim',mj&&arbresRedim);poigneeFenetre.hidden=!(mj&&arbresRedim);
+ // Le séparateur, entre l'arbre et le panneau : refait à chaque dessin.
+ const v2=arbresDialog.querySelector('.arbres-v2');if(!v2)return;let sep=v2.querySelector(':scope>.poignee-blocs');
+ if(!(mj&&arbresRedim)){if(sep)sep.remove();return}
+ if(!sep){sep=document.createElement('div');sep.className='poignee-blocs';sep.title='Tirer pour régler la largeur du panneau';v2.append(sep);
+  sep.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();const x0=e.clientX,d0=(arbresDialog.querySelector('.arbres-detail')||{getBoundingClientRect:()=>({width:360})}).getBoundingClientRect().width;
+   if(!tailleArbresMJ()){const r=arbresDialog.getBoundingClientRect();catalog.tailleArbres={w:Math.round(r.width),h:Math.round(r.height),detail:Math.round(d0)};appliqueTailleArbres()}
+   const mv=ev=>{const w=arbresDialog.getBoundingClientRect().width,d=Math.max(240,Math.min(w-360,d0-(ev.clientX-x0)));arbresDialog.style.setProperty('--detail-w',d+'px');
+    if(arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}};
+   const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);sauveTailleArbres();renderArbres()};
+   addEventListener('pointermove',mv);addEventListener('pointerup',up)})}}
+poigneeFenetre.addEventListener('pointerdown',e=>{if(e.button!==0||view!=='mj')return;e.preventDefault();const r0=arbresDialog.getBoundingClientRect(),x0=e.clientX,y0=e.clientY;
+ if(!tailleArbresMJ()){const d=(arbresDialog.querySelector('.arbres-detail')||{getBoundingClientRect:()=>({width:360})}).getBoundingClientRect().width;catalog.tailleArbres={w:Math.round(r0.width),h:Math.round(r0.height),detail:Math.round(d)};appliqueTailleArbres()}
+ // La fenêtre est centrée : elle grandit des deux côtés, le coin reste sous le pointeur.
+ const mv=ev=>{const w=Math.max(480,Math.min(innerWidth*.98,r0.width+2*(ev.clientX-x0))),h=Math.max(360,Math.min(innerHeight*.98,r0.height+2*(ev.clientY-y0)));
+  arbresDialog.style.width=Math.round(w)+'px';arbresDialog.style.height=Math.round(h)+'px';arbresTaille={w:Math.round(w),h:Math.round(h)};
+  if(arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}};
+ const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);sauveTailleArbres();renderArbres()};
+ addEventListener('pointermove',mv);addEventListener('pointerup',up)});
+arbresRedimBtn.onclick=()=>{arbresRedim=!arbresRedim;majRedim()};
+arbresAutoBtn.onclick=()=>{delete catalog.tailleArbres;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));arbresDialog.classList.remove('taille-mj');arbresDialog.style.removeProperty('height');arbresTaille=null;tailleCommuneArbres();majRedim()};
+arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresRedim=false;arbresDialog.style.removeProperty('height')});
+{const ra=renderArbres;renderArbres=function(...x){if(arbresDialog.open&&tailleArbresMJ())appliqueTailleArbres();const r=ra(...x);majRedim();return r}}
+// La taille gardée se relit avec le contenu : elle voyage avec lui.
+{const nc=normalizeCatalog;normalizeCatalog=function(c,...x){const r=nc(c,...x);if(c&&typeof c==='object'&&c.tailleArbres!==undefined){const t=c.tailleArbres;
+ if(!t||typeof t!=='object'||!(Number(t.w)>0)||!(Number(t.h)>0))delete c.tailleArbres;else c.tailleArbres={w:Math.round(Number(t.w)),h:Math.round(Number(t.h)),detail:Math.round(Number(t.detail)||360)}}return r}}

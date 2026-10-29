@@ -3591,7 +3591,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function synchronisePV()
 {const ix=fs.readFileSync('index.html','utf8');
  assert.ok(ix.includes("const briseO=briseContre(talentsCodes(a),b);"));
  assert.ok(ix.includes("const defCible=hasState(b,'Au sol')||briseO.ignore?0:defOf(b)"));
- assert.ok(ix.includes("if(briseO.double&&!r.failed&&r.damage)r={...r,damage:r.damage*2};"));
+ assert.ok(ix.includes("if(briseO.double&&!r.failed&&r.damage)r={...r,damage:r.damage*2,mystique:r.mystique};"));
  assert.ok(ix.includes("if(briseO.perte)b.defBrisee="));}
 /* v0.729 — Le loot forgé borné par type : 2 affixes standard, 3 élite, 4 solitaire et boss. */
 {const C32=require('./combat.js');
@@ -5368,10 +5368,16 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.170 — Le dé Mystique qui double : le moteur le dit (champ non compté), la Sphère Saphir le lit. */
+{const {resolveAttack}=require('./combat.js');const r1=resolveAttack({dice:[[4,3],[4,0]],def:0,dmg:0,roll:()=>1}),r2=resolveAttack({dice:[[4,3],[5,0]],def:0,dmg:0,roll:()=>1}),r3=resolveAttack({dice:[[4,3],[4,0]],def:4,dmg:0,roll:()=>1});
+ assert.equal(r1.mystique,true);assert.equal(r2.mystique,false);assert.equal(r3.mystique,false);assert.ok(!Object.keys(r1).includes('mystique'));assert.ok(fs.readFileSync('index.html','utf8').includes("gemmesApresCoup(a,b,{...r,mystique:r.mystique,orbe:true"));}
+/* v1.170 — Le MJ redimensionne la fenêtre des arbres et son panneau ; la taille se garde dans le contenu. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function appliqueTailleArbres(){")&&ed.includes("catalog.tailleArbres={w:Math.round(r.width),h:Math.round(r.height),detail:Math.round(d)};")
+ &&ed.includes("if(appliqueTailleArbres()){renderArbres();return}")&&fs.readFileSync('editor.css','utf8').includes("grid-template-columns:minmax(0,1fr) var(--detail-w,360px)}"),'v1.170');}
 /* v1.169 — Quinze déclencheurs de plus (Saphir, Citrine, Diamant). */
 {const gm=fs.readFileSync('gemmes.js','utf8');
- assert.ok(['critique-mystique','test-mental-combat','tuer-par-etat','maitrise-unique','relever-coma','deplacement-force','etat-precision','tir-premier','bouger-premier','tuer-pv-max','absorber-armure','gain-armure','reaction-annule','fin-tour-bas-pv','groupe-sans-coma'].every(c=>gm.includes("{cle:'"+c+"',"))
-  &&gm.includes("if(s.parCombat[cle]===numeroCombat)return null;")&&gm.includes("?'critique-mystique':'critique',opp);")&&fs.readFileSync('index.html','utf8').includes("if(perdu&&typeof deGemme==='function')deGemme(g,'reaction-annule');"),'v1.169');}
+ assert.ok(['double-mystique','test-mental-combat','tuer-par-etat','maitrise-unique','relever-coma','deplacement-force','etat-precision','tir-premier','bouger-premier','tuer-pv-max','absorber-armure','gain-armure','reaction-annule','fin-tour-bas-pv','groupe-sans-coma'].every(c=>gm.includes("{cle:'"+c+"',"))
+  &&gm.includes("if(s.parCombat[cle]===numeroCombat)return null;")&&gm.includes("if(r.mystique)deGemme(a,'double-mystique',opp);")&&fs.readFileSync('index.html','utf8').includes("if(perdu&&typeof deGemme==='function')deGemme(g,'reaction-annule');"),'v1.169');}
 /* v1.168 — Une taille commune aux onglets des arbres ; le bouton Coûts du sphérier. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function tailleCommuneArbres(){")&&ed.includes("['openArbres','openArbresClasse','openArbresMetier'].forEach(n=>{")
  &&ed.includes("function boutonCoutsSphere(){")&&ed.includes("(coutsSphereVus()?'':' sans-couts')")&&fs.readFileSync('editor.css','utf8').includes(".spherier.sans-couts .sphere-cout{display:none}"),'v1.168');}

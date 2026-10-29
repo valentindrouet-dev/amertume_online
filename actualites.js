@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.170","d":"2026-10-29","t":"Arbres redimensionnables par le MJ ; double Mystique"},
 {"v":"1.169","d":"2026-10-29","t":"Sphères : quinze déclencheurs de plus"},
 {"v":"1.168","d":"2026-10-29","t":"Arbres : taille commune aux onglets ; bouton Coûts"},
 {"v":"1.167","d":"2026-10-29","t":"Sphères : un seul dé, le seuil décide"},

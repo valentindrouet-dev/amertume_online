@@ -4086,3 +4086,16 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .spherier.sans-couts .sphere-cout{display:none}
 .arbres-v2.sphere-plein .spherier-zone{align-items:center}
 .sphere-infusion .couts-sphere{margin-left:auto}
+/* v1.170 : la taille de la fenêtre des arbres, à la main du MJ — sa poignée de coin, le séparateur du panneau. */
+#arbres.taille-mj{max-width:98vw;max-height:98dvh;min-height:0}
+#arbres.taille-mj .arbres-v2,#arbres.taille-mj .arbres-v2.sphere-plein{grid-template-columns:minmax(0,1fr) var(--detail-w,360px)}
+#arbres.taille-mj .arbres-v2-arbre{overflow:auto}
+#arbres .arbres-v2{position:relative}
+.poignee-fenetre-arbres{position:absolute;right:3px;bottom:3px;width:22px;height:22px;cursor:nwse-resize;z-index:20;border-radius:4px;
+ background:linear-gradient(135deg,transparent 45%,#c99a3c 45%,#c99a3c 55%,transparent 55%,transparent 68%,#c99a3c 68%,#c99a3c 78%,transparent 78%)}
+.poignee-fenetre-arbres[hidden]{display:none}
+.poignee-blocs{position:absolute;top:0;bottom:0;right:calc(var(--detail-w,360px) + 4px);width:14px;cursor:ew-resize;z-index:15;border-radius:7px;
+ background:linear-gradient(to right,transparent 5px,#c99a3c 5px,#c99a3c 9px,transparent 9px);opacity:.55}
+.poignee-blocs:hover{opacity:1}
+#arbres.redim{outline:2px dashed #c99a3c;outline-offset:-2px}
+.arbres-redim-btn[hidden]{display:none}

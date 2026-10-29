@@ -31,7 +31,7 @@ const DECLENCHEURS_GEMMES=[
  {cle:'tir-longue-portee',nom:'Tir à longue portée, la cible au-delà d’un mouvement',phase:'combat',couleur:'citrine',seuil:6,auto:true,note:'Un tir qui touche une cible plus loin que le mouvement du tireur.'},
  {cle:'utiliser-objet',nom:'Utiliser un objet, un piège ou une invention',phase:'combat',couleur:'citrine',auto:true,note:'Un objet employé, ou une invention qui touche.'},
  {cle:'reperer-cache',nom:'Repérer un adversaire caché',phase:'combat',couleur:'citrine',auto:true,note:'Un test de Perception en combat qui révèle un adversaire.'},
- {cle:'critique-mystique',nom:'Faire un critique avec un dé Mystique',phase:'combat',couleur:'saphir',auto:true,note:'Un double de 6 dont au moins un dé Mystique : il compte en Saphir à la place du Rubis.'},
+ {cle:'double-mystique',nom:'Faire doubler un dé Mystique',phase:'combat',couleur:'saphir',auto:true,note:'Le pouvoir des dés bleus : un dé Mystique qui passe et dont la face est répétée double.'},
  {cle:'deplacement-force',nom:'Repousser ou attirer un adversaire, ou le mettre Au sol',phase:'combat',couleur:'citrine',auto:true,note:'Un déplacement forcé, ou Au sol infligé.'},
  {cle:'etat-precision',nom:'Infliger un état de précision (Aveugle)',phase:'combat',couleur:'citrine',auto:true,note:'Aveugle posé sur un adversaire.'},
  {cle:'tir-premier',nom:'Tirer le premier du tour, sur un adversaire qui n’a pas encore agi',phase:'combat',couleur:'citrine',auto:true,note:'Le premier tir des aventuriers dans le tour.'},
@@ -154,8 +154,9 @@ let bossVaincuCombat=0,dernierInvisible=null;
 function gemmesApresCoup(a,b,r,hpAvant,lost){if(!a||!b||!r||typeof enCombat!=='function'||!enCombat())return;
  const crit=!!(r.critical&&!r.failed),touche=!r.failed&&!!r.hit,opp={critique:crit};
  if(a.hero&&hostiles(a,b)){
-  // v1.169 : un critique dont un 6 est un dé Mystique compte en Saphir, à la place du Rubis.
-  if(crit)deGemme(a,(r.dice||[]).some(([v,c])=>v===6&&c===DICE_KEYS.indexOf('blue'))?'critique-mystique':'critique',opp);
+  if(crit)deGemme(a,'critique',opp);
+  // v1.170 : un dé Mystique qui double, critique ou non : le Saphir.
+  if(r.mystique)deGemme(a,'double-mystique',opp);
   if(b.hp===0&&hpAvant>0){deGemme(a,'tuer',opp);noteTuerie(a,b,opp);if(b.type==='boss')bossVaincuCombat=numeroCombat}
   if(touche&&!r.orbe){const inv=dernierInvisible&&dernierInvisible.id===a.id&&performance.now()-dernierInvisible.t<3000;
    if(inv||hasState(b,'Surpris')||hasState(b,'Aveugle')||hasState(b,'Sommeil')||hasState(a,'Invisible')||hasState(a,'Caché'))deGemme(a,'frapper-non-vu',opp);
