@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.135","d":"2026-10-29","t":"Sphérier : valeur des bonus sur leur icône"},
 {"v":"1.134","d":"2026-10-29","t":"Table : Tab cache l'interface"},
 {"v":"1.133","d":"2026-10-29","t":"Sphérier : icônes fixes, ajout au clic, Maj + clic pour lier, coûts"},
 {"v":"1.132","d":"2026-10-29","t":"Table : zone libre de la carte, fenêtres rangées en colonne"},
