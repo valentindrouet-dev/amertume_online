@@ -1961,7 +1961,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
    la sauvegarde qui l'emporte. Le domaine ne se publie pas et ne va pas à la table. */
 {const fief=fs.readFileSync('domaine.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(page.includes('<script src="./maps.js?v=')&&/maps\.js\?v=[\d.]+"><\/script><script src="\.\/domaine\.js\?v=/.test(page),'domaine.js se charge après maps.js');
- assert.ok(cartes.includes("const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','gemmes','regles','settings'];")
+ assert.ok(cartes.includes("const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','gemmes','regles','settings','maj'];")
   &&cartes.includes('<button data-page="domaine">Domaine</button>')&&cartes.includes("else if(p==='domaine')renderDomaine();")
   &&cartes.includes("if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}")
   &&cartes.includes("const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;")
@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.210 — Les sphères réglables d'un clic dans les Richesses ; l'onglet MAJ, chez le MJ. */
+{const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');assert.ok(ed.includes("function sphereEnPlus(a,k,pas){")&&ed.includes("function renderMaj(){")&&mp.includes('<button data-page="maj">MAJ</button>')&&mp.includes("'settings','maj'];"),'v1.210');}
 /* v1.209 — Le coût en Marques d'un talent et de ses améliorations se règle d'un clic dans le panneau de l'arbre. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);"),'v1.209');
 assert.ok(fs.readFileSync('editor.js','utf8').includes("c.querySelectorAll(':scope>.hero-head,:scope>.hero-pv,:scope>.chips').forEach(x=>x.remove());")&&fs.readFileSync('editor.js','utf8').includes("apres.className='arbres-ident-apres'"),'v1.209 en-tête');

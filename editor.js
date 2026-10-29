@@ -718,7 +718,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.012 : les types de ressource de la carte, partagés par toutes les cartes.
  c.typesRessources=normaliseTypesRessources(c.typesRessources);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
- {const o=c.iconesFiche&&typeof c.iconesFiche==='object'&&!Array.isArray(c.iconesFiche)?c.iconesFiche:{};c.iconesFiche={};['stats','inventaire','classe','bonus','espece','metier'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.iconesFiche[k]=v})}
+ if(Array.isArray(c.majVerifiees))c.majVerifiees=c.majVerifiees.filter(v=>typeof v==='string'&&/^\d+\.\d+$/.test(v)).slice(-2000);else delete c.majVerifiees;
+ {const o=c.iconesFiche&&typeof c.iconesFiche==='object'&&!Array.isArray(c.iconesFiche)?c.iconesFiche:{};c.iconesFiche={};['stats','inventaire','classe','bonus','espece','metier','statistiques'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.iconesFiche[k]=v})}
  // v1.195 : l'icône choisie de chaque sphère ; et la planche des sphères, 6 × 5, découpée une fois.
  c.iconesGemmes=normaliseIconesGemmes(c.iconesGemmes);
  if(!c.semisForge.includes('planches-spheres')){if(!Array.isArray(c.planches))c.planches=[];const f='planches/SPHERES.webp',cases=[[0.04192,0.03785,0.16419,0.1361],[0.23231,0.03712,0.16507,0.13755],[0.42009,0.03785,0.16769,0.13683],[0.61397,0.03712,0.16681,0.13755],[0.80524,0.03712,0.16419,0.13755],[0.05328,0.19651,0.14585,0.13828],[0.24716,0.19651,0.14585,0.13828],[0.43668,0.19651,0.1441,0.13828],[0.62707,0.19651,0.14498,0.13828],[0.82183,0.19651,0.1441,0.13828],[0.04192,0.35153,0.16507,0.14265],[0.23144,0.35153,0.16943,0.14338],[0.42271,0.35153,0.17031,0.14265],[0.61485,0.35153,0.17031,0.1441],[0.80786,0.35153,0.17031,0.14338],[0.04279,0.51092,0.15371,0.12518],[0.23319,0.51092,0.15633,0.12518],[0.4262,0.51092,0.15371,0.12518],[0.61747,0.51019,0.15546,0.12591],[0.80961,0.50946,0.15721,0.12664],[0.04192,0.65284,0.15895,0.13464],[0.23319,0.65284,0.15983,0.13464],[0.42358,0.65284,0.15983,0.13464],[0.61223,0.65284,0.15983,0.13464],[0.80262,0.65211,0.16245,0.1361],[0.03057,0.80422,0.17293,0.14629],[0.22183,0.80349,0.1738,0.14702],[0.41135,0.80277,0.17467,0.14774],[0.60262,0.80277,0.17642,0.14993],[0.79476,0.80277,0.17555,0.14847]],noms=['Brisure de citrine','Brisure d’émeraude','Brisure de saphir','Brisure de rubis','Brisure de diamant','Éclat de citrine','Éclat d’émeraude','Éclat de saphir','Éclat de rubis','Éclat de diamant','Brôme de citrine','Brôme d’émeraude','Brôme de saphir','Brôme de rubis','Brôme de diamant','Gemme coussin de citrine','Gemme coussin d’émeraude','Gemme coussin de saphir','Gemme coussin de rubis','Gemme coussin de diamant','Gemme octogonale de citrine','Gemme octogonale d’émeraude','Gemme octogonale de saphir','Gemme octogonale de rubis','Gemme octogonale de diamant','Gemme ronde de citrine','Gemme ronde d’émeraude','Gemme ronde de saphir','Gemme ronde de rubis','Gemme ronde de diamant'];
@@ -2186,7 +2187,7 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
   +ACTIONS_SPECIALES.map(([k,n])=>selGrille(selGroupes(esc(n),'action-'+k,actionSpeciale(k).logo||'',groupes))+'<label class="action-texte">Texte · '+esc(n)+'<textarea name="actiontexte-'+k+'" rows="2">'+esc(actionSpeciale(k).texte||'')+'</textarea></label>').join('');
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
   // v1.097 : l'icône des PV d'Armure, celle de {armure} dans les textes.
-  if(/^fiche-(stats|inventaire|classe|bonus|espece|metier)$/.test(nom)){const o={...(catalog.iconesFiche||{})};if(e.target.value)o[nom.slice(6)]=e.target.value;else delete o[nom.slice(6)];catalog.iconesFiche=o}
+  if(/^fiche-(stats|inventaire|classe|bonus|espece|metier|statistiques)$/.test(nom)){const o={...(catalog.iconesFiche||{})};if(e.target.value)o[nom.slice(6)]=e.target.value;else delete o[nom.slice(6)];catalog.iconesFiche=o}
   else if(nom==='etat-armure'){if(e.target.value)catalog.logoArmure=e.target.value;else delete catalog.logoArmure}
   else if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
   else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
@@ -2841,7 +2842,16 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
      posé sur l'icône comme celui d'un bonus ; une taille dont il n'a rien ne fait pas de ligne. */
   TAILLES_GEMMES.forEach(([ta,nomT,un])=>{const l=document.createElement('div');l.className='bourse-ligne gemmes-corps';l.setAttribute('aria-label',nomT);const d=contenu();
    VARIETES_GEMMES.forEach(([v])=>{const k=cleGemme(ta,v,false),n=Math.max(0,Math.trunc(Number(a.richesses[k]))||0);if(!n)return;const el=document.createElement('span');el.className='gem-vive gem-chiffree g-'+v;
-    const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,false),b);el.title=n+' '+nomGemme(ta,v,false);d.append(el)});if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});
+    const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,false),b);el.title=n+' '+nomGemme(ta,v,false);
+    // v1.210 : chez le MJ, un clic sur une sphère en ajoute une, un clic droit en retire une.
+    if(view==='mj'){el.classList.add('reglable');el.onclick=e=>{e.stopPropagation();sphereEnPlus(a,k,1)};el.oncontextmenu=e=>{e.preventDefault();e.stopPropagation();sphereEnPlus(a,k,-1)}}
+    d.append(el)});
+   // v1.210 : chez le MJ, chaque taille a sa ligne, et son « + » propose les cinq couleurs.
+   if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='bourse-ajout';plus.textContent='+';plus.setAttribute('aria-label','Ajouter : '+nomT);
+    plus.onclick=e=>{e.stopPropagation();const ouvert=d.querySelector('.bourse-palette');if(ouvert){ouvert.remove();return}const pal=document.createElement('span');pal.className='bourse-palette';
+     VARIETES_GEMMES.forEach(([v])=>{const k=cleGemme(ta,v,false),b2=document.createElement('button');b2.type='button';b2.className='bourse-couleur';b2.title='1 '+nomGemme(ta,v,false).replace(/^\S+/,un);b2.append(iconeDeGemme(ta,v,false));
+      b2.onclick=ev=>{ev.stopPropagation();sphereEnPlus(a,k,1)};pal.append(b2)});d.append(pal)};d.append(plus)}
+   if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});
   if(view==='mj'){pl.classList.add('cliquable');pl.setAttribute('role','button');pl.tabIndex=0;pl.title='Or et sphères de '+a.name;pl.onclick=()=>openRichesses(a);pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
   if(l.classList.contains('bourse-titre'))rang.prepend(l);pl.append(rang);corps.append(pl)}
  else if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
@@ -9572,9 +9582,11 @@ const ICONES_FICHE=[['stats','Caractéristiques','<circle cx="12" cy="8" r="3.6"
  ['classe','Talents','<path d="M12 21v-7M12 14l-5-5M12 14l5-5M12 10V4"/><circle cx="12" cy="4" r="1.8"/><circle cx="6.5" cy="8.5" r="1.8"/><circle cx="17.5" cy="8.5" r="1.8"/>'],
  ['bonus','Bonus','<path d="M12 3 20 9.5 12 21 4 9.5Z"/><path d="M4 9.5h16M9 9.5 12 21l3-11.5M9 9.5 12 3l3 6.5"/>'],
  ['espece','Espèce','<circle cx="7" cy="9" r="1.9"/><circle cx="11" cy="6" r="1.9"/><circle cx="15.5" cy="7" r="1.9"/><circle cx="18.5" cy="11" r="1.9"/><path d="M8.5 18.5c-1.2-3 1.2-6 4.2-6s4.8 2.6 3.6 5.2c-.8 1.8-2.6 1.2-4 1.2s-3.2.9-3.8-.4Z"/>'],
- ['metier','Métier','<path d="m14 6 4 4-9.5 9.5a2.1 2.1 0 0 1-3-3Z"/><path d="m12.5 4.5 2-1.5 6.5 6.5-1.5 2"/>']];
+ ['metier','Métier','<path d="m14 6 4 4-9.5 9.5a2.1 2.1 0 0 1-3-3Z"/><path d="m12.5 4.5 2-1.5 6.5 6.5-1.5 2"/>'],
+ // v1.210 : le septième, les Statistiques.
+ ['statistiques','Statistiques','<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx=".8"/><rect x="10.5" y="7" width="3" height="11" rx=".8"/><rect x="15.5" y="10" width="3" height="8" rx=".8"/>']];
 function iconesFiche(a){const g=document.createElement('span');g.className='fiche-icones';const cl=classeDuHeros(a),dispo=new Set(ongletsArbre(a,cl).map(([k])=>k));
- const e=especeDe(a.espece),teintes={stats:actorTint(a),inventaire:'',classe:teinteClasse(cl)||actorTint(a),bonus:'#c99a3c',espece:e&&e.teinte||'',metier:a.metier?teinteMetier(a.metier):''};
+ const e=especeDe(a.espece),teintes={stats:actorTint(a),inventaire:'',classe:teinteClasse(cl)||actorTint(a),bonus:'#c99a3c',espece:e&&e.teinte||'',metier:a.metier?teinteMetier(a.metier):'',statistiques:''};
  ICONES_FICHE.forEach(([k,nom,svg])=>{const b=document.createElement('button');b.type='button';b.className='fiche-icone'+(dispo.has(k)?'':' absente');b.setAttribute('aria-label',nom+' de '+a.name);
   if(teintes[k])b.style.setProperty('--teinte',teintes[k]);
   // v1.204 : l'icône que le MJ a choisie (Icônes des caracs et compétences), sinon le dessin.
@@ -9631,3 +9643,19 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  'Savoir':['Analyser un adversaire : chaque réussite révèle une information','Se souvenir, déchiffrer, identifier'],
  'Technique':['Crocheter une serrure','Désamorcer un piège','Réparer, fabriquer, manier une invention']};
 function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const ul=document.createElement('ul');ul.className=cls||'';l.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});return ul}
+// v1.210 : une sphère de plus ou de moins dans les Richesses d'un aventurier, chez le MJ, sans ouvrir de fenêtre.
+function sphereEnPlus(a,k,pas){if(view!=='mj'||!a)return;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);const n=Math.max(0,(Math.trunc(Number(a.richesses[k]))||0)+pas);
+ if(n)a.richesses[k]=n;else delete a.richesses[k];a.richesses={...a.richesses};if(typeof renderHeroes==='function')renderHeroes();if(arbresDialog.open&&typeof renderArbres==='function')renderArbres();render();scheduleSave()}
+/* v1.210 — L'onglet MAJ, chez le MJ seul : chaque publication sur une ligne — son numéro, sa date, son titre — et une case
+   qu'il coche quand il l'a vérifiée. Les cases cochées voyagent avec le contenu (catalog.majVerifiees). */
+const majPage=document.createElement('main');majPage.id='maj-page';majPage.innerHTML='<section class="cat-panel panel"><header class="cat-head"><h2>MAJ</h2></header><div id="maj-liste"></div></section>';
+document.querySelector('main.layout').after(majPage);
+function renderMaj(){const boite=$('maj-liste');if(!boite)return;boite.replaceChildren();const A=typeof ACTUALITES!=='undefined'?ACTUALITES:{versions:[]},vus=new Set(Array.isArray(catalog.majVerifiees)?catalog.majVerifiees:[]);
+ const ul=document.createElement('ul');ul.className='maj-lignes';
+ (A.versions||[]).forEach(x=>{if(!x||!x.v)return;const li=document.createElement('li');li.className='maj-ligne'+(vus.has(x.v)?' vue':'');const lab=document.createElement('label');
+  const c=document.createElement('input');c.type='checkbox';c.checked=vus.has(x.v);c.disabled=view!=='mj';
+  c.onchange=()=>{const l=new Set(Array.isArray(catalog.majVerifiees)?catalog.majVerifiees:[]);if(c.checked)l.add(x.v);else l.delete(x.v);catalog.majVerifiees=[...l];li.classList.toggle('vue',c.checked);scheduleSave()};
+  const v=document.createElement('b');v.className='maj-v';v.textContent='v'+x.v;const d=document.createElement('span');d.className='maj-d';d.textContent=x.d||'';const t=document.createElement('span');t.className='maj-t';t.textContent=x.t||'';
+  lab.append(c,v,d,t);li.append(lab);ul.append(li)});boite.append(ul)}
+// showPage est déclaré plus loin (maps.js) : l'onglet s'y raccroche une fois tous les scripts chargés.
+(function accroche(){if(typeof showPage!=='function'){setTimeout(accroche,100);return}const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='maj')renderMaj();return r}})();

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.210","d":"2026-10-29","t":"Sphères d'un clic, onglet MAJ, bouton Statistiques"},
 {"v":"1.209","d":"2026-10-29","t":"Coût en Marques d'un clic, identité en en-tête, textes en puces"},
 {"v":"1.208","d":"2026-10-29","t":"En-têtes Équipements et Inventaire"},
 {"v":"1.207","d":"2026-10-29","t":"Le bloc Richesses"},
