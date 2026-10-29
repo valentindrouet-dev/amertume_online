@@ -4014,3 +4014,10 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .sphere-noeud.dispo:not(.acquis) .sphere-rond{background:color-mix(in srgb,#58b09f 32%,var(--panel))}
 .sphere-noeud.dispo.cher:not(.acquis) .sphere-rond{border-style:solid;border-color:#c99a3c;background:color-mix(in srgb,#c99a3c 26%,var(--panel));box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .spherier-lien.pris{stroke:#58b09f;stroke-opacity:.9}
+/* v1.151 : le bonus choisi — et ceux de la sélection — portent une aura dorée légère, comme un talent choisi ; plus de liseré bleu. */
+.sphere-noeud.choisi .sphere-rond,.sphere-noeud.depart.choisi .sphere-rond{outline:none}
+.sphere-noeud.selec .sphere-rond,.sphere-noeud.selec.depart .sphere-rond{box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.sphere-noeud.selec.depart .sphere-rond,.sphere-noeud.selec.acquis.depart .sphere-rond{box-shadow:0 0 0 3px var(--panel-2),0 0 0 5px #c99a3c,0 2px 6px rgba(0,0,0,.2)}
+.sphere-noeud.selec.acquis .sphere-rond{box-shadow:0 0 0 2px color-mix(in srgb,#58b09f 40%,transparent),0 2px 6px rgba(0,0,0,.2)}
+.sphere-noeud:is(.choisi,.selec)::before{content:'';position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 18px 7px color-mix(in srgb,#c99a3c 55%,transparent);pointer-events:none}
+.sphere-noeud.selec::before{box-shadow:0 0 14px 6px color-mix(in srgb,#c99a3c 70%,transparent)}

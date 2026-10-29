@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.151","d":"2026-10-29","t":"Arbre Bonus : aura dorée du bonus choisi"},
 {"v":"1.150","d":"2026-10-29","t":"Arbre Bonus : vert émeraude, fonds des accessibles, clic dans le vide"},
 {"v":"1.149","d":"2026-10-29","t":"Arbre Bonus : plus de marquage, couleurs tenu / accessible"},
 {"v":"1.148","d":"2026-10-29","t":"Arbre Bonus : Désacheter au MJ, Infuser centré"},
