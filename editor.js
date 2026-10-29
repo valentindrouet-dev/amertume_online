@@ -5665,12 +5665,23 @@ function logoBonusFixe(carac){const n={vie:1,endu:2,pv:3,xp:4,dmg:5}[carac],id=n
  return id&&typeof iconeDe==='function'&&iconeDe(id)?id:''}
 // v1.137 : les icônes que rien ne change — les cinq de la planche, la DEF, les mètres, l'Armure, l'état.
 const iconeBonusFigee=carac=>!!logoBonusFixe(carac)||['def','metres','armure','etat','pa','pm'].includes(carac);
+/* v1.178 — Une icône d'état dont le dessin n'est pas au milieu de son image se recentre dans son rond : le cœur visible de l'image
+   (ses pixels non transparents) est mesuré une fois par image, et l'icône se décale d'autant. */
+const CENTRES_VISUELS=new Map();
+function centreVisuel(im){const pose=c=>{if(c&&(Math.abs(c[0])>.02||Math.abs(c[1])>.02))im.style.translate=(-c[0]*100).toFixed(1)+'% '+(-c[1]*100).toFixed(1)+'%';else im.style.removeProperty('translate')};
+ const mesure=()=>{const src=im.currentSrc||im.src;if(!src)return;if(CENTRES_VISUELS.has(src)){pose(CENTRES_VISUELS.get(src));return}
+  let c=null;try{const n=64,cv=document.createElement('canvas');cv.width=cv.height=n;const x=cv.getContext('2d',{willReadFrequently:true});
+   const nw=im.naturalWidth,nh=im.naturalHeight;if(!nw||!nh)return;const k=Math.min(n/nw,n/nh),w=nw*k,h=nh*k,ox=(n-w)/2,oy=(n-h)/2;x.drawImage(im,ox,oy,w,h);
+   const d=x.getImageData(0,0,n,n).data;let x0=n,y0=n,x1=-1,y1=-1;for(let y=0;y<n;y++)for(let i=0;i<n;i++)if(d[(y*n+i)*4+3]>40){if(i<x0)x0=i;if(i>x1)x1=i;if(y<y0)y0=y;if(y>y1)y1=y}
+   if(x1>=x0)c=[((x0+x1+1)/2-n/2)/n,((y0+y1+1)/2-n/2)/n]}catch(e){c=null}
+  CENTRES_VISUELS.set(src,c);pose(c)};
+ if(im.complete&&im.naturalWidth)mesure();im.addEventListener('load',mesure)}
 function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
  {const fixe=logoBonusFixe(carac),im=fixe&&logoImage(fixe,LOGOS_TOUS);if(im){im.classList.add('logo-bonus');return im}}
  // v1.140 : un point d'Action, un point de Mouvement — la bulle bleue, la bulle brune, celles du jeu.
  if(carac==='pa'||carac==='pm'){el=document.createElement('img');el.src=imgUrl('points/'+carac+'.webp');el.alt='';el.draggable=false;el.classList.add('logo-bonus');return el}
  if(carac==='def'||carac==='armure'){el=document.createElement('img');el.src=imgUrl(carac==='def'?'BONUS_DEF.webp':'weapon_armure.png');el.alt='';el.draggable=false;el.classList.add('logo-bonus');return el}
- if(carac==='etat'){const e=p&&p.etat||'Rage',im=typeof imageEtat==='function'?imageEtat(e):null;if(im){im.classList.add('logo-bonus');return im}
+ if(carac==='etat'){const e=p&&p.etat||'Rage',im=typeof imageEtat==='function'?imageEtat(e):null;if(im){im.classList.add('logo-bonus');if(im.tagName==='IMG')centreVisuel(im);return im}
   el=document.createElement('span');el.className='bonus-lettres logo-bonus';el.textContent=e.slice(0,2);return el}
  // Le logo que le MJ a donné à tous les bonus de cette caractéristique passe devant l'icône du jeu.
  const perso=(typeof catalog!=='undefined'&&catalog.logosBonus||{})[cleLogoBonus(p)];if(perso){const im=logoImage(perso,LOGOS_TOUS);if(im)return im}
@@ -9189,7 +9200,7 @@ function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.cl
  const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;
  /* v1.174 : la fenêtre a sa taille — le cadre du sphérier remplit sa colonne jusqu'au panneau de droite et jusqu'en bas, sans vide ;
     le plan s'y centre, et le quadrillage passe sur tout le cadre, au pas du plan. */
- if(arbresTaille&&!arbresMesure){const zw=(cad.closest('.arbres-v2-arbre')||{}).clientWidth||0,cw=Math.max(W*k+2,dispoW,zw),ch=Math.max(H*k+2,dispoH),tx=Math.round((cw-2-W*k)/2),ty=Math.round((ch-2-H*k)/2);
+ if(arbresTaille&&!arbresMesure){const zw=(cad.closest('.arbres-v2-arbre')||{}).clientWidth||0,cw=Math.max(W*k+2,dispoW,zw),ch=Math.max(H*k+2,dispoH),tx=Math.round((cw-2-W*k)/2),ty=Math.max(0,Math.round((ch-2-H*k)/2-2*GRILLE_SPHERE*k));
   plan.style.transform='translate('+tx+'px,'+ty+'px)'+(k<1?' scale('+k+')':'');cad.style.width=Math.floor(cw)+'px';cad.style.height=Math.floor(ch)+'px';
   const bp=String(plan.style.backgroundPosition||'0px 0px').split(' ').map(v=>parseFloat(v)||0),pas=(parseFloat(plan.style.getPropertyValue('--pas'))||40)*k;
   cad.classList.toggle('grille',plan.classList.contains('grille'));cad.style.setProperty('--pas',pas+'px');cad.style.backgroundPosition=(tx+bp[0]*k-.5)+'px '+(ty+(bp[1]||0)*k-.5)+'px';

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.178","d":"2026-10-29","t":"États centrés, sphérier plus haut"},
 {"v":"1.177","d":"2026-10-29","t":"Ronds de l'arbre à la taille du bloc"},
 {"v":"1.176","d":"2026-10-29","t":"Arbre de talents jusqu'au bas de la fenêtre"},
 {"v":"1.175","d":"2026-10-29","t":"Talents jusqu'au panneau de droite"},

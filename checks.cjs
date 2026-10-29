@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.178 — Les icônes d'états recentrées dans leur rond ; le sphérier remonte de deux lignes. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(im){im.classList.add('logo-bonus');if(im.tagName==='IMG')centreVisuel(im);return im}")&&ed.includes("function centreVisuel(im){")
+ &&ed.includes("ty=Math.max(0,Math.round((ch-2-H*k)/2-2*GRILLE_SPHERE*k));"),'v1.178');}
 /* v1.177 — Les ronds de l'arbre grandissent jusqu'à remplir leur bloc, sans jamais faire défiler. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function agranditArbre(zone){")&&fs.readFileSync('editor.js','utf8').includes("try{agranditArbre(zone)}catch(e){}}}"),'v1.177');
 /* v1.176 — Le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre, comme le sphérier. */
