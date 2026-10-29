@@ -3591,7 +3591,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function synchronisePV()
 {const ix=fs.readFileSync('index.html','utf8');
  assert.ok(ix.includes("const briseO=briseContre(talentsCodes(a),b);"));
  assert.ok(ix.includes("const defCible=hasState(b,'Au sol')||briseO.ignore?0:defOf(b)"));
- assert.ok(ix.includes("if(briseO.double&&!r.failed&&r.damage)r={...r,damage:r.damage*2,mystique:r.mystique};"));
+ assert.ok(ix.includes("if(briseO.double&&!r.failed&&r.damage)r={...r,damage:r.damage*2,mystique:r.mystique,detail:r.detail};"));
  assert.ok(ix.includes("if(briseO.perte)b.defBrisee="));}
 /* v0.729 — Le loot forgé borné par type : 2 affixes standard, 3 élite, 4 solitaire et boss. */
 {const C32=require('./combat.js');
@@ -5368,6 +5368,15 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.183 — Treize déclencheurs de plus, les titres de fin de combat qui valent une Brisure, la Tour Mystique ; le détail d'un coup. */
+{const C=require('./combat.js');const r=C.resolveAttack({dice:[[5,0],[6,0],[4,2],[3,3]],def:3,dmg:2,roll:()=>1});
+ assert.deepEqual(r.detail,{passes:3,arretes:1,couleurs:[0,2],bloque:3},'le détail du coup');assert.ok(!Object.keys(r).includes('detail'));
+ const r2=C.resolveAttack({dice:[[2,0],[3,0]],def:4,dmg:5,roll:()=>1});assert.deepEqual(r2.detail,{passes:0,arretes:2,couleurs:[],bloque:10},'tout bloqué : les faces et les Dégâts');
+ assert.ok(C.FONCTIONS_BATIMENT.some(([k,n])=>k==='tour'&&n==='Tour Mystique')&&C.fonctionParNom('Tour de Mystique')==='tour','la Tour');
+ assert.deepEqual(C.normaliseDomaine({savoirSpheres:['critique','critique',7]}).savoirSpheres,['critique'],'le savoir de la troupe');
+ const g=fs.readFileSync('gemmes.js','utf8');['fin-tour-contact-2','attaque-2-round','degats-etat-debout','crans-etat-3','repos-court','liberation','ancre','contact-aller-retour','coup-50','quatre-des-passent','blesser-3','trois-couleurs','rage-3'].forEach(k=>assert.ok(g.includes("{cle:'"+k+"'"),k));
+ assert.ok(g.includes("{cle:'deplacement-force',nom:'Repousser ou attirer un adversaire, ou le mettre Au sol',phase:'combat',couleur:'rubis'")&&g.includes("const TITRES_GEMMES=[")&&g.includes("function titresDuCombat(){")&&g.includes("nv.textContent='new'"),'gemmes');
+ assert.ok(fs.readFileSync('domaine.js','utf8').includes("function vitTour(corps,b,client,onglet){")&&fs.readFileSync('editor.js','utf8').includes("['objets','🧪','L’ingénieux','objets utilisés'],['intouch','✦','L’intouchable','dégâts subis',true]];"),'la Tour et les titres');}
 /* v1.182 — L'arbre se mesure sur ses ronds, pas sur les conteneurs des talents (larges de leur nom caché). */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("if(n.tagName.toLowerCase()==='svg'||n.classList.contains('arbre-noeud'))return;"),'v1.182');
 /* v1.181 — Tous les onglets des arbres ont la taille de l'onglet Bonus, verrouillée. */

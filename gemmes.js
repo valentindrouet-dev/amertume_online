@@ -32,7 +32,20 @@ const DECLENCHEURS_GEMMES=[
  {cle:'utiliser-objet',nom:'Utiliser un objet, un piège ou une invention',phase:'combat',couleur:'citrine',auto:true,note:'Un objet employé, ou une invention qui touche.'},
  {cle:'reperer-cache',nom:'Repérer un adversaire caché',phase:'combat',couleur:'citrine',auto:true,note:'Un test de Perception en combat qui révèle un adversaire.'},
  {cle:'double-mystique',nom:'Faire doubler un dé Mystique',phase:'combat',couleur:'saphir',auto:true,note:'Le pouvoir des dés bleus : un dé Mystique qui passe et dont la face est répétée double.'},
- {cle:'deplacement-force',nom:'Repousser ou attirer un adversaire, ou le mettre Au sol',phase:'combat',couleur:'citrine',auto:true,note:'Un déplacement forcé, ou Au sol infligé.'},
+ {cle:'deplacement-force',nom:'Repousser ou attirer un adversaire, ou le mettre Au sol',phase:'combat',couleur:'rubis',auto:true,note:'Un déplacement forcé, ou Au sol infligé — un geste de Force.'},
+ // v1.183 : treize déclencheurs de plus (« neuf » : marqués « new » dans l'onglet Sphères).
+ {cle:'fin-tour-contact-2',nom:'Finir son tour au contact de 2 adversaires ou plus',phase:'combat',couleur:'emeraude',auto:true,neuf:true,note:'À la fin du tour, debout, deux adversaires ou plus au contact.'},
+ {cle:'attaque-2-round',nom:'Être attaqué 2 fois ou plus dans le même round',phase:'combat',couleur:'emeraude',auto:true,parTour:true,neuf:true,note:'La deuxième attaque adverse du round, une fois par round.'},
+ {cle:'degats-etat-debout',nom:'Subir des dégâts d’état en fin de tour (Poison, Saignée, Feu) et rester debout',phase:'combat',couleur:'emeraude',auto:true,neuf:true,note:'Les dégâts d’un de ces états qui blessent sans mettre à 0 PV.'},
+ {cle:'crans-etat-3',nom:'Porter 3 crans d’un même état ou plus (une fois par combat et par état)',phase:'combat',couleur:'emeraude',auto:true,neuf:true,note:'Poison 3, Feu 3, Gel 3… : la première fois du combat, état par état.'},
+ {cle:'liberation',nom:'Se libérer d’Entravé, ou se relever d’Au sol',phase:'combat',couleur:'emeraude',auto:true,neuf:true,note:'Entravé ou Au sol qui s’en va pendant le combat.'},
+ {cle:'ancre',nom:'Ne pas être repoussé ni mis Au sol par une attaque qui l’aurait dû (Ancré, Carrure…)',phase:'combat',couleur:'emeraude',auto:true,neuf:true,note:'Carrure Imposante, ou Ancré dans le Sol activé.'},
+ {cle:'contact-aller-retour',nom:'Entrer et sortir de la zone de contact d’adversaires durant un même tour',phase:'combat',couleur:'citrine',auto:true,neuf:true,note:'Un pas au contact d’un adversaire et un pas hors de tout contact, dans le même tour.'},
+ {cle:'coup-50',nom:'Infliger en un coup au moins 50 % des PV max de la cible',phase:'combat',couleur:'rubis',auto:true,neuf:true,note:'Les dégâts d’un seul coup, face aux PV max de la cible.'},
+ {cle:'quatre-des-passent',nom:'Toucher avec 4 dés ou plus, aucun arrêté par la DEF',phase:'combat',couleur:'rubis',auto:true,neuf:true,note:'Tous les dés du coup passent la DEF, et ils sont quatre ou plus.'},
+ {cle:'blesser-3',nom:'Blesser 3 adversaires différents dans le même tour',phase:'combat',couleur:'rubis',auto:true,neuf:true,note:'Le troisième adversaire blessé du tour.'},
+ {cle:'trois-couleurs',nom:'Infliger des dégâts avec 3 couleurs de dés différentes',phase:'combat',couleur:'rubis',auto:true,neuf:true,note:'Trois couleurs de dés qui passent la DEF dans un même coup.'},
+ {cle:'rage-3',nom:'Cumuler Rage 3 ou plus (une fois par combat)',phase:'combat',couleur:'rubis',auto:true,parCombat:true,neuf:true,note:'Le troisième cran de Rage du combat.'},
  {cle:'etat-precision',nom:'Infliger un état de précision (Aveugle)',phase:'combat',couleur:'citrine',auto:true,note:'Aveugle posé sur un adversaire.'},
  {cle:'tir-premier',nom:'Tirer le premier du tour, sur un adversaire qui n’a pas encore agi',phase:'combat',couleur:'citrine',auto:true,note:'Le premier tir des aventuriers dans le tour.'},
  {cle:'bouger-premier',nom:'Se déplacer le premier du tour',phase:'combat',couleur:'citrine',auto:true,note:'Le premier combattant qui bouge dans le tour, s’il est aventurier.'},
@@ -59,6 +72,7 @@ const DECLENCHEURS_GEMMES=[
  {cle:'test-competence',nom:'Réussir un test de compétence',phase:'hors',couleur:'competence',auto:true,note:'Un test hors combat avec au moins une réussite ; la couleur est celle de la compétence (tableau des gemmes des bonus).'},
  {cle:'escalader',nom:'Escalader, sauter, nager',phase:'hors',couleur:'emeraude',auto:false},
  {cle:'longue-marche',nom:'Tenir une longue marche',phase:'hors',couleur:'emeraude',auto:false},
+ {cle:'repos-court',nom:'Effectuer un repos court',phase:'hors',couleur:'emeraude',auto:true,neuf:true,note:'À chaque repos court.'},
  {cle:'fouiller',nom:'Fouiller',phase:'hors',couleur:'citrine',auto:true,note:'Une fouille avec au moins une réussite.'},
  {cle:'crocheter',nom:'Crocheter',phase:'hors',couleur:'citrine',auto:true,note:'Une serrure ou un coffre déverrouillé.'},
  {cle:'desamorcer',nom:'Désamorcer',phase:'hors',couleur:'citrine',auto:true,note:'Un piège de coffre trouvé et désamorcé.'},
@@ -74,11 +88,19 @@ const nbEntier=(v,lo,hi,d)=>{const n=Math.trunc(Number(v));return Number.isFinit
 /* v1.155 : plus de table des faces ; chaque déclencheur a son seuil — la plus petite face qui donnait quelque chose dans la table
    d'avant, s'il y en avait une, sinon 5+ (6+ pour le Diamant, comme la table d'avant). */
 const seuilDesFaces=(g,c)=>{const l=COULEURS_GEMMES.includes(c)?(Array.isArray(g.faces&&g.faces[c])?g.faces[c]:FACES_GEMMES_DEFAUT[c]):null;if(!l)return 5;const i=l.findIndex(n=>Number(n)>0);return i<0?6:i+1};
+/* v1.183 : les titres de fin de combat (les distinctions des Stats de Combat, editor.js) valent chacun une Brisure de leur couleur à
+   qui les remporte ; et la Tour Mystique — ses prix d'achat par taille et par couleur, son taux de rachat, sa conversion, le prix
+   d'une ligne de savoir. */
+const TITRES_GEMMES=[['inf','rubis'],['abat','rubis'],['pic','rubis'],['sub','emeraude'],['donne','saphir'],['crit','citrine'],['dist','citrine'],['bloc','diamant'],['tir','citrine'],['etats','saphir'],['soin','saphir'],['objets','citrine'],['intouch','diamant']];
+const PRIX_TOUR={brisure:25,eclat:100,brome:400};
 function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const out={plafond:nbEntier(g.plafond,0,99,3),
  boss:{taille:['brisure','eclat','brome'].includes(g.boss&&g.boss.taille)?g.boss.taille:'eclat',n:nbEntier(g.boss&&g.boss.n,0,20,1)},
- fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{}};
+ fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{},titres:{},
+ tour:{achat:{},vente:nbEntier(g.tour&&g.tour.vente,0,100,50),conversion:nbEntier(g.tour&&g.tour.conversion,1,99,2),savoir:nbEntier(g.tour&&g.tour.savoir,0,9999,25)}};
  DECLENCHEURS_GEMMES.forEach(d=>{const x=g.declencheurs&&g.declencheurs[d.cle]||{},couleur=COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'||x.couleur==='etat'?x.couleur:d.couleur;
   out.declencheurs[d.cle]={couleur,actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,d.seuil||seuilDesFaces(g,couleur))}});
+ TITRES_GEMMES.forEach(([k,c])=>{const x=g.titres&&g.titres[k]||{};out.titres[k]={couleur:COULEURS_GEMMES.includes(x.couleur)?x.couleur:c,actif:x.actif!==false}});
+ const ta=g.tour&&g.tour.achat&&typeof g.tour.achat==='object'?g.tour.achat:{};['brisure','eclat','brome'].forEach(t=>{out.tour.achat[t]={};COULEURS_GEMMES.forEach(c=>{out.tour.achat[t][c]=nbEntier(ta[t]&&ta[t][c],0,99999,PRIX_TOUR[t])})});
  return out}
 function reglesGemmes(){return normaliseReglesGemmes(typeof catalog!=='undefined'&&catalog?catalog.gemmesRegles:null)}
 function poseReglesGemmes(f){catalog.gemmesRegles=reglesGemmes();f(catalog.gemmesRegles);catalog.gemmesRegles=normaliseReglesGemmes(catalog.gemmesRegles);
@@ -280,21 +302,46 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
  const fois=cle=>actors.reduce((n,a)=>n+(a&&a.hero&&a.gemmesSuivi&&a.gemmesSuivi.compte?Math.max(0,Math.trunc(Number(a.gemmesSuivi.compte[cle]))||0):0),0);
  [['combat','En combat'],['hors','Hors combat']].forEach(([ph,nom])=>{const t=document.createElement('table');t.className='gemmes-table gemmes-decl';const cap=document.createElement('caption');cap.textContent=nom;t.append(cap);
   const tr=document.createElement('tr');['Actif','Déclencheur','Couleur','Seuil','Détection','Fois'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
-  DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).forEach(d=>{const r=R.declencheurs[d.cle],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
+  // v1.183 : les déclencheurs rangés par couleur de sphère ; les derniers venus portent « new ».
+  const ordre=c=>{const i=COULEURS_GEMMES.indexOf(c);return i<0?COULEURS_GEMMES.length:i};
+  DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).map((d,i)=>[d,i]).sort(([x,i],[y,j])=>ordre(R.declencheurs[x.cle].couleur)-ordre(R.declencheurs[y.cle].couleur)||i-j).map(([d])=>d).forEach(d=>{const r=R.declencheurs[d.cle],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
    const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].actif=cb.checked});renderGemmes()};c1.append(cb);
-   const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d.nom;
+   const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d.nom;if(d.neuf){const nv=document.createElement('span');nv.className='gemmes-neuf';nv.textContent='new';c2.append(' ',nv)}
    const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));if(d.couleur==='competence'||d.cle==='test-competence')s.add(new Option('Compétence testée','competence'));if(d.couleur==='etat')s.add(new Option('Couleur de l’état','etat'));
    s.value=r.couleur;const im=icone('brisure',['competence','etat'].includes(r.couleur)?'citrine':r.couleur);if(['competence','etat'].includes(r.couleur))im.hidden=true;s.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].couleur=s.value});renderGemmes()};c3.append(im,s);
    const c6=document.createElement('td');const ss=document.createElement('select');ss.className='gemmes-seuil';[1,2,3,4,5,6].forEach(n=>ss.add(new Option(n+'+',String(n))));ss.value=String(r.seuil);ss.classList.add('seuil-'+r.seuil);ss.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].seuil=Number(ss.value)});renderGemmes()};c6.append(ss);
    const c5=document.createElement('td');c5.className='muted gemmes-note';c5.textContent=d.auto?('Automatique'+(d.note?' — '+d.note:'')):'À la main (🎲 sur la fiche)';
    const c7=document.createElement('td');c7.className='gemmes-fois';const nf=fois(d.cle);c7.textContent=String(nf);if(!nf)c7.classList.add('zero');
    row.append(c1,c2,c3,c6,c5,c7);t.append(row)});boite.append(t)});
+ // v1.183 — 2 bis. Les titres de fin de combat : chacun vaut une Brisure, de la couleur réglée ici.
+ h('Les titres de fin de combat','Chaque titre des Stats de Combat vaut une Brisure à l’aventurier qui le remporte ; sa couleur se règle ici.');
+ {const t=document.createElement('table');t.className='gemmes-table gemmes-titres';const tr=document.createElement('tr');['Actif','Titre','Couleur'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
+  const D=typeof DISTINCTIONS!=='undefined'?DISTINCTIONS:[];
+  TITRES_GEMMES.forEach(([k])=>{const r=R.titres[k],d=D.find(x=>x[0]===k)||[k,'',k,''],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
+   const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.titres[k].actif=cb.checked});renderGemmes()};c1.append(cb);
+   const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d[2]+' — '+d[3];
+   const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));s.value=r.couleur;
+   const im=icone('brisure',r.couleur);s.onchange=()=>{poseReglesGemmes(g=>{g.titres[k].couleur=s.value});renderGemmes()};c3.append(im,s);row.append(c1,c2,c3);t.append(row)});boite.append(t)}
  // 3. Les récompenses et la fusion.
  h('Récompenses et fusion');
  {const l=document.createElement('div');l.className='gemmes-reglage';
   const lab=document.createElement('label');lab.append('Boss vaincu : chaque aventurier reçoit ');lab.append(nombre(R.boss.n,0,20,(g,n)=>{g.boss.n=n}));const s=document.createElement('select');TAILLES_GEMMES.forEach(([k,n])=>s.add(new Option(n,k)));s.value=R.boss.taille;s.onchange=()=>{poseReglesGemmes(g=>{g.boss.taille=s.value});renderGemmes()};lab.append(' ',s,' de la couleur qu’il a le plus déclenchée.');l.append(lab);
   const f1=document.createElement('label');f1.append('Fusion : ',nombre(R.fusion.eclat,1,99,(g,n)=>{g.fusion.eclat=n}),' Brisures → 1 Éclat ; ',nombre(R.fusion.brome,1,99,(g,n)=>{g.fusion.brome=n}),' Éclats → 1 Brôme');l.append(f1);
-  const p=document.createElement('span');p.className='muted';p.textContent='La fusion se règle ici ; elle se branchera avec l’Arcaniste.';l.append(p);boite.append(l)}
+  const p=document.createElement('span');p.className='muted';p.textContent='La fusion se fait à la Tour Mystique, chez l’Arcaniste.';l.append(p);boite.append(l)}
+ // v1.183 — 3 bis. La Tour Mystique : les prix de l'Arcaniste.
+ h('La Tour Mystique','Le bâtiment du domaine où vit l’Arcaniste : il vend les sphères, les rachète, les fusionne, les convertit, et vend le savoir des déclencheurs, une ligne à la fois.');
+ {const t=document.createElement('table');t.className='gemmes-table gemmes-tour-achat';const cap=document.createElement('caption');cap.textContent='Prix d’achat, en or';t.append(cap);
+  const tr=document.createElement('tr');['',...COULEURS_GEMMES.map(c=>NOM_COULEUR_GEMME[c])].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
+  TAILLES_GEMMES.forEach(([ta,,un])=>{const row=document.createElement('tr');const c0=document.createElement('td');c0.className='gemmes-nom';c0.textContent=un;row.append(c0);
+   COULEURS_GEMMES.forEach(c=>{const td=document.createElement('td');td.append(icone(ta,c),nombre(R.tour.achat[ta][c],0,99999,(g,n)=>{g.tour.achat[ta][c]=n}));row.append(td)});t.append(row)});boite.append(t);
+  const l=document.createElement('div');l.className='gemmes-reglage';const li=(txt,el,fin)=>{const lab=document.createElement('label');lab.append(txt,el,fin||'');l.append(lab)};
+  li('Rachat à ',nombre(R.tour.vente,0,100,(g,n)=>{g.tour.vente=n}),' % du prix d’achat');
+  li('Conversion : ',nombre(R.tour.conversion,1,99,(g,n)=>{g.tour.conversion=n}),' sphères d’une couleur → 1 d’une autre, de même taille');
+  li('Une ligne de savoir : ',nombre(R.tour.savoir,0,9999,(g,n)=>{g.tour.savoir=n}),' or');
+  const sv=typeof domaine!=='undefined'&&Array.isArray(domaine.savoirSpheres)?domaine.savoirSpheres.length:0;
+  const p=document.createElement('span');p.className='muted';p.textContent='La troupe connaît '+sv+' ligne(s) de savoir sur '+DECLENCHEURS_GEMMES.length+'.';l.append(p);
+  if(sv){const bo=document.createElement('button');bo.type='button';bo.textContent='Tout oublier';bo.onclick=()=>{if(!confirm('Effacer tout le savoir des sphères de la troupe ?'))return;domaine.savoirSpheres=[];if(typeof sauveDomaine==='function')sauveDomaine();renderGemmes()};l.append(bo)}
+  boite.append(l)}
  // 4. Les couleurs des caractéristiques et des compétences : ce que coûtent les bonus, et ce que rapportent les tests.
  h('Couleur de chaque caractéristique et compétence','Ce que paie un bonus du sphérier, et ce que rapporte un test de compétence réussi ou un état infligé.');
  {const g=document.createElement('div');g.className='gemmes-bonus-liste';remplitGemmesBonus(g,()=>renderGemmes());boite.append(g)}}
@@ -382,3 +429,73 @@ const aAgi=o=>!!o&&agisTour.get(o.id)===cleTour();
  if(s&&s.hero&&o&&!o.hero&&hp>0&&hp>=(Number(o.max)||Infinity)&&o.hp===0&&enCombatG()&&hostiles(s,o))deGemme(s,'tuer-pv-max');return r}}
 // La fin du tour : sous un quart de ses PV, debout.
 {const ts=tourSuivant;tourSuivant=function(...x){if(enCombatG()&&!(typeof spectateur==='function'&&spectateur()))actors.forEach(a=>{if(a&&a.hero&&!a.horsCarte&&alive(a)&&!estMort(a)&&a.hp>0&&a.hp<.25*(Number(a.max)||0))deGemme(a,'fin-tour-bas-pv')});return ts(...x)}}
+
+/* ---------- v1.183 — Encore des déclencheurs, les titres de fin de combat, le bilan qui les nourrit ---------- */
+let finCombatEnCours=false,titresDerniers=null;
+// Ce que le tour retient : les attaques adverses reçues, les adversaires blessés, le va-et-vient au contact.
+const attaquesRecues=new Map(),blessesParTour=new Map(),contactTour=new Map();
+const auContact=a=>typeof contactsDe==='function'&&contactsDe(a).some(o=>o&&alive(o)&&hostiles(a,o));
+function noteContactTour(a,debut){if(!a||!a.hero)return;const k=cleTour(),au=auContact(a);let e=contactTour.get(a.id);
+ if(debut||!e||e.k!==k){contactTour.set(a.id,{k,au,entre:false,sorti:false,fait:false});return}
+ if(au&&!e.au)e.entre=true;if(!au&&e.au)e.sorti=true;e.au=au;if(e.entre&&e.sorti&&!e.fait){e.fait=true;deGemme(a,'contact-aller-retour')}}
+// Un coup : la moitié des PV max d'un seul coup, quatre dés qui passent, trois couleurs ; la deuxième attaque adverse du round ; la DEF qui bloque.
+{const ac=gemmesApresCoup;gemmesApresCoup=function(a,b,r,hpAvant,lost,...x){
+ if(a&&b&&r&&enCombatG()){const k=cleTour(),touche=!r.failed&&!!r.hit,opp={critique:!!(r.critical&&!r.failed)},d=r.detail&&typeof r.detail==='object'?r.detail:null;
+  if(a.hero&&hostiles(a,b)&&touche){const degats=Math.max(Number(lost)||0,Number(r.damage)||0);
+   if(degats>0&&degats>=.5*(Number(b.max)||Infinity))deGemme(a,'coup-50',opp);
+   if(d&&!r.orbe&&d.passes>=4&&d.arretes===0)deGemme(a,'quatre-des-passent',opp);
+   if(d&&Array.isArray(d.couleurs)&&d.couleurs.length>=3)deGemme(a,'trois-couleurs',opp)}
+  if(b.hero&&hostiles(a,b)&&!a.hero){let e=attaquesRecues.get(b.id);if(!e||e.k!==k){e={k,n:0};attaquesRecues.set(b.id,e)}e.n++;if(e.n>=2)deGemme(b,'attaque-2-round');
+   if(d&&d.bloque>0&&!r.failed&&typeof ajouteBilan==='function')ajouteBilan(b,'bloc',d.bloque)}}
+ return ac(a,b,r,hpAvant,lost,...x)}}
+// Les blessures : le troisième adversaire du tour ; et, au bilan, les dégâts à distance sans adversaire au contact.
+{const cd=compteDegats;compteDegats=function(de,vers,n,...x){const r=cd(de,vers,n,...x);
+ if(n>0&&de&&de.hero&&vers&&!vers.hero&&de!==vers&&hostiles(de,vers)&&enCombatG()){const k=cleTour();let e=blessesParTour.get(de.id);if(!e||e.k!==k){e={k,ids:new Set(),fait:false};blessesParTour.set(de.id,e)}
+  e.ids.add(vers.id);if(e.ids.size>=3&&!e.fait){e.fait=true;deGemme(de,'blesser-3')}
+  if(typeof rangeOf==='function'&&rangeOf(de)==='distance'&&typeof contactsDe==='function'&&!contactsDe(de).length&&typeof ajouteBilan==='function')ajouteBilan(de,'tir',n)}
+ return r}}
+// Les dégâts d'un état en fin de tour, debout.
+{const sd=subitDegatsEtat;subitDegatsEtat=function(o,etat,n,...x){const hp=o&&o.hp,r=sd(o,etat,n,...x);
+ if(o&&o.hero&&hp>0&&o.hp>0&&r&&r.perdu>0&&['Poison','Saignée','Feu'].includes(etat)&&enCombatG())deGemme(o,'degats-etat-debout',{etat});return r}}
+// Trois crans d'un même état (une fois par combat et par état) ; Rage 3 ; et, au bilan, les crans infligés aux adversaires.
+function notesCrans(o){if(!o||!o.hero||!enCombatG())return;const s=suiviGemmes(o);if(!s.parCombat||typeof s.parCombat!=='object')s.parCombat={};
+ ETATS_CUMULES.forEach(e=>{if(compteEtat(o,e)<3)return;const kc='crans-etat-3:'+e;if(s.parCombat[kc]===numeroCombat)return;s.parCombat[kc]=numeroCombat;deGemme(o,'crans-etat-3',{etat:e})});
+ if(compteEtat(o,'Rage')>=3)deGemme(o,'rage-3')}
+function noteEtatInflige(o,n){if(!o||o.hero||!(n>0)||!enCombatG()||typeof ajouteBilan!=='function')return;const s=sourceG();if(s&&s.hero&&hostiles(s,o))ajouteBilan(s,'etats',n)}
+{const ae=ajouteEtat;ajouteEtat=function(o,etat,n,...x){const r=ae(o,etat,n,...x);if(n>0){notesCrans(o);if(r>0)noteEtatInflige(o,Math.trunc(n))}return r}}
+{const ie=infligeEtat;infligeEtat=function(o,etat,...x){const r=ie(o,etat,...x);if(r===true){notesCrans(o);noteEtatInflige(o,1)}
+ // Carrure Imposante : l'Au sol refusé.
+ if(r==='immunise'&&o&&o.hero&&enCombatG())deGemme(o,'ancre');return r}}
+// Le repos court.
+{const rc=reposCourt;reposCourt=function(a,...x){const pris=!!a&&a.reposPris===true,r=rc(a,...x);if(a&&a.hero&&!pris&&a.reposPris===true)deGemme(a,'repos-court');return r}}
+// Se libérer d'Entravé, se relever d'Au sol, pendant le combat.
+{const ss=setState;setState=function(o,etat,mis,...x){const avait=!!o&&o.hero&&!mis&&(etat==='Entravé'||etat==='Au sol')&&hasState(o,etat),r=ss(o,etat,mis,...x);
+ if(avait&&!finCombatEnCours&&enCombatG()&&alive(o)&&!hasState(o,etat))deGemme(o,'liberation',{etat});return r}}
+// Ni repoussé ni mis Au sol : la Carrure qui refuse la poussée, l'Ancré qui tient.
+{const rp=repousser;repousser=function(b,a,...x){const r=rp(b,a,...x);if(r===null&&b&&b.hero&&a&&hostiles(a,b)&&enCombatG()&&typeof carrureContre==='function'&&carrureContre(b,a))deGemme(b,'ancre');return r}}
+{const fa=fenetreAncre;fenetreAncre=function(b,x,activer,laisser,...y){return fa(b,x,()=>{if(b&&b.hero&&enCombatG())deGemme(b,'ancre');if(activer)activer()},laisser,...y)}}
+// Le pas d'un aventurier : au contact, hors du contact.
+{const am=afterMove;afterMove=function(a,...x){const r=am(a,...x);if(a&&a.hero&&!forceEnCours&&enCombatG())noteContactTour(a);return r}}
+// La fin du tour : deux adversaires ou plus au contact ; puis chacun repart de là où il est.
+{const ts=tourSuivant;tourSuivant=function(...x){const spect=typeof spectateur==='function'&&spectateur();
+ if(enCombatG()&&!spect)actors.forEach(a=>{if(a&&a.hero&&!a.horsCarte&&alive(a)&&!estMort(a)&&typeof contactsDe==='function'&&contactsDe(a).filter(o=>o&&alive(o)&&hostiles(a,o)).length>=2)deGemme(a,'fin-tour-contact-2')});
+ const r=ts(...x);if(enCombatG())actors.forEach(a=>{if(a&&a.hero)noteContactTour(a,true)});return r}}
+// Les objets employés, et les PV soignés aux autres, au bilan.
+const objetsVus=new Set();
+function noteObjet(a){if(!a||!a.hero||!enCombatG()||typeof ajouteBilan!=='function')return;if(objetsVus.has(a.id))return;objetsVus.add(a.id);queueMicrotask(()=>objetsVus.delete(a.id));ajouteBilan(a,'objets',1)}
+if(typeof appliquerObjet==='function'){const ao=appliquerObjet;appliquerObjet=function(a,...x){const r=ao(a,...x);noteObjet(a);return r}}
+if(typeof appliquerEffetObjet==='function'){const ae=appliquerEffetObjet;appliquerEffetObjet=function(a,...x){const r=ae(a,...x);noteObjet(a);return r}}
+{const ah=applyHeal;applyHeal=function(o,...x){const g=ah(o,...x);if(g>0&&enCombatG()&&typeof ajouteBilan==='function'){const h=(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.a)||actors[selected];if(h&&h.hero&&o&&memeCamp(h,o))ajouteBilan(h,'donne',g)}return g}}
+/* Les titres : à la fin du combat, chaque distinction des Stats de Combat va à son meilleur aventurier — l'Intouchable au moins
+   blessé de la troupe — et lui vaut une Brisure de sa couleur, comptée au bilan ; la ligne du journal retient qui a eu quoi. */
+function titresDuCombat(){const R=reglesGemmes(),b=typeof bilanDuCombat==='function'?bilanDuCombat():null,out={};if(!b)return out;
+ TITRES_GEMMES.forEach(([k])=>{const t=R.titres[k];if(!t||!t.actif)return;const min=k==='intouch',l=min?b.liste.filter(x=>x.camp==='troupe'):b.liste;
+  const top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];if(!top||(!min&&!(top[k]>0)))return;const a=actors.find(o=>o&&o.id===top.id&&o.hero);if(!a)return;
+  const cg=cleGemme('brisure',t.couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+1;flotteGemme(a,'brisure',t.couleur,1);
+  const s=suiviGemmes(a);s.gagnes[cg]=(s.gagnes[cg]||0)+1;out[k]={id:a.id,couleur:t.couleur}});
+ return out}
+{const bm=basculerMode;basculerMode=function(neuf,...x){const finit=mode==='combat'&&neuf!=='combat',spect=typeof spectateur==='function'&&spectateur();
+ if(finit&&!spect){try{titresDerniers={combat:numeroCombat,titres:titresDuCombat()}}catch(e){titresDerniers=null}}
+ finCombatEnCours=finit;let r;try{r=bm(neuf,...x)}finally{finCombatEnCours=false}
+ if(neuf==='combat')actors.forEach(a=>{if(a&&a.hero)noteContactTour(a,true)});return r}}
+{const bd=bilanDuCombat;bilanDuCombat=function(...x){const b=bd(...x);if(b&&titresDerniers&&titresDerniers.combat===numeroCombat&&Object.keys(titresDerniers.titres).length)b.titres={...titresDerniers.titres};return b}}

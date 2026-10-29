@@ -749,6 +749,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.154 : « Infliger un état » prend la couleur de l'état posé ; l'ancienne couleur fixe de ce déclencheur cède la place.
  // v1.163 : « Toucher une cible à distance » revient, en Citrine, à 5+.
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('tir-citrine')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['toucher-distance'];if(d&&typeof d==='object'){d.couleur='citrine';d.actif=true;d.seuil=5}c.semisForge.push('tir-citrine')}
+ // v1.183 : « Repousser ou attirer » passe en Rubis, un geste de Force, une fois.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('force-rubis')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['deplacement-force'];if(d&&typeof d==='object'&&d.couleur==='citrine')d.couleur='rubis';c.semisForge.push('force-rubis')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['etat-elementaire'];if(d&&typeof d==='object')d.couleur='etat';c.semisForge.push('etat-couleur')}
  {const g=c.gemmesBonus&&typeof c.gemmesBonus==='object'&&!Array.isArray(c.gemmesBonus)?c.gemmesBonus:{};c.gemmesBonus={};
   Object.entries(g).forEach(([k,v])=>{if((/^([a-z]+|comp:[0-7])$/.test(k)||k.startsWith('etat:')&&ETATS_JEU.includes(k.slice(5)))&&['citrine','emeraude','saphir','rubis','diamant'].includes(v))c.gemmesBonus[k]=v});if(!Object.keys(c.gemmesBonus).length)delete c.gemmesBonus}
@@ -1228,11 +1230,17 @@ const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-for
    d'un autre appareil parfois : il est relu, chiffres et noms bornés, avant d'être montré. */
 function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return null;const n=v=>Math.max(0,Math.min(1e6,Math.trunc(Number(v))||0));
  return {tours:n(o.tours),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
-  inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),
-  sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0))}))}}
+  inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),tir:n(x.tir),etats:n(x.etats),objets:n(x.objets),donne:n(x.donne),bloc:n(x.bloc),
+  sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0))})),
+  // v1.183 : les titres remportés, et la Brisure que chacun a valu.
+  titres:Object.fromEntries(Object.entries(o.titres&&typeof o.titres==='object'?o.titres:{}).filter(([k,v])=>DISTINCTIONS.some(d=>d[0]===k)&&v&&typeof v==='object'&&/^(citrine|emeraude|saphir|rubis|diamant)$/.test(v.couleur)).map(([k,v])=>[k,{id:String(v.id||'').slice(0,80),couleur:v.couleur}]))}}
 const statsDialog=dialog('stats-combat','Stats de Combat','<div id="stats-combat-corps"></div>');
-const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['sub','🩸','Le plus éprouvé','PV perdus'],['soin','✚','Meilleur soigneur','PV soignés'],
- ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','Mise à Mort'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus']];
+/* v1.183 : le Meilleur soigneur se lit aux PV qu'il a soignés aux autres (« donne ») ; cinq titres de plus, et l'Intouchable, le moins
+   de dégâts subis parmi les aventuriers (cinquième champ : le minimum l'emporte). Chaque titre vaut une Brisure (gemmes.js). */
+const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['sub','🩸','Le plus éprouvé','PV perdus'],['donne','✚','Meilleur soigneur','PV soignés'],
+ ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','Mise à Mort'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus'],
+ ['bloc','🛡','Le Rempart','dégâts bloqués par la DEF'],['tir','🏹','Meilleur tireur','dégâts à distance'],['etats','☠','Maître des états','états infligés'],['soin','💚','Le Survivant','PV récupérés'],
+ ['objets','🧪','L’ingénieux','objets utilisés'],['intouch','✦','L’intouchable','dégâts subis',true]];
 const COLONNES_STATS=[['inf','Infligés'],['sub','Subis'],['soin','Soignés'],['dist','Distance'],['coups','Coups'],['crit','Critiques'],['abat','Mise à Mort']];
 function portraitStats(x){const a=actors.find(o=>o&&o.id===x.id),el=document.createElement('span');el.className='stats-portrait '+x.camp;
  if(a&&a.image){const im=document.createElement('img');im.src=a.image;im.alt='';el.append(im)}else el.textContent=(x.nom||'?').trim().charAt(0).toUpperCase();return el}
@@ -1243,11 +1251,14 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
   if(degats){const i=document.createElement('img');i.className='stats-degats';i.src=imgUrl('DEGATS.webp');i.alt='';i.draggable=false;v.append(' ',i)}
   d.append(v,el('span','',libelle));return d};
  const tete=el('div','stats-tableau');tete.append(score('troupe',somme(troupe,'inf'),'Dégâts des aventuriers',true),score('tours',b.tours,b.tours>1?'tours':'tour'),score('adverse',somme(adv,'inf'),'Dégâts des adversaires',true));corps.append(tete);
- const prix=DISTINCTIONS.map(([k,ico,titre,unite])=>{const top=[...b.liste].sort((x,y)=>y[k]-x[k])[0];return top&&top[k]>0?{k,ico,titre,unite,top}:null}).filter(Boolean);
+ const prix=DISTINCTIONS.map(([k,ico,titre,unite,min])=>{const l=min?b.liste.filter(x=>x.camp==='troupe'):b.liste,top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];
+  return top&&(min||top[k]>0)?{k,ico,titre,unite,top,val:min?top.sub:top[k]}:null}).filter(Boolean);
  if(prix.length){const g=el('div','stats-distinctions');
   // Le token dit qui ; son nom paraît en bulle, au survol.
   prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp),t=el('div','stats-prix-texte');
-   t.append(el('strong','',p.titre),el('span','stats-prix-val',p.top[p.k]+' '+p.unite));
+   t.append(el('strong','',p.titre),el('span','stats-prix-val',p.val+' '+p.unite));
+   // v1.183 : la Brisure que le titre a value, à côté.
+   const tg=b.titres&&b.titres[p.k];if(tg&&typeof iconeDeGemme==='function'){const g=el('span','stats-titre-gemme');g.append(iconeDeGemme('brisure',tg.couleur,false),'+1');g.title='1 '+nomGemme('brisure',tg.couleur,false).replace(/^\S+/,'Brisure');t.append(g)}
    const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');jeton.setAttribute('aria-label',p.top.nom);
    surveille(jeton,()=>{const d=el('div','talent-detail large'),n=el('p','talent-bulle-nom');n.append(el('b','',p.top.nom));d.append(n);ouvrirBulle(jeton,d,'bulle-talent')});
    c.append(jeton,t);g.append(c)});corps.append(g)}

@@ -1137,12 +1137,15 @@ coffreGroupeDialog.addEventListener('close',()=>{clearInterval(coffreGroupeMinut
    la fiche, les déplacements et les quêtes. Rien ne change des achats, des ventes, des fabrications : ce sont les mêmes gestes. */
 const ONGLETS_VITRINE={magasin:[['acheter','Acheter'],['vendre','Vendre']],
  tannerie:[['acheter','Acheter'],['fabriquer','Fabriquer'],['vendre','Vendre'],['convertir','Convertir']],
- herboristerie:[['acheter','Acheter'],['apprendre','Apprendre une recette'],['fabriquer','Fabriquer']],forge:[['fabriquer','Fabriquer']]};
-const ICI_VITRINE={magasin:'au magasin',tannerie:'à la tannerie',herboristerie:'à l’herboristerie',forge:'à la forge'};
+ herboristerie:[['acheter','Acheter'],['apprendre','Apprendre une recette'],['fabriquer','Fabriquer']],forge:[['fabriquer','Fabriquer']],
+ // v1.183 : la Tour Mystique, chez l'Arcaniste.
+ tour:[['achat','Achat de Sphères'],['fusion','Fusion de Sphères'],['vente','Vente de Sphères'],['conversion','Conversion de Sphères'],['connaissance','Connaissance']]};
+const ICI_VITRINE={magasin:'au magasin',tannerie:'à la tannerie',herboristerie:'à l’herboristerie',forge:'à la forge',tour:'à la Tour Mystique'};
 const ICONES_VITRINE={herboristerie:'<path d="M5 19c0-8 5-14 14-14 0 9-6 14-14 14zm0 0 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
  magasin:'<path d="M4 9h16l-1.5 10h-13zM8 9a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
  tannerie:'<path d="M7 4h10l2 5-3 2 1 9H7l1-9-3-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
- forge:'<path d="M3 8h13c0 3 2 4 5 4v2h-6l1 3h3v3H6v-3h3l1-3c-4 0-7-3-7-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'};
+ forge:'<path d="M3 8h13c0 3 2 4 5 4v2h-6l1 3h3v3H6v-3h3l1-3c-4 0-7-3-7-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+ tour:'<path d="M8 21V9l4-6 4 6v12M8 13h8M6 21h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="4" r="1.2" fill="currentColor"/>'};
 const PAR_PAGE_VITRINE=16;
 const vitrine={bat:'',onglet:'',sel:{},page:{},cherche:{},payer:'bourse'};
 const vitEl=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
@@ -1211,6 +1214,7 @@ function habilleVitrine(){const boite=$('dom-fiche'),b=batimentDom(domPageSel);i
  if(cherchait){const s=corps.querySelector('.vit-recherche');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}}}
 function vitRendCorps(){const corps=vitBoite,b=vitBat,client=vitClient;if(!corps||!b)return;corps.replaceChildren();
  if(vitrine.onglet==='batiment'){corps.append(vitFiche);return}
+ if(b.fonction==='tour'){vitTour(corps,b,client,vitrine.onglet);return}
  if(vitrine.onglet==='fabriquer'){vitEtabli(corps,b,client);return}
  vitGrille(corps,b,client,vitrine.onglet)}
 // Grille, recherche, pages ; à droite, la case choisie et les autres.
@@ -1281,3 +1285,58 @@ function vitEtabli(corps,b,client){corps.className='vit-corps vit-a-etabli';cons
   const tout=vitEl('button','vit-tout-voir','Tout voir →');tout.type='button';tout.onclick=()=>{vitrine.onglet='apprendre';document.querySelectorAll('.vit-onglet').forEach(o=>o.classList.toggle('actif',o.textContent==='Apprendre une recette'));vitRendCorps()};
   l.append(tout);corps.append(l)}}
 {const rf=renderDomFiche;renderDomFiche=function(...x){const r=rf(...x);try{habilleVitrine()}catch(e){console.error(e)}return r}}
+
+/* ---------- v1.183 — La Tour Mystique ----------
+   L'Arcaniste y vend les sphères, les fusionne (les taux de l'onglet Sphères), les rachète à une part de leur prix, les convertit
+   d'une couleur à l'autre à taille égale, et vend le savoir des déclencheurs, une ligne à la fois — la troupe n'en connaît aucune au
+   départ, et ce qu'elle apprend est à elle (domaine.savoirSpheres). L'or et les sphères sont ceux de l'aventurier présent. */
+const savoirSpheres=()=>Array.isArray(domaine.savoirSpheres)?domaine.savoirSpheres:[];
+function vitTour(corps,b,client,onglet){const R=reglesGemmes(),T=R.tour,cle=b.id+'|'+onglet,or=client?orDe(client):0;
+ const bourse=client?{...(client.richesses||{})}:{},q=k=>Math.max(0,Math.trunc(Number(bourse[k]))||0);
+ const icone=(t,c,cls)=>{const im=document.createElement('img');im.src=imgUrl(iconeGemme(t,c)+'.png');im.alt='';im.draggable=false;if(cls)im.className=cls;return im};
+ const unNom=(t,c)=>nomGemme(t,c,false).replace(/^\S+/,(TAILLES_GEMMES.find(([k])=>k===t)||[])[2]||'');
+ const donne=(a,k,n)=>{a.richesses={...(a.richesses||{})};const v=(Math.trunc(Number(a.richesses[k]))||0)+n;if(v>0)a.richesses[k]=v;else delete a.richesses[k]};
+ const fini=texte=>{log(texte);apresMagasin()};
+ if(onglet==='connaissance'){vitSavoir(corps,client,R);return}
+ corps.className='vit-corps vit-a-grille';const gauche=vitEl('div','vit-gauche'),droite=vitEl('aside','vit-fiche');corps.append(gauche,droite);
+ const items=[];
+ if(onglet==='achat')TAILLES_GEMMES.forEach(([t])=>COULEURS_GEMMES.forEach(c=>{const prix=T.achat[t][c],k=cleGemme(t,c,false),ok=!!client&&or>=prix;
+  items.push({id:k,nom:unNom(t,c),t,c,prix,ok,raison:!client?'Il faut être à la Tour Mystique pour acheter.':'Il manque '+(prix-or)+' or.',action:'Acheter',
+   faire:()=>{ajouteOr(client,-prix);donne(client,k,1);fini(nomNum(client)+' achète 1 '+unNom(t,c).toLowerCase()+' à la Tour Mystique pour '+prix+' or.')}})}));
+ if(onglet==='vente')TAILLES_GEMMES.forEach(([t])=>COULEURS_GEMMES.forEach(c=>{const k=cleGemme(t,c,false),n=q(k);if(!n)return;const prix=Math.floor(T.achat[t][c]*T.vente/100);
+  items.push({id:k,nom:unNom(t,c),t,c,n,prix,ok:true,action:'Vendre',faire:()=>{donne(client,k,-1);ajouteOr(client,prix);fini(nomNum(client)+' vend 1 '+unNom(t,c).toLowerCase()+' à la Tour Mystique pour '+prix+' or.')}})}));
+ if(onglet==='fusion')[['brisure','eclat',R.fusion.eclat],['eclat','brome',R.fusion.brome]].forEach(([de,vers,n])=>COULEURS_GEMMES.forEach(c=>{const k=cleGemme(de,c,false),a=q(k);if(!client||!a)return;const ok=a>=n;
+  items.push({id:k+'>'+vers,nom:n+' '+nomGemme(de,c,false).toLowerCase()+' → 1 '+unNom(vers,c).toLowerCase(),t:vers,c,n:a,prix:null,ok,raison:ok?'':'Il manque '+(n-a)+' '+nomGemme(de,c,false).toLowerCase()+'.',action:'Fusionner',
+   faire:()=>{donne(client,k,-n);donne(client,cleGemme(vers,c,false),1);fini(nomNum(client)+' fusionne '+n+' '+nomGemme(de,c,false).toLowerCase()+' en 1 '+unNom(vers,c).toLowerCase()+' à la Tour Mystique.')}})}));
+ if(onglet==='conversion')TAILLES_GEMMES.forEach(([t])=>COULEURS_GEMMES.forEach(c=>{const k=cleGemme(t,c,false),a=q(k);if(!client||!a)return;const n=T.conversion,ok=a>=n;
+  items.push({id:k,nom:n+' '+nomGemme(t,c,false).toLowerCase()+' → 1 d’une autre couleur',t,c,n:a,prix:null,ok,raison:ok?'':'Il manque '+(n-a)+' '+nomGemme(t,c,false).toLowerCase()+'.',
+   choix:COULEURS_GEMMES.filter(x=>x!==c).map(x=>({c:x,nom:NOM_COULEUR_GEMME[x],faire:()=>{donne(client,k,-n);donne(client,cleGemme(t,x,false),1);fini(nomNum(client)+' convertit '+n+' '+nomGemme(t,c,false).toLowerCase()+' en 1 '+unNom(t,x).toLowerCase()+' à la Tour Mystique.')}}))})}));
+ if(!items.length){const vide=!client?'Personne à la Tour Mystique : déplace un aventurier ici.':onglet==='vente'?client.name+' n’a pas de sphère à vendre.':onglet==='fusion'?client.name+' n’a pas de sphère à fusionner.':client.name+' n’a pas de sphère à convertir.';
+  gauche.append(vitEl('p','muted vit-vide',vide));droite.remove();corps.className='vit-corps';return}
+ const choisi=items.find(x=>x.id===vitrine.sel[cle])||items[0],grille=vitEl('div','vit-grille');
+ items.forEach(x=>{const ca=vitEl('button','vit-case'+(x.ok?' ok':' non')+(x===choisi?' choisie':''));ca.type='button';ca.append(icone(x.t,x.c,'vit-case-logo'));
+  if(x.n>1)ca.append(vitEl('span','vit-nombre','×'+x.n));ca.append(vitEl('span','vit-case-nom',x.nom));if(x.prix!==null)ca.append(vitPrix(x.prix));ca.onclick=()=>{vitrine.sel[cle]=x.id;vitRendCorps()};grille.append(ca)});
+ gauche.append(grille);
+ droite.append(vitEl('h3','vit-fiche-nom',choisi.nom));const grand=vitEl('div','vit-fiche-logo');grand.append(icone(choisi.t,choisi.c));if(choisi.n>1)grand.append(vitEl('span','vit-nombre','×'+choisi.n));droite.append(grand);
+ if(choisi.prix!==null){const p=vitPrix(choisi.prix);p.classList.add('grand');droite.append(p)}
+ droite.append(vitEl('hr','vit-trait'));
+ if(choisi.choix){const l=vitEl('div','vit-choix-couleurs');choisi.choix.forEach(ch=>{const bt=vitEl('button','vit-choix-couleur'+(choisi.ok?'':' non'));bt.type='button';bt.append(icone(choisi.t,ch.c),ch.nom);
+   if(!choisi.ok){bt.classList.add('inactif');bt.setAttribute('aria-disabled','true');vitRefus(bt,choisi.raison)}bt.onclick=()=>{if(choisi.ok)ch.faire()};l.append(bt)});droite.append(l);return}
+ const agir=vitEl('button','vit-agir',choisi.action);agir.type='button';if(!choisi.ok){agir.classList.add('inactif');agir.setAttribute('aria-disabled','true')}vitRefus(agir,choisi.ok?'':choisi.raison);agir.onclick=()=>{if(choisi.ok)choisi.faire()};droite.append(agir)}
+// Le savoir : les lignes que la troupe connaît ; une ligne de plus, au hasard parmi celles qu'elle ignore, contre de l'or. Le MJ voit tout.
+function vitSavoir(corps,client,R){corps.className='vit-corps';const mj=mjDom(),connu=savoirSpheres(),prix=R.tour.savoir,or=client?orDe(client):0;
+ const actifs=DECLENCHEURS_GEMMES.filter(d=>R.declencheurs[d.cle].actif),inconnus=actifs.filter(d=>!connu.includes(d.cle));
+ const liste=vitEl('div','vit-tour-savoir');corps.append(vitEl('h4','vit-section','Le savoir des sphères'));
+ const couleurDe=cle=>{const c=R.declencheurs[cle].couleur;return c==='competence'?'Couleur de la compétence':c==='etat'?'Couleur de l’état':NOM_COULEUR_GEMME[c]};
+ const ligne=(d,sue)=>{const r=R.declencheurs[d.cle],l=vitEl('div','vit-savoir-ligne'+(sue?'':' inconnue')),c=['competence','etat'].includes(r.couleur)?'citrine':r.couleur;
+  const im=document.createElement('img');im.src=imgUrl(iconeGemme('brisure',c)+'.png');im.alt='';im.draggable=false;if(['competence','etat'].includes(r.couleur))im.hidden=true;
+  // Le MJ lit toutes les lignes ; la troupe ne lit que celles qu'elle a achetées.
+  l.append(im,vitEl('span','vit-savoir-nom',sue||mj?d.nom:'?'),vitEl('span','muted',(sue||mj?couleurDe(d.cle)+' · '+r.seuil+'+ · '+(d.phase==='combat'?'en combat':'hors combat'):'')+(sue?'':(mj?' · inconnu de la troupe':'inconnu'))));return l};
+ const montrees=mj?actifs:actifs.filter(d=>connu.includes(d.cle));
+ if(!montrees.length)liste.append(vitEl('p','muted vit-vide','La troupe ne connaît encore aucun déclencheur.'));
+ montrees.forEach(d=>liste.append(ligne(d,connu.includes(d.cle))));corps.append(liste);
+ corps.append(vitEl('p','muted',connu.filter(k=>actifs.some(d=>d.cle===k)).length+' ligne(s) connue(s) sur '+actifs.length+'.'));
+ const ok=!!client&&inconnus.length>0&&or>=prix,raison=!client?'Il faut être à la Tour Mystique pour apprendre.':!inconnus.length?'L’Arcaniste n’a plus rien à apprendre à la troupe.':'Il manque '+(prix-or)+' or.';
+ const agir=vitEl('button','vit-agir','Acheter une ligne de savoir — '+prix+' or');agir.type='button';if(!ok){agir.classList.add('inactif');agir.setAttribute('aria-disabled','true')}vitRefus(agir,ok?'':raison);
+ agir.onclick=()=>{if(!ok)return;const d=inconnus[Math.floor(Math.random()*inconnus.length)];ajouteOr(client,-prix);domaine.savoirSpheres=[...connu,d.cle];sauveDomaine();
+  log(nomNum(client)+' apprend de l’Arcaniste, pour '+prix+' or : « '+d.nom+' » — '+couleurDe(d.cle)+', '+R.declencheurs[d.cle].seuil+'+.');apresMagasin()};corps.append(agir)}

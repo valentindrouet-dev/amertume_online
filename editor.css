@@ -4110,3 +4110,13 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 #arbres.redim{outline:2px dashed #c99a3c;outline-offset:-2px}
 .arbres-redim-btn[hidden]{display:none}
 #couche-spheres{position:absolute;inset:0;z-index:40;pointer-events:none}
+/* v1.183 : le badge « new » des déclencheurs ; la Brisure d'un titre aux Stats de Combat ; la Tour Mystique. */
+.gemmes-neuf{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:999px;background:var(--accent);color:#fff;font:700 10px/1.4 system-ui;letter-spacing:1px;text-transform:uppercase;vertical-align:middle}
+.stats-titre-gemme{display:inline-flex;align-items:center;gap:3px;font:700 12px system-ui;color:var(--ink)}.stats-titre-gemme img,.stats-titre-gemme .gem-ico{width:20px;height:20px;object-fit:contain}
+.gemmes-tour-achat td{white-space:nowrap}.gemmes-tour-achat input[type=number]{width:66px}.gemmes-tour-achat .gemmes-icone{vertical-align:middle;margin-right:4px}
+.vit-tour-savoir{display:flex;flex-direction:column;gap:6px}
+.vit-savoir-ligne{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.vit-savoir-ligne img{width:22px;height:22px;object-fit:contain;flex:none}.vit-savoir-ligne.inconnue{opacity:.55}.vit-savoir-nom{flex:1;font-weight:600}
+.vit-choix-couleurs{display:flex;flex-wrap:wrap;gap:6px}
+.vit-choix-couleur{display:inline-flex;align-items:center;gap:5px;margin:0;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);color:var(--ink);cursor:pointer;font:600 14px system-ui}
+.vit-choix-couleur:hover{background:var(--hover)}.vit-choix-couleur.inactif{opacity:.5;cursor:not-allowed}.vit-choix-couleur img{width:20px;height:20px}

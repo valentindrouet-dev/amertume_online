@@ -34,8 +34,12 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
  let mystique=false;
  kept.forEach(d=>{if(!passeDef(d,seuil,solidite))return;const [v,c]=d;hit=true;if(c===3&&remaining[v]>1)mystique=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1);if(c===7)poison+=v});
  const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
+ /* v1.183 : « detail », hors des champs comptés — les dés qui passent la DEF, ceux qu'elle arrête, les couleurs qui blessent, et les
+    dégâts qu'elle a bloqués (les faces arrêtées, et les Dégâts si rien ne passe) ; les sphères et les titres le lisent. */
+ const passes=kept.filter(d=>passeDef(d,seuil,solidite)),arretes=kept.filter(d=>!passeDef(d,seuil,solidite));
+ const detail={passes:passes.length,arretes:arretes.length,couleurs:[...new Set(passes.map(([,c])=>c))],bloque:arretes.reduce((n,[v])=>n+v,0)+(hit?0:Math.max(0,Math.trunc(dmg)||0))};
  // Hors des champs comptés : le résultat se compare toujours tel quel.
- return Object.defineProperty({dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit,poison},'mystique',{value:mystique,enumerable:false});
+ return Object.defineProperties({dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit,poison},{mystique:{value:mystique,enumerable:false},detail:{value:detail,enumerable:false}});
 }
 /* La DEF va de 0 à 6 : à 6, plus aucune face ne la passe, seuls le Lourd et le Mortel. */
 const DEF_MAX=6;
@@ -3607,7 +3611,7 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
 /* Ce qu'un bâtiment fait pour la troupe. Il ne le fait que construit et intact : toute autre
    étape, tout autre état, et sa fonction s'arrête. Un bâtiment d'avant les fonctions qui
    s'appelle Magasin devient le magasin, une fois ; ensuite c'est le MJ qui choisit. */
-const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie'],['herboristerie','Herboristerie'],['forge','Forge']];
+const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie'],['herboristerie','Herboristerie'],['forge','Forge'],['tour','Tour Mystique']];
 const NOM_FONCTION=f=>(FONCTIONS_BATIMENT.find(([k])=>k===f)||FONCTIONS_BATIMENT[0])[1];
 const fonctionActive=b=>!!b&&!!b.fonction&&b.etape>=ETAPES_DOMAINE.length-1&&!b.etat;
 function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);
@@ -3615,6 +3619,8 @@ function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);
 function fonctionParNom(nom){const n=String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
  // v1.016 : le Laboratoire est l'herboristerie du domaine.
  if(n==='laboratoire')return 'herboristerie';
+ // v1.183 : la Tour de Mystique est la Tour Mystique du domaine, où vit l'Arcaniste.
+ if(n==='tour de mystique'||n==='tour mystique')return 'tour';
  return FONCTIONS_BATIMENT.some(([k])=>k&&k===n)?n:''}
 function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
@@ -3758,7 +3764,9 @@ function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
   // Les dépôts des joueurs déjà versés à la réserve : chacun ne compte qu'une fois.
   depotsVus:(Array.isArray(d.depotsVus)?d.depotsVus:[]).filter(x=>typeof x==='string'&&ID_DEPOT.test(x)).slice(-500),
   // v1.009 : le Coffre de Groupe, et les opérations des joueurs déjà versées.
-  coffre:normaliseCoffreGroupe(d.coffre),coffreVus:(Array.isArray(d.coffreVus)?d.coffreVus:[]).filter(x=>typeof x==='string'&&ID_DEPOT.test(x)).slice(-800)}}
+  coffre:normaliseCoffreGroupe(d.coffre),coffreVus:(Array.isArray(d.coffreVus)?d.coffreVus:[]).filter(x=>typeof x==='string'&&ID_DEPOT.test(x)).slice(-800),
+  // v1.183 : le savoir des sphères que la troupe a acheté à l'Arcaniste, déclencheur par déclencheur.
+  savoirSpheres:[...new Set((Array.isArray(d.savoirSpheres)?d.savoirSpheres:[]).filter(x=>typeof x==='string'&&x.length<=40))].slice(0,200)}}
 /* ---------- v1.009 — Le Coffre de Groupe ----------
    Commun à toute la troupe : de l'or, et des pièces rangées en onglets — 2 d'office, jusqu'à 10, les suivants achetés. Un
    onglet tient 50 emplacements : une pièce par emplacement, ses exemplaires empilés. Les pièces forgées y gardent leur fiche.
