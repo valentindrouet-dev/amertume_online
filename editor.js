@@ -9204,7 +9204,19 @@ function arbreSansDefilement(){if(!arbresDialog.open||arbresOnglet==='bonus'||!a
  try{reduitArbre(zone)}finally{
   // v1.176 : comme le sphérier, le bloc de l'arbre et son panneau descendent jusqu'au bas de la fenêtre.
   if(v2){const d=arbresDialog.getBoundingClientRect(),cs=getComputedStyle(arbresDialog),bas=d.top+arbresDialog.offsetHeight-(parseFloat(cs.paddingBottom)||0)-8,h=bas-v2.getBoundingClientRect().top;
-   if(h>v2.offsetHeight)v2.style.minHeight=Math.floor(h)+'px'}}}
+   if(h>v2.offsetHeight)v2.style.minHeight=Math.floor(h)+'px'}
+  try{agranditArbre(zone)}catch(e){}}}
+/* v1.177 — Les ronds de l'arbre prennent la place de leur bloc : un arbre d'une seule colonne qui tient sans réduction grandit, d'un bloc,
+   jusqu'au bas du bloc ou jusqu'à ses bords, le premier atteint. */
+function agranditArbre(zone){const roues=[...zone.querySelectorAll('.arbre-roue')],cols=[...zone.querySelectorAll('.arbres-cols>.arbre-col')];
+ if(roues.length!==1||cols.length>1)return;const e=roues[0];if(e.style.transform)return;
+ const H=e.offsetHeight,L=e.offsetWidth;if(!H||!L)return;const r=e.getBoundingClientRect(),z=zone.getBoundingClientRect(),c=(cols[0]||zone).getBoundingClientRect();
+ const kH=(H+z.bottom-12-r.bottom)/H,kW=(L+2*Math.min(r.left-c.left,c.right-r.right)-16)/L,k=Math.min(2.5,kH,kW);if(!(k>1.02))return;
+ const pose=k=>{e.style.transformOrigin='top center';e.style.transform='scale('+k+')';e.style.marginBottom=(H*(k-1))+'px';e.style.marginLeft=e.style.marginRight=(L*(k-1)/2)+'px'};
+ // Grandi, l'arbre ne doit rien faire défiler : s'il déborde, il se reprend d'autant ; s'il déborde encore, il garde sa taille.
+ let g=k;for(let i=0;i<4;i++){pose(g);const trop=arbresDialog.scrollHeight-arbresDialog.clientHeight,large=zone.scrollWidth-zone.clientWidth;if(trop<=1&&large<=1)return;
+  g=Math.min(g-Math.max(0,trop+2)/H,g-Math.max(0,large+2)/L);if(!(g>1.02))break}
+ ['transform','transform-origin','margin-bottom','margin-left','margin-right'].forEach(k=>e.style.removeProperty(k))}
 function reduitArbre(zone){
  const roues=[...zone.querySelectorAll('.arbre-roue')],blocs=roues.length?roues:[...zone.children].filter(e=>e.offsetHeight);if(!blocs.length)return;
  // v1.175 : un arbre d'une seule colonne tient aussi en largeur, sans défiler de côté.
