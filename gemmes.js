@@ -13,23 +13,30 @@ const NOM_COULEUR_GEMME=Object.fromEntries(VARIETES_GEMMES);
 const DECLENCHEURS_GEMMES=[
  {cle:'critique',nom:'Faire un critique',phase:'combat',couleur:'rubis',auto:true,note:'Un critique à l’attaque ou à l’orbe.'},
  {cle:'tuer',nom:'Tuer un adversaire',phase:'combat',couleur:'rubis',auto:true,note:'Le coup ou l’orbe qui met un adversaire à 0 PV.'},
+ {cle:'abattre-approche',nom:'Abattre un adversaire qui s’est déplacé vers vous ou un allié ce tour',phase:'combat',couleur:'rubis',auto:true,note:'Il a bougé ce tour et s’est rapproché d’un aventurier : on l’abat avant le contact.'},
+ {cle:'contribution',nom:'Un adversaire que vous avez blessé ce tour meurt, quel que soit le tueur',phase:'combat',couleur:'rubis',auto:true,note:'Chacun de ceux qui l’ont blessé ce tour.'},
  {cle:'tuer-plusieurs',nom:'Tuer 2 adversaires ou plus en une seule attaque ou un seul talent',phase:'combat',couleur:'rubis',auto:true,note:'Un même geste qui met deux adversaires ou plus à 0 PV.'},
  {cle:'frapper-non-vu',nom:'Frapper un adversaire qui ne vous voit pas',phase:'combat',couleur:'rubis',auto:true,note:'Cible Surprise, Aveugle ou endormie, ou attaquant Invisible ou Caché.'},
  {cle:'soigner-allie',nom:'Soigner un allié',phase:'combat',couleur:'emeraude',auto:true,note:'Un talent, une potion ou un objet qui rend des PV à un autre.'},
  {cle:'critique-soin',nom:'Faire un critique de soin',phase:'combat',couleur:'emeraude',auto:true,note:'Deux dés verts ou plus font 6, sur un talent de soin d’aventurier — pas un objet.'},
+ {cle:'fin-tour-intouchable',nom:'Finir le tour sans adversaire au contact et sans avoir été blessé',phase:'combat',couleur:'emeraude',auto:true,note:'À la fin du tour, pour chaque aventurier debout qui n’a pas perdu de PV ce tour.'},
+ {cle:'distance-ratee',nom:'Une attaque à distance adverse qui vous rate',phase:'combat',couleur:'emeraude',auto:true,note:'Un tir ou un orbe adverse qui ne passe pas.'},
  {cle:'encaisser-debout',nom:'Encaisser un coup sans tomber',phase:'combat',couleur:'emeraude',auto:true,note:'Un coup adverse qui blesse sans mettre à 0 PV.'},
  {cle:'subir-25',nom:'Subir 25 % de ses PV max d’une attaque adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Seul le plus haut palier atteint par le coup compte.'},
  {cle:'subir-50',nom:'Subir 50 % de ses PV max d’une attaque adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Seul le plus haut palier atteint par le coup compte.'},
  {cle:'subir-75',nom:'Subir 75 % de ses PV max d’une attaque adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Seul le plus haut palier atteint par le coup compte.'},
  {cle:'subir-critique',nom:'Subir un critique adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Un critique d’attaque ou d’orbe adverse sur l’aventurier.'},
  {cle:'degager-sans-do',nom:'Se dégager du contact sans Dégâts d’Opportunité',phase:'combat',couleur:'emeraude',auto:true,note:'Quitter un adversaire au contact sans rien perdre.'},
- {cle:'toucher-distance',nom:'Toucher une cible à distance',phase:'combat',couleur:'citrine',auto:true,note:'Une attaque à distance qui passe la DEF.'},
+ {cle:'toucher-distance',nom:'Toucher une cible à distance (une fois par tour)',phase:'combat',couleur:'citrine',auto:true,parTour:true,note:'Une attaque à distance qui passe la DEF, une fois par tour.'},
+ {cle:'tir-longue-portee',nom:'Tir à longue portée, la cible au-delà d’un mouvement',phase:'combat',couleur:'citrine',seuil:6,auto:true,note:'Un tir qui touche une cible plus loin que le mouvement du tireur.'},
  {cle:'utiliser-objet',nom:'Utiliser un objet, un piège ou une invention',phase:'combat',couleur:'citrine',auto:true,note:'Un objet employé, ou une invention qui touche.'},
  {cle:'reperer-cache',nom:'Repérer un adversaire caché',phase:'combat',couleur:'citrine',auto:true,note:'Un test de Perception en combat qui révèle un adversaire.'},
  {cle:'sort-touche',nom:'Lancer un sort ou un talent mystique qui touche',phase:'combat',couleur:'saphir',auto:true,note:'Un orbe qui passe la DEF.'},
  {cle:'etat-elementaire',nom:'Infliger un état',phase:'combat',couleur:'etat',auto:true,note:'Feu, Gel, Poison… posé sur un adversaire ; la couleur est celle de l’état (tableau des couleurs).'},
+ {cle:'etat-positif-allie',nom:'Mettre un état positif sur un allié',phase:'combat',couleur:'etat',auto:true,note:'Blindage, Furie, Invisible, Onde, Vie ou Rage posé sur un autre aventurier ; la couleur est celle de l’état.'},
  {cle:'reveler-faiblesse',nom:'Révéler une faiblesse',phase:'combat',couleur:'saphir',auto:true,note:'Une Analyse qui apprend quelque chose.'},
  {cle:'def-tient',nom:'Une attaque adverse ne passe pas votre DEF',phase:'combat',couleur:'diamant',auto:true,note:'Les dés adverses tous arrêtés par la DEF.'},
+ {cle:'toucher-couvert',nom:'Toucher un adversaire au contact d’un allié',phase:'combat',couleur:'diamant',auto:true,note:'Le coup ou le tir qui touche un adversaire qu’un autre aventurier tient au contact.'},
  {cle:'proteger-allie',nom:'Protéger un allié à sa place',phase:'combat',couleur:'diamant',auto:true,note:'Gardien, Rempart ou Garde rapprochée qui prend le coup.'},
  {cle:'combat-sans-coma',nom:'Finir un combat sans être tombé dans le coma',phase:'combat',couleur:'diamant',auto:true,note:'À la fin du combat, pour chaque aventurier debout de bout en bout.'},
  {cle:'larcin',nom:'Voler (Larcin)',phase:'hors',couleur:'rubis',auto:true,note:'Un Larcin qui rapporte de l’or.'},
@@ -56,7 +63,7 @@ function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:
  boss:{taille:['brisure','eclat','brome'].includes(g.boss&&g.boss.taille)?g.boss.taille:'eclat',n:nbEntier(g.boss&&g.boss.n,0,20,1)},
  fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{}};
  DECLENCHEURS_GEMMES.forEach(d=>{const x=g.declencheurs&&g.declencheurs[d.cle]||{},couleur=COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'||x.couleur==='etat'?x.couleur:d.couleur;
-  out.declencheurs[d.cle]={couleur,des:nbEntier(x.des,1,6,1),actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,seuilDesFaces(g,couleur))}});
+  out.declencheurs[d.cle]={couleur,des:nbEntier(x.des,1,6,1),actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,d.seuil||seuilDesFaces(g,couleur))}});
  return out}
 function reglesGemmes(){return normaliseReglesGemmes(typeof catalog!=='undefined'&&catalog?catalog.gemmesRegles:null)}
 function poseReglesGemmes(f){catalog.gemmesRegles=reglesGemmes();f(catalog.gemmesRegles);catalog.gemmesRegles=normaliseReglesGemmes(catalog.gemmesRegles);
@@ -87,6 +94,8 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  const couleur=couleurDeclencheur(cle,opts),s=suiviGemmes(a);if(!couleur)return null;
  s.decl[couleur]=(s.decl[couleur]||0)+1;
  if(!combat||d.phase==='hors'){const sc=cleSceneGemme(a)+'|'+k;if(s.scenes.includes(sc)&&!opts.manuel)return null;s.scenes=[...s.scenes.filter(x=>x!==sc),sc].slice(-80)}
+ // v1.163 : un déclencheur « une fois par tour » ne rejoue pas avant le tour suivant.
+ if(d.parTour&&!opts.manuel&&typeof cleTour==='function'){if(!s.tours||typeof s.tours!=='object')s.tours={};if(s.tours[cle]===cleTour())return null;s.tours[cle]=cleTour()}
  s.compte[cle]=(Math.trunc(Number(s.compte[cle]))||0)+1;
  const des=Math.max(1,Math.min(12,opts.des||r.des));
  const faces=Array.from({length:des},()=>typeof d6==='function'?d6():1+Math.floor(Math.random()*6));
@@ -97,13 +106,19 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  // Le plafond du combat : ce qui dépasse ne tombe pas.
  if(combat&&d.phase==='combat'){const deja=s.brisures[couleur]||0;gagne=Math.max(0,Math.min(gagne,R.plafond-deja));s.brisures[couleur]=deja+gagne}
  if(gagne>0){const cg=cleGemme('brisure',couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+gagne;
-  flotteGemme(a,'brisure',couleur,gagne);if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne;
-  if(typeof log==='function')log(nomNum(a)+' a acquis une sphère.',{ton:'talent',toujours:true})}
+  flotteGemme(a,'brisure',couleur,gagne);if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne}
  if(typeof scheduleSave==='function')scheduleSave();return {faces,gagne,couleur}}
 // La petite sphère qui monte au-dessus du socle quand une Brisure tombe.
-function flotteGemme(a,taille,variete,n){if(typeof floatNumber!=='function')return;const c=$('floaters'),avant=c?c.childElementCount:0;
- floatNumber(a,'+'+n,'gain');const el=c&&c.childElementCount>avant?c.lastElementChild:null;if(!el)return;
- const im=document.createElement('img');im.className='floater-gemme';im.src=imgUrl(iconeGemme(taille,variete)+'.png');im.alt=nomGemme(taille,variete,false);im.draggable=false;el.append(im)}
+/* v1.163 : la sphère gagnée ne se mêle plus aux dégâts et aux états, qui montent au-dessus du socle : elle naît à sa droite, à mi-
+   hauteur, la gemme seule et son « +1 », grossit un instant, monte un peu en s'écartant, puis s'efface. Plusieurs à la suite
+   s'étagent vers le bas. */
+const pilesSpheres=new Map();
+function flotteGemme(a,taille,variete,n){const c=$('floaters');if(!c||!a||typeof tokenOf!=='function')return;const tk=tokenOf(a),t=performance.now(),pile=(pilesSpheres.get(a.id)||[]).filter(x=>t-x<1400),rang=pile.length;pile.push(t);pilesSpheres.set(a.id,pile);
+ const el=document.createElement('span');el.className='flotte-sphere';el.style.left='calc('+a.x+'% + '+Math.round(tk*.62)+'px)';el.style.top='calc('+a.y+'% + '+Math.round(rang*tk*.42-tk*.18)+'px)';el.style.setProperty('--t',Math.max(18,Math.round(tk*.42))+'px');
+ const im=document.createElement('img');im.src=imgUrl(iconeGemme(taille,variete)+'.png');im.alt=nomGemme(taille,variete,false);im.draggable=false;const b=document.createElement('b');b.textContent='+'+n;el.append(im,b);c.append(el);
+ const calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const fin=el.animate(calme?[{opacity:0},{opacity:1,offset:.15},{opacity:1,offset:.75},{opacity:0}]:[{transform:'translate(0,-50%) scale(.4)',opacity:0},{transform:'translate(0,-50%) scale(1.15)',opacity:1,offset:.14},{transform:'translate(0,-50%) scale(1)',opacity:1,offset:.24},{transform:'translate(6px,-90%) scale(1)',opacity:1,offset:.78},{transform:'translate(10px,-120%) scale(.95)',opacity:0}],{duration:1900,easing:'ease-out'});
+ fin.onfinish=()=>el.remove()}
 /* ---------- Ce que le moteur dit au dé de gemme ---------- */
 let bossVaincuCombat=0,dernierInvisible=null;
 // Un coup posé (index.html, frappe et orbe) : à l'attaquant, à la cible, ce que les faces ont dit.
@@ -186,8 +201,7 @@ let larcinGemme=null;
  if(!finit||spect)return bm(neuf,...x);const R=reglesGemmes(),presents=actors.filter(a=>a&&a.hero&&!a.horsCarte&&!estMort(a)&&!sortiDuCombat(a));
  presents.forEach(a=>{const s=suiviGemmes(a);if(s.combat===n&&s.coma!==n)deGemme(a,'combat-sans-coma',{phase:'combat'})});
  if(bossVaincuCombat===n&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
-  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n;
-  if(typeof log==='function')log(nomNum(a)+' a acquis '+(R.boss.n>1?R.boss.n+' sphères':'une sphère')+'.',{ton:'talent',toujours:true})});bossVaincuCombat=0}
+  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n});bossVaincuCombat=0}
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
 const deGemmeDialog=dialog('de-gemme','Dé de gemme','<form id="de-gemme-form"><div class="edit-grid"><label>Déclencheur<select name="decl" id="de-gemme-decl"></select></label>'
@@ -251,3 +265,42 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
  h('Couleur de chaque caractéristique et compétence','Ce que paie un bonus du sphérier, et ce que rapporte un test de compétence réussi ou un état infligé.');
  {const g=document.createElement('div');g.className='gemmes-bonus-liste';remplitGemmesBonus(g,()=>renderGemmes());boite.append(g)}}
 {const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='gemmes')renderGemmes();return r}}
+
+/* ---------- v1.163 — De nouveaux déclencheurs en combat ---------- */
+// Où était chaque adversaire au début du tour : celui qui s'est rapproché d'un aventurier depuis, abattu, vaut une gemme.
+let posDebutTour=new Map(),blessuresTour=new Map(),blessesTour=new Map();const mortsVus=new WeakSet();
+function notePositionsTour(){posDebutTour=new Map(actors.filter(o=>o&&!o.hero).map(o=>[o.id,{x:o.x,y:o.y}]))}
+function seRapprochait(o){const p=posDebutTour.get(o&&o.id);if(!p||(Math.abs(p.x-o.x)<.01&&Math.abs(p.y-o.y)<.01))return false;const size=mapSize();if(!size.width)return false;
+ const heros=actors.filter(h=>h&&!h.horsCarte&&alive(h)&&hostiles(h,o));if(!heros.length)return false;
+ const d=(q,h)=>Math.hypot((q.x-h.x)/100*size.width,(q.y-h.y)/100*size.height),avant=Math.min(...heros.map(h=>d(p,h))),apres=Math.min(...heros.map(h=>d(o,h)));return apres<avant-1}
+{const nt=noteTuerie;noteTuerie=function(a,b,opp,...x){const r=nt(a,b,opp,...x);if(a&&a.hero&&b&&!b.hero&&seRapprochait(b))deGemme(a,'abattre-approche',opp||{});return r}}
+/* Les blessures du tour : qui a blessé quel adversaire ; à sa mort, d'où qu'elle vienne, chacun d'eux a son dé. Et l'aventurier
+   blessé ce tour, pour « finir le tour sans avoir été blessé ». */
+{const cd=compteDegats;compteDegats=function(de,vers,n,...x){const r=cd(de,vers,n,...x);
+ if(n>0&&vers&&typeof enCombat==='function'&&enCombat()&&typeof cleTour==='function'){const k=cleTour();
+  if(vers.hero)blessesTour.set(vers.id,k);
+  if(de&&de.hero&&!vers.hero&&hostiles(de,vers)){let b=blessuresTour.get(vers.id);if(!b||b.k!==k){b={k,ids:new Set()};blessuresTour.set(vers.id,b)}b.ids.add(de.id)}
+  if(!vers.hero&&vers.hp===0&&!mortsVus.has(vers)){mortsVus.add(vers);const b=blessuresTour.get(vers.id);
+   if(b&&b.k===k)b.ids.forEach(id=>{const h=actors.find(o=>o&&o.id===id);if(h&&h.hero)deGemme(h,'contribution')})}}
+ return r}}
+// Un coup : la couverture d'un allié, la longue portée, l'attaque à distance adverse qui rate.
+{const ac=gemmesApresCoup;gemmesApresCoup=function(a,b,r,hpAvant,lost,...x){const res=ac(a,b,r,hpAvant,lost,...x);
+ if(!a||!b||!r||typeof enCombat!=='function'||!enCombat())return res;const touche=!r.failed&&!!r.hit,opp={critique:!!(r.critical&&!r.failed)};
+ const aDistance=!r.orbe&&typeof rangeOf==='function'&&rangeOf(a)==='distance';
+ if(a.hero&&hostiles(a,b)&&touche){
+  if(typeof contactsDe==='function'&&contactsDe(b).some(o=>o&&o!==a&&o.hero&&alive(o)))deGemme(a,'toucher-couvert',opp);
+  if(aDistance&&typeof metres==='function'&&typeof distanceMouvement==='function'){const m=metres(a,b,mapSize(),tokenPx());if(m>distanceMouvement(a,catalog.items||[]))deGemme(a,'tir-longue-portee',opp)}}
+ if(b.hero&&hostiles(a,b)&&!touche&&(aDistance||r.orbe))deGemme(b,'distance-ratee');
+ return res}}
+// Un état positif posé sur un autre aventurier, par un talent ou un geste : à qui l'a posé.
+{const pose=(o,etat)=>{if(!o||!ETATS_POSITIFS.includes(etat)||typeof enCombat!=='function'||!enCombat())return;const s=(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.a)||null;
+  if(s&&s.hero&&s!==o&&memeCamp(s,o))deGemme(s,'etat-positif-allie',{etat})};
+ const ie=infligeEtat;infligeEtat=function(o,etat,...x){const r=ie(o,etat,...x);if(r===true){const s=(typeof auteurCoup!=='undefined'&&auteurCoup)||null;
+  if(s&&s.hero&&s!==o&&memeCamp(s,o)&&ETATS_POSITIFS.includes(etat)&&enCombat())deGemme(s,'etat-positif-allie',{etat});else pose(o,etat)}return r};
+ const ae=ajouteEtat;ajouteEtat=function(o,etat,n,...x){const r=ae(o,etat,n,...x);if(r>0&&n>0)pose(o,etat);return r};
+ const ss=setState;setState=function(o,etat,mis,...x){const avant=!!o&&hasState(o,etat),r=ss(o,etat,mis,...x);if(mis&&!avant&&o&&hasState(o,etat))pose(o,etat);return r}}
+// La fin du tour : chaque aventurier debout, sans adversaire au contact et sans PV perdus ce tour. Puis les positions du tour suivant.
+{const ts=tourSuivant;tourSuivant=function(...x){if(typeof enCombat==='function'&&enCombat()&&!(typeof spectateur==='function'&&spectateur())){const k=cleTour();
+  actors.forEach(a=>{if(!a||!a.hero||a.horsCarte||!alive(a)||estMort(a))return;if(blessesTour.get(a.id)===k)return;if(typeof contactsDe==='function'&&contactsDe(a).length)return;deGemme(a,'fin-tour-intouchable')})}
+ const r=ts(...x);notePositionsTour();return r}}
+{const bm=basculerMode;basculerMode=function(neuf,...x){const r=bm(neuf,...x);if(neuf==='combat')notePositionsTour();return r}}

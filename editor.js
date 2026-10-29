@@ -747,6 +747,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.142 : les bonus du sphérier se paient en gemmes : leur prix en XP s'efface, une fois ; ce qu'ils avaient coûté revient en XP.
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('gemmes-bonus')){(c.talents||[]).forEach(t=>{if(t&&t.spherier===true)t.couts=[0,0,0]});c.semisForge.push('gemmes-bonus')}
  // v1.154 : « Infliger un état » prend la couleur de l'état posé ; l'ancienne couleur fixe de ce déclencheur cède la place.
+ // v1.163 : « Toucher une cible à distance » revient, en Citrine, à 5+.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('tir-citrine')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['toucher-distance'];if(d&&typeof d==='object'){d.couleur='citrine';d.actif=true;d.seuil=5}c.semisForge.push('tir-citrine')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['etat-elementaire'];if(d&&typeof d==='object')d.couleur='etat';c.semisForge.push('etat-couleur')}
  {const g=c.gemmesBonus&&typeof c.gemmesBonus==='object'&&!Array.isArray(c.gemmesBonus)?c.gemmesBonus:{};c.gemmesBonus={};
   Object.entries(g).forEach(([k,v])=>{if((/^([a-z]+|comp:[0-7])$/.test(k)||k.startsWith('etat:')&&ETATS_JEU.includes(k.slice(5)))&&['citrine','emeraude','saphir','rubis','diamant'].includes(v))c.gemmesBonus[k]=v});if(!Object.keys(c.gemmesBonus).length)delete c.gemmesBonus}
@@ -9033,7 +9035,7 @@ function descriptionBonus(p){const c=p&&p.carac||'pv',e=p&&p.etat||'Rage';
    ne tenait plus que par lui ; « Infuser les Sphères » apprend tout ce qui est marqué et consomme les gemmes : sans retour. */
 const GEMMES_BONUS_DEFAUT={vie:'diamant',pv:'rubis',endu:'emeraude',def:'saphir',dmg:'rubis',orbe:'saphir',pa:'diamant',pm:'emeraude',metres:'emeraude',armure:'saphir',etat:'rubis'};
 // v1.154 : chaque état a sa couleur (clé « etat:Feu »…) ; sinon la proposition ci-dessous, puis celle des états en général.
-const GEMMES_ETATS_DEFAUT={Feu:'rubis',Gel:'saphir',Foudre:'citrine',Poison:'emeraude',Nécrose:'emeraude',Corruption:'emeraude',Saignée:'rubis',Affaibli:'diamant','Au sol':'diamant',Immobilisé:'diamant',Entravé:'diamant',Aveugle:'citrine',Surpris:'citrine',Charme:'saphir',Sommeil:'saphir',Faille:'saphir'};
+const GEMMES_ETATS_DEFAUT={Blindage:'diamant',Furie:'rubis',Invisible:'citrine',Onde:'saphir',Vie:'emeraude',Rage:'rubis',Feu:'rubis',Gel:'saphir',Foudre:'citrine',Poison:'emeraude',Nécrose:'emeraude',Corruption:'emeraude',Saignée:'rubis',Affaibli:'diamant','Au sol':'diamant',Immobilisé:'diamant',Entravé:'diamant',Aveugle:'citrine',Surpris:'citrine',Charme:'saphir',Sommeil:'saphir',Faille:'saphir'};
 const cleGemmeBonus=p=>{const c=p&&p.carac||'pv';return c==='comp'?'comp:'+Math.max(0,Math.min(7,Number(p.comp)||0)):c==='etat'?'etat:'+(ETATS_JEU.includes(p.etat)?p.etat:'Rage'):c};
 function varieteBonus(p){const k=cleGemmeBonus(p),v=(catalog.gemmesBonus||{})[k];return VARIETES_GEMMES.some(([x])=>x===v)?v:k.startsWith('comp:')?'citrine':k.startsWith('etat:')?GEMMES_ETATS_DEFAUT[k.slice(5)]||GEMMES_BONUS_DEFAUT.etat:GEMMES_BONUS_DEFAUT[k]||'citrine'}
 /* v1.154 : le tableau des couleurs, en quatre groupes — les caractéristiques, les compétences, les bonus, les états infligés

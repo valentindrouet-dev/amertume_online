@@ -5368,6 +5368,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.163 — Huit déclencheurs de plus ; la sphère flotte à part ; plus de ligne au journal pour une sphère ; « Le combat commence » caché. */
+{const gm=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(['abattre-approche','contribution','fin-tour-intouchable','distance-ratee','tir-longue-portee','toucher-couvert','etat-positif-allie'].every(c=>gm.includes("{cle:'"+c+"',"))
+  &&gm.includes("couleur:'citrine',auto:true,parTour:true,")&&gm.includes("if(s.tours[cle]===cleTour())return null;s.tours[cle]=cleTour()}")&&!gm.includes("a acquis une sphère")
+  &&gm.includes("el.className='flotte-sphere';")&&page.includes("if(String(text)==='⚔ Le combat commence.')li.hidden=true;"),'v1.163');}
 /* v1.162 — Le sphérier tient dans la fenêtre, à l'échelle s'il le faut ; plus de bouton Gemmes dans l'arbre Bonus. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function cadreSpherier(plan){")&&ed.includes("const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;")
  &&!ed.includes("boutonOutil('Gemmes',")&&ed.includes("x0=(e.clientX-r.left)/k,y0=(e.clientY-r.top)/k;"),'v1.162');}
@@ -5403,7 +5408,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes(" if(rm.right+ec+w<=rp.r
 /* v1.155 — Gemmes : un seuil par déclencheur, une sphère au plus, le journal dit seulement qu'elle est acquise ; nouveaux
    déclencheurs ; les bonus de PA et de PM à plusieurs gemmes. */
 {const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');
- assert.ok(gm.includes(" let gagne=faces.some(f=>f>=r.seuil)?1:0;")&&gm.includes("log(nomNum(a)+' a acquis une sphère.',{ton:'talent',toujours:true})")&&!gm.includes("' · Dé de gemme ('")
+ assert.ok(gm.includes(" let gagne=faces.some(f=>f>=r.seuil)?1:0;")&&!gm.includes("' · Dé de gemme ('")
   &&['tuer-plusieurs','critique-soin','subir-25','subir-50','subir-75','subir-critique'].every(c=>gm.includes("{cle:'"+c+"',"))
   &&gm.includes("const f=lost/Math.max(1,Number(b.max)||1),p=f>=.75?'subir-75':f>=.5?'subir-50':f>=.25?'subir-25':null;")
   &&ed.includes("const PRIX_MULTIPLES=['pa','pm'];")&&ed.includes("natures.splice(Math.max(0,natures.findIndex(([c])=>c==='def')+1),0,['pa','Point d’Action'],['pm','Point de Mouvement']);")&&fs.readFileSync('index.html','utf8').includes("meta.bilan||meta.toujours||meta.ton==='degats'")&&ed.includes("const ouvert=k>0||sphereOuverte(a,t,l),tot=prixSpheres(t);"),'v1.155');}

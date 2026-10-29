@@ -4073,3 +4073,7 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .arbres-v2.sphere-plein .spherier-cadre{overflow:hidden;overflow:clip;max-height:none;min-height:0;flex:none}
 .arbres-v2.sphere-plein .spherier{margin:0;transform-origin:0 0}
 .arbres-v2.sphere-plein .arbres-detail{min-height:0;align-self:stretch}
+/* v1.163 : la sphère gagnée, à droite du socle, à part des dégâts et des états. */
+.flotte-sphere{position:absolute;display:inline-flex;align-items:center;gap:2px;pointer-events:none;z-index:30;white-space:nowrap;transform:translate(0,-50%)}
+.flotte-sphere img{width:var(--t,22px);height:var(--t,22px);object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(255,255,255,.45))}
+.flotte-sphere b{font:800 calc(var(--t,22px)*.62)/1 system-ui;color:#fff;-webkit-text-stroke:2.5px #1d1a16;paint-order:stroke fill}

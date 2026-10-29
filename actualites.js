@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.163","d":"2026-10-29","t":"Sphères : huit déclencheurs, flottant à part, journal allégé"},
 {"v":"1.162","d":"2026-10-29","t":"Sphérier entier dans la fenêtre ; plus de bouton Gemmes"},
 {"v":"1.161","d":"2026-10-29","t":"Sphérier qui s'agrandit ; onglet Sphères"},
 {"v":"1.160","d":"2026-10-29","t":"Gemmes : stats, déclenchements comptés ; Ctrl+Z au sphérier"},
