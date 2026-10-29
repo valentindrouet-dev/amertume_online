@@ -8825,11 +8825,14 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
  // Les liens, sous les ronds : dorés quand l'aventurier tient leurs deux bouts.
  const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','spherier-liens');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';plan.append(svg);
  const vus=new Set();l.forEach(t=>voisinsSphere(t,l).forEach(x=>{const k=[t.id,x.id].sort().join('|');if(vus.has(k))return;vus.add(k);const ln=document.createElementNS(NS,'line');
-  [['x1',t.sphere.x],['y1',t.sphere.y],['x2',x.sphere.x],['y2',x.sphere.y]].forEach(([c,v])=>ln.setAttribute(c,String(v)));{const m=a?marquesDe(a):new Set(),pt=y=>tient(y)||m.has(y.id);ln.setAttribute('class','spherier-lien'+(tient(t)&&tient(x)?' pris':pt(t)&&pt(x)?' marque':''))}
+  [['x1',t.sphere.x],['y1',t.sphere.y],['x2',x.sphere.x],['y2',x.sphere.y]].forEach(([c,v])=>ln.setAttribute(c,String(v)));ln.setAttribute('class','spherier-lien'+(tient(t)&&tient(x)?' pris':(tient(t)||tient(x))&&a?' ouvert':''));
   if(mj){ln.addEventListener('click',()=>{t.liensSphere=(t.liensSphere||[]).filter(id=>id!==x.id);x.liensSphere=(x.liensSphere||[]).filter(id=>id!==t.id);arbreChange()})}svg.append(ln)}));
  const dispo=a?xpDisponible(a,catalog.talents):0;
  l.forEach(t=>{const el=document.createElement('button');el.type='button';el.dataset.id=t.id;const k=a?palierDe(a,t):0,ouvert=!!a&&sphereOuverte(a,t,l);
-  const mq=!!a&&marquesDe(a).has(t.id),etat=!a?'':mq?'marque':k>=paliersDe(t)?'acquis':(k>0||ouverteAvecMarques(a,t,l))?(k?'acquis dispo':'dispo'):'verrou';
+  /* v1.149 : l'état d'un rond — tenu (vert) ; accessible, relié à un bonus tenu ou de départ (doré, en tirets si les gemmes
+     manquent) ; fermé (gris). Plus de marquage au clic : le clic choisit, Infuser achète. */
+  const pr=prixSphere(t),accessible=k>0||ouvert,cher=!!a&&gemmesDe(a,pr.cle)<pr.n;
+  const etat=!a?'':(k>0?'acquis':'')+(k<paliersDe(t)&&accessible?(k>0?' ':'')+'dispo'+(cher?' cher':''):k>0?'':'verrou');
   el.className='sphere-noeud'+(etat?' '+etat:'')+(t.departSphere?' depart':'')+(t.id===sphereSel?' choisi':'')+(sphereSels.has(t.id)?' selec':'')+(((paramsTalent(t)||{}).carac)==='comp'?' competence':'');el.style.left=t.sphere.x+'px';el.style.top=t.sphere.y+'px';
   const r=document.createElement('span');r.className='sphere-rond';poseLogoBonus(r,t);el.append(r);teinteSphere(t,v=>el.style.setProperty('--tint',v));
   if(paliersDe(t)>1&&a){const p=document.createElement('span');p.className='sphere-paliers';for(let n=1;n<=paliersDe(t);n++){const i=document.createElement('i');if(k>=n)i.className='on';p.append(i)}el.append(p)}
@@ -8855,7 +8858,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
      if(e.shiftKey&&s&&s!==t){if(voisinsSphere(t,l).includes(s)){t.liensSphere=(t.liensSphere||[]).filter(id=>id!==s.id);s.liensSphere=(s.liensSphere||[]).filter(id=>id!==t.id)}
       else s.liensSphere=[...(s.liensSphere||[]),t.id];sphereSel=t.id;arbreChange();return}
      // v1.138 : chez le MJ qui regarde un aventurier, le clic achète ou rend, comme chez le joueur.
-     if(a&&!e.shiftKey&&!sphereLier){sphereSel=t.id;if(!marqueSphere(ctx,t,l))renderArbres();return}
+     if(a&&!e.shiftKey&&!sphereLier){sphereSel=t.id;sphereSels=new Set([t.id]);renderArbres();return}
      /* v1.136 : un double-clic sur un bonus ouvre son éditeur. Le premier clic redessine le plan : les deux clics se comptent ici,
         sur le même bonus, à moins de 450 ms. */
      {const now=performance.now(),d=sphereClic;sphereClic={id:t.id,at:now};if(d&&d.id===t.id&&now-d.at<450&&!sphereLier){sphereClic=null;sphereSel=t.id;openTalent(catalog.talents.indexOf(t),renderArbres);return}}
@@ -8863,7 +8866,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
      sphereSel=t.id;sphereSels=new Set([t.id]);renderArbres()};
     addEventListener('pointermove',mv);addEventListener('pointerup',up)})}
   // v1.138 : chez un aventurier, un clic achète le bonus — ou son palier suivant — et le reclic le rend.
-  else el.onclick=()=>{sphereSel=t.id;if(!(a&&marqueSphere(ctx,t,l)))renderArbres()};
+  else el.onclick=()=>{sphereSel=t.id;renderArbres()};
   plan.append(el)});
  // v1.133 : chez le MJ, un clic sur le fond du plan y pose un bonus, choisi parmi ceux qui existent.
  if(mj){plan.addEventListener('pointerdown',e=>{if(e.button!==0||(e.target!==plan&&e.target!==svg))return;const r=plan.getBoundingClientRect(),x0=e.clientX-r.left,y0=e.clientY-r.top;let boite=null,z=null;
@@ -8893,8 +8896,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   tete.append(pile,droite);panneau.append(tete);
   if(a){const bi=boutonInfuser(ctx,t,l);if(bi)panneau.append(bi);const bd=boutonDesacheter(ctx,t,l);if(bd)panneau.append(bd)}
   if(mj&&!a){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
-  else if(a){const mq=marquesDe(a).has(t.id),ok=k<max&&(mq||k>0||ouverteAvecMarques(a,t,l));tete.classList.add('cliquable',mq?'marquee':k>=max?'acquise':ok?'achetable':'fermee');
-   if(ok){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>marqueSphere(ctx,t,l)}}
+  else if(a){const ok=k<max&&(k>0||sphereOuverte(a,t,l));tete.classList.add(k>0?'acquise':ok?'achetable':'fermee')}
   tete.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&tete.onclick){e.preventDefault();tete.onclick()}}};
  return {el:zone,detail}}
 // Les bonus du sphérier et l'arbre du métier restent à l'aventurier au chargement, s'ils tiennent encore à un départ.
@@ -9009,13 +9011,12 @@ function barreInfusion(ctx,l){const {a}=ctx,b=document.createElement('div');b.cl
  return b}
 /* v1.146 — Sous le bloc d'un bonus, « Infuser les Sphères » : il infuse ce bonus, avec ceux qu'on a marqués, et dit le prix de
    l'ensemble ; grisé quand le bonus n'est relié à rien de tenu ou que les gemmes manquent ; absent quand tous ses paliers sont pris. */
-function boutonInfuser(ctx,t,l){const {a}=ctx,k=palierDe(a,t);if(k>=paliersDe(t))return null;const m=marquesDe(a),mq=m.has(t.id),ouvert=mq||k>0||ouverteAvecMarques(a,t,l);
- const tot=totalMarques(a,l);if(!mq){const p=prixSphere(t),e=tot.find(x=>x.cle===p.cle);if(e)e.n+=p.n;else tot.push({...p})}
+function boutonInfuser(ctx,t,l){const {a}=ctx,k=palierDe(a,t);if(k>=paliersDe(t))return null;const ouvert=k>0||sphereOuverte(a,t,l),tot=[{...prixSphere(t)}];
  const assez=tot.every(p=>gemmesDe(a,p.cle)>=p.n),b=document.createElement('div');b.className='sphere-infuser-bloc';
  const bt=document.createElement('button');bt.type='button';bt.className='primary infuser';bt.append('Infuser les Sphères');tot.forEach(p=>bt.append(puceGemme(p,gemmesDe(a,p.cle)<p.n)));
  bt.disabled=!ouvert||!assez||(estMort(a)&&view!=='mj')||figeEnCombat(a);
  bt.title=!ouvert?'Ce bonus n’est relié ni à un bonus de départ, ni à un bonus tenu.':!assez?'Il manque des gemmes de cette couleur.':figeEnCombat(a)?'Pas pendant un combat.':'';
- bt.onclick=()=>{m.add(t.id);infuseSpheres(ctx,l)};b.append(bt);return b}
+ bt.onclick=()=>infuseSpheres(ctx,l,t);b.append(bt);return b}
 /* v1.148 — Au MJ seul, sous le bloc d'un bonus infusé : « Désacheter » rend le dernier palier — le bonus entier s'il n'en a qu'un —
    et rend ses gemmes ; ce qui ne tient plus à un départ tombe avec lui, gemmes rendues aussi. Un joueur ne le peut pas. */
 function boutonDesacheter(ctx,t,l){const {a}=ctx;if(view!=='mj'||arbresVueJoueur||!a)return null;const k=palierDe(a,t);if(!k)return null;
@@ -9030,7 +9031,8 @@ function desacheteSphere(ctx,t,l){const {a,classe,poserPalier,note,majTable}=ctx
  a.paliersTalents=normalisePaliersActeur(a);marquesDe(a).clear();
  if(typeof log==='function')log(nomNum(a)+' · '+libelleBonus(paramsTalent(t)||{})+' désacheté : '+[...rendus].map(([cle,n])=>{const [ta,v]=cle.split('-');return '+'+n+' '+nomGemme(ta,v,false).toLowerCase()}).join(', ')+'.',{ton:'talent'});
  note('');majTable()}
-function infuseSpheres(ctx,l){const {a,poserPalier,note,majTable}=ctx;if(!a)return;const m=marquesDe(a),marques=l.filter(t=>m.has(t.id)),tot=totalMarques(a,l);
+function infuseSpheres(ctx,l,seul){const {a,poserPalier,note,majTable}=ctx;if(!a)return;const m=marquesDe(a),marques=seul?[seul]:l.filter(t=>m.has(t.id));
+ const tm=new Map();marques.forEach(t=>{const p=prixSphere(t),e=tm.get(p.cle)||{...p,n:0};e.n+=p.n;tm.set(p.cle,e)});const tot=[...tm.values()];
  if(!marques.length||tot.some(p=>gemmesDe(a,p.cle)<p.n))return;
  a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});
  marques.forEach(t=>{const k=palierDe(a,t);if(k===0)a.talents=[...(a.talents||[]),t.id];else poserPalier(t,k+1)});

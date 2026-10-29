@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.149 — Plus de marquage au clic ; tenu en vert, accessible en doré, lien tenu-tenu vert, tenu-libre doré. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("const pr=prixSphere(t),accessible=k>0||ouvert,cher=!!a&&gemmesDe(a,pr.cle)<pr.n;")&&fs.readFileSync('editor.css','utf8').includes(".spherier-lien.pris{stroke:var(--green);stroke-opacity:.85}"),'v1.149');
 /* v1.148 — Au MJ, Désacheter un bonus infusé rend ses gemmes ; Infuser centré. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function desacheteSphere(ctx,t,l){const {a,classe,poserPalier,note,majTable}=ctx;if(view!=='mj'||!a)return;")&&fs.readFileSync('editor.css','utf8').includes(".arbres-detail .sphere-infuser-bloc,.arbres-detail .sphere-desachete-bloc{display:flex;justify-content:center;"),'v1.148');
 /* v1.147 — Sphérier : sélection multiple (Ctrl + clic, rectangle), déplacement groupé, Suppr de la sélection ; Infuser dit pourquoi il est grisé. */
@@ -5398,7 +5400,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("ctx.lineJoin='round';ct
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function natureBonus(p){const c=p&&p.carac||'pv';return c==='comp'?'Compétence':['pv','endu','vie','def','dmg'].includes(c)?'Caractéristique':'Bonus'}"),'v1.139');
 /* v1.138 / v1.142 — Sphérier : un seul bloc à droite, sa description ; les bonus se paient en gemmes, marqués puis infusés. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);")
- &&ed.includes("else el.onclick=()=>{sphereSel=t.id;if(!(a&&marqueSphere(ctx,t,l)))renderArbres()};")&&ed.includes("bt.append('Infuser les Sphères');")
+ &&ed.includes("else el.onclick=()=>{sphereSel=t.id;renderArbres()};")&&ed.includes("function infuseSpheres(ctx,l,seul){")&&ed.includes("bt.append('Infuser les Sphères');")
  &&ed.includes("a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});")
  &&!ed.includes("function basculeSphere("),'v1.142');}
 /* v1.137 — Bonus DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier ; bonus de compétence plus petits. */
