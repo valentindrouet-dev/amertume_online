@@ -900,7 +900,8 @@ function verrouillerInvite(){const inv=spectateur();
  if(inv){cache($('owner'),true);cache($('owner-label'),true)}
  cache($('open-share'),inv);
  // Les joueurs connectés, dans l'en-tête, sont au MJ ; à l'Accueil, tout le monde les voit.
- cache($('open-joueurs'),inv)}
+ // v1.172 : et seulement quand une table en ligne est ouverte.
+ cache($('open-joueurs'),inv||!(enLigne&&tableId))}
 // Après chaque rendu, ce qui a bougé part sur le réseau — et rien d'autre.
 // Une vue imposée le temps d'être invité se rend dès qu'on ne l'est plus, avec l'onglet d'avant.
 let vueImposee=false;
@@ -1057,3 +1058,8 @@ function groupeRendus(fn){rendusGroupes++;if(rendusGroupes===1){renduDemande=fal
  try{return fn()}finally{rendusGroupes--;if(!rendusGroupes&&renduDemande){renduDemande=false;render()}}}
 {const ts=tourSuivant;tourSuivant=function(...x){return groupeRendus(()=>ts.apply(this,x))}}
 {const bm=basculerMode;basculerMode=function(...x){return groupeRendus(()=>bm.apply(this,x))}}
+/* v1.172 — « Joueurs connectés » ne paraît que lorsqu'une table en ligne est ouverte. */
+function majBoutonJoueurs(){joueursButton.hidden=!(enLigne&&tableId)}
+{const rj=renderJoueursConnectes;renderJoueursConnectes=function(...x){const r=rj(...x);majBoutonJoueurs();return r}}
+{const bt=brancherTable;brancherTable=function(...x){const r=bt(...x);majBoutonJoueurs();return r}}
+majBoutonJoueurs();

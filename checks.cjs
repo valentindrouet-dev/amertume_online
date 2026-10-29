@@ -2339,7 +2339,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("if(b&&lieuDe(a)!==b.id)deplaceAventurier(a,b)};")&&fief.includes("t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);")
   &&fief.includes("+(batimentConstruit(b)?' construit':'')")&&feuille.includes('.dom-etiquette .jeton-rond.mini{width:36px;height:36px;font-size:18px;')
   &&feuille.includes('#dom-plan.glisse-jeton .dom-zone.construit{'),'le jeton se glisse vers un bâtiment construit, en grand');
- assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&!estVide(t)&&(famille===FAMILLE_METIERS?talentFamily(t).startsWith(PREFIXE_METIER):talentFamily(t)===famille)")
+ assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&!estVide(t)&&t.type!=='ame'&&(famille===FAMILLE_METIERS?talentFamily(t).startsWith(PREFIXE_METIER):talentFamily(t)===famille)")
   &&src.includes(".filter(t=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
  assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
   &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value,etat:f.b_etat?f.b_etat.value:'Rage'}});")
@@ -3638,7 +3638,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
    connectés est au MJ. */
 {const vv=fs.readFileSync('live.js','utf8');
  assert.ok(vv.includes("b.textContent=joueur?'Options en ligne':ouvert?'Table · '+tableId:'Table en ligne'}")&&vv.includes(" montre('live-copy',ouvert&&!joueur,false,'');")
-  &&vv.includes("e.hidden=!ouvert||joueur});")&&vv.includes(" cache($('open-joueurs'),inv)}"),'options en ligne du joueur');}
+  &&vv.includes("e.hidden=!ouvert||joueur});")&&vv.includes(" cache($('open-joueurs'),inv||!(enLigne&&tableId))}"),'options en ligne du joueur');}
 /* v0.717 — Le site au MJ : son compte reconnu, ou un appareil où il l'a été ; hors d'une table, tout autre visiteur n'a qu'une page
    fermée. La scène publiée et les catalogues au MJ seul ; la publication ne s'écoute que connecté, et les règles le demandent. */
 {const pg=fs.readFileSync('index.html','utf8'),sh=fs.readFileSync('shared.js','utf8'),vv=fs.readFileSync('live.js','utf8'),rg=fs.readFileSync('firestore-online.rules','utf8');
@@ -5368,6 +5368,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.172 — « Joueurs connectés » seulement table en ligne ouverte. */
+assert.ok(fs.readFileSync('live.js','utf8').includes("function majBoutonJoueurs(){joueursButton.hidden=!(enLigne&&tableId)}"),'v1.172 joueurs');
+/* v1.172 — La page des talents ne montre plus les améliorations : elles sont dans l'arbre. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("filter(([t])=>!estBonus(t)&&!estVide(t)&&t.type!=='ame'&&(famille===FAMILLE_METIERS"),'v1.172');
 /* v1.171 — Les sphères au-dessus de tout sur la carte : leur propre calque. */
 assert.ok(fs.readFileSync('gemmes.js','utf8').includes("function flotteGemme(a,taille,variete,n){const c=coucheSpheres();")&&fs.readFileSync('editor.css','utf8').includes("#couche-spheres{position:absolute;inset:0;z-index:40;pointer-events:none}"),'v1.171');
 /* v1.170 — Le dé Mystique qui double : le moteur le dit (champ non compté), la Sphère Saphir le lit. */

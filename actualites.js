@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.172","d":"2026-10-29","t":"Talents sans améliorations ; Joueurs connectés en ligne seulement"},
 {"v":"1.171","d":"2026-10-29","t":"Sphères : animation au-dessus de tout"},
 {"v":"1.170","d":"2026-10-29","t":"Arbres redimensionnables par le MJ ; double Mystique"},
 {"v":"1.169","d":"2026-10-29","t":"Sphères : quinze déclencheurs de plus"},

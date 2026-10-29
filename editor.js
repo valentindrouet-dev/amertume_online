@@ -4051,7 +4051,8 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
  const tri=$('talent-sort').value;
  const visibles=sel.value?[sel.value]:familles;
  for(const famille of visibles){
-  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>!estBonus(t)&&!estVide(t)&&(famille===FAMILLE_METIERS?talentFamily(t).startsWith(PREFIXE_METIER):talentFamily(t)===famille)
+  // v1.172 : plus d'améliorations sur la page des talents — elles se lisent dans l'arbre, sous leur talent.
+  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>!estBonus(t)&&!estVide(t)&&t.type!=='ame'&&(famille===FAMILLE_METIERS?talentFamily(t).startsWith(PREFIXE_METIER):talentFamily(t)===famille)
    &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name,'fr')
    :tri==='niveau-'?(b[0].level||1)-(a[0].level||1)||a[0].name.localeCompare(b[0].name,'fr')
