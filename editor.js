@@ -1270,7 +1270,8 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
  const RG=typeof reglesGemmes==='function'?reglesGemmes():null,brise=k=>!!(RG&&RG.titres&&RG.titres[k]&&RG.titres[k].actif);
  const prix=DISTINCTIONS.map(([k,ico,titre,unite,min])=>{const l=troupe,top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];
   return top&&(min||top[k]>0)?{k,ico,titre,unite,top,val:min?top.sub:top[k],dore:brise(k)}:null}).filter(Boolean).map((p,i)=>[p,i]).sort(([x,i],[y,j])=>(y.dore-x.dore)||i-j).map(([p])=>p);
- if(prix.length){const g=el('div','stats-distinctions');
+ /* v1.191 : deux lignes — celle des titres à Brisure, puis celle des autres ; chacune se partage sa largeur. */
+ if(prix.length){const g=el('div','stats-distinctions'),rang=new Map();[true,false].forEach(d=>{const n=prix.filter(p=>p.dore===d).length;if(!n)return;const r=el('div','stats-rang'+(d?' dorees':''));r.style.setProperty('--n',n);rang.set(d,r);g.append(r)});
   // Le token dit qui ; son nom paraît en bulle, au survol.
   prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp+(p.dore?' dore':'')),t=el('div','stats-prix-texte');
    t.append(el('strong','',p.titre),el('span','stats-prix-val',p.val+' '+p.unite));
@@ -1278,7 +1279,7 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
    const tg=b.titres&&b.titres[p.k];if(tg&&typeof iconeDeGemme==='function'){const g=el('span','stats-titre-gemme');g.append(iconeDeGemme('brisure',tg.couleur,false),'+1');g.title='1 '+nomGemme('brisure',tg.couleur,false).replace(/^\S+/,'Brisure');t.append(g)}
    const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');jeton.setAttribute('aria-label',p.top.nom);
    surveille(jeton,()=>{const d=el('div','talent-detail large'),n=el('p','talent-bulle-nom');n.append(el('b','',p.top.nom));d.append(n);ouvrirBulle(jeton,d,'bulle-talent')});
-   c.append(jeton,t);g.append(c)});corps.append(g)}
+   c.append(jeton,t);rang.get(p.dore).append(c)});corps.append(g)}
  const maxInf=Math.max(1,...b.liste.map(x=>x.inf)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
  [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
