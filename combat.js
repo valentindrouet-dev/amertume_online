@@ -3614,7 +3614,7 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
 /* Ce qu'un bâtiment fait pour la troupe. Il ne le fait que construit et intact : toute autre
    étape, tout autre état, et sa fonction s'arrête. Un bâtiment d'avant les fonctions qui
    s'appelle Magasin devient le magasin, une fois ; ensuite c'est le MJ qui choisit. */
-const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie'],['herboristerie','Herboristerie'],['forge','Forge'],['tour','Tour Mystique']];
+const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie'],['herboristerie','Herboristerie'],['forge','Forge'],['tour','Tour Mystique'],['bibliotheque','Bibliothèque']];
 const NOM_FONCTION=f=>(FONCTIONS_BATIMENT.find(([k])=>k===f)||FONCTIONS_BATIMENT[0])[1];
 const fonctionActive=b=>!!b&&!!b.fonction&&b.etape>=ETAPES_DOMAINE.length-1&&!b.etat;
 function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);

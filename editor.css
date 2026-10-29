@@ -4171,13 +4171,27 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .vie-tuile.zero b{color:color-mix(in srgb,var(--muted) 60%,transparent)}
 .vie-tuile.vie-rar{border-color:color-mix(in srgb,var(--rarete) 45%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--rarete) 14%,transparent),transparent 85%)}
 .vie-tuile.vie-rar b{color:var(--rarete)}.vie-tuile.vie-rar span{color:var(--rarete)}
-/* v1.193 — L'onglet Caractéristiques : deux blocs de vignettes, les talents centrés dessous. */
-.fiche-onglet .hero-pv{margin:10px 0 12px}
-.fiche-onglet .fiche-blocs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start}
-.fiche-onglet .fiche-blocs>.stat-row.en-icones,.fiche-onglet .fiche-blocs>.comp-ronds.cadre-comps{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:10px}
-.fiche-onglet .vignette{display:grid;grid-template-columns:56px 1fr;align-items:center;min-height:52px;padding:3px 10px;border-radius:10px;border:1px solid var(--line-strong);background:color-mix(in srgb,var(--panel) 70%,transparent)}
-.fiche-onglet .vignette>.stat-tile,.fiche-onglet .vignette>.comp-rond{justify-self:center}
-.fiche-onglet .vignette-val{justify-self:center;font:700 22px/1 'Killam',Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+/* v1.196 — L'onglet Caractéristiques en livre ouvert : deux pages, leurs vignettes ; les talents au bas de la page de gauche. */
+.hero-card.fiche-onglet{background:none;border:0;padding:0}
+.fiche-onglet .hero-head{flex-wrap:wrap;row-gap:4px}
+.fiche-onglet .hero-head .hero-id{flex:0 0 auto}.fiche-onglet .hero-head .hero-identite{width:auto;flex:0 1 auto;margin-left:6px}.fiche-onglet .hero-head .cat-tools{margin-left:auto}
+.fiche-onglet .hero-pv{margin:8px 0 12px}
+.fiche-livre{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px;border-radius:16px;background:color-mix(in srgb,var(--accent) 30%,var(--panel-2));box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent),0 2px 8px color-mix(in srgb,var(--ink) 25%,transparent)}
+.fiche-page{position:relative;display:flex;flex-direction:column;gap:12px;min-width:0;padding:16px 18px 18px;background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);outline:1px solid color-mix(in srgb,var(--accent) 28%,transparent);outline-offset:-7px}
+.fiche-page.page-gauche{border-radius:12px 4px 4px 12px;box-shadow:inset -16px 0 18px -16px color-mix(in srgb,var(--ink) 40%,transparent)}
+.fiche-page.page-droite{border-radius:4px 12px 12px 4px;box-shadow:inset 16px 0 18px -16px color-mix(in srgb,var(--ink) 40%,transparent)}
+.fiche-titre{display:flex;align-items:center;justify-content:center;gap:14px;margin:2px 0 0;font:700 25px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;color:var(--ink)}
+.fiche-titre::before,.fiche-titre::after{content:'';flex:0 1 90px;height:2px;background:linear-gradient(90deg,transparent,var(--accent))}.fiche-titre::after{background:linear-gradient(90deg,var(--accent),transparent)}
+.hero-card.fiche-onglet .fiche-page>.stat-row.en-icones,.hero-card.fiche-onglet .fiche-page>.comp-ronds.cadre-comps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:8px;border-radius:10px;background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line)}
+.fiche-onglet .vignette{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:76px;padding:8px 12px;border-radius:9px;border:1px solid var(--line-strong);background:var(--panel-2)}
+.fiche-onglet .vignette-icone{display:grid;place-items:center;min-width:56px}
+.fiche-onglet .vignette-texte{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fiche-onglet .vignette-nom{font:700 17px/1.1 'Killam',Georgia,serif}
+.fiche-onglet .vignette-nature{font:600 11px/1.2 system-ui;color:var(--muted)}
+.fiche-onglet .vignette-desc{margin-top:3px;padding-top:3px;border-top:1px solid var(--line);font:italic 400 11.5px/1.3 system-ui;color:color-mix(in srgb,var(--ink) 72%,transparent)}
+.fiche-onglet .vignette-val{font:700 26px/1 'Killam',Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+.fiche-onglet .fiche-talents{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.fiche-onglet .fiche-talents .hero-sous{margin:0;font:700 18px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1px;text-transform:none;color:var(--ink)}
 .hero-card.fiche-onglet .talent-grille{display:flex;flex-direction:column;align-items:center;gap:10px}
 .hero-card.fiche-onglet .talent-grille>*{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;width:auto;grid-column:auto}
 .fiche-onglet .talent-case-vide{display:none}
@@ -4215,3 +4229,19 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .icone-case .gem-ico{width:100%;height:100%;object-fit:contain}.planche-vignette .gem-ico{width:100%;height:100%;object-fit:contain}.icone-nom.sphere-nom{display:block;text-align:center;font:600 12px/1.2 system-ui;border:0;background:none}
 #hero-grid .hero-vignette:has(>.hero-aventure){padding-left:32px}
 .gemmes-icones .gemmes-icone-choix{display:inline-grid;place-items:center;width:52px;height:52px;padding:4px;border:1px solid var(--line-strong);border-radius:10px;background:var(--panel-2);cursor:pointer}.gemmes-icones .gemmes-icone-choix:hover:not(:disabled){border-color:var(--accent)}.gemmes-icones .gemmes-icone-choix .gem-ico{width:40px;height:40px;object-fit:contain}.gemmes-icones .gemmes-icone-choix:disabled{cursor:default}
+/* v1.196 — La Bibliothèque ; « Ouvrir la Carte » dans la fenêtre d'un bâtiment. */
+.biblio-portrait{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--accent) 18%,var(--panel-2));border:2px solid color-mix(in srgb,var(--accent) 50%,transparent);font:700 26px 'Killam',Georgia,serif;color:var(--ink)}
+.biblio-portrait img{width:100%;height:100%;object-fit:cover}
+.biblio-portrait.grand{width:120px;height:120px;font-size:46px;align-self:center}
+.biblio-fiche .vit-fiche-nom{margin:0;text-align:center;font:700 22px/1.1 'Killam',Georgia,serif}
+.biblio-infos{display:flex;flex-direction:column;gap:6px}
+.biblio-info{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;align-items:baseline;padding:6px 8px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line)}
+.biblio-label{font:700 11px/1.2 system-ui;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.biblio-val{font:600 14px/1.35 system-ui;color:var(--ink)}
+.biblio-info.inconnu .biblio-val{color:var(--muted)}
+#dom-fiche-fenetre .dialog-head{position:relative}
+#dom-fiche-fenetre .dom-ouvre-carte{margin-left:auto;margin-right:8px;padding:6px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel-2);font:600 13px system-ui;color:var(--ink);cursor:pointer}
+#dom-fiche-fenetre .dom-ouvre-carte:hover{border-color:var(--accent)}
+#dom-fiche-fenetre .dom-cartes-menu{position:absolute;top:100%;right:48px;z-index:5;display:flex;flex-direction:column;gap:2px;min-width:200px;padding:6px;border:1px solid var(--line-strong);border-radius:10px;background:var(--panel);box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 30%,transparent)}
+#dom-fiche-fenetre .dom-cartes-menu button{text-align:left;padding:7px 10px;border:0;border-radius:7px;background:none;font:600 13px system-ui;color:var(--ink);cursor:pointer}
+#dom-fiche-fenetre .dom-cartes-menu button:hover{background:var(--panel-2)}

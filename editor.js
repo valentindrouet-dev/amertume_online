@@ -1930,7 +1930,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  bInv.onclick=e=>{e.stopPropagation();fermerBulle();openInventaire(a)};blocInv.append(bInv);
  {const n=orDe(a),or=document.createElement('span');or.className='or-fiche'+(n?'':' zero');const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);blocInv.append(or)}
  titreKit.classList.add('ouvre-arbre');titreKit.onclick=e=>{if(e.target.closest('button'))return;fermerBulle();openInventaire(a)};
- titreComp.classList.add('titre-comps');titreKit.classList.add('titre-kit');
+ titreComp.classList.add('titre-comps');titreKit.classList.add('titre-kit');titreTal.classList.add('titre-tal');
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}
 /* L'ordre des fiches : libre, comme le MJ les a rangées en les glissant par leur poignée, ou par nom, niveau, classe, XP.
    Le choix reste sur l'appareil ; l'ordre libre, sur chaque aventurier. */
@@ -9463,13 +9463,30 @@ comaAventuriers=noteChutes(comaAventuriers);appliqueNecrose=noteChutes(appliqueN
 /* v1.193 — L'onglet Caractéristiques : la fiche de l'aventurier en deux blocs — à gauche ses six caractéristiques, à droite
    ses huit compétences, chacune en vignette, son icône et sa valeur à côté — puis ses talents, centrés. L'inventaire a son onglet. */
 function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('fiche-onglet');
- const vignette=(el,val)=>{const w=document.createElement('div');w.className='vignette';el.before(w);const v=document.createElement('b');v.className='vignette-val';v.textContent=val;w.append(el,v)};
+ const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+ /* v1.196 : chaque vignette dit ce que dit le panneau du sphérier — l'icône, le nom à sa couleur, sa nature, ce qu'elle fait en
+    italique — et la valeur, à droite. */
+ const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
+  const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h,el('span','vignette-nature',nature));if(desc)m.append(el('span','vignette-desc',desc));
+  w.append(g,m,el('b','vignette-val',val))};
+ const CARACS_FICHE={vie:['Vie',descriptionBonus({carac:'vie'})],endu:['Endurance',descriptionBonus({carac:'endu'})],pv:['PV max',descriptionBonus({carac:'pv'})],def:['DEF',descriptionBonus({carac:'def'})],
+  dmg:['Dégâts',descriptionBonus({carac:'dmg'})],xp:['XP','Tous les '+XP_PAR_MARQUE+' XP, une Marque, qui paie les talents.']};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
- if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'')});
- if(cp)[...cp.querySelectorAll(':scope>.comp-carte')].forEach(k=>{const v=k.querySelector('.comp-val');k.classList.add('vignette');const b=document.createElement('b');b.className='vignette-val';b.textContent=v?v.textContent:'';k.append(b)});
+ if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const k=([...t.classList].find(x=>x.startsWith('t-'))||'t-').slice(2),s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');
+  const [nom,desc]=CARACS_FICHE[k]||[k,''];vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'',nom,'Caractéristique',desc,t.style.getPropertyValue('--tint').trim())});
+ if(cp)[...cp.querySelectorAll(':scope>.comp-carte')].forEach((k,i)=>{const r=k.querySelector('.comp-rond'),v=k.querySelector('.comp-val'),n=skillNames[i]||'';
+  vignette(k,v?v.textContent:'',n,'Compétence',USAGES_COMPETENCES[n]||USAGES_COMPETENCES[COMPETENCES[i]]||'',r?r.style.getPropertyValue('--tint').trim():'')});
  c.querySelectorAll(':scope>.titre-comps,:scope>.titre-kit,:scope>.bloc-inventaire').forEach(x=>x.remove());
- const pv=c.querySelector(':scope>.hero-pv'),blocs=document.createElement('div');blocs.className='fiche-blocs';
- if(ch){ch.before(blocs);blocs.append(ch)}if(cp)blocs.append(cp);if(pv)blocs.before(pv);
+ // La ligne Homme / Espèce / Classe / Marques, sur la ligne du nom.
+ const tete=c.querySelector(':scope>.hero-head'),puces=c.querySelector(':scope>.chips'),ident=puces&&puces.querySelector('.hero-identite'),id=tete&&tete.querySelector('.hero-id');
+ if(ident&&id){id.after(ident);if(!puces.childElementCount)puces.remove()}
+ // Deux pages : à gauche les caractéristiques et les talents, à droite les compétences.
+ const titreTal=c.querySelector(':scope>.titre-tal'),blocTal=c.querySelector(':scope>.talent-grille');
+ const livre=el('div','fiche-livre'),pg=el('section','fiche-page page-gauche'),pd=el('section','fiche-page page-droite');
+ if(ch)ch.before(livre);livre.append(pg,pd);{const pv=c.querySelector(':scope>.hero-pv');if(pv)livre.before(pv)}
+ pg.append(el('h3','fiche-titre','Caractéristiques'));if(ch)pg.append(ch);
+ if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);pg.append(bt)}
+ pd.append(el('h3','fiche-titre','Compétences'));if(cp)pd.append(cp);
  return c}
 /* v1.194 — La page Aventuriers : une vignette par aventurier, comme à l'Accueil — son portrait cerclé de sa classe, son nom, sa
    classe et son niveau, son lieu. Un clic ouvre sa fiche. Le MJ y garde la case de l'aventure, le rang qu'on glisse, l'accueil

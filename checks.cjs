@@ -5377,6 +5377,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.196 — L'onglet Caractéristiques en livre ; la Bibliothèque et son Bestiaire ; « Ouvrir la Carte » d'un bâtiment, et dans l'onglet Cartes. */
+{const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),rg=fs.readFileSync('regles.js','utf8');
+ assert.ok(ed.includes("const livre=el('div','fiche-livre'),pg=el('section','fiche-page page-gauche'),pd=el('section','fiche-page page-droite');")&&cb.includes("['tour','Tour Mystique'],['bibliotheque','Bibliothèque']];")
+  &&dm.includes("bibliotheque:[['bestiaire','Bestiaire'],['parchemins','Parchemins'],['cartes','Cartes']]};")&&dm.includes("function vitBibliotheque(corps,b,client,onglet){")
+  &&dm.includes("ouvreCarteBat.textContent='Ouvrir la Carte';")&&mp.includes('<button id="map-play" class="primary">Ouvrir la Carte</button>')&&rg.includes("'<b>Bibliothèque</b> : construite et intacte"),'v1.196');}
 /* v1.195 — La planche des sphères (6 × 5, découpée une fois) ; l'icône de chaque sphère se choisit dans l'onglet Sphères, et suit partout. */
 {const ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');
  assert.ok(fs.existsSync('img/planches/SPHERES.webp')&&ed.includes("if(!c.semisForge.includes('planches-spheres'))")&&ed.includes("c.iconesGemmes=normaliseIconesGemmes(c.iconesGemmes);")

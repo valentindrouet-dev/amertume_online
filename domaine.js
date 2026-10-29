@@ -1141,12 +1141,15 @@ const ONGLETS_VITRINE={magasin:[['acheter','Acheter'],['vendre','Vendre']],
  tannerie:[['acheter','Acheter'],['fabriquer','Fabriquer'],['vendre','Vendre'],['convertir','Convertir']],
  herboristerie:[['acheter','Acheter'],['apprendre','Apprendre une recette'],['fabriquer','Fabriquer']],forge:[['fabriquer','Fabriquer']],
  // v1.183 : la Tour Mystique, chez l'Arcaniste.
- tour:[['achat','Achat de Sphères'],['fusion','Fusion de Sphères'],['vente','Vente de Sphères'],['conversion','Conversion de Sphères'],['connaissance','Connaissance']]};
-const ICI_VITRINE={magasin:'au magasin',tannerie:'à la tannerie',herboristerie:'à l’herboristerie',forge:'à la forge',tour:'à la Tour Mystique'};
+ tour:[['achat','Achat de Sphères'],['fusion','Fusion de Sphères'],['vente','Vente de Sphères'],['conversion','Conversion de Sphères'],['connaissance','Connaissance']],
+ // v1.196 : la Bibliothèque — le Bestiaire de ce que la troupe a analysé ; Parchemins et Cartes viendront.
+ bibliotheque:[['bestiaire','Bestiaire'],['parchemins','Parchemins'],['cartes','Cartes']]};
+const ICI_VITRINE={magasin:'au magasin',tannerie:'à la tannerie',herboristerie:'à l’herboristerie',forge:'à la forge',tour:'à la Tour Mystique',bibliotheque:'à la Bibliothèque'};
 const ICONES_VITRINE={herboristerie:'<path d="M5 19c0-8 5-14 14-14 0 9-6 14-14 14zm0 0 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
  magasin:'<path d="M4 9h16l-1.5 10h-13zM8 9a4 4 0 0 1 8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
  tannerie:'<path d="M7 4h10l2 5-3 2 1 9H7l1-9-3-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
  forge:'<path d="M3 8h13c0 3 2 4 5 4v2h-6l1 3h3v3H6v-3h3l1-3c-4 0-7-3-7-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+ bibliotheque:'<path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
  tour:'<path d="M8 21V9l4-6 4 6v12M8 13h8M6 21h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="4" r="1.2" fill="currentColor"/>'};
 const PAR_PAGE_VITRINE=16;
 const vitrine={bat:'',onglet:'',sel:{},page:{},cherche:{},payer:'bourse'};
@@ -1217,6 +1220,7 @@ function habilleVitrine(){const boite=$('dom-fiche'),b=batimentDom(domPageSel);i
 function vitRendCorps(){const corps=vitBoite,b=vitBat,client=vitClient;if(!corps||!b)return;corps.replaceChildren();
  if(vitrine.onglet==='batiment'){corps.append(vitFiche);return}
  if(b.fonction==='tour'){vitTour(corps,b,client,vitrine.onglet);return}
+ if(b.fonction==='bibliotheque'){vitBibliotheque(corps,b,client,vitrine.onglet);return}
  if(vitrine.onglet==='fabriquer'){vitEtabli(corps,b,client);return}
  vitGrille(corps,b,client,vitrine.onglet)}
 // Grille, recherche, pages ; à droite, la case choisie et les autres.
@@ -1350,3 +1354,34 @@ function vitSavoir(corps,client,R){corps.className='vit-corps';const mj=mjDom(),
  const agir=vitEl('button','vit-agir','Acheter une ligne de savoir — '+prix+' or');agir.type='button';if(!ok){agir.classList.add('inactif');agir.setAttribute('aria-disabled','true')}vitRefus(agir,ok?'':raison);
  agir.onclick=()=>{if(!ok)return;const d=inconnus[Math.floor(Math.random()*inconnus.length)];ajouteOr(client,-prix);domaine.savoirSpheres=[...connu,d.cle];sauveDomaine();
   apresMagasin()};corps.append(agir)}
+/* v1.196 — La Bibliothèque. Le Bestiaire : chaque adversaire que la troupe a analysé, ce qu'elle en sait — le reste se lit « ? ».
+   Une grille de portraits ; à droite, celui qu'on regarde. Parchemins et Cartes attendent leur contenu. */
+function bestiaireConnu(){const an=(catalog&&catalog.analyses)||{};return (catalog.monsters||[]).filter(m=>m&&Array.isArray(an[m.id])&&an[m.id].length).sort((x,y)=>String(x.name).localeCompare(String(y.name),'fr'))}
+function portraitBestiaire(m,cls){const p=vitEl('span',cls);if(m.image){const im=vitEl('img');im.src=m.image;im.alt='';im.draggable=false;p.append(im)}else p.textContent=String(m.name||'?').trim().charAt(0).toUpperCase();return p}
+function lignesBestiaire(m){const o={...profilDuModele(m)},eq=typeof equipeAdversaire==='function'?equipeAdversaire(o):o,att=attackChoices(eq,items());
+ const nomT=id=>{const t=typeof talent==='function'?talent(id):null;return t?(typeof nomEnClair==='function'?nomEnClair(t.name):t.name):''};
+ return {pv:()=>String(Math.trunc(Number(m.pv))||0),def:()=>String(defOf(o)),dmg:()=>'+ '+degatsDe(o),attaques:()=>att.length?att.map(at=>(at.name||'Attaque')+' '+desAuJournal(at.dice)).join(' · '):'aucune',
+  xp:()=>String(Math.trunc(Number(m.xp))||0),talents:()=>{const l=(o.talents||[]).map(nomT).filter(Boolean);return l.length?l.join(', '):'aucun'},
+  equip:()=>{const l=(eq.inventaire||[]).map(id=>items().find(x=>x&&x.id===id)).filter(Boolean);return l.length?l.map(x=>'⟦'+x.id+'⟧').join(' '):'aucun'}}}
+function vitBibliotheque(corps,b,client,onglet){if(onglet!=='bestiaire')return;const l=bestiaireConnu(),cle=b.id+'|bestiaire';
+ if(!l.length){corps.className='vit-corps';corps.append(vitEl('p','muted vit-vide','Aucun adversaire analysé pour l’instant.'));return}
+ const gauche=vitEl('div','vit-gauche'),droite=vitEl('aside','vit-fiche biblio-fiche');corps.append(gauche,droite);corps.className='vit-corps vit-a-grille';
+ const choisi=l.find(m=>m.id===vitrine.sel[cle])||l[0],grille=vitEl('div','vit-grille biblio-grille');
+ l.forEach(m=>{const c=vitEl('button','vit-case biblio-case'+(m===choisi?' choisie':''));c.type='button';c.append(portraitBestiaire(m,'biblio-portrait'),vitEl('span','vit-case-nom',m.name));
+  c.onclick=()=>{vitrine.sel[cle]=m.id;vitRendCorps()};grille.append(c)});gauche.append(grille);
+ const su=new Set(catalog.analyses[choisi.id]||[]),dit=lignesBestiaire(choisi);
+ droite.append(portraitBestiaire(choisi,'biblio-portrait grand'),vitEl('h3','vit-fiche-nom',choisi.name));
+ const t=vitEl('div','biblio-infos');INFOS_ANALYSE.forEach(([k,nom])=>{const r=vitEl('div','biblio-info'+(su.has(k)?'':' inconnu'));r.append(vitEl('span','biblio-label',nom));
+  const v=vitEl('span','biblio-val');if(su.has(k)){try{decorate(v,dit[k]())}catch(e){v.textContent='?'}}else v.textContent='?';r.append(v);t.append(r)});droite.append(t)}
+/* v1.196 — « Ouvrir la Carte », chez le MJ, en haut de la fenêtre d'un bâtiment, à côté de la croix : la carte que l'éditeur
+   de Cartes lui a liée s'ouvre, comme le bouton de l'onglet Cartes. Plusieurs : un menu les propose. */
+const ouvreCarteBat=document.createElement('button');ouvreCarteBat.type='button';ouvreCarteBat.className='dom-ouvre-carte';ouvreCarteBat.textContent='Ouvrir la Carte';ouvreCarteBat.hidden=true;
+{const x=ficheDomDialog.querySelector('.dialog-head [data-close]');if(x)x.before(ouvreCarteBat)}
+const cartesDuBatiment=b=>b&&typeof maps!=='undefined'&&Array.isArray(maps)?maps.filter(m=>m&&m.batiment===b.id):[];
+function majOuvreCarte(){const l=cartesDuBatiment(batimentDom(domPageSel));ouvreCarteBat.hidden=!mjDom()||!l.length;const menu=ficheDomDialog.querySelector('.dom-cartes-menu');if(menu)menu.remove()}
+function ouvreCarteDuBatiment(id){if(!mjDom()||typeof openBattleMap!=='function')return;if(ficheDomDialog.open)ficheDomDialog.close();openBattleMap(id)}
+ouvreCarteBat.onclick=e=>{e.stopPropagation();const l=cartesDuBatiment(batimentDom(domPageSel));if(!l.length)return;if(l.length===1){ouvreCarteDuBatiment(l[0].id);return}
+ const vieux=ficheDomDialog.querySelector('.dom-cartes-menu');if(vieux){vieux.remove();return}
+ const menu=vitEl('div','dom-cartes-menu');l.forEach(m=>{const b2=vitEl('button','',m.name||'Carte');b2.type='button';b2.onclick=()=>ouvreCarteDuBatiment(m.id);menu.append(b2)});ouvreCarteBat.after(menu)};
+ficheDomDialog.addEventListener('click',e=>{const menu=ficheDomDialog.querySelector('.dom-cartes-menu');if(menu&&!menu.contains(e.target)&&e.target!==ouvreCarteBat)menu.remove()});
+{const rf=renderDomFiche;renderDomFiche=function(...x){const r=rf(...x);majOuvreCarte();return r}}
