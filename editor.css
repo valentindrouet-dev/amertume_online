@@ -4348,11 +4348,18 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .corps .place.p-bourse .bourse-couleur:hover{background:var(--panel-2)}.corps .place.p-bourse .bourse-couleur .gem-ico{width:26px;height:26px}
 body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page-maj #save-status,body.page-maj footer{display:none!important}
 #maj-page{display:none;padding:16px 28px 26px}body.page-maj #maj-page{display:block}
-.maj-lignes{list-style:none;margin:0;padding:0;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;background:var(--panel-2)}
-.maj-ligne{border-top:1px solid var(--line)}.maj-ligne:first-child{border-top:0}.maj-ligne:nth-child(even){background:color-mix(in srgb,var(--ink) 3%,transparent)}
-.maj-ligne label{display:grid;grid-template-columns:auto 64px 92px minmax(0,1fr);align-items:center;gap:12px;padding:7px 14px;cursor:pointer}
-.maj-ligne input{width:18px;height:18px;margin:0}
-.maj-v{font:700 14px/1 'Killam',Georgia,serif;color:var(--accent)}.maj-d{font:600 12px/1 system-ui;color:var(--muted)}.maj-t{font:500 14px/1.3 system-ui;color:var(--ink)}
+.maj-panel{max-width:1200px;margin:0 auto}
+.maj-actuelle{margin:0 0 14px;font:500 14px/1.4 system-ui;color:var(--muted)}.maj-actuelle b{color:var(--ink)}
+.maj-carte{margin:0 0 14px;padding:14px 22px 12px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:0 1px 4px color-mix(in srgb,var(--ink) 8%,transparent)}
+.maj-carte.actuelle{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 14%,var(--panel)),var(--panel) 70px)}
+.maj-tete{display:flex;align-items:baseline;gap:12px;margin:0 0 6px}
+.maj-v{font:800 22px/1 system-ui;color:var(--ink)}.maj-carte.actuelle .maj-v{color:var(--accent)}
+.maj-d{font:500 13px/1 system-ui;color:var(--muted)}
+.maj-badge{padding:3px 10px;border-radius:999px;border:1px solid var(--line-strong);background:var(--panel);font:500 12px/1.3 system-ui;color:var(--muted)}
+.maj-lignes{list-style:none;margin:0;padding:0}
+.maj-ligne label{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;padding:3px 0;cursor:pointer}
+.maj-ligne input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.maj-t{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:400 14px/1.5 system-ui;color:var(--ink)}
 .maj-ligne.vue .maj-t{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
 /* v1.210 — Le trait sous le nom de chaque caractéristique et compétence revient ; seule la nature était de trop. */
 .fiche-onglet .vignette-texte>:is(.vignette-desc,.vignette-puces){margin-top:3px;padding-top:4px;border-top:1px solid var(--line)}

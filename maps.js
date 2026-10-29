@@ -1735,7 +1735,7 @@ const tabs=document.createElement('nav');tabs.className='tabs';
 tabs.innerHTML='<button data-page="accueil">Accueil</button><button data-page="table" class="on">Table</button><button data-page="maps">Cartes</button>'
  +'<button data-page="domaine">Domaine</button><button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
  +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button><button data-page="icones">Icônes</button><button data-page="gemmes">Sphères</button>'
- +'<button data-page="regles">Règles</button><button data-page="settings">Paramètres</button><button data-page="maj">MAJ</button>';
+ +'<button data-page="regles">Règles</button><button data-page="settings">Paramètres</button><button data-page="maj">Versions</button>';
 document.querySelector('.view-controls').before(tabs);
 const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','gemmes','regles','settings','maj'];
 /* Sous l'onglet ouvert, chez le MJ seul et pendant une table en ligne : un petit viseur. Un clic envoie tous les joueurs

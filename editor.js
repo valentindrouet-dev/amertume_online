@@ -718,7 +718,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.012 : les types de ressource de la carte, partagés par toutes les cartes.
  c.typesRessources=normaliseTypesRessources(c.typesRessources);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
- if(Array.isArray(c.majVerifiees))c.majVerifiees=c.majVerifiees.filter(v=>typeof v==='string'&&/^\d+\.\d+$/.test(v)).slice(-2000);else delete c.majVerifiees;
+ if(Array.isArray(c.majVerifiees))c.majVerifiees=c.majVerifiees.filter(v=>typeof v==='string'&&/^\d+\.\d+(#\d{1,3})?$/.test(v)).slice(-8000);else delete c.majVerifiees;
  {const o=c.iconesFiche&&typeof c.iconesFiche==='object'&&!Array.isArray(c.iconesFiche)?c.iconesFiche:{};c.iconesFiche={};['stats','inventaire','classe','bonus','espece','metier','statistiques'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.iconesFiche[k]=v})}
  // v1.195 : l'icône choisie de chaque sphère ; et la planche des sphères, 6 × 5, découpée une fois.
  c.iconesGemmes=normaliseIconesGemmes(c.iconesGemmes);
@@ -9650,16 +9650,25 @@ function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const u
 // v1.210 : une sphère de plus ou de moins dans les Richesses d'un aventurier, chez le MJ, sans ouvrir de fenêtre.
 function sphereEnPlus(a,k,pas){if(view!=='mj'||!a)return;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);const n=Math.max(0,(Math.trunc(Number(a.richesses[k]))||0)+pas);
  if(n)a.richesses[k]=n;else delete a.richesses[k];a.richesses={...a.richesses};if(typeof renderHeroes==='function')renderHeroes();if(arbresDialog.open&&typeof renderArbres==='function')renderArbres();render();scheduleSave()}
-/* v1.210 — L'onglet MAJ, chez le MJ seul : chaque publication sur une ligne — son numéro, sa date, son titre — et une case
-   qu'il coche quand il l'a vérifiée. Les cases cochées voyagent avec le contenu (catalog.majVerifiees). */
-const majPage=document.createElement('main');majPage.id='maj-page';majPage.innerHTML='<section class="cat-panel panel"><header class="cat-head"><h2>MAJ</h2></header><div id="maj-liste"></div></section>';
+/* v1.210 — L'onglet MAJ, chez le MJ seul. v1.212 : il s'appelle Versions — une carte par publication, son numéro, sa date ; dessous,
+   une ligne par modification (versions.json, que publie.sh tient à jour), chacune avec sa case, que le MJ coche une fois vérifiée.
+   Les cases cochées voyagent avec le contenu (catalog.majVerifiees). Le fichier ne se charge qu'à l'ouverture de l'onglet. */
+const majPage=document.createElement('main');majPage.id='maj-page';majPage.innerHTML='<section class="cat-panel panel maj-panel"><header class="cat-head"><h2>Historique des versions</h2></header><p class="maj-actuelle" id="maj-actuelle"></p><div id="maj-liste"></div></section>';
 document.querySelector('main.layout').after(majPage);
-function renderMaj(){const boite=$('maj-liste');if(!boite)return;boite.replaceChildren();const A=typeof ACTUALITES!=='undefined'?ACTUALITES:{versions:[]},vus=new Set(Array.isArray(catalog.majVerifiees)?catalog.majVerifiees:[]);
- const ul=document.createElement('ul');ul.className='maj-lignes';
- (A.versions||[]).forEach(x=>{if(!x||!x.v)return;const li=document.createElement('li');li.className='maj-ligne'+(vus.has(x.v)?' vue':'');const lab=document.createElement('label');
-  const c=document.createElement('input');c.type='checkbox';c.checked=vus.has(x.v);c.disabled=view!=='mj';
-  c.onchange=()=>{const l=new Set(Array.isArray(catalog.majVerifiees)?catalog.majVerifiees:[]);if(c.checked)l.add(x.v);else l.delete(x.v);catalog.majVerifiees=[...l];li.classList.toggle('vue',c.checked);scheduleSave()};
-  const v=document.createElement('b');v.className='maj-v';v.textContent='v'+x.v;const d=document.createElement('span');d.className='maj-d';d.textContent=x.d||'';const t=document.createElement('span');t.className='maj-t';t.textContent=x.t||'';
-  lab.append(c,v,d,t);li.append(lab);ul.append(li)});boite.append(ul)}
+let versionsDetail=null;
+function chargeVersions(){if(versionsDetail)return Promise.resolve(versionsDetail);const v=typeof IMG_V!=='undefined'?IMG_V:String(Date.now());
+ return fetch('./versions.json?v='+encodeURIComponent(v)).then(r=>r.ok?r.json():[]).catch(()=>[]).then(l=>{versionsDetail=Array.isArray(l)?l:[];return versionsDetail})}
+function renderMaj(){const boite=$('maj-liste');if(!boite)return;chargeVersions().then(l=>{boite.replaceChildren();const vus=new Set(Array.isArray(catalog.majVerifiees)?catalog.majVerifiees:[]);
+ const fr=d=>{const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(String(d||''));return m?m[3]+'/'+m[2]+'/'+m[1]:String(d||'')};
+ {const p=$('maj-actuelle');if(p){p.replaceChildren();if(l[0]){p.append('Version actuelle ');const b=document.createElement('b');b.textContent=l[0].v;p.append(b,' — '+fr(l[0].d)+'.')}}}
+ const coche=(cle,c,li)=>{const s2=new Set(Array.isArray(catalog.majVerifiees)?catalog.majVerifiees:[]);if(c.checked)s2.add(cle);else s2.delete(cle);catalog.majVerifiees=[...s2];li.classList.toggle('vue',c.checked);scheduleSave()};
+ l.forEach((x,k)=>{if(!x||!x.v)return;const carte=document.createElement('section');carte.className='maj-carte'+(k===0?' actuelle':'');
+  const h=document.createElement('div');h.className='maj-tete';const v=document.createElement('b');v.className='maj-v';v.textContent=x.v;const d=document.createElement('span');d.className='maj-d';d.textContent=fr(x.d);h.append(v,d);
+  if(k===0){const t=document.createElement('span');t.className='maj-badge';t.textContent='version actuelle';h.append(t)}
+  const ul=document.createElement('ul');ul.className='maj-lignes';
+  (Array.isArray(x.l)&&x.l.length?x.l:[x.t||'']).forEach((txt,n)=>{const cle=x.v+'#'+n,li=document.createElement('li');li.className='maj-ligne';const lab=document.createElement('label');
+   const c=document.createElement('input');c.type='checkbox';c.checked=vus.has(cle)||vus.has(x.v);c.disabled=view!=='mj';li.classList.toggle('vue',c.checked);c.onchange=()=>coche(cle,c,li);
+   const t=document.createElement('span');t.className='maj-t';t.textContent=txt;t.title=txt;lab.append(c,t);li.append(lab);ul.append(li)});
+  carte.append(h,ul);boite.append(carte)})})}
 // showPage est déclaré plus loin (maps.js) : l'onglet s'y raccroche une fois tous les scripts chargés.
 (function accroche(){if(typeof showPage!=='function'){setTimeout(accroche,100);return}const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='maj')renderMaj();return r}})();
