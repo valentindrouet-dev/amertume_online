@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.146 — Infuser sous le bloc du bonus ; l'icône d'un bonus au logo choisi grisée comme les autres. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function boutonInfuser(ctx,t,l){")&&fs.readFileSync('editor.css','utf8').includes(".sphere-noeud:is(.dispo,.verrou) .sphere-rond>:is(.logo-bonus,.logo-equip){filter:grayscale(1);opacity:.75}"),'v1.146');
 /* v1.145 — La bourse de gemmes d'un aventurier : dans son inventaire, et en tête de son arbre Bonus. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("if(gm){gm.classList.add('gemmes-corps');corps.append(gm)}}")&&fs.readFileSync('editor.js','utf8').includes("bourse.className='sphere-bourse';"),'v1.145');
 /* v1.144 — Les gemmes gagnées en jouant : l'onglet Gemmes, le dé, les déclencheurs ; le moteur appelle le dé. */

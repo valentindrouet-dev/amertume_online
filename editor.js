@@ -8876,6 +8876,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   const nat=document.createElement('p');nat.className='detail-type-bonus';nat.textContent=natureBonus(p);
   const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,nat,desc);
   tete.append(pile,droite);panneau.append(tete);
+  if(a){const bi=boutonInfuser(ctx,t,l);if(bi)panneau.append(bi)}
   if(mj&&!a){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
   else if(a){const mq=marquesDe(a).has(t.id),ok=k<max&&(mq||k>0||ouverteAvecMarques(a,t,l));tete.classList.add('cliquable',mq?'marquee':k>=max?'acquise':ok?'achetable':'fermee');
    if(ok){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>marqueSphere(ctx,t,l)}}
@@ -8990,9 +8991,14 @@ function barreInfusion(ctx,l){const {a}=ctx,b=document.createElement('div');b.cl
  // v1.145 : à gauche, la bourse de l'aventurier — ce qu'il peut dépenser.
  const bourse=document.createElement('div');bourse.className='sphere-bourse';const lg=ligneGemmes(a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES),null,a.name);
  if(lg)bourse.append(lg);else{const v=document.createElement('span');v.className='muted';v.textContent='Aucune gemme';bourse.append(v)}b.append(bourse);
- const bt=document.createElement('button');bt.type='button';bt.className='primary infuser';bt.append('Infuser les Sphères');
- tot.forEach(p=>bt.append(puceGemme(p,gemmesDe(a,p.cle)<p.n)));
- bt.disabled=!tot.length||!assez||(estMort(a)&&view!=='mj')||figeEnCombat(a);bt.onclick=()=>infuseSpheres(ctx,l);b.append(bt);return b}
+ return b}
+/* v1.146 — Sous le bloc d'un bonus, « Infuser les Sphères » : il infuse ce bonus, avec ceux qu'on a marqués, et dit le prix de
+   l'ensemble ; grisé quand le bonus n'est relié à rien de tenu ou que les gemmes manquent ; absent quand tous ses paliers sont pris. */
+function boutonInfuser(ctx,t,l){const {a}=ctx,k=palierDe(a,t);if(k>=paliersDe(t))return null;const m=marquesDe(a),mq=m.has(t.id),ouvert=mq||k>0||ouverteAvecMarques(a,t,l);
+ const tot=totalMarques(a,l);if(!mq){const p=prixSphere(t),e=tot.find(x=>x.cle===p.cle);if(e)e.n+=p.n;else tot.push({...p})}
+ const assez=tot.every(p=>gemmesDe(a,p.cle)>=p.n),b=document.createElement('div');b.className='sphere-infuser-bloc';
+ const bt=document.createElement('button');bt.type='button';bt.className='primary infuser';bt.append('Infuser les Sphères');tot.forEach(p=>bt.append(puceGemme(p,gemmesDe(a,p.cle)<p.n)));
+ bt.disabled=!ouvert||!assez||(estMort(a)&&view!=='mj')||figeEnCombat(a);bt.onclick=()=>{m.add(t.id);infuseSpheres(ctx,l)};b.append(bt);return b}
 function infuseSpheres(ctx,l){const {a,poserPalier,note,majTable}=ctx;if(!a)return;const m=marquesDe(a),marques=l.filter(t=>m.has(t.id)),tot=totalMarques(a,l);
  if(!marques.length||tot.some(p=>gemmesDe(a,p.cle)<p.n))return;
  a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.146","d":"2026-10-29","t":"Arbre Bonus : Infuser sous le bloc, icônes grisées"},
 {"v":"1.145","d":"2026-10-29","t":"Gemmes de l'aventurier visibles : inventaire et arbre Bonus"},
 {"v":"1.144","d":"2026-10-29","t":"Gemmes gagnées en jouant : onglet Gemmes, dé de gemme, déclencheurs"},
 {"v":"1.143","d":"2026-10-29","t":"DEF : chiffre à la taille des autres caractéristiques"},

@@ -3859,7 +3859,7 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .sphere-noeud.depart .sphere-rond{box-shadow:0 0 0 3px var(--panel-2),0 0 0 5px #c99a3c,0 2px 6px rgba(0,0,0,.2)}
 .sphere-noeud.choisi .sphere-rond{border-color:#c99a3c;box-shadow:0 0 10px 2px color-mix(in srgb,#c99a3c 45%,transparent)}
 .sphere-noeud.depart.choisi .sphere-rond{box-shadow:0 0 0 3px var(--panel-2),0 0 0 5px #c99a3c,0 0 12px 4px color-mix(in srgb,#c99a3c 45%,transparent)}
-.sphere-noeud:is(.dispo,.verrou) .sphere-rond>.logo-bonus{filter:grayscale(1);opacity:.75}
+.sphere-noeud:is(.dispo,.verrou) .sphere-rond>:is(.logo-bonus,.logo-equip){filter:grayscale(1);opacity:.75}
 .sphere-noeud.verrou .sphere-rond{background:color-mix(in srgb,#7d7a74 24%,var(--panel));border-color:var(--line-strong)}
 .sphere-noeud.verrou .sphere-rond>.bonus-valeur{border-color:var(--line-strong)}
 .sphere-paliers{position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;gap:3px;margin-top:3px}
@@ -3958,10 +3958,11 @@ body:not(.carte-pleine) .interface-message{display:none}
 .corps .gemmes-corps{position:absolute;left:6px;right:6px;bottom:34px;margin:0;gap:2px 8px;z-index:1}
 .corps:has(.gemmes-corps),.corps-sac>.corps:has(.gemmes-corps){padding-bottom:62px}
 .corps .gemmes-corps .gem-ico{width:18px;height:18px}.corps .gemmes-corps b{font-size:13px}
-.sphere-infusion .infuser{display:inline-flex;align-items:center;gap:10px}
-.sphere-infusion .infuser .puce-gemme{padding:1px 8px;border-radius:999px;background:var(--panel);color:var(--ink)}
+.infuser{display:inline-flex;align-items:center;gap:10px}
+.infuser .puce-gemme{padding:1px 8px;border-radius:999px;background:var(--panel);color:var(--ink)}
+.arbres-detail .sphere-infuser-bloc{display:flex;justify-content:flex-end;margin:12px 0 4px}
 .sphere-noeud.marque .sphere-rond{border-color:#c99a3c;border-style:dashed;box-shadow:0 0 12px 3px color-mix(in srgb,#c99a3c 50%,transparent)}
-.sphere-noeud.marque .sphere-rond>.logo-bonus{filter:none;opacity:1}
+.sphere-noeud.marque .sphere-rond>:is(.logo-bonus,.logo-equip){filter:none;opacity:1}
 .spherier-lien.marque{stroke:#c99a3c;stroke-opacity:.75;stroke-dasharray:8 7}
 .arbres-v2 .arbres-detail .detail-tete.cliquable.marquee{cursor:pointer;border-color:#c99a3c;border-style:dashed;background:var(--panel)}
 .gemmes-bonus-liste{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:6px 18px}
