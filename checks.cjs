@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.153 — Les pastilles de l'éditeur en place sont pâles. */
+{const css=fs.readFileSync('editor.css','utf8');assert.ok(css.includes(".sphere-pastilles .die-pick{background:color-mix(in srgb,var(--teinte) 22%,var(--panel-2))"),'v1.153');}
 /* v1.152 — L'éditeur en place d'un bonus du sphérier ; plus de paliers à ces bonus. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function editeurSphere(t){")&&ed.includes("else if(mj)panneau.append(editeurSphere(t));")&&ed.includes("   delete t.paliersActifs;delete t.paliers;"),'v1.152');}
 /* v1.151 — Le bonus choisi : une aura dorée, plus de liseré bleu. */
