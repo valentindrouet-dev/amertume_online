@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.167 — Un seul dé par déclencheur : plus de colonne Dés, ni de champ Dés au dé du MJ. */
+{const gm=fs.readFileSync('gemmes.js','utf8');assert.ok(gm.includes("['Actif','Déclencheur','Couleur','Seuil','Détection','Fois']")&&!gm.includes('name="des"')&&!gm.includes("g.declencheurs[d.cle].des=n"),'v1.167');}
 /* v1.166 — La sphère gagnée : des éclats qui jaillissent et se rassemblent en une gemme. */
 assert.ok(fs.readFileSync('gemmes.js','utf8').includes("d.className='eclat-sphere';")&&fs.readFileSync('editor.css','utf8').includes(".eclat-sphere{position:absolute;"),'v1.166');
 /* v1.165 — La case du seuil teintée selon sa valeur. */
@@ -5408,7 +5410,7 @@ assert.ok(fs.readFileSync('gemmes.js','utf8').includes("ss.classList.add('seuil-
 /* v1.158 — La Cellule à Plasma ne chevauche plus la barre de mouvement. */
 assert.ok(fs.readFileSync('index.html','utf8').includes(" if(rm.right+ec+w<=rp.right-4)c.style.left=Math.round(rm.right+ec-rb.left)+'px';"),'v1.158');
 /* v1.157 — Une même action, une gemme de chaque couleur au plus ; plus de dés en plus sur un critique. */
-{const gm=fs.readFileSync('gemmes.js','utf8');assert.ok(gm.includes("if(gagne&&!opts.manuel){const kc=a.id+'|'+couleur;if(gemmesCetteAction.has(kc))gagne=0;")&&gm.includes(" const des=Math.max(1,Math.min(12,opts.des||r.des));")&&!gm.includes("Dés sur un critique"),'v1.157');}
+{const gm=fs.readFileSync('gemmes.js','utf8');assert.ok(gm.includes("if(gagne&&!opts.manuel){const kc=a.id+'|'+couleur;if(gemmesCetteAction.has(kc))gagne=0;")&&gm.includes(" const des=1;")&&!gm.includes("Dés sur un critique"),'v1.157');}
 /* v1.156 — Le zoom de la Table s'arrête à la carte entière : 100 %, jamais moins. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("function zoomMapAt(facteur,cx,cy){const z=Math.min(8,Math.max(1,mapZoom*facteur));")&&page.includes("if(!w||!h)return;if(!(mapZoom>=1))mapZoom=1;")
  &&!page.includes("Math.max(.4,mapZoom*facteur)")&&fs.readFileSync('maps.js','utf8').includes("try{mapZoom=Math.min(8,Math.max(1,s.z));"),'v1.156');}
@@ -5453,7 +5455,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("if(gm){gm.classList.add(
  const R=ctx.n({faces:{diamant:[0,0,0,1,0,3]},critique:9,plafond:-1,declencheurs:{tuer:{couleur:'saphir',des:2,actif:false},'def-tient':{seuil:9}}});
  const J=JSON.stringify;assert.equal(R.faces,undefined);assert.equal(R.critique,undefined);assert.equal(R.plafond,0);
  /* v1.155 : le seuil vient de l'ancienne table des faces (Diamant ici 4+), sinon 5+, 6+ pour le Diamant. */
- assert.equal(J(R.declencheurs.tuer),J({couleur:'saphir',des:2,actif:false,seuil:5}));assert.equal(J(R.declencheurs.critique),J({couleur:'rubis',des:1,actif:true,seuil:5}));
+ assert.equal(J(R.declencheurs.tuer),J({couleur:'saphir',actif:false,seuil:5}));assert.equal(J(R.declencheurs.critique),J({couleur:'rubis',actif:true,seuil:5}));
  assert.equal(R.declencheurs['proteger-allie'].seuil,4);assert.equal(R.declencheurs['def-tient'].seuil,6);assert.equal(ctx.n({}).declencheurs['def-tient'].seuil,6);assert.equal(ctx.n({}).declencheurs['subir-75'].seuil,5);}
 /* v1.143 — Sur la fiche et les cartes d'aventurier, l'écu de DEF à la taille des autres icônes, son chiffre à celle des autres chiffres. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("const k=im.closest('.stat-row.en-icones')?CHIFFRE_ECU_FICHE:1;")&&fs.readFileSync('editor.css','utf8').includes('.stat-row.en-icones .stat-tile .ecu{width:36px;height:44px}'),'v1.143');

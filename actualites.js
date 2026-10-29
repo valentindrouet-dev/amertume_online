@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.167","d":"2026-10-29","t":"Sphères : un seul dé, le seuil décide"},
 {"v":"1.166","d":"2026-10-29","t":"Sphères : animation des éclats"},
 {"v":"1.165","d":"2026-10-29","t":"Sphères : seuils colorés"},
 {"v":"1.164","d":"2026-10-29","t":"Sphérier collé à ses bonus"},

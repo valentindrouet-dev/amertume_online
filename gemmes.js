@@ -1,7 +1,7 @@
 /* ---------- v1.144 : les gemmes gagnées en jouant ----------
    Chaque aventurier a sa bourse de gemmes, qui ne se partage pas : ce sont ses actions qui la remplissent. Quand il réussit une
    action liée à une couleur — un déclencheur —, il lance un dé de gemme : sur le seuil du déclencheur ou plus (5+ de base), une
-   Brisure de la couleur, jamais plus d'une (v1.155) ; un déclencheur peut lancer plusieurs dés, réglés un à un par le MJ, et une
+   Brisure de la couleur, jamais plus d'une (v1.155) ; un déclencheur lance un seul dé, son seuil fait sa difficulté (v1.167), et une
    même action ne donne qu'une gemme de chaque couleur (v1.157). En combat, au plus tant de Brisures de chaque
    couleur par combat ; hors combat, chaque déclencheur ne joue qu'une fois par zone de la carte. Un boss vaincu vaut à chacun un
    Éclat de la couleur qu'il a le plus déclenchée. Tout se règle dans l'onglet Gemmes du MJ (catalog.gemmesRegles) ; le dé part
@@ -63,7 +63,7 @@ function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:
  boss:{taille:['brisure','eclat','brome'].includes(g.boss&&g.boss.taille)?g.boss.taille:'eclat',n:nbEntier(g.boss&&g.boss.n,0,20,1)},
  fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{}};
  DECLENCHEURS_GEMMES.forEach(d=>{const x=g.declencheurs&&g.declencheurs[d.cle]||{},couleur=COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'||x.couleur==='etat'?x.couleur:d.couleur;
-  out.declencheurs[d.cle]={couleur,des:nbEntier(x.des,1,6,1),actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,d.seuil||seuilDesFaces(g,couleur))}});
+  out.declencheurs[d.cle]={couleur,actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,d.seuil||seuilDesFaces(g,couleur))}});
  return out}
 function reglesGemmes(){return normaliseReglesGemmes(typeof catalog!=='undefined'&&catalog?catalog.gemmesRegles:null)}
 function poseReglesGemmes(f){catalog.gemmesRegles=reglesGemmes();f(catalog.gemmesRegles);catalog.gemmesRegles=normaliseReglesGemmes(catalog.gemmesRegles);
@@ -97,7 +97,8 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  // v1.163 : un déclencheur « une fois par tour » ne rejoue pas avant le tour suivant.
  if(d.parTour&&!opts.manuel&&typeof cleTour==='function'){if(!s.tours||typeof s.tours!=='object')s.tours={};if(s.tours[cle]===cleTour())return null;s.tours[cle]=cleTour()}
  s.compte[cle]=(Math.trunc(Number(s.compte[cle]))||0)+1;
- const des=Math.max(1,Math.min(12,opts.des||r.des));
+ // v1.167 : un seul dé par déclencheur ; le seuil fait la difficulté.
+ const des=1;
  const faces=Array.from({length:des},()=>typeof d6==='function'?d6():1+Math.floor(Math.random()*6));
  let gagne=faces.some(f=>f>=r.seuil)?1:0;
  /* v1.157 : une même action — un coup, un talent et toutes ses cibles — ne donne qu'une gemme de chaque couleur : chaque
@@ -216,16 +217,16 @@ let larcinGemme=null;
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
 const deGemmeDialog=dialog('de-gemme','Dé de gemme','<form id="de-gemme-form"><div class="edit-grid"><label>Déclencheur<select name="decl" id="de-gemme-decl"></select></label>'
- +'<label>Dés<input name="des" type="number" min="1" max="12" value="1"></label><label>Compétence<select name="comp" id="de-gemme-comp"></select></label><label>État<select name="etat" id="de-gemme-etat"></select></label></div>'
+ +'<label>Compétence<select name="comp" id="de-gemme-comp"></select></label><label>État<select name="etat" id="de-gemme-etat"></select></label></div>'
  +'<p class="muted" id="de-gemme-dit"></p><div class="form-actions"><button class="primary">Lancer</button></div></form>');
 let deGemmeActeur=null;
 function ouvreDeGemme(a){if(view!=='mj'||!a||!a.hero)return;deGemmeActeur=a;const f=$('de-gemme-form'),sd=$('de-gemme-decl'),sc=$('de-gemme-comp'),se=$('de-gemme-etat');sd.replaceChildren();sc.replaceChildren();se.replaceChildren();ETATS_JEU.forEach(e=>se.add(new Option(e,e)));
  [['combat','En combat'],['hors','Hors combat']].forEach(([ph,nom])=>{const g=document.createElement('optgroup');g.label=nom;DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).forEach(d=>g.append(new Option(d.nom+(d.auto?'':' (à la main)'),d.cle)));sd.append(g)});
- skillNames.forEach((n,k)=>sc.add(new Option(n,String(k))));f.des.value='1';
+ skillNames.forEach((n,k)=>sc.add(new Option(n,String(k))));
  const maj=()=>{const d=declencheurGemme(sd.value),r=reglesGemmes().declencheurs[sd.value];sc.closest('label').hidden=!(r&&r.couleur==='competence');se.closest('label').hidden=!(r&&r.couleur==='etat');
   const c=couleurDeclencheur(sd.value,{comp:sc.value,etat:se.value});$('de-gemme-dit').textContent=(d?d.nom:'')+' → '+(c?NOM_COULEUR_GEMME[c]:'')+(r&&!r.actif?' (déclencheur désactivé)':'')};
  sd.onchange=maj;sc.onchange=maj;se.onchange=maj;maj();
- f.onsubmit=e=>{e.preventDefault();const res=deGemme(deGemmeActeur,sd.value,{manuel:true,des:nbEntier(f.des.value,1,12,1),comp:sc.value,etat:se.value});deGemmeDialog.close();
+ f.onsubmit=e=>{e.preventDefault();const res=deGemme(deGemmeActeur,sd.value,{manuel:true,comp:sc.value,etat:se.value});deGemmeDialog.close();
   if(res&&!res.gagne&&typeof log==='function')log(nomNum(deGemmeActeur)+' · dé de gemme ⦃'+res.faces.join(',')+'⦄ : rien.',{ton:'talent',local:true});
   if(typeof render==='function')render();if(typeof renderHeroes==='function')renderHeroes()};
  deGemmeDialog.showModal()}
@@ -255,17 +256,16 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
  {const bt=document.createElement('button');bt.type='button';bt.className='gemmes-rafraichir';bt.textContent='Rafraîchir les stats de déclenchement';bt.onclick=()=>renderGemmes();boite.append(bt)}
  const fois=cle=>actors.reduce((n,a)=>n+(a&&a.hero&&a.gemmesSuivi&&a.gemmesSuivi.compte?Math.max(0,Math.trunc(Number(a.gemmesSuivi.compte[cle]))||0):0),0);
  [['combat','En combat'],['hors','Hors combat']].forEach(([ph,nom])=>{const t=document.createElement('table');t.className='gemmes-table gemmes-decl';const cap=document.createElement('caption');cap.textContent=nom;t.append(cap);
-  const tr=document.createElement('tr');['Actif','Déclencheur','Couleur','Dés','Seuil','Détection','Fois'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
+  const tr=document.createElement('tr');['Actif','Déclencheur','Couleur','Seuil','Détection','Fois'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
   DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).forEach(d=>{const r=R.declencheurs[d.cle],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
    const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].actif=cb.checked});renderGemmes()};c1.append(cb);
    const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d.nom;
    const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));if(d.couleur==='competence'||d.cle==='test-competence')s.add(new Option('Compétence testée','competence'));if(d.couleur==='etat')s.add(new Option('Couleur de l’état','etat'));
    s.value=r.couleur;const im=icone('brisure',['competence','etat'].includes(r.couleur)?'citrine':r.couleur);if(['competence','etat'].includes(r.couleur))im.hidden=true;s.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].couleur=s.value});renderGemmes()};c3.append(im,s);
-   const c4=document.createElement('td');c4.append(nombre(r.des,1,6,(g,n)=>{g.declencheurs[d.cle].des=n}));
    const c6=document.createElement('td');const ss=document.createElement('select');ss.className='gemmes-seuil';[1,2,3,4,5,6].forEach(n=>ss.add(new Option(n+'+',String(n))));ss.value=String(r.seuil);ss.classList.add('seuil-'+r.seuil);ss.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].seuil=Number(ss.value)});renderGemmes()};c6.append(ss);
    const c5=document.createElement('td');c5.className='muted gemmes-note';c5.textContent=d.auto?('Automatique'+(d.note?' — '+d.note:'')):'À la main (🎲 sur la fiche)';
    const c7=document.createElement('td');c7.className='gemmes-fois';const nf=fois(d.cle);c7.textContent=String(nf);if(!nf)c7.classList.add('zero');
-   row.append(c1,c2,c3,c4,c6,c5,c7);t.append(row)});boite.append(t)});
+   row.append(c1,c2,c3,c6,c5,c7);t.append(row)});boite.append(t)});
  // 3. Les récompenses et la fusion.
  h('Récompenses et fusion');
  {const l=document.createElement('div');l.className='gemmes-reglage';
