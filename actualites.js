@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.143","d":"2026-10-29","t":"DEF : chiffre à la taille des autres caractéristiques"},
 {"v":"1.142","d":"2026-10-29","t":"Bonus payés en gemmes, Infuser les Sphères"},
 {"v":"1.141","d":"2026-10-29","t":"DEF : nouveau bouclier, chiffre en blanc"},
 {"v":"1.140","d":"2026-10-29","t":"DEF au nouveau bouclier ; bonus seulement dans l'onglet Bonus"},

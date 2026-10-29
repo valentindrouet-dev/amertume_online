@@ -3963,3 +3963,6 @@ body:not(.carte-pleine) .interface-message{display:none}
 .gemmes-bonus-ligne{display:grid;grid-template-columns:26px 1fr 130px;align-items:center;gap:8px;margin:0}
 .gemmes-bonus-ligne img{width:24px;height:24px;object-fit:contain}
 .gemmes-bonus-ligne select{margin:0}
+/* v1.143 : sur la fiche et les cartes d'aventurier, l'écu de la DEF à la hauteur des autres icônes de caractéristique (44 px). */
+.stat-row.en-icones .stat-tile .ecu{width:36px;height:44px}
+.stat-row.en-icones .stat-tile .ecu img{width:100%;height:100%;display:block}
