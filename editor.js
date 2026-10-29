@@ -745,7 +745,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   ['Alchimiste','Forgeron','Tanneur','Mineur','Herboriste','Arcaniste'].forEach(n=>{if(!l.some(m=>m&&m.nom===n))l.push({nom:n});c.nbArbres=c.nbArbres&&typeof c.nbArbres==='object'&&!Array.isArray(c.nbArbres)?c.nbArbres:{};c.nbArbres['Métier · '+n]=1});
   c.metiers=l;c.semisForge.push('metiers-6')}
  // v1.128 : les métiers, nommés par le MJ — chacun a son arbre (famille « Métier · nom »).
- {const l=Array.isArray(c.metiers)?c.metiers:[],vus=new Set();c.metiers=l.map(m=>({nom:String(m&&m.nom||'').replace(/["<>·]/g,'').trim().slice(0,40)})).filter(m=>m.nom&&!vus.has(m.nom)&&vus.add(m.nom)).slice(0,40);if(!c.metiers.length)delete c.metiers}
+ {const l=Array.isArray(c.metiers)?c.metiers:[],vus=new Set();c.metiers=l.map(m=>({nom:String(m&&m.nom||'').replace(/["<>·]/g,'').trim().slice(0,40),...(m&&/^#[0-9a-f]{6}$/i.test(m.teinte||'')?{teinte:m.teinte}:{})})).filter(m=>m.nom&&!vus.has(m.nom)&&vus.add(m.nom)).slice(0,40);if(!c.metiers.length)delete c.metiers}
  // v1.114 : les paliers passent à 1, 5, 10, 15, 20 — les talents des niveaux 4, 7 et 10 suivent au 5, au 10 et au 15, la limite des joueurs aussi.
  if(!c.semisForge.includes('paliers-5')){const M={4:5,7:10,10:15};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
   if(c.limitesArbres)Object.keys(c.limitesArbres).forEach(k=>{const n=M[c.limitesArbres[k]];if(n)c.limitesArbres[k]=n});c.semisForge.push('paliers-5')}
@@ -7123,9 +7123,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y},liens:[]})));
    const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));g.append(ge)}
   else if(sphere)g.append(sphere.el);
-  else if(arbresOnglet==='metier'&&!famMetier){}
+  else if(arbresOnglet==='metier'&&!famMetier){if(a){const m=document.createElement('p');m.className='arbres-sans-metier';m.textContent='Vous n’avez pas encore de Métier, rendez-vous au Domaine pour en apprendre un !';g.append(m)}}
   else g.append(grille);
-  const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
+  const panneau=document.createElement('aside');panneau.className='arbres-detail';if(arbresOnglet==='metier'&&!famMetier&&a)panneau.style.display='none';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);
   /* v0.840 : un bonus du panneau lâché sur le grand rond d'un autre talent de l'arbre s'y copie, paliers et prix compris, à
      son premier chemin libre. */
@@ -8725,14 +8725,15 @@ const metiersJeu=()=>Array.isArray(catalog.metiers)?catalog.metiers:[];
 const familleMetier=nom=>nom?PREFIXE_METIER+nom:'';
 function familleMetierVue(a){const l=metiersJeu();if(a)return a.metier&&l.some(m=>m.nom===a.metier)?familleMetier(a.metier):'';
  if(!l.some(m=>m.nom===arbresMetierMJ))arbresMetierMJ=l[0]?l[0].nom:'';return familleMetier(arbresMetierMJ)}
-function ongletsArbre(a,classe){if(!a&&estFamilleMetier(classe))return [['classe',classe.slice(PREFIXE_METIER.length)]];
- const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=[['classe',classe||'Classe']];
- if(classe&&(plan||talentsSphere(classe).length))l.push(['bonus','Bonus']);
- const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece',e.nom]);
- if(a&&fm)l.push(['metier',a.metier]);
+// v1.130 : chaque onglet à la teinte de ce qu'il ouvre — la classe, l'espèce, le métier ; Bonus en or. Un aventurier a toujours son onglet Métier.
+function ongletsArbre(a,classe){if(!a&&estFamilleMetier(classe)){const n=classe.slice(PREFIXE_METIER.length);return [['classe',n,teinteMetier(n)]]}
+ const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=[['classe',classe||'Classe',teinteClasse(classe)]];
+ if(classe&&(plan||talentsSphere(classe).length))l.push(['bonus','Bonus','#c99a3c']);
+ const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece',e.nom,e.teinte]);
+ if(a)l.push(['metier',fm?a.metier:'Métier',fm?teinteMetier(a.metier):'']);
  return l}
 function barreOngletsArbre(onglets){const b=document.createElement('div');b.className='vit-onglets arbres-onglets';b.setAttribute('role','tablist');
- onglets.forEach(([k,n])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));
+ onglets.forEach(([k,n,teinte])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;if(teinte)t.style.setProperty('--teinte',teinte);t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));
   // La fenêtre garde sa taille d'un onglet à l'autre.
   t.onclick=()=>{if(arbresOnglet===k)return;const r=arbresDialog.getBoundingClientRect();arbresDialog.style.width=Math.round(r.width)+'px';arbresDialog.style.minHeight=Math.round(r.height)+'px';
    arbresOnglet=k;sphereSel=null;sphereLier=false;renderArbres()};b.append(t)});
@@ -8854,3 +8855,7 @@ function openArbresMetier(nom){if(view!=='mj'||!metiersJeu().some(m=>m.nom===nom
   b.onclick=e=>{e.stopPropagation();const v=prompt('Nom du nouveau métier','');const n=String(v||'').replace(/["<>·]/g,'').trim().slice(0,40);if(!n||metiersJeu().some(m=>m.nom===n))return;
    catalog.metiers=[...metiersJeu(),{nom:n}];catalog.nbArbres={...(catalog.nbArbres||{}),[familleMetier(n)]:1};renderTalents();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};h.append(b)}
  return r}}
+
+// v1.130 : la teinte d'un métier — la sienne, sinon celle des six métiers du jeu, sinon l'or.
+const TEINTES_METIERS={Alchimiste:'#7a5cb8',Forgeron:'#c2692a',Tanneur:'#8a5a2b',Mineur:'#6e6a66',Herboriste:'#2f7a4b',Arcaniste:'#3a6fc2'};
+function teinteMetier(nom){const m=metiersJeu().find(x=>x.nom===nom);return (m&&m.teinte)||TEINTES_METIERS[nom]||'#9d7b1e'}

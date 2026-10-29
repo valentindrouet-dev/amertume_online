@@ -3867,3 +3867,8 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .sphere-paliers i.on{background:#c99a3c;border-color:#c99a3c}
 .sphere-rond.detail-sphere{width:96px;height:96px;flex:none}
 .arbres-v2 .arbres-v2-arbre>.spherier-zone{align-self:stretch}.spherier-zone>.spherier-cadre{flex:1;min-height:420px}
+/* v1.130 : les onglets de l'arbre à la teinte de ce qu'ils ouvrent ; le message d'un aventurier sans métier. */
+.arbres-onglets .vit-onglet{color:var(--teinte,var(--ink));border-color:color-mix(in srgb,var(--teinte,var(--line)) 45%,var(--line))}
+.arbres-onglets .vit-onglet.actif{background:var(--teinte,var(--green));border-color:var(--teinte,var(--green));color:#fff}
+.arbres-sans-metier{flex:1;align-self:center;margin:60px auto;max-width:420px;text-align:center;font:600 17px 'Killam',Georgia,serif;color:var(--muted)}
+.arbres-v2-arbre:has(>.arbres-sans-metier){grid-column:1/-1;display:flex;min-height:420px}
