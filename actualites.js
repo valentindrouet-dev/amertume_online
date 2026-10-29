@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.213","d":"2026-10-29","t":"Coût en Marques au clavier"},
 {"v":"1.212","d":"2026-10-29","t":"Onglet Versions"},
 {"v":"1.211","d":"2026-10-29","t":"Pastille Classe / niveau, plus de barres"},
 {"v":"1.210","d":"2026-10-29","t":"Sphères d'un clic, onglet MAJ, bouton Statistiques"},

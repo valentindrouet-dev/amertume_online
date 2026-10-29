@@ -9610,7 +9610,11 @@ function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);
   const i=document.createElement('i');i.className='die-sq';i.setAttribute('aria-hidden','true');i.append(iconeMarque('marque-ico'));
   const pose=v=>{const c=Array.isArray(t.couts)?[...t.couts]:[];while(c.length<n)c.push(0);c[n-1]=Math.max(0,Math.min(99,v));t.couts=c;arbreChange()};
   const bm=document.createElement('button');bm.type='button';bm.textContent='−';bm.setAttribute('aria-label','Coût : moins');bm.onclick=e=>{e.stopPropagation();pose(prix-1)};
-  const val=document.createElement('b');val.className='sphere-val';val.textContent=String(prix);val.title='Fermer';val.onclick=e=>{e.stopPropagation();coutEdite='';renderArbres()};
+  // v1.213 : la valeur se tape aussi ; Entrée la pose et referme, Échap referme.
+  const val=document.createElement('input');val.type='number';val.min='0';val.max='99';val.step='1';val.className='sphere-val cout-saisie';val.value=String(prix);val.setAttribute('aria-label','Coût en Marques');
+  const lis=()=>Math.max(0,Math.min(99,Math.trunc(Number(val.value))||0));val.onclick=e=>e.stopPropagation();
+  val.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();coutEdite='';pose(lis())}else if(e.key==='Escape'){e.preventDefault();coutEdite='';renderArbres()}};
+  val.onchange=()=>{if(lis()!==prix)pose(lis())};requestAnimationFrame(()=>{if(val.isConnected){val.focus();val.select()}});
   const bp=document.createElement('button');bp.type='button';bp.textContent='+';bp.setAttribute('aria-label','Coût : plus');bp.onclick=e=>{e.stopPropagation();pose(prix+1)};
   d.append(i,bm,val,bp);d.onclick=e=>e.stopPropagation();return d}
  const pr=document.createElement('span');pr.className=cls;remplitMarques(pr,prix);

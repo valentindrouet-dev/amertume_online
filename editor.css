@@ -4373,3 +4373,5 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #hero-grid .vignette-classe span{font:600 11px/1.1 system-ui}
 #hero-grid .fiche-icone,#hero-grid .fiche-icone:hover{transform:none;transition:box-shadow .12s,border-color .12s}
 #hero-grid .fiche-icone:hover{border-color:color-mix(in srgb,var(--teinte) 70%,var(--ink))}
+.die-pick.cout-pick .cout-saisie{width:3.2ch;padding:2px 2px;border:1px solid color-mix(in srgb,var(--teinte) 45%,transparent);border-radius:6px;background:var(--panel);font:700 15px/1 system-ui;color:var(--ink);text-align:center;-moz-appearance:textfield;appearance:textfield}
+.die-pick.cout-pick .cout-saisie::-webkit-inner-spin-button,.die-pick.cout-pick .cout-saisie::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
