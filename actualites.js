@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.195","d":"2026-10-29","t":"Planche et icônes des sphères"},
 {"v":"1.194","d":"2026-10-29","t":"Vignettes, flèches, inventaire, carte Sphères"},
 {"v":"1.193","d":"2026-10-29","t":"Onglet Caractéristiques en deux blocs"},
 {"v":"1.192","d":"2026-10-29","t":"Marques sur la ligne du niveau"},

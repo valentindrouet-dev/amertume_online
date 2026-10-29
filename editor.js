@@ -718,6 +718,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.012 : les types de ressource de la carte, partagés par toutes les cartes.
  c.typesRessources=normaliseTypesRessources(c.typesRessources);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
+ // v1.195 : l'icône choisie de chaque sphère ; et la planche des sphères, 6 × 5, découpée une fois.
+ c.iconesGemmes=normaliseIconesGemmes(c.iconesGemmes);
+ if(!c.semisForge.includes('planches-spheres')){if(!Array.isArray(c.planches))c.planches=[];const f='planches/SPHERES.webp',cases=[[0.04192,0.03785,0.16419,0.1361],[0.23231,0.03712,0.16507,0.13755],[0.42009,0.03785,0.16769,0.13683],[0.61397,0.03712,0.16681,0.13755],[0.80524,0.03712,0.16419,0.13755],[0.05328,0.19651,0.14585,0.13828],[0.24716,0.19651,0.14585,0.13828],[0.43668,0.19651,0.1441,0.13828],[0.62707,0.19651,0.14498,0.13828],[0.82183,0.19651,0.1441,0.13828],[0.04192,0.35153,0.16507,0.14265],[0.23144,0.35153,0.16943,0.14338],[0.42271,0.35153,0.17031,0.14265],[0.61485,0.35153,0.17031,0.1441],[0.80786,0.35153,0.17031,0.14338],[0.04279,0.51092,0.15371,0.12518],[0.23319,0.51092,0.15633,0.12518],[0.4262,0.51092,0.15371,0.12518],[0.61747,0.51019,0.15546,0.12591],[0.80961,0.50946,0.15721,0.12664],[0.04192,0.65284,0.15895,0.13464],[0.23319,0.65284,0.15983,0.13464],[0.42358,0.65284,0.15983,0.13464],[0.61223,0.65284,0.15983,0.13464],[0.80262,0.65211,0.16245,0.1361],[0.03057,0.80422,0.17293,0.14629],[0.22183,0.80349,0.1738,0.14702],[0.41135,0.80277,0.17467,0.14774],[0.60262,0.80277,0.17642,0.14993],[0.79476,0.80277,0.17555,0.14847]],noms=['Brisure de citrine','Brisure d’émeraude','Brisure de saphir','Brisure de rubis','Brisure de diamant','Éclat de citrine','Éclat d’émeraude','Éclat de saphir','Éclat de rubis','Éclat de diamant','Brôme de citrine','Brôme d’émeraude','Brôme de saphir','Brôme de rubis','Brôme de diamant','Gemme coussin de citrine','Gemme coussin d’émeraude','Gemme coussin de saphir','Gemme coussin de rubis','Gemme coussin de diamant','Gemme octogonale de citrine','Gemme octogonale d’émeraude','Gemme octogonale de saphir','Gemme octogonale de rubis','Gemme octogonale de diamant','Gemme ronde de citrine','Gemme ronde d’émeraude','Gemme ronde de saphir','Gemme ronde de rubis','Gemme ronde de diamant'];
+  if(!c.planches.some(x=>x&&x.fichier===f))c.planches.push({fichier:f,lignes:6,colonnes:5,cases,icones:cases.map((_,i)=>({nom:noms[i]||'',cat:'divers'}))});c.semisForge.push('planches-spheres')}
  // La classe où le MJ range chaque effet de talent, pour la bibliothèque : un nom par effet connu.
  const ce=c.classesEffets&&typeof c.classesEffets==='object'&&!Array.isArray(c.classesEffets)?c.classesEffets:{};
  c.classesEffets={};Object.entries(ce).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.classesEffets[k]=v.trim().slice(0,60)});
@@ -1709,7 +1713,7 @@ function ligneGemmes(compte,poser,qui){const l=document.createElement('div');l.c
    Éteinte, elle passe au gris. */
 function iconeDeGemme(taille,variete,eteinte){const l=iconeGemme(taille,variete);
  if(!LOGOS_RESSOURCES.includes(l)){const i=document.createElement('i');i.className='gemme'+(eteinte?' eteinte':'');return i}
- const im=document.createElement('img');im.className='gem-ico'+(eteinte?' eteinte':'');im.src=imgUrl(fichierLogo(l));im.alt='';im.draggable=false;return im}
+ const im=document.createElement('img');im.className='gem-ico'+(eteinte?' eteinte':'');poseLogo(im,l);im.alt='';im.draggable=false;return im}
 // Poser un compte : un entier positif, ou rien — un compte à zéro disparaît.
 function poseCompte(compte,k,v){const n=lisCompte(v);if(n)compte[k]=n;else delete compte[k];return n}
 // Les richesses d'un aventurier, sur sa carte : le MJ les corrige, la troupe les lit.
@@ -1991,6 +1995,7 @@ $('hero-extensions').onclick=()=>openExtensions();
    dans une fenêtre de la page Aventuriers, parmi les logos et les icônes des planches, celles de
    la planche Caractéristiques en tête. Elles voyagent avec le contenu publié. */
 function normaliseIconesCompetences(l){return COMPETENCES.map((_,k)=>{const v=Array.isArray(l)?l[k]:'';return typeof v==='string'&&v.length<=200&&!/["'<>&\\]/.test(v)?v:''})}
+function normaliseIconesGemmes(o){const r={};if(o&&typeof o==='object'&&!Array.isArray(o))Object.entries(o).forEach(([k,v])=>{if(/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)&&typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))r[k]=v});return r}
 function iconesCompetences(){return normaliseIconesCompetences(typeof catalog!=='undefined'&&catalog?catalog.iconesCompetences:null)}
 function logoCompetence(k){const l=iconesCompetences()[k];return l?logoAttaque(l,'skill-ico'):null}
 /* Le rond d'une compétence : son logo, ou ses deux premières lettres ; le bord et le fond à la
@@ -4181,7 +4186,7 @@ function sauvegardeTalents(){return {app:'amertume_online',type:'talents',versio
  talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),nbArbres:structuredClone(catalog.nbArbres||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),ordreEffets:[...(catalog.ordreEffets||[])],reglagesEffets:structuredClone(catalog.reglagesEffets||{}),logosBonus:structuredClone(catalog.logosBonus||{}),motsCles:[...(catalog.motsCles||[])],
  // v1.173 : tous les onglets de l'arbre — les couleurs de sphère des Bonus, les métiers, les réglages des espèces, les arbres agencés à la main, leurs limites, la taille de la fenêtre.
  gemmesBonus:structuredClone(catalog.gemmesBonus||{}),metiers:structuredClone(catalog.metiers||[]),especesReglages:structuredClone(catalog.especesReglages||{}),extensionsEspeces:structuredClone(catalog.extensionsEspeces||{}),
- arbresLibres:structuredClone(catalog.arbresLibres||{}),limitesArbres:structuredClone(catalog.limitesArbres||{}),...(catalog.tailleArbres?{tailleArbres:structuredClone(catalog.tailleArbres)}:{})}}
+ arbresLibres:structuredClone(catalog.arbresLibres||{}),limitesArbres:structuredClone(catalog.limitesArbres||{}),iconesGemmes:structuredClone(catalog.iconesGemmes||{}),...(catalog.tailleArbres?{tailleArbres:structuredClone(catalog.tailleArbres)}:{})}}
 $('talent-sauve').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(sauvegardeTalents(),null,1)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde().replace(/^amertume-/,'amertume-talents-');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
 $('talent-importe').onclick=()=>{$('talent-fichier').value='';$('talent-fichier').click()};
@@ -4198,7 +4203,7 @@ $('talent-fichier').onchange=async()=>{const f=$('talent-fichier').files[0];if(!
  if(d.reglagesEffets&&typeof d.reglagesEffets==='object')catalog.reglagesEffets={...(catalog.reglagesEffets||{}),...d.reglagesEffets};
  if(d.logosBonus&&typeof d.logosBonus==='object')catalog.logosBonus={...(catalog.logosBonus||{}),...d.logosBonus};
  if(Array.isArray(d.motsCles)&&d.motsCles.length)catalog.motsCles=d.motsCles;
- ['gemmesBonus','especesReglages','extensionsEspeces','arbresLibres','limitesArbres'].forEach(k=>{if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))catalog[k]={...(catalog[k]||{}),...d[k]}});
+ ['gemmesBonus','especesReglages','extensionsEspeces','arbresLibres','limitesArbres','iconesGemmes'].forEach(k=>{if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))catalog[k]={...(catalog[k]||{}),...d[k]}});
  if(Array.isArray(d.metiers))catalog.metiers=[...d.metiers,...(catalog.metiers||[]).filter(m=>m&&!d.metiers.some(x=>x&&x.nom===m.nom))];
  if(d.tailleArbres&&typeof d.tailleArbres==='object')catalog.tailleArbres=d.tailleArbres;
  normalizeCatalog(catalog);accordeArbres();accordeTalentsHeros();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
@@ -9156,7 +9161,7 @@ const paramsCleGemme=k=>k.startsWith('comp:')?{carac:'comp',comp:k.slice(5)}:k.s
 function remplitGemmesBonus(boite,apres){boite.replaceChildren();GROUPES_GEMMES_BONUS().forEach(([titre,lignes])=>{const h=document.createElement('div');h.className='gemmes-bonus-groupe';h.textContent=titre;boite.append(h);
   lignes.forEach(([k,n])=>{const r=document.createElement('label');r.className='gemmes-bonus-ligne';const nom=document.createElement('span');nom.textContent=n;
    const s=document.createElement('select');VARIETES_GEMMES.forEach(([v,nv])=>s.add(new Option(nv,v)));s.value=varieteBonus(paramsCleGemme(k));
-   const im=document.createElement('img');im.alt='';im.className='gemmes-icone';const pose=()=>{im.src=imgUrl(iconeGemme('brisure',s.value)+'.png')};pose();
+   const im=document.createElement('img');im.alt='';im.className='gemmes-icone';const pose=()=>{poseGemme(im,'brisure',s.value)};pose();
    s.onchange=()=>{catalog.gemmesBonus={...(catalog.gemmesBonus||{}),[k]:s.value};pose();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));apres()};
    r.append(im,nom,s);boite.append(r)})})}
 function prixSphere(t){const g=t&&t.prixGemmes||{},taille=['brisure','eclat','brome'].includes(g.taille)?g.taille:'brisure',variete=varieteBonus(paramsTalent(t)||{});
@@ -9170,7 +9175,7 @@ function prixSpheres(t){const l=[prixSphere(t)],g=t&&t.prixGemmes||{};if(!prixMu
   if(e)e.n+=n;else l.push({taille,variete,n,cle})});return l}
 // Une gemme et sa quantité : « 2 » puis l'icône, son nom au survol.
 function puceGemme(pr,manque){const s=document.createElement('span');s.className='puce-gemme'+(manque?' manque':'');s.title=pr.n+' '+nomGemme(pr.taille,pr.variete,false);
- const b=document.createElement('b');b.textContent=String(pr.n);const im=document.createElement('img');im.src=imgUrl(iconeGemme(pr.taille,pr.variete)+'.png');im.alt='';im.draggable=false;s.append(b,im);return s}
+ const b=document.createElement('b');b.textContent=String(pr.n);const im=document.createElement('img');poseGemme(im,pr.taille,pr.variete);im.alt='';im.draggable=false;s.append(b,im);return s}
 // Les marques d'un aventurier : seulement sur cet appareil, le temps de choisir.
 const sphereMarques=new Map();
 function marquesDe(a){const k=a&&a.id;if(!k)return new Set();if(!sphereMarques.has(k))sphereMarques.set(k,new Set());return sphereMarques.get(k)}
@@ -9255,15 +9260,15 @@ function editeurSphere(t){const p=paramsTalent(t)||{},box=document.createElement
   const n=Math.max(1,(p.valeur|0)||1),pose=k=>{t.params={...(t.params||{}),valeur:Math.max(1,Math.min(20,k))};sauve()};
   let tint='150,150,150';teinteSphere(t,x=>{tint=x});
   pastilles.append(pastille('rgb('+tint+')',['comp','pv'].includes(p.carac)?false:false,ic,'+'+n,'Valeur du bonus',()=>pose(n-1),()=>pose(n+1)))}
- {const im=document.createElement('img');im.src=imgUrl(iconeGemme(pr.taille,pr.variete)+'.png');im.alt='';const pose=k=>{t.prixGemmes={...t.prixGemmes,n:Math.max(1,Math.min(99,k))};sauve()};
+ {const im=document.createElement('img');poseGemme(im,pr.taille,pr.variete);im.alt='';const pose=k=>{t.prixGemmes={...t.prixGemmes,n:Math.max(1,Math.min(99,k))};sauve()};
   pastilles.append(pastille(teinteGemme,clairGemme,im,String(pr.n),'Prix en gemmes',()=>pose(pr.n-1),()=>pose(pr.n+1)))}
- {const im=document.createElement('img');im.src=imgUrl(iconeGemme(pr.taille,pr.variete)+'.png');im.alt='';const i=TAILLES_GEMMES.findIndex(([k])=>k===pr.taille),pose=k=>{const j=Math.max(0,Math.min(TAILLES_GEMMES.length-1,k));t.prixGemmes={...t.prixGemmes,taille:TAILLES_GEMMES[j][0]};sauve()};
+ {const im=document.createElement('img');poseGemme(im,pr.taille,pr.variete);im.alt='';const i=TAILLES_GEMMES.findIndex(([k])=>k===pr.taille),pose=k=>{const j=Math.max(0,Math.min(TAILLES_GEMMES.length-1,k));t.prixGemmes={...t.prixGemmes,taille:TAILLES_GEMMES[j][0]};sauve()};
   pastilles.append(pastille(teinteGemme,clairGemme,im,TAILLES_GEMMES[i][2],'Taille des gemmes',()=>pose(i-1),()=>pose(i+1)))}
  box.append(pastilles);
  // v1.155 : un bonus de PA ou de PM — d'autres gemmes à son prix, une rangée chacune : couleur, quantité, taille ; × l'ôte.
  if(prixMultiple(t)){const plus=()=>Array.isArray(t.prixGemmes&&t.prixGemmes.plus)?t.prixGemmes.plus:[],posePlus=l=>{t.prixGemmes={...t.prixGemmes,plus:l};if(!l.length)delete t.prixGemmes.plus;sauve()};
   plus().forEach((x,j)=>{const r=document.createElement('div');r.className='sphere-pastilles sphere-prix-plus';const v=VARIETES_GEMMES.findIndex(([k])=>k===x.variete),vi=v<0?0:v,ta=TAILLES_GEMMES.findIndex(([k])=>k===x.taille),ti=ta<0?0:ta;
-   const change=o=>posePlus(plus().map((y,k)=>k===j?{...y,...o}:y)),ic=()=>{const im=document.createElement('img');im.src=imgUrl(iconeGemme(TAILLES_GEMMES[ti][0],VARIETES_GEMMES[vi][0])+'.png');im.alt='';return im};
+   const change=o=>posePlus(plus().map((y,k)=>k===j?{...y,...o}:y)),ic=()=>{const im=document.createElement('img');poseGemme(im,TAILLES_GEMMES[ti][0],VARIETES_GEMMES[vi][0]);im.alt='';return im};
    const te=TEINTES_GEMMES[VARIETES_GEMMES[vi][0]]||'#8fa3ad',cl=['citrine','diamant'].includes(VARIETES_GEMMES[vi][0]),n=Math.max(1,x.n|0||1),nv=VARIETES_GEMMES.length;
    r.append(pastille(te,cl,ic(),VARIETES_GEMMES[vi][1],'Couleur de la gemme',()=>change({variete:VARIETES_GEMMES[(vi+nv-1)%nv][0]}),()=>change({variete:VARIETES_GEMMES[(vi+1)%nv][0]})),
     pastille(te,cl,ic(),String(n),'Quantité',()=>change({n:Math.max(1,n-1)}),()=>change({n:Math.min(99,n+1)})),
@@ -9492,3 +9497,6 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  c.addEventListener('dragleave',e=>{if(!c.contains(e.relatedTarget))c.classList.remove('cible-avant','cible-apres')});
  c.addEventListener('drop',e=>{if(!ficheGlissee||ficheGlissee===a)return;e.preventDefault();e.stopPropagation();const apres=c.classList.contains('cible-apres');c.classList.remove('cible-avant','cible-apres');deplaceFiche(ficheGlissee,a,apres)});
  return c}
+// v1.195 : l'image d'une sphère, partout où elle paraît (img/ressource_*), suit l'icône que le MJ lui a choisie dans l'onglet Sphères.
+{const pl=poseLogo;poseLogo=function(im,l,...x){const g=/^ressource_([a-z]+)_([a-z]+)$/.exec(String(l||''));
+ if(g){const t=(TAILLES_GEMMES.find(([k])=>(FICHIERS_TAILLES[k]||k)===g[1])||[])[0],c=t?logoGemmeChoisi(t,g[2]):'';if(c&&c!==l)l=c}return pl(im,l,...x)}}

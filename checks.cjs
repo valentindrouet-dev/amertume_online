@@ -5377,6 +5377,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['equipement','Équipement',")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.195 — La planche des sphères (6 × 5, découpée une fois) ; l'icône de chaque sphère se choisit dans l'onglet Sphères, et suit partout. */
+{const ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');
+ assert.ok(fs.existsSync('img/planches/SPHERES.webp')&&ed.includes("if(!c.semisForge.includes('planches-spheres'))")&&ed.includes("c.iconesGemmes=normaliseIconesGemmes(c.iconesGemmes);")
+  &&cb.includes("function poseGemme(im,taille,variete){")&&cb.includes("iconeGemme,logoGemmeChoisi,poseGemme,")&&gm.includes("h('Icônes des sphères');")
+  &&!/\.src=imgUrl\(iconeGemme\(/.test(ed+gm+fs.readFileSync('domaine.js','utf8'))&&ed.includes("iconesGemmes:structuredClone(catalog.iconesGemmes||{})"),'v1.195');}
 /* v1.194 — Flèches entre aventuriers, schéma en haut, bourse en quatre lignes, sac à huit colonnes, place qui brille, vignettes, carte Sphères. */
 {const ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(ed.includes("const herosVoisins=()=>trieHeros(actors.filter(a=>a&&a.hero&&voitAventurier(a)&&peutVoirArbres(a)));")&&ed.includes("grille.classList.add('en-vignettes');heros.forEach((a,i)=>grille.append(vignetteHeros(a,i)));")

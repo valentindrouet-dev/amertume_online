@@ -235,7 +235,7 @@ function flotteGemme(a,taille,variete,n){const c=coucheSpheres();if(!c||!a||type
  const teinte=(typeof TEINTES_GEMMES!=='undefined'&&TEINTES_GEMMES[variete])||'#c99a3c',calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const bx=Math.round(tk*.62),by=Math.round(rang*tk*.42-tk*.18),retard=calme?0:520;
  const el=document.createElement('span');el.className='flotte-sphere';el.style.left='calc('+a.x+'% + '+bx+'px)';el.style.top='calc('+a.y+'% + '+by+'px)';el.style.setProperty('--t',Math.max(18,Math.round(tk*.42))+'px');
- const im=document.createElement('img');im.src=imgUrl(iconeGemme(taille,variete)+'.png');im.alt=nomGemme(taille,variete,false);im.draggable=false;const b=document.createElement('b');b.textContent='+'+n;el.append(im,b);el.style.opacity='0';c.append(el);
+ const im=document.createElement('img');poseGemme(im,taille,variete);im.alt=nomGemme(taille,variete,false);im.draggable=false;const b=document.createElement('b');b.textContent='+'+n;el.append(im,b);el.style.opacity='0';c.append(el);
  if(!calme){const N=8,R=tk*.78,e=Math.max(6,Math.round(tk*.17));
   for(let k=0;k<N;k++){const ang=(k/N)*Math.PI*2+(Math.random()-.5)*.5,r=R*(.8+Math.random()*.4),ox=Math.cos(ang)*r,oy=Math.sin(ang)*r,d=document.createElement('i');d.className='eclat-sphere';
    d.style.left=a.x+'%';d.style.top=a.y+'%';d.style.setProperty('--c',teinte);d.style.width=d.style.height=e+'px';c.append(d);const rot=Math.round(Math.random()*90);
@@ -363,7 +363,7 @@ document.querySelector('main.layout').after(gemmesPage);
 function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.replaceChildren();const R=reglesGemmes();
  const h=(t,sous)=>{const e=document.createElement('h3');e.className='gemmes-titre';e.textContent=t;boite.append(e);if(sous){const p=document.createElement('p');p.className='muted';p.textContent=sous;boite.append(p)}};
  const nombre=(v,lo,hi,f)=>{const i=document.createElement('input');i.type='number';i.min=lo;i.max=hi;i.value=v;i.onchange=()=>{poseReglesGemmes(g=>f(g,nbEntier(i.value,lo,hi,v)));renderGemmes()};return i};
- const icone=(taille,c)=>{const im=document.createElement('img');im.src=imgUrl(iconeGemme(taille,c)+'.png');im.alt='';im.className='gemmes-icone';return im};
+ const icone=(taille,c)=>{const im=document.createElement('img');poseGemme(im,taille,c);im.alt='';im.className='gemmes-icone';return im};
  // 1. Le dé.
  h('Le dé de gemme','Sur le seuil de son déclencheur ou plus, une Brisure de sa couleur ; jamais plus d’une, ni plus d’une de chaque couleur par action.');
  {const l=document.createElement('div');l.className='gemmes-reglage';
@@ -421,7 +421,19 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
   boite.append(l)}
  // 4. Les couleurs des caractéristiques et des compétences : ce que coûtent les bonus, et ce que rapportent les tests.
  h('Couleur de chaque caractéristique et compétence','Ce que paie un bonus du sphérier, et ce que rapporte un test de compétence réussi ou un état infligé.');
- {const g=document.createElement('div');g.className='gemmes-bonus-liste';remplitGemmesBonus(g,()=>renderGemmes());boite.append(g)}}
+ {const g=document.createElement('div');g.className='gemmes-bonus-liste';remplitGemmesBonus(g,()=>renderGemmes());boite.append(g)}
+ // v1.195 — 5. L'icône de chaque sphère : un clic ouvre la grille des icônes, planches comprises ; « aucune » rend son image d'origine.
+ h('Icônes des sphères');
+ {const t=document.createElement('table');t.className='gemmes-table gemmes-icones';const tr=document.createElement('tr');['',...COULEURS_GEMMES.map(c=>NOM_COULEUR_GEMME[c])].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
+  const mj=typeof view==='undefined'||view==='mj';
+  TAILLES_GEMMES.forEach(([ta,,un])=>{const row=document.createElement('tr');const c0=document.createElement('td');c0.className='gemmes-nom';c0.textContent=un;row.append(c0);
+   COULEURS_GEMMES.forEach(c=>{const td=document.createElement('td'),b=document.createElement('button');b.type='button';b.className='gemmes-icone-choix';b.disabled=!mj;b.title=nomGemme(ta,c,false);b.setAttribute('aria-label','Icône : '+b.title);
+    b.append(iconeDeGemme(ta,c,false));
+    b.onclick=()=>{if(!mj)return;const k=cleGemme(ta,c,false),v=(catalog.iconesGemmes||{})[k]||'',s=document.createElement('select');
+     s.innerHTML='<option value="">— aucune —</option>'+groupesLogosCompetence().filter(([,l])=>l.length).map(([g,l])=>'<optgroup label="'+esc(g)+'">'+l.map(x=>'<option value="'+esc(x)+'"'+(x===v?' selected':'')+'>'+esc(nomLogo(x))+'</option>').join('')+'</optgroup>').join('');s.value=v;
+     s.onchange=()=>{const o={...(catalog.iconesGemmes||{})};if(s.value)o[k]=s.value;else delete o[k];catalog.iconesGemmes=normaliseIconesGemmes(o);
+      if(typeof scheduleSave==='function')scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderGemmes();if(typeof renderHeroes==='function')renderHeroes();if(typeof render==='function')render()};
+     ouvreGrilleLogos(s)};td.append(b);row.append(td)});t.append(row)});boite.append(t)}}
 {const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='gemmes')renderGemmes();return r}}
 
 /* ---------- v1.163 — De nouveaux déclencheurs en combat ---------- */

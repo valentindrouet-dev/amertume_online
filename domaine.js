@@ -1295,7 +1295,7 @@ function vitEtabli(corps,b,client){corps.className='vit-corps vit-a-etabli';cons
 const savoirSpheres=()=>Array.isArray(domaine.savoirSpheres)?domaine.savoirSpheres:[];
 function vitTour(corps,b,client,onglet){const R=reglesGemmes(),T=R.tour,cle=b.id+'|'+onglet,or=client?orDe(client):0;
  const bourse=client?{...(client.richesses||{})}:{},q=k=>Math.max(0,Math.trunc(Number(bourse[k]))||0);
- const icone=(t,c,cls)=>{const im=document.createElement('img');im.src=imgUrl(iconeGemme(t,c)+'.png');im.alt='';im.draggable=false;if(cls)im.className=cls;return im};
+ const icone=(t,c,cls)=>{const im=document.createElement('img');poseGemme(im,t,c);im.alt='';im.draggable=false;if(cls)im.className=cls;return im};
  const unNom=(t,c)=>nomGemme(t,c,false).replace(/^\S+/,(TAILLES_GEMMES.find(([k])=>k===t)||[])[2]||'');
  const donne=(a,k,n)=>{a.richesses={...(a.richesses||{})};const v=(Math.trunc(Number(a.richesses[k]))||0)+n;if(v>0)a.richesses[k]=v;else delete a.richesses[k]};
  // v1.188 : rien au journal — c'est celui du combat.
@@ -1334,7 +1334,7 @@ function vitSavoir(corps,client,R){corps.className='vit-corps';const mj=mjDom(),
  /* v1.186 : chaque ligne porte le texte que lisent les joueurs, et son seuil — abaissé d'un point une fois connu (« 5+ → 4+ »).
     Le MJ lit toutes les lignes et récrit chaque texte dans son champ ; la troupe ne lit que celles qu'elle a achetées. */
  const ligne=(d,sue)=>{const r=R.declencheurs[d.cle],l=vitEl('div','vit-savoir-ligne'+(sue?'':' inconnue')),c=['competence','etat'].includes(r.couleur)?'citrine':r.couleur;
-  const im=document.createElement('img');im.src=imgUrl(iconeGemme('brisure',c)+'.png');im.alt='';im.draggable=false;if(['competence','etat'].includes(r.couleur))im.hidden=true;
+  const im=document.createElement('img');poseGemme(im,'brisure',c);im.alt='';im.draggable=false;if(['competence','etat'].includes(r.couleur))im.hidden=true;
   const tete=vitEl('div','vit-savoir-tete');tete.append(im,vitEl('span','vit-savoir-nom',sue||mj?d.nom:'?'));
   const seuilTxt=sue?r.seuil+'+ → '+seuilGemme(d.cle)+'+':r.seuil+'+';
   tete.append(vitEl('span','muted',(sue||mj?couleurDe(d.cle)+' · '+seuilTxt+' · '+(d.phase==='combat'?'en combat':'hors combat'):'')+(sue?'':(mj?' · inconnu de la troupe':'inconnu'))));l.append(tete);
