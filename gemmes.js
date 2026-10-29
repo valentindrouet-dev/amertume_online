@@ -131,7 +131,9 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
    en une gemme qui brille un instant et s'efface, son « +1 » à côté. Elle reste à part des dégâts et des états, qui montent au-dessus
    du socle ; plusieurs à la suite s'étagent vers le bas. */
 const pilesSpheres=new Map();
-function flotteGemme(a,taille,variete,n){const c=$('floaters');if(!c||!a||typeof tokenOf!=='function')return;const tk=tokenOf(a),t=performance.now(),pile=(pilesSpheres.get(a.id)||[]).filter(x=>t-x<1600),rang=pile.length;pile.push(t);pilesSpheres.set(a.id,pile);
+/* v1.171 : les sphères ont leur propre calque, au-dessus de tout sur la carte — tokens, états, jauges, flottants. */
+function coucheSpheres(){let c=$('couche-spheres');if(!c){const v=$('map-view');if(!v)return null;c=document.createElement('div');c.id='couche-spheres';c.setAttribute('aria-hidden','true');v.append(c)}return c}
+function flotteGemme(a,taille,variete,n){const c=coucheSpheres();if(!c||!a||typeof tokenOf!=='function')return;const tk=tokenOf(a),t=performance.now(),pile=(pilesSpheres.get(a.id)||[]).filter(x=>t-x<1600),rang=pile.length;pile.push(t);pilesSpheres.set(a.id,pile);
  const teinte=(typeof TEINTES_GEMMES!=='undefined'&&TEINTES_GEMMES[variete])||'#c99a3c',calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const bx=Math.round(tk*.62),by=Math.round(rang*tk*.42-tk*.18),retard=calme?0:520;
  const el=document.createElement('span');el.className='flotte-sphere';el.style.left='calc('+a.x+'% + '+bx+'px)';el.style.top='calc('+a.y+'% + '+by+'px)';el.style.setProperty('--t',Math.max(18,Math.round(tk*.42))+'px');

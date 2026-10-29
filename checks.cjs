@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.171 — Les sphères au-dessus de tout sur la carte : leur propre calque. */
+assert.ok(fs.readFileSync('gemmes.js','utf8').includes("function flotteGemme(a,taille,variete,n){const c=coucheSpheres();")&&fs.readFileSync('editor.css','utf8').includes("#couche-spheres{position:absolute;inset:0;z-index:40;pointer-events:none}"),'v1.171');
 /* v1.170 — Le dé Mystique qui double : le moteur le dit (champ non compté), la Sphère Saphir le lit. */
 {const {resolveAttack}=require('./combat.js');const r1=resolveAttack({dice:[[4,3],[4,0]],def:0,dmg:0,roll:()=>1}),r2=resolveAttack({dice:[[4,3],[5,0]],def:0,dmg:0,roll:()=>1}),r3=resolveAttack({dice:[[4,3],[4,0]],def:4,dmg:0,roll:()=>1});
  assert.equal(r1.mystique,true);assert.equal(r2.mystique,false);assert.equal(r3.mystique,false);assert.ok(!Object.keys(r1).includes('mystique'));assert.ok(fs.readFileSync('index.html','utf8').includes("gemmesApresCoup(a,b,{...r,mystique:r.mystique,orbe:true"));}

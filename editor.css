@@ -4099,3 +4099,4 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .poignee-blocs:hover{opacity:1}
 #arbres.redim{outline:2px dashed #c99a3c;outline-offset:-2px}
 .arbres-redim-btn[hidden]{display:none}
+#couche-spheres{position:absolute;inset:0;z-index:40;pointer-events:none}
