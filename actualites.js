@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.155","d":"2026-10-29","t":"Gemmes : seuils, une sphère par déclencheur, nouveaux déclencheurs"},
 {"v":"1.154","d":"2026-10-29","t":"Gemmes : couleurs par groupes, une par état"},
 {"v":"1.153","d":"2026-10-29","t":"Arbre Bonus : pastilles pâles"},
 {"v":"1.152","d":"2026-10-29","t":"Arbre Bonus : éditeur en place sous le bloc"},

@@ -4046,3 +4046,10 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 /* v1.154 : le tableau des couleurs des gemmes, en groupes — un titre en séparateur sur toute la largeur. */
 .gemmes-bonus-groupe{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font:700 12px system-ui;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .gemmes-bonus-groupe:first-child{margin-top:0;padding-top:0;border-top:0}
+/* v1.155 : les gemmes en plus d'un bonus de PA ou de PM — une rangée de pastilles chacune, × pour l'ôter ; et le bouton qui en ajoute. */
+.sphere-prix-plus{align-items:center}
+.sphere-prix-plus .sphere-retire{flex:none;width:26px;height:26px;padding:0;margin:0;border:1px solid var(--line-strong);border-radius:50%;background:var(--panel);color:var(--muted);font:700 15px/1 system-ui;cursor:pointer}
+.sphere-prix-plus .sphere-retire:hover{color:var(--ink);border-color:var(--ink)}
+.sphere-editeur .sphere-ajoute{align-self:flex-start;margin:0}
+.sphere-cout .puce-gemme+.puce-gemme,.detail-prix .puce-gemme+.puce-gemme,.desacheter .puce-gemme+.puce-gemme,.infuser .puce-gemme+.puce-gemme{margin-left:4px}
+.sphere-pastilles .die-pick .die-sq span>img{width:22px;height:22px;object-fit:contain;display:block}
