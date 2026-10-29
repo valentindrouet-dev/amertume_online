@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.148 — Au MJ, Désacheter un bonus infusé rend ses gemmes ; Infuser centré. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function desacheteSphere(ctx,t,l){const {a,classe,poserPalier,note,majTable}=ctx;if(view!=='mj'||!a)return;")&&fs.readFileSync('editor.css','utf8').includes(".arbres-detail .sphere-infuser-bloc,.arbres-detail .sphere-desachete-bloc{display:flex;justify-content:center;"),'v1.148');
 /* v1.147 — Sphérier : sélection multiple (Ctrl + clic, rectangle), déplacement groupé, Suppr de la sélection ; Infuser dit pourquoi il est grisé. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const groupe=sphereSels.has(t.id)&&sphereSels.size>1?l.filter(x=>sphereSels.has(x.id)):[t];")&&ed.includes("boite.className='sphere-lasso';")
  &&ed.includes("bt.title=!ouvert?'Ce bonus n’est relié ni à un bonus de départ, ni à un bonus tenu.'"),'v1.147');}

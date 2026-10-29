@@ -3960,7 +3960,8 @@ body:not(.carte-pleine) .interface-message{display:none}
 .corps .gemmes-corps .gem-ico{width:18px;height:18px}.corps .gemmes-corps b{font-size:13px}
 .infuser{display:inline-flex;align-items:center;gap:10px}
 .infuser .puce-gemme{padding:1px 8px;border-radius:999px;background:var(--panel);color:var(--ink)}
-.arbres-detail .sphere-infuser-bloc{display:flex;justify-content:flex-end;margin:12px 0 4px}
+.arbres-detail .sphere-infuser-bloc,.arbres-detail .sphere-desachete-bloc{display:flex;justify-content:center;margin:12px 0 4px}
+.arbres-detail .desacheter{display:inline-flex;align-items:center;gap:8px}
 .sphere-noeud.marque .sphere-rond{border-color:#c99a3c;border-style:dashed;box-shadow:0 0 12px 3px color-mix(in srgb,#c99a3c 50%,transparent)}
 .sphere-noeud.marque .sphere-rond>:is(.logo-bonus,.logo-equip){filter:none;opacity:1}
 .spherier-lien.marque{stroke:#c99a3c;stroke-opacity:.75;stroke-dasharray:8 7}

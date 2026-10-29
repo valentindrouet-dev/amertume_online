@@ -8891,7 +8891,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   const nat=document.createElement('p');nat.className='detail-type-bonus';nat.textContent=natureBonus(p);
   const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);droite.append(nom,nat,desc);
   tete.append(pile,droite);panneau.append(tete);
-  if(a){const bi=boutonInfuser(ctx,t,l);if(bi)panneau.append(bi)}
+  if(a){const bi=boutonInfuser(ctx,t,l);if(bi)panneau.append(bi);const bd=boutonDesacheter(ctx,t,l);if(bd)panneau.append(bd)}
   if(mj&&!a){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres)}
   else if(a){const mq=marquesDe(a).has(t.id),ok=k<max&&(mq||k>0||ouverteAvecMarques(a,t,l));tete.classList.add('cliquable',mq?'marquee':k>=max?'acquise':ok?'achetable':'fermee');
    if(ok){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>marqueSphere(ctx,t,l)}}
@@ -9016,6 +9016,20 @@ function boutonInfuser(ctx,t,l){const {a}=ctx,k=palierDe(a,t);if(k>=paliersDe(t)
  bt.disabled=!ouvert||!assez||(estMort(a)&&view!=='mj')||figeEnCombat(a);
  bt.title=!ouvert?'Ce bonus n’est relié ni à un bonus de départ, ni à un bonus tenu.':!assez?'Il manque des gemmes de cette couleur.':figeEnCombat(a)?'Pas pendant un combat.':'';
  bt.onclick=()=>{m.add(t.id);infuseSpheres(ctx,l)};b.append(bt);return b}
+/* v1.148 — Au MJ seul, sous le bloc d'un bonus infusé : « Désacheter » rend le dernier palier — le bonus entier s'il n'en a qu'un —
+   et rend ses gemmes ; ce qui ne tient plus à un départ tombe avec lui, gemmes rendues aussi. Un joueur ne le peut pas. */
+function boutonDesacheter(ctx,t,l){const {a}=ctx;if(view!=='mj'||arbresVueJoueur||!a)return null;const k=palierDe(a,t);if(!k)return null;
+ const p=prixSphere(t),b=document.createElement('div');b.className='sphere-desachete-bloc';const bt=document.createElement('button');bt.type='button';bt.className='desacheter';bt.append('Désacheter');bt.append(puceGemme(p));
+ bt.title='Rend le dernier palier et ses gemmes ; ce qui ne tient plus à un départ tombe aussi.';bt.onclick=()=>desacheteSphere(ctx,t,l);b.append(bt);return b}
+function desacheteSphere(ctx,t,l){const {a,classe,poserPalier,note,majTable}=ctx;if(view!=='mj'||!a)return;const k=palierDe(a,t);if(!k)return;
+ const rendus=new Map(),rend=(x,n)=>{const p=prixSphere(x);rendus.set(p.cle,(rendus.get(p.cle)||0)+p.n*n)};
+ if(k>1){poserPalier(t,k-1);rend(t,1)}
+ else{a.talents=(a.talents||[]).filter(id=>id!==t.id);rend(t,1);const garde=spheresTenues(a,classe);
+  l.forEach(x=>{if(x!==t&&tientSphere(a,x)&&!garde.has(x.id)){rend(x,palierDe(a,x));a.talents=a.talents.filter(id=>id!==x.id);poserPalier(x,1)}})}
+ a.richesses={...(a.richesses||{})};rendus.forEach((n,cle)=>{a.richesses[cle]=(Math.trunc(Number(a.richesses[cle]))||0)+n});
+ a.paliersTalents=normalisePaliersActeur(a);marquesDe(a).clear();
+ if(typeof log==='function')log(nomNum(a)+' · '+libelleBonus(paramsTalent(t)||{})+' désacheté : '+[...rendus].map(([cle,n])=>{const [ta,v]=cle.split('-');return '+'+n+' '+nomGemme(ta,v,false).toLowerCase()}).join(', ')+'.',{ton:'talent'});
+ note('');majTable()}
 function infuseSpheres(ctx,l){const {a,poserPalier,note,majTable}=ctx;if(!a)return;const m=marquesDe(a),marques=l.filter(t=>m.has(t.id)),tot=totalMarques(a,l);
  if(!marques.length||tot.some(p=>gemmesDe(a,p.cle)<p.n))return;
  a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});
