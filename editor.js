@@ -9698,12 +9698,13 @@ function renderMaj(){const boite=$('maj-liste');if(!boite)return;chargeVersions(
 (function accroche(){if(typeof showPage!=='function'){setTimeout(accroche,100);return}const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='maj')renderMaj();return r}})();
 // v1.217 : une touche ouvre, partout et par-dessus toute fenêtre, la fenêtre des Versions ; la même touche, Échap ou un clic dehors la referme.
 // v1.218 : cette touche est réglable (V d'origine) et n'appartient qu'au MJ ; elle ne joue pas pendant qu'on écrit dans un champ.
+// v1.220 : une case à cocher, un bouton radio ou un curseur ne sont pas des champs où l'on écrit : la touche y joue.
 const versionsFen=document.createElement('dialog');versionsFen.id='versions-fenetre';document.body.append(versionsFen);
 versionsFen.addEventListener('close',()=>{const sec=versionsFen.querySelector('.maj-panel');if(sec)majPage.append(sec)});
 versionsFen.addEventListener('click',e=>{if(e.target===versionsFen)versionsFen.close()});
 function basculeVersions(){if(versionsFen.open){versionsFen.close();return}const sec=majPage.querySelector('.maj-panel');if(sec)versionsFen.append(sec);versionsFen.showModal();versionsFen.scrollTop=0;renderMaj()}
 document.addEventListener('keydown',e=>{const k=raccourcis.versions;
- if(k&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.repeat&&String(e.key).toLowerCase()===k&&typeof mjIci==='function'&&mjIci()&&!(e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"]'))){e.preventDefault();e.stopPropagation();basculeVersions();return}
+ if(k&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.repeat&&String(e.key).toLowerCase()===k&&typeof mjIci==='function'&&mjIci()&&!(e.target&&e.target.closest&&e.target.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=range]):not([type=color]),textarea,select,[contenteditable=""],[contenteditable="true"]'))){e.preventDefault();e.stopPropagation();basculeVersions();return}
  if(e.key==='Escape'&&versionsFen.open){e.preventDefault();e.stopPropagation();versionsFen.close()}},true);
 // v1.214 : un clic hors du réglage du coût l'enregistre et le referme.
 document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=document.querySelector('.die-pick.cout-pick');if(!d){coutEdite='';return}if(d.contains(e.target))return;d._pose()},true);
