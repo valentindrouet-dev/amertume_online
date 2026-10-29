@@ -4082,3 +4082,7 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .gemmes-seuil.seuil-5{background:#f8dcc0}.gemmes-seuil.seuil-6{background:#f6cfcf}
 /* v1.166 : les éclats d'une sphère gagnée — petits losanges de la couleur de la gemme, lumineux. */
 .eclat-sphere{position:absolute;pointer-events:none;z-index:30;background:var(--c);border-radius:2px;box-shadow:0 0 6px var(--c),inset 0 0 0 1px rgba(255,255,255,.55)}
+/* v1.168 : le coût en sphères caché ; le sphérier centré dans sa colonne quand la fenêtre a une taille commune. */
+.spherier.sans-couts .sphere-cout{display:none}
+.arbres-v2.sphere-plein .spherier-zone{align-items:center}
+.sphere-infusion .couts-sphere{margin-left:auto}

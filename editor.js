@@ -6046,7 +6046,7 @@ arbresDialog.querySelector('.dialog-head').insertBefore(arbresEspeceBtn,arbresRe
 arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;
  // v0.894 : la fenêtre garde la taille qu'elle a pour la classe.
  if(arbresEspece){const r=arbresDialog.getBoundingClientRect();arbresDialog.style.width=Math.round(r.width)+'px';arbresDialog.style.minHeight=Math.round(r.height)+'px'}
- else{arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height')}
+ else if(!arbresTaille){arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height')}
  renderArbres();
  // v0.899 : un arbre d'espèce plus large que celui de la classe élargit la fenêtre, plutôt que d'en cacher une part.
  if(arbresEspece){const z=arbresDialog.querySelector('.arbres-v2-arbre');if(z&&z.scrollWidth>z.clientWidth+1)arbresDialog.style.width=Math.round(Math.min(innerWidth*.96,arbresDialog.getBoundingClientRect().width+z.scrollWidth-z.clientWidth+2))+'px'}};
@@ -8779,7 +8779,7 @@ function ongletsArbre(a,classe){if(!a&&estFamilleMetier(classe)){const n=classe.
  if(a)l.push(['metier',fm?a.metier:'Métier',fm?teinteMetier(a.metier):'']);
  return l}
 function barreOngletsArbre(onglets){const b=document.createElement('div');b.className='vit-onglets arbres-onglets';b.setAttribute('role','tablist');
- onglets.forEach(([k,n,teinte])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;if(teinte)t.style.setProperty('--teinte',teinte);t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));
+ onglets.forEach(([k,n,teinte])=>{const t=document.createElement('button');t.type='button';t.className='vit-onglet'+(arbresOnglet===k?' actif':'');t.textContent=n;if(teinte)t.style.setProperty('--teinte',teinte);t.setAttribute('role','tab');t.setAttribute('aria-selected',String(arbresOnglet===k));t.dataset.onglet=k;
   // La fenêtre garde sa taille d'un onglet à l'autre.
   t.onclick=()=>{if(arbresOnglet===k)return;const r=arbresDialog.getBoundingClientRect();arbresDialog.style.width=Math.round(r.width)+'px';arbresDialog.style.minHeight=Math.round(r.height)+'px';
    arbresOnglet=k;sphereSel=null;sphereLier=false;sphereSels=new Set();renderArbres()};b.append(t)});
@@ -8810,7 +8810,7 @@ function bulleSphere(el,t,n){surveille(el,()=>{const xp=talentAuPalier(t,Math.ma
 function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=talentsSphere(classe),tient=t=>!!a&&(a.talents||[]).includes(t.id);
  if(!l.some(t=>t.id===sphereSel))sphereSel=null;
  const zone=document.createElement('div');zone.className='spherier-zone';
- const plan=document.createElement('div');plan.className='spherier'+(sphereLier?' lier':'')+(mj?' grille':'');plan.style.setProperty('--pas',GRILLE_SPHERE+'px');
+ const plan=document.createElement('div');plan.className='spherier'+(sphereLier?' lier':'')+(mj?' grille':'')+(coutsSphereVus()?'':' sans-couts');plan.style.setProperty('--pas',GRILLE_SPHERE+'px');
  /* v1.164 : le plan colle aux bonus — ses bords à une case des ronds les plus à gauche, à droite, en haut et en bas (un peu plus en bas,
     pour le prix sous le rond). Il se dessine décalé de OX, OY : les positions gardées ne changent pas ; le quadrillage suit. */
  const MARGE_S=GRILLE_SPHERE,xs=l.map(t=>t.sphere.x),ys=l.map(t=>t.sphere.y);
@@ -8824,6 +8824,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
    let px=surGrille(Math.max(60,cx)),py=surGrille(Math.max(60,cy));for(let k=0;k<200&&l.some(o=>Math.hypot(o.sphere.x-px,o.sphere.y-py)<80);k++){px+=2*GRILLE_SPHERE;if(px>OX+W-60){px=surGrille(Math.max(60,OX+MARGE_S));py+=2*GRILLE_SPHERE}}
    choisirBonusSphere(classe,{x:px,y:py})}));
   o.append(boutonOutil('Lier',()=>{sphereLier=!sphereLier;renderArbres()},sphereLier));
+  o.append(boutonCoutsSphere());
   const dep=boutonOutil('Départ',()=>{if(!sel)return;if(sel.departSphere)delete sel.departSphere;else sel.departSphere=true;arbreChange()},!!(sel&&sel.departSphere));dep.disabled=!sel;o.append(dep);
   // v1.147 : Supprimer ôte le bonus choisi et toute la sélection.
   const sup=boutonOutil('Supprimer',()=>{const cibles=l.filter(t=>t===sel||sphereSels.has(t.id));if(!cibles.length)return;const ids=new Set(cibles.map(t=>t.id));
@@ -8839,7 +8840,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
     sphereSel=null;arbreChange()};o.append(s)}
   zone.append(o)}
   // v1.142 : chez un aventurier, en tête, « Infuser les Sphères » et le prix de ce qui est marqué.
-  if(a)zone.append(barreInfusion(ctx,l));
+  if(a){const bi=barreInfusion(ctx,l);bi.append(boutonCoutsSphere());zone.append(bi)}
  // Les liens, sous les ronds : dorés quand l'aventurier tient leurs deux bouts.
  const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','spherier-liens');svg.setAttribute('viewBox',OX+' '+OY+' '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';plan.append(svg);
  const vus=new Set();l.forEach(t=>voisinsSphere(t,l).forEach(x=>{const k=[t.id,x.id].sort().join('|');if(vus.has(k))return;vus.add(k);const ln=document.createElementNS(NS,'line');
@@ -8997,7 +8998,7 @@ const enEditionSphere=()=>arbresDialog.open&&view==='mj'&&arbresOnglet==='bonus'
 {const ra=renderArbres;renderArbres=function(...x){if(enEditionSphere()){const p=photoSpheres();
   if(spheresPhoto!==null&&p!==spheresPhoto&&!spheresRetour){spheresHisto.push(spheresPhoto);if(spheresHisto.length>50)spheresHisto.shift()}spheresPhoto=p}
  return ra(...x)}}
-arbresDialog.addEventListener('close',()=>{spheresHisto=[];spheresPhoto=null});
+arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;spheresHisto=[];spheresPhoto=null});
 function annuleSphere(){if(!enEditionSphere()||!spheresHisto.length)return false;const avant=spheresHisto.pop(),l=JSON.parse(avant);
  catalog.talents=[...(catalog.talents||[]).filter(t=>!(t&&t.spherier===true)),...l];
  const ids=new Set(l.map(t=>t.id));if(sphereSel&&!ids.has(sphereSel))sphereSel=null;sphereSels=new Set([...sphereSels].filter(id=>ids.has(id)));
@@ -9172,13 +9173,36 @@ function editeurSphere(t){const p=paramsTalent(t)||{},box=document.createElement
 /* v1.162 — Le sphérier tient tout entier dans la fenêtre des arbres, sans défilement : la fenêtre s'élargit autant que l'écran le
    permet ; au-delà, le plan se réduit à l'échelle (plan._s), chez le MJ comme chez un aventurier. */
 function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.closest('.arbres-v2');if(!cad||!v2||!arbresDialog.open)return;
- v2.classList.add('sphere-plein');arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height');
+ v2.classList.add('sphere-plein');if(!arbresTaille){arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height')}
  const W=parseFloat(plan.style.width)||plan.offsetWidth,H=parseFloat(plan.style.height)||plan.offsetHeight,cs=getComputedStyle(arbresDialog);
  const aside=v2.querySelector('.arbres-detail'),aw=aside?aside.getBoundingClientRect().width:340,gap=parseFloat(getComputedStyle(v2).columnGap)||22;
- const dispoW=innerWidth*.96-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-(parseFloat(cs.borderLeftWidth)||0)*2-gap-aw-6;
+ const dispoW=(arbresTaille?arbresTaille.w:innerWidth*.96)-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-(parseFloat(cs.borderLeftWidth)||0)*2-gap-aw-6;
  const haut=cad.getBoundingClientRect().top-arbresDialog.getBoundingClientRect().top+arbresDialog.scrollTop;
- const dispoH=innerHeight*.96-haut-(parseFloat(cs.paddingBottom)||0)-8;
+ const dispoH=(arbresTaille?arbresTaille.h:innerHeight*.96)-haut-(parseFloat(cs.paddingBottom)||0)-8;
  const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;
  plan.style.transform=k<1?'scale('+k+')':'';cad.style.width=Math.ceil(W*k+2)+'px';cad.style.height=Math.ceil(H*k+2)+'px'}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}return r}}
 addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}});
+
+/* v1.168 — Le coût en sphères sous les ronds du sphérier se montre ou se cache, d'un bouton ; le choix se garde sur l'appareil. */
+const coutsSphereVus=()=>{try{return localStorage.getItem('amertume-couts-sphere')!=='0'}catch(e){return true}};
+function boutonCoutsSphere(){const b=boutonOutil('Coûts',()=>{try{localStorage.setItem('amertume-couts-sphere',coutsSphereVus()?'0':'1')}catch(e){}renderArbres()},coutsSphereVus());
+ b.classList.add('couts-sphere');b.setAttribute('aria-pressed',String(coutsSphereVus()));b.title=coutsSphereVus()?'Cacher le coût en sphères des bonus':'Montrer le coût en sphères des bonus';return b}
+/* v1.168 — Une taille commune à tous les onglets de la fenêtre des arbres. À l'ouverture, chaque onglet se dessine à sa taille
+   naturelle, sans être montré (tout se fait avant la peinture suivante) ; la fenêtre prend la plus grande largeur et la plus grande
+   hauteur, bornées à l'écran, et ne change plus d'un onglet à l'autre. Le sphérier s'y cale, réduit s'il le faut. */
+let arbresTaille=null,arbresMesure=false;
+function tailleCommuneArbres(){if(!arbresDialog.open||arbresMesure)return;arbresMesure=true;
+ const garde={onglet:arbresOnglet,sel:sphereSel,sels:new Set(sphereSels),lier:sphereLier,haut:arbresDialog.scrollTop};
+ try{arbresTaille=null;const cles=[...arbresDialog.querySelectorAll('.arbres-onglets [data-onglet]')].map(b=>b.dataset.onglet);if(!cles.length)cles.push(arbresOnglet);
+  let w=0,h=0;
+  cles.forEach(k=>{arbresOnglet=k;arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height');renderArbres();
+   const r=arbresDialog.getBoundingClientRect(),z=arbresDialog.querySelector('.arbres-v2-arbre');let lw=r.width;if(z&&z.scrollWidth>z.clientWidth+1)lw+=z.scrollWidth-z.clientWidth+2;
+   w=Math.max(w,lw);h=Math.max(h,Math.max(r.height,arbresDialog.scrollHeight))});
+  arbresTaille={w:Math.round(Math.min(innerWidth*.96,w)),h:Math.round(Math.min(innerHeight*.96,h))}}
+ finally{arbresOnglet=garde.onglet;sphereSel=garde.sel;sphereSels=garde.sels;sphereLier=garde.lier;
+  if(arbresTaille){arbresDialog.style.width=arbresTaille.w+'px';arbresDialog.style.minHeight=arbresTaille.h+'px'}
+  renderArbres();arbresDialog.scrollTop=garde.haut;arbresMesure=false}}
+['openArbres','openArbresClasse','openArbresMetier'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(...x){arbresTaille=null;const r=f(...x);tailleCommuneArbres();return r}});
+arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresTaille=null});
+addEventListener('resize',()=>{if(arbresDialog.open&&arbresTaille)tailleCommuneArbres()});

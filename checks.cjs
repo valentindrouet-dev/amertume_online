@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.168 — Une taille commune aux onglets des arbres ; le bouton Coûts du sphérier. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function tailleCommuneArbres(){")&&ed.includes("['openArbres','openArbresClasse','openArbresMetier'].forEach(n=>{")
+ &&ed.includes("function boutonCoutsSphere(){")&&ed.includes("(coutsSphereVus()?'':' sans-couts')")&&fs.readFileSync('editor.css','utf8').includes(".spherier.sans-couts .sphere-cout{display:none}"),'v1.168');}
 /* v1.167 — Un seul dé par déclencheur : plus de colonne Dés, ni de champ Dés au dé du MJ. */
 {const gm=fs.readFileSync('gemmes.js','utf8');assert.ok(gm.includes("['Actif','Déclencheur','Couleur','Seuil','Détection','Fois']")&&!gm.includes('name="des"')&&!gm.includes("g.declencheurs[d.cle].des=n"),'v1.167');}
 /* v1.166 — La sphère gagnée : des éclats qui jaillissent et se rassemblent en une gemme. */
