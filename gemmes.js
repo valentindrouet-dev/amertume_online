@@ -109,15 +109,26 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
   flotteGemme(a,'brisure',couleur,gagne);if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne}
  if(typeof scheduleSave==='function')scheduleSave();return {faces,gagne,couleur}}
 // La petite sphère qui monte au-dessus du socle quand une Brisure tombe.
-/* v1.163 : la sphère gagnée ne se mêle plus aux dégâts et aux états, qui montent au-dessus du socle : elle naît à sa droite, à mi-
-   hauteur, la gemme seule et son « +1 », grossit un instant, monte un peu en s'écartant, puis s'efface. Plusieurs à la suite
-   s'étagent vers le bas. */
+/* v1.166 : la sphère gagnée — des éclats de sa couleur jaillissent tout autour du socle, puis se rassemblent à sa droite, à mi-hauteur,
+   en une gemme qui brille un instant et s'efface, son « +1 » à côté. Elle reste à part des dégâts et des états, qui montent au-dessus
+   du socle ; plusieurs à la suite s'étagent vers le bas. */
 const pilesSpheres=new Map();
-function flotteGemme(a,taille,variete,n){const c=$('floaters');if(!c||!a||typeof tokenOf!=='function')return;const tk=tokenOf(a),t=performance.now(),pile=(pilesSpheres.get(a.id)||[]).filter(x=>t-x<1400),rang=pile.length;pile.push(t);pilesSpheres.set(a.id,pile);
- const el=document.createElement('span');el.className='flotte-sphere';el.style.left='calc('+a.x+'% + '+Math.round(tk*.62)+'px)';el.style.top='calc('+a.y+'% + '+Math.round(rang*tk*.42-tk*.18)+'px)';el.style.setProperty('--t',Math.max(18,Math.round(tk*.42))+'px');
- const im=document.createElement('img');im.src=imgUrl(iconeGemme(taille,variete)+'.png');im.alt=nomGemme(taille,variete,false);im.draggable=false;const b=document.createElement('b');b.textContent='+'+n;el.append(im,b);c.append(el);
- const calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const fin=el.animate(calme?[{opacity:0},{opacity:1,offset:.15},{opacity:1,offset:.75},{opacity:0}]:[{transform:'translate(0,-50%) scale(.4)',opacity:0},{transform:'translate(0,-50%) scale(1.15)',opacity:1,offset:.14},{transform:'translate(0,-50%) scale(1)',opacity:1,offset:.24},{transform:'translate(6px,-90%) scale(1)',opacity:1,offset:.78},{transform:'translate(10px,-120%) scale(.95)',opacity:0}],{duration:1900,easing:'ease-out'});
+function flotteGemme(a,taille,variete,n){const c=$('floaters');if(!c||!a||typeof tokenOf!=='function')return;const tk=tokenOf(a),t=performance.now(),pile=(pilesSpheres.get(a.id)||[]).filter(x=>t-x<1600),rang=pile.length;pile.push(t);pilesSpheres.set(a.id,pile);
+ const teinte=(typeof TEINTES_GEMMES!=='undefined'&&TEINTES_GEMMES[variete])||'#c99a3c',calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const bx=Math.round(tk*.62),by=Math.round(rang*tk*.42-tk*.18),retard=calme?0:520;
+ const el=document.createElement('span');el.className='flotte-sphere';el.style.left='calc('+a.x+'% + '+bx+'px)';el.style.top='calc('+a.y+'% + '+by+'px)';el.style.setProperty('--t',Math.max(18,Math.round(tk*.42))+'px');
+ const im=document.createElement('img');im.src=imgUrl(iconeGemme(taille,variete)+'.png');im.alt=nomGemme(taille,variete,false);im.draggable=false;const b=document.createElement('b');b.textContent='+'+n;el.append(im,b);el.style.opacity='0';c.append(el);
+ if(!calme){const N=8,R=tk*.78,e=Math.max(6,Math.round(tk*.17));
+  for(let k=0;k<N;k++){const ang=(k/N)*Math.PI*2+(Math.random()-.5)*.5,r=R*(.8+Math.random()*.4),ox=Math.cos(ang)*r,oy=Math.sin(ang)*r,d=document.createElement('i');d.className='eclat-sphere';
+   d.style.left=a.x+'%';d.style.top=a.y+'%';d.style.setProperty('--c',teinte);d.style.width=d.style.height=e+'px';c.append(d);const rot=Math.round(Math.random()*90);
+   const f=d.animate([{transform:'translate(-50%,-50%) rotate(45deg) scale(.3)',opacity:0},{transform:'translate(calc(-50% + '+ox+'px),calc(-50% + '+oy+'px)) rotate('+(45+rot)+'deg) scale(1)',opacity:1,offset:.38},
+    {transform:'translate(calc(-50% + '+ox*1.08+'px),calc(-50% + '+oy*1.08+'px)) rotate('+(45+rot*1.4)+'deg) scale(1)',opacity:1,offset:.55},
+    {transform:'translate(calc(-50% + '+(bx+tk*.21)+'px),calc(-50% + '+by+'px)) rotate('+(45+rot*2)+'deg) scale(.35)',opacity:.9}],{duration:retard+60,easing:'cubic-bezier(.25,.8,.35,1)'});
+   f.onfinish=()=>d.remove()}}
+ const fin=el.animate(calme?[{opacity:0},{opacity:1,offset:.15},{opacity:1,offset:.75},{opacity:0}]
+  :[{transform:'translate(0,-50%) scale(.3)',opacity:0,filter:'brightness(1)'},{transform:'translate(0,-50%) scale(1.25)',opacity:1,filter:'brightness(1.9)',offset:.16},
+    {transform:'translate(0,-50%) scale(1)',opacity:1,filter:'brightness(1)',offset:.32},{transform:'translate(0,-50%) scale(1)',opacity:1,offset:.8},{transform:'translate(0,-62%) scale(.92)',opacity:0}],
+  {duration:calme?1600:1300,delay:retard,easing:'ease-out',fill:'backwards'});
  fin.onfinish=()=>el.remove()}
 /* ---------- Ce que le moteur dit au dé de gemme ---------- */
 let bossVaincuCombat=0,dernierInvisible=null;

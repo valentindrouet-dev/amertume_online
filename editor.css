@@ -4080,3 +4080,5 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 /* v1.165 : la case du seuil prend la couleur de sa difficulté — bleu, vert, jaune, orange, rouge, tous clairs. */
 .gemmes-seuil.seuil-2{background:#d6e8f7}.gemmes-seuil.seuil-3{background:#d9efd5}.gemmes-seuil.seuil-4{background:#f6edc2}
 .gemmes-seuil.seuil-5{background:#f8dcc0}.gemmes-seuil.seuil-6{background:#f6cfcf}
+/* v1.166 : les éclats d'une sphère gagnée — petits losanges de la couleur de la gemme, lumineux. */
+.eclat-sphere{position:absolute;pointer-events:none;z-index:30;background:var(--c);border-radius:2px;box-shadow:0 0 6px var(--c),inset 0 0 0 1px rgba(255,255,255,.55)}

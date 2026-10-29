@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.166 — La sphère gagnée : des éclats qui jaillissent et se rassemblent en une gemme. */
+assert.ok(fs.readFileSync('gemmes.js','utf8').includes("d.className='eclat-sphere';")&&fs.readFileSync('editor.css','utf8').includes(".eclat-sphere{position:absolute;"),'v1.166');
 /* v1.165 — La case du seuil teintée selon sa valeur. */
 assert.ok(fs.readFileSync('gemmes.js','utf8').includes("ss.classList.add('seuil-'+r.seuil);")&&fs.readFileSync('editor.css','utf8').includes(".gemmes-seuil.seuil-6{background:#f6cfcf}"),'v1.165');
 /* v1.164 — Le plan du sphérier colle aux bonus : décalé de OX, OY, ses bords à une case des ronds extrêmes. */
