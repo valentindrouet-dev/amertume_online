@@ -5368,6 +5368,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.158 — La Cellule à Plasma ne chevauche plus la barre de mouvement. */
+assert.ok(fs.readFileSync('index.html','utf8').includes(" if(rm.right+ec+w<=rp.right-4)c.style.left=Math.round(rm.right+ec-rb.left)+'px';"),'v1.158');
 /* v1.157 — Une même action, une gemme de chaque couleur au plus ; plus de dés en plus sur un critique. */
 {const gm=fs.readFileSync('gemmes.js','utf8');assert.ok(gm.includes("if(gagne&&!opts.manuel){const kc=a.id+'|'+couleur;if(gemmesCetteAction.has(kc))gagne=0;")&&gm.includes(" const des=Math.max(1,Math.min(12,opts.des||r.des));")&&!gm.includes("Dés sur un critique"),'v1.157');}
 /* v1.156 — Le zoom de la Table s'arrête à la carte entière : 100 %, jamais moins. */
