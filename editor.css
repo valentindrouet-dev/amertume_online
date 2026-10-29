@@ -4393,5 +4393,10 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .hero-card.fiche-onglet .fiche-page>.stat-row.en-icones>.vignette:has(.t-xp){grid-column:1/-1;justify-self:center;width:calc(50% - 4px)}
 .fiche-onglet .fiche-talents>.titre-tal.fiche-titre{font:700 26px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;text-transform:none}
 .hero-card.fiche-onglet .talent-grille>*{gap:10px 14px}
-.hero-card.fiche-onglet .talent-grille>*>*{flex:0 0 auto}
+.hero-card.fiche-onglet .talent-grille>*>*{flex:0 0 62px;width:62px;min-width:0}
+.hero-card.fiche-onglet .talent-grille>:is(.rang-moyens,.talent-ameliorations)>*{flex-basis:44px;width:44px}
 #hero-grid.en-vignettes .accueil-avatar{box-shadow:none}
+/* v1.219 — Richesses, chez le MJ : le « + » reste sur la ligne de sa taille, même avec les cinq couleurs — six colonnes égales
+   par ligne, les sphères de chaque taille alignées en colonnes. */
+.corps .place.p-bourse .bourse-lignes .bourse-items{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;gap:12px 4px;padding:2px 4px 4px 0}
+.corps .place.p-bourse .bourse-lignes .bourse-items>.bourse-palette{grid-column:1/-1;justify-self:start}
