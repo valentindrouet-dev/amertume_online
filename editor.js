@@ -1265,11 +1265,14 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
   if(degats){const i=document.createElement('img');i.className='stats-degats';i.src=imgUrl('DEGATS.webp');i.alt='';i.draggable=false;v.append(' ',i)}
   d.append(v,el('span','',libelle));return d};
  const tete=el('div','stats-tableau');tete.append(score('troupe',somme(troupe,'inf'),'Dégâts des aventuriers',true),score('tours',b.tours,b.tours>1?'tours':'tour'),score('adverse',somme(adv,'inf'),'Dégâts des adversaires',true));corps.append(tete);
- const prix=DISTINCTIONS.map(([k,ico,titre,unite,min])=>{const l=min?b.liste.filter(x=>x.camp==='troupe'):b.liste,top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];
-  return top&&(min||top[k]>0)?{k,ico,titre,unite,top,val:min?top.sub:top[k]}:null}).filter(Boolean);
+ /* v1.189 : les titres se disputent entre aventuriers seulement ; ceux qui donnent une Brisure (cochés dans l'onglet Sphères)
+    viennent en premier, en doré. */
+ const RG=typeof reglesGemmes==='function'?reglesGemmes():null,brise=k=>!!(RG&&RG.titres&&RG.titres[k]&&RG.titres[k].actif);
+ const prix=DISTINCTIONS.map(([k,ico,titre,unite,min])=>{const l=troupe,top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];
+  return top&&(min||top[k]>0)?{k,ico,titre,unite,top,val:min?top.sub:top[k],dore:brise(k)}:null}).filter(Boolean).map((p,i)=>[p,i]).sort(([x,i],[y,j])=>(y.dore-x.dore)||i-j).map(([p])=>p);
  if(prix.length){const g=el('div','stats-distinctions');
   // Le token dit qui ; son nom paraît en bulle, au survol.
-  prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp),t=el('div','stats-prix-texte');
+  prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp+(p.dore?' dore':'')),t=el('div','stats-prix-texte');
    t.append(el('strong','',p.titre),el('span','stats-prix-val',p.val+' '+p.unite));
    // v1.183 : la Brisure que le titre a value, à côté.
    const tg=b.titres&&b.titres[p.k];if(tg&&typeof iconeDeGemme==='function'){const g=el('span','stats-titre-gemme');g.append(iconeDeGemme('brisure',tg.couleur,false),'+1');g.title='1 '+nomGemme('brisure',tg.couleur,false).replace(/^\S+/,'Brisure');t.append(g)}

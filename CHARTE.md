@@ -129,6 +129,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Taille de la fenêtre des arbres, au MJ (v1.170)** : le bouton ordinaire « ⤡ Redimensionner » (enfoncé quand il est actif) cerne la fenêtre de tirets `#c99a3c` et fait paraître deux poignées dorées `#c99a3c` : deux traits obliques au coin bas-droit (`.poignee-fenetre-arbres`), une barre verticale entre l'arbre et le panneau (`.poignee-blocs`, pâle, pleine au survol) ; « Taille auto » revient à la taille commune. La taille choisie vaut pour tous, joueurs compris, bornée à 98 % de l'écran.
 
+**Titres qui donnent une Brisure (v1.189)** (`.stats-prix.dore`, `.gemmes-titres tr.dore`) : aux Stats de Combat, la carte du titre est dorée — bordure `#c99a3c`, fond en dégradé `#fbf0d4` → `#f0dca6`, halo `#c99a3c66` et ombre `#c99a3c33`, son nom en `#7a5a1a` — et vient en premier ; dans l'onglet Sphères, la ligne du titre coché prend le fond `#fbf0d4`, son nom en `#7a5a1a`, et monte en tête.
+
 **Fenêtre des arbres (v1.168)** : une taille commune à tous ses onglets — la plus grande dont l'un d'eux a besoin, bornée à 96 % de l'écran —, prise à l'ouverture ; elle ne change plus d'un onglet à l'autre, et le sphérier s'y cale, centré, réduit s'il le faut. Dans l'arbre Bonus, le bouton ordinaire « Coûts » (`.couts-sphere`, enfoncé quand ils se voient) montre ou cache le prix sous les ronds ; chez un aventurier, il se tient à droite de la bourse.
 
 **Seuils des déclencheurs (v1.165)** : la case du seuil (`.gemmes-seuil`) se teinte selon la valeur — 2+ bleu clair `#d6e8f7`, 3+ vert clair `#d9efd5`, 4+ jaune clair `#f6edc2`, 5+ orange clair `#f8dcc0`, 6+ rouge clair `#f6cfcf` ; 1+ reste au fond ordinaire.

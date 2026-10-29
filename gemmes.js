@@ -390,10 +390,11 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
    const c7=document.createElement('td');c7.className='gemmes-fois';const nf=fois(d.cle);c7.textContent=String(nf);if(!nf)c7.classList.add('zero');
    row.append(c1,c2,c3,c6,c5,c7);t.append(row)});boite.append(t)});
  // v1.183 — 2 bis. Les titres de fin de combat : chacun vaut une Brisure, de la couleur réglée ici.
- h('Les titres de fin de combat','Chaque titre des Stats de Combat vaut une Brisure à l’aventurier qui le remporte ; sa couleur se règle ici.');
- {const t=document.createElement('table');t.className='gemmes-table gemmes-titres';const tr=document.createElement('tr');['Actif','Titre','Couleur'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
+ h('Les titres de fin de combat','Coché, un titre des Stats de Combat vaut une Brisure de sa couleur à l’aventurier qui le remporte ; il se dispute entre aventuriers seulement.');
+ {const t=document.createElement('table');t.className='gemmes-table gemmes-titres';const tr=document.createElement('tr');['Brisure','Titre','Couleur'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
   const D=typeof DISTINCTIONS!=='undefined'?DISTINCTIONS:[];
-  TITRES_GEMMES.forEach(([k])=>{const r=R.titres[k],d=D.find(x=>x[0]===k)||[k,'',k,''],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
+  // v1.189 : ceux qui donnent une Brisure d'abord, en doré.
+  TITRES_GEMMES.map((x,i)=>[x,i]).sort(([[a],i],[[b],j])=>(R.titres[b].actif-R.titres[a].actif)||i-j).map(([x])=>x).forEach(([k])=>{const r=R.titres[k],d=D.find(x=>x[0]===k)||[k,'',k,''],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');else row.classList.add('dore');
    const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.titres[k].actif=cb.checked});renderGemmes()};c1.append(cb);
    const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d[2]+' — '+d[3];
    const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));s.value=r.couleur;
@@ -565,7 +566,8 @@ if(typeof appliquerEffetObjet==='function'){const ae=appliquerEffetObjet;appliqu
 /* Les titres : à la fin du combat, chaque distinction des Stats de Combat va à son meilleur aventurier — l'Intouchable au moins
    blessé de la troupe — et lui vaut une Brisure de sa couleur, comptée au bilan ; la ligne du journal retient qui a eu quoi. */
 function titresDuCombat(){const R=reglesGemmes(),b=typeof bilanDuCombat==='function'?bilanDuCombat():null,out={};if(!b)return out;
- TITRES_GEMMES.forEach(([k])=>{const t=R.titres[k];if(!t||!t.actif)return;const min=k==='intouch',l=min?b.liste.filter(x=>x.camp==='troupe'):b.liste;
+ // v1.189 : entre aventuriers seulement.
+ TITRES_GEMMES.forEach(([k])=>{const t=R.titres[k];if(!t||!t.actif)return;const min=k==='intouch',l=b.liste.filter(x=>x.camp==='troupe'&&actors.some(o=>o&&o.id===x.id&&o.hero));
   const top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];if(!top||(!min&&!(top[k]>0)))return;const a=actors.find(o=>o&&o.id===top.id&&o.hero);if(!a)return;
   const cg=cleGemme('brisure',t.couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+1;flotteGemme(a,'brisure',t.couleur,1);
   const s=suiviGemmes(a);s.gagnes[cg]=(s.gagnes[cg]||0)+1;out[k]={id:a.id,couleur:t.couleur}});
