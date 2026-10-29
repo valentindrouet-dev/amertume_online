@@ -5368,6 +5368,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.162 — Le sphérier tient dans la fenêtre, à l'échelle s'il le faut ; plus de bouton Gemmes dans l'arbre Bonus. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function cadreSpherier(plan){")&&ed.includes("const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;")
+ &&!ed.includes("boutonOutil('Gemmes',")&&ed.includes("x0=(e.clientX-r.left)/k,y0=(e.clientY-r.top)/k;"),'v1.162');}
 /* v1.161 — Le sphérier s'agrandit sous le geste ; l'onglet Gemmes s'appelle Sphères. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const versGauche=()=>{const k=4*GRILLE_SPHERE;decale+=k;")&&ed.includes("if(bouge){if(decale)l.forEach(x=>{if(!els.has(x.id))x.sphere={x:x.sphere.x+decale,y:x.sphere.y}});")
  &&fs.readFileSync('gemmes.js','utf8').includes('<h2>Sphères</h2>'),'v1.161');}

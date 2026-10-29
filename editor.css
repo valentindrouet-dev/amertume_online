@@ -4067,3 +4067,9 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .gemmes-fois{font:700 14px system-ui;text-align:right;min-width:44px}.gemmes-fois.zero{color:var(--muted);font-weight:400}
 .gemmes-decl th:last-child{text-align:right}
 .gemmes-rafraichir{margin:6px 0 2px}
+/* v1.162 : le sphérier tout entier dans la fenêtre — la colonne du plan à sa taille, sans défilement ; le plan réduit s'il le faut. */
+.arbres-v2.sphere-plein{grid-template-columns:auto minmax(330px,380px)}
+.arbres-v2.sphere-plein .arbres-v2-arbre{overflow:visible}
+.arbres-v2.sphere-plein .spherier-cadre{overflow:hidden;overflow:clip;max-height:none;min-height:0;flex:none}
+.arbres-v2.sphere-plein .spherier{margin:0;transform-origin:0 0}
+.arbres-v2.sphere-plein .arbres-detail{min-height:0;align-self:stretch}

@@ -8813,7 +8813,7 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
  const W=Math.max(880,...l.map(t=>t.sphere.x+(mj?240:90))),H=Math.max(620,...l.map(t=>t.sphere.y+(mj?160:90)));plan.style.width=W+'px';plan.style.height=H+'px';
  // Chez le MJ : ajouter, lier, marquer le départ, supprimer, copier le sphérier d'une autre classe.
  if(mj){const o=document.createElement('div');o.className='arbres-outils spherier-outils';const sel=l.find(t=>t.id===sphereSel)||null;
-  o.append(boutonOutil('+ Bonus',()=>{const g=zone.querySelector('.spherier'),cx=g?Math.round(g.parentElement.scrollLeft+g.parentElement.clientWidth/2):W/2,cy=g?Math.round(g.parentElement.scrollTop+Math.min(g.parentElement.clientHeight,H)/2):H/2;
+  o.append(boutonOutil('+ Bonus',()=>{const g=zone.querySelector('.spherier'),cx=g?Math.round((g.parentElement.scrollLeft+g.parentElement.clientWidth/2)/(g._s||1)):W/2,cy=g?Math.round((g.parentElement.scrollTop+Math.min(g.parentElement.clientHeight,H*(g._s||1))/2)/(g._s||1)):H/2;
    // La place libre la plus proche du milieu de la vue : un nouveau rond ne se pose pas sur un autre.
    let px=surGrille(Math.max(60,cx)),py=surGrille(Math.max(60,cy));for(let k=0;k<200&&l.some(o=>Math.hypot(o.sphere.x-px,o.sphere.y-py)<80);k++){px+=2*GRILLE_SPHERE;if(px>W-60){px=surGrille(60);py+=2*GRILLE_SPHERE}}
    choisirBonusSphere(classe,{x:px,y:py})}));
@@ -8831,7 +8831,6 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
     const src=talentsSphere(de),neuf=new Map(src.map(t=>[t.id,crypto.randomUUID()]));
     src.forEach(t=>{const k=structuredClone(t);k.id=neuf.get(t.id);k.famille=classe;if(k.liensSphere)k.liensSphere=k.liensSphere.map(id=>neuf.get(id)).filter(Boolean);catalog.talents.push(k)});
     sphereSel=null;arbreChange()};o.append(s)}
-  o.append(boutonOutil('Gemmes',()=>ouvreGemmesBonus()));
   zone.append(o)}
   // v1.142 : chez un aventurier, en tête, « Infuser les Sphères » et le prix de ce qui est marqué.
   if(a)zone.append(barreInfusion(ctx,l));
@@ -8856,26 +8855,28 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   // Chez le MJ, un rond se prend et se pose où l'on veut ; un clic le choisit ; en mode Lier, un clic lie (ou délie) le rond choisi à celui-ci.
   /* v1.147 : plusieurs bonus se sélectionnent — Ctrl (⌘) + clic, ou un rectangle tracé sur le fond — et bougent ensemble : le
      groupe suit le rond pris, chacun gardant ses écarts, sur le quadrillage. */
-  /* v1.161 : le plan suit le geste — près d'un bord du cadre, il défile ; à droite et en bas, il s'agrandit sous le bonus ; à gauche,
-     au bout du défilement, tout le plan glisse de quatre cases vers la droite pour faire de la place (gardé au lâcher). */
-  if(mj){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;const x0=e.clientX,y0=e.clientY,cad=plan.parentElement,sl0=cad?cad.scrollLeft:0,st0=cad?cad.scrollTop:0;
+  /* v1.162 : le plan tient tout entier dans la fenêtre, à l'échelle s'il le faut (plan._s). Le bonus suit le pointeur, mesuré dans
+     le plan à son échelle ; tenu contre le bord droit ou le bas du cadre, le plan grandit de quatre cases, contre le bord gauche tout
+     le reste glisse de quatre cases vers la droite (gardé au lâcher) ; chaque fois, il se recale dans la fenêtre. */
+  if(mj){el.addEventListener('pointerdown',e=>{if(e.button!==0)return;const x0=e.clientX,y0=e.clientY,cad=plan.parentElement;
     const groupe=sphereSels.has(t.id)&&sphereSels.size>1?l.filter(x=>sphereSels.has(x.id)):[t];
     const s0=new Map(groupe.map(x=>[x.id,{...x.sphere}])),els=new Map(groupe.map(x=>[x.id,plan.querySelector('.sphere-noeud[data-id="'+x.id+'"]')]));let bouge=false;
     const autres=[...plan.querySelectorAll('.sphere-noeud')].filter(n=>!groupe.some(x=>x.id===n.dataset.id));let dernier=null,boucle=0,decale=0,elargi=0;
-    const agrandit=(w,h)=>{const W0=parseFloat(plan.style.width)||W,H0=parseFloat(plan.style.height)||H;if(w>W0)plan.style.width=w+'px';if(h>H0)plan.style.height=h+'px'};
-    const place=()=>{if(!dernier)return;const dx=dernier.x-x0+(cad?cad.scrollLeft-sl0:0),dy=dernier.y-y0+(cad?cad.scrollTop-st0:0),p0=s0.get(t.id);
+    const ech=()=>plan._s||1,dansPlan=(cx,cy)=>{const r=plan.getBoundingClientRect();return [(cx-r.left)/ech(),(cy-r.top)/ech()]};
+    const prise=(()=>{const [px,py]=dansPlan(x0,y0);return [px-t.sphere.x,py-t.sphere.y]})();
+    const place=()=>{if(!dernier)return;const [px,py]=dansPlan(dernier.x,dernier.y),p0=s0.get(t.id);
      // Le bonus tenu reste sous le pointeur ; seuls les autres glissent quand le plan s'agrandit à gauche.
-     const ox=Math.max(GRILLE_SPHERE,surGrille(p0.x+dx))-p0.x,oy=Math.max(GRILLE_SPHERE,surGrille(p0.y+dy))-p0.y;let dr=0,bas=0;
-     groupe.forEach(x=>{const n=els.get(x.id),p=s0.get(x.id);if(!n)return;const L=Math.max(GRILLE_SPHERE,p.x+ox),T=Math.max(GRILLE_SPHERE,p.y+oy);n.style.left=L+'px';n.style.top=T+'px';dr=Math.max(dr,L);bas=Math.max(bas,T)});
-     agrandit(dr+240,bas+160)};
-    const versGauche=()=>{const k=4*GRILLE_SPHERE;decale+=k;autres.forEach(n=>{n.style.left=(parseFloat(n.style.left)+k)+'px'});svg.style.transform='translateX('+decale+'px)';
-     agrandit((parseFloat(plan.style.width)||W)+k,0);place()};
-    const defile=()=>{boucle=0;if(!bouge||!dernier||!cad)return;const r=cad.getBoundingClientRect(),m=48,now=performance.now();let vx=0,vy=0;
-     if(dernier.x<r.left+m)vx=-14;else if(dernier.x>r.right-m)vx=14;if(dernier.y<r.top+m)vy=-14;else if(dernier.y>r.bottom-m)vy=14;
-     if(vx<0&&cad.scrollLeft<=0){if(now-elargi>350){elargi=now;versGauche()}}else if(vx)cad.scrollLeft+=vx;
-     if(vy)cad.scrollTop+=vy;if(vx||vy){place();boucle=requestAnimationFrame(defile)}};
+     const ox=Math.max(GRILLE_SPHERE,surGrille(px-prise[0]))-p0.x,oy=Math.max(GRILLE_SPHERE,surGrille(py-prise[1]))-p0.y;
+     groupe.forEach(x=>{const n=els.get(x.id),p=s0.get(x.id);if(!n)return;n.style.left=Math.max(GRILLE_SPHERE,p.x+ox)+'px';n.style.top=Math.max(GRILLE_SPHERE,p.y+oy)+'px'})};
+    const grandit=(dw,dh)=>{plan.style.width=((parseFloat(plan.style.width)||W)+dw)+'px';plan.style.height=((parseFloat(plan.style.height)||H)+dh)+'px';
+     svg.style.width=plan.style.width;svg.style.height=plan.style.height;svg.setAttribute('viewBox',(-decale)+' 0 '+parseFloat(plan.style.width)+' '+parseFloat(plan.style.height));cadreSpherier(plan)};
+    const versGauche=()=>{const k=4*GRILLE_SPHERE;decale+=k;autres.forEach(n=>{n.style.left=(parseFloat(n.style.left)+k)+'px'});grandit(k,0)};
+    const bord=()=>{boucle=0;if(!bouge||!dernier||!cad)return;const r=cad.getBoundingClientRect(),m=36,now=performance.now();
+     const g=dernier.x<r.left+m,d=dernier.x>r.right-m,b=dernier.y>r.bottom-m;
+     if((g||d||b)&&now-elargi>350){elargi=now;if(g)versGauche();else grandit(d?4*GRILLE_SPHERE:0,b?4*GRILLE_SPHERE:0);place()}
+     if(g||d||b)boucle=requestAnimationFrame(bord)};
     const mv=ev=>{const dx=ev.clientX-x0,dy=ev.clientY-y0;if(!bouge&&Math.hypot(dx,dy)<5)return;if(!bouge){bouge=true;groupe.forEach(x=>{const n=els.get(x.id);if(n)n.classList.add('tire')});if(typeof fermerBulle==='function')fermerBulle()}
-     dernier={x:ev.clientX,y:ev.clientY};place();if(!boucle)boucle=requestAnimationFrame(defile)};
+     dernier={x:ev.clientX,y:ev.clientY};place();if(!boucle)boucle=requestAnimationFrame(bord)};
     const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);if(boucle)cancelAnimationFrame(boucle);boucle=0;
      if(bouge){if(decale)l.forEach(x=>{if(!els.has(x.id))x.sphere={x:x.sphere.x+decale,y:x.sphere.y}});
       groupe.forEach(x=>{const n=els.get(x.id);if(n)x.sphere={x:Math.max(GRILLE_SPHERE,surGrille(parseFloat(n.style.left))),y:Math.max(GRILLE_SPHERE,surGrille(parseFloat(n.style.top)))}});sphereSel=t.id;arbreChange();return}
@@ -8897,15 +8898,15 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   else el.onclick=()=>{sphereSel=t.id;renderArbres()};
   plan.append(el)});
  // v1.133 : chez le MJ, un clic sur le fond du plan y pose un bonus, choisi parmi ceux qui existent.
- if(mj){plan.addEventListener('pointerdown',e=>{if(e.button!==0||(e.target!==plan&&e.target!==svg))return;const r=plan.getBoundingClientRect(),x0=e.clientX-r.left,y0=e.clientY-r.top;let boite=null,z=null;
-   const mv=ev=>{const x1=ev.clientX-r.left,y1=ev.clientY-r.top;if(!boite){if(Math.hypot(x1-x0,y1-y0)<5)return;boite=document.createElement('div');boite.className='sphere-lasso';plan.append(boite)}
+ if(mj){plan.addEventListener('pointerdown',e=>{if(e.button!==0||(e.target!==plan&&e.target!==svg))return;const r=plan.getBoundingClientRect(),k=plan._s||1,x0=(e.clientX-r.left)/k,y0=(e.clientY-r.top)/k;let boite=null,z=null;
+   const mv=ev=>{const x1=(ev.clientX-r.left)/k,y1=(ev.clientY-r.top)/k;if(!boite){if(Math.hypot(x1-x0,y1-y0)<5)return;boite=document.createElement('div');boite.className='sphere-lasso';plan.append(boite)}
     const L=Math.min(x0,x1),T=Math.min(y0,y1),W=Math.abs(x1-x0),H=Math.abs(y1-y0);Object.assign(boite.style,{left:L+'px',top:T+'px',width:W+'px',height:H+'px'});z={L,T,R:L+W,B:T+H}};
    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);if(!boite)return;boite.remove();lassoFait=true;
     const dans=l.filter(t=>t.sphere.x>=z.L&&t.sphere.x<=z.R&&t.sphere.y>=z.T&&t.sphere.y<=z.B).map(t=>t.id);
     sphereSels=e.ctrlKey||e.metaKey?new Set([...sphereSels,...dans]):new Set(dans);if(dans.length)sphereSel=dans[0];renderArbres()};
    addEventListener('pointermove',mv);addEventListener('pointerup',up)});
-  plan.addEventListener('click',e=>{if(lassoFait){lassoFait=false;return}if(e.target!==plan&&e.target!==svg)return;const r=plan.getBoundingClientRect();
-   choisirBonusSphere(classe,{x:Math.max(GRILLE_SPHERE,surGrille(e.clientX-r.left)),y:Math.max(GRILLE_SPHERE,surGrille(e.clientY-r.top))})})}
+  plan.addEventListener('click',e=>{if(lassoFait){lassoFait=false;return}if(e.target!==plan&&e.target!==svg)return;const r=plan.getBoundingClientRect(),k=plan._s||1;
+   choisirBonusSphere(classe,{x:Math.max(GRILLE_SPHERE,surGrille((e.clientX-r.left)/k)),y:Math.max(GRILLE_SPHERE,surGrille((e.clientY-r.top)/k))})})}
  if(!mj)plan.addEventListener('click',e=>{if(e.target!==plan&&e.target!==svg)return;sphereSel=null;sphereSels=new Set();renderArbres()});
  const cadre=document.createElement('div');cadre.className='spherier-cadre';cadre.append(plan);zone.append(cadre);
  /* v1.138 — Le panneau de droite : un seul bloc — le grand rond et, dessous, son coût ; à droite, le bonus sur une ligne et, en
@@ -9161,3 +9162,17 @@ function editeurSphere(t){const p=paramsTalent(t)||{},box=document.createElement
    const x0=document.createElement('button');x0.type='button';x0.className='sphere-retire';x0.textContent='×';x0.title='Ôter cette gemme';x0.setAttribute('aria-label','Ôter cette gemme');x0.onclick=()=>posePlus(plus().filter((y,k)=>k!==j));r.append(x0);box.append(r)});
   if(plus().length<4){const aj=document.createElement('button');aj.type='button';aj.className='sphere-ajoute';aj.textContent='+ Gemme';aj.onclick=()=>posePlus([...plus(),{taille:'brisure',variete:VARIETES_GEMMES.map(([k])=>k).find(k=>!prixSpheres(t).some(p=>p.variete===k))||'citrine',n:1}]);box.append(aj)}}
  return box}
+
+/* v1.162 — Le sphérier tient tout entier dans la fenêtre des arbres, sans défilement : la fenêtre s'élargit autant que l'écran le
+   permet ; au-delà, le plan se réduit à l'échelle (plan._s), chez le MJ comme chez un aventurier. */
+function cadreSpherier(plan){const cad=plan&&plan.parentElement,v2=plan&&plan.closest('.arbres-v2');if(!cad||!v2||!arbresDialog.open)return;
+ v2.classList.add('sphere-plein');arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height');
+ const W=parseFloat(plan.style.width)||plan.offsetWidth,H=parseFloat(plan.style.height)||plan.offsetHeight,cs=getComputedStyle(arbresDialog);
+ const aside=v2.querySelector('.arbres-detail'),aw=aside?aside.getBoundingClientRect().width:340,gap=parseFloat(getComputedStyle(v2).columnGap)||22;
+ const dispoW=innerWidth*.96-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-(parseFloat(cs.borderLeftWidth)||0)*2-gap-aw-6;
+ const haut=cad.getBoundingClientRect().top-arbresDialog.getBoundingClientRect().top+arbresDialog.scrollTop;
+ const dispoH=innerHeight*.96-haut-(parseFloat(cs.paddingBottom)||0)-8;
+ const k=Math.max(.25,Math.min(1,dispoW/W,dispoH/H));plan._s=k;
+ plan.style.transform=k<1?'scale('+k+')':'';cad.style.width=Math.ceil(W*k+2)+'px';cad.style.height=Math.ceil(H*k+2)+'px'}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}return r}}
+addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='bonus'){const p=arbresDialog.querySelector('.spherier');if(p)cadreSpherier(p)}});
