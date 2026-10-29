@@ -4286,3 +4286,14 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .corps .place.p-bourse .bourse-lignes .or-corps .piece-or{display:block;width:34px;height:34px;vertical-align:0}
 .corps .place.p-bourse .bourse-lignes .or-corps b{position:absolute;right:-4px;bottom:-4px;margin:0;color:#fff;font:900 18px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
 .corps .place.p-bourse .bourse-lignes .or-corps.zero b{opacity:1}
+/* v1.205 — L'onglet Statistiques en lignes, sur deux colonnes. */
+.vie-stats.vie-colonnes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.vie-colonne{display:flex;flex-direction:column;gap:12px;min-width:0}
+.vie-lignes{display:flex;flex-direction:column;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;background:var(--panel-2)}
+.vie-ligne{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 14px;border-top:1px solid var(--line)}
+.vie-ligne:first-child{border-top:0}.vie-ligne:nth-child(even){background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.vie-ligne span{font:600 13px/1.2 system-ui;color:var(--ink)}
+.vie-ligne b{font:700 19px/1 'Killam',Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+.vie-ligne.zero b{color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.vie-ligne.vie-rar span,.vie-ligne.vie-rar b{color:var(--rarete)}
+.vie-ligne.vie-rar{box-shadow:inset 4px 0 0 var(--rarete)}

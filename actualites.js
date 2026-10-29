@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.205","d":"2026-10-29","t":"Statistiques en lignes, deux colonnes"},
 {"v":"1.204","d":"2026-10-29","t":"Boutons des vignettes, or sur la pièce"},
 {"v":"1.203","d":"2026-10-29","t":"Ramener un aventurier sur la table"},
 {"v":"1.202","d":"2026-10-29","t":"Icônes des vignettes, en-têtes ornés, total des sphères"},

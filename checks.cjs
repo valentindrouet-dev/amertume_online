@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.205 — L'onglet Statistiques en lignes, sur deux colonnes. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("const r=el('div','vie-stats vie-colonnes'),cols=[el('div','vie-colonne'),el('div','vie-colonne')];"),'v1.205');
 /* v1.204 — Les boutons des vignettes au look des cases d'équipement, et leur icône réglable. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("+'<h3 class=\"reglage-titre icones-titre\">Boutons des aventuriers</h3>'")&&ed.includes("const l=(catalog.iconesFiche||{})[k];if(l&&typeof poseLogo==='function')"),'v1.204');assert.ok(fs.readFileSync('editor.css','utf8').includes('.corps .place.p-bourse .bourse-lignes .or-corps b{position:absolute;'),'v1.204 or');}
 /* v1.203 — Le portrait pâle d'un aventurier retiré de la table le ramène d'un clic, chez le MJ. */

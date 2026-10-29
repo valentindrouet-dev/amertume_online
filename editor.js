@@ -9460,10 +9460,12 @@ const STATS_VIE=[['Combat',[['combats','Combats'],['inf','Dégâts infligés'],[
 function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsVie:{},n=k=>Math.max(0,Math.floor(Number(s[k])||0));
  const val=k=>k==='xp'?Math.max(0,Math.trunc(Number(a.xp))||0):k==='marques'?marquesGagnees(a):n(k);
  const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
- const tuile=(v,libelle,cls)=>{const t=el('div','vie-tuile'+(cls?' '+cls:'')+(v?'':' zero'));t.append(el('b','',v),el('span','',libelle));return t};
- const r=el('div','vie-stats'),groupe=(titre,tuiles)=>{const g=el('section','vie-groupe');g.append(el('h3','',titre));const l=el('div','vie-grille');l.append(...tuiles);g.append(l);r.append(g)};
- STATS_VIE.forEach(([titre,l])=>groupe(titre,l.map(([k,lib])=>tuile(k==='dist'?val(k)+' m':String(val(k)),lib))));
- groupe('Objets trouvés',[...RARETES.map(([k])=>k),'ressource'].map(k=>tuile(String(n('rar_'+k)),NOM_RARETE(k),'vie-rar r-'+k)));
+ // v1.205 : une ligne par chiffre — son nom à gauche, sa valeur à droite — en deux colonnes, comme les autres onglets.
+ const tuile=(v,libelle,cls)=>{const t=el('div','vie-ligne'+(cls?' '+cls:'')+(v&&v!=='0'&&v!=='0 m'?'':' zero'));t.append(el('span','',libelle),el('b','',v));return t};
+ const r=el('div','vie-stats vie-colonnes'),cols=[el('div','vie-colonne'),el('div','vie-colonne')];r.append(...cols);
+ const groupe=(col,titre,tuiles)=>{const g=el('section','vie-groupe');g.append(el('h3','',titre));const l=el('div','vie-lignes');l.append(...tuiles);g.append(l);cols[col].append(g)};
+ STATS_VIE.forEach(([titre,l],i)=>groupe(i<2?0:1,titre,l.map(([k,lib])=>tuile(k==='dist'?val(k)+' m':String(val(k)),lib))));
+ groupe(1,'Objets trouvés',[...RARETES.map(([k])=>k),'ressource'].map(k=>tuile(String(n('rar_'+k)),NOM_RARETE(k),'vie-rar r-'+k)));
  return r}
 // Le contenu tient dans le bloc, sans barre de défilement : trop haut, il se réduit.
 function cadreStatsVie(zone,sel='.vie-stats'){const c=zone&&zone.querySelector(sel);if(!c)return;c.style.zoom='';const h=zone.clientHeight,ch=c.scrollHeight;if(h>0&&ch>h)c.style.zoom=String(Math.max(.5,h/ch).toFixed(3))}
