@@ -3880,7 +3880,8 @@ body.carte-pleine main.layout>.stack.left{grid-column:1;grid-row:1;z-index:5;poi
 body.carte-pleine main.layout>.stack.right{grid-column:3;grid-row:1;z-index:5;pointer-events:none;display:flex}
 body.carte-pleine main.layout>.stack>:is(.panel,.poignee-taille){pointer-events:auto}
 body.carte-pleine main.layout>.stack>.panel{position:relative;box-shadow:0 10px 28px rgba(0,0,0,.32)}
-body.carte-pleine .map-panel{position:absolute;inset:0;height:100%;min-height:0!important;padding:0;border:0;border-radius:0;background:var(--map-bg)}
+body.carte-pleine .map-panel{position:absolute;inset:0;height:100%;min-height:0!important;padding:0;border:0;border-radius:0;background:#000}
+body.carte-pleine .map-panel>#map{clip-path:none}
 body.carte-pleine .map{height:100%}
 body.carte-pleine .map-panel>.mapbar{position:absolute;top:12px;left:var(--barre-g,260px);right:var(--barre-d,364px);z-index:7;padding:8px 14px;
  background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.32)}
@@ -3892,3 +3893,15 @@ body.carte-pleine .prise-fenetre{display:block;position:absolute;top:0;left:0;ri
 body.carte-pleine .prise-fenetre::after{content:'';position:absolute;left:50%;top:5px;width:38px;height:4px;margin-left:-19px;border-radius:2px;background:var(--line);opacity:0;transition:opacity .15s}
 body.carte-pleine .panel:hover>.prise-fenetre::after,body.carte-pleine .panel.tenue>.prise-fenetre::after{opacity:1}
 body.carte-pleine .panel.tenue>.prise-fenetre,body.carte-pleine .panel.flottante :is(h2,.eyebrow){cursor:grab}
+/* v1.132 : les colonnes de la Table à toute hauteur ; le journal prend ce qui reste de la sienne ; la place qui s'ouvre sous une
+   fenêtre qu'on range. */
+body.carte-pleine main.layout>.stack.colonne-pleine{min-height:0}
+body.carte-pleine main.layout>.stack>.panel{flex:none}
+body.carte-pleine main.layout>.stack>.panneau-journal{display:flex;flex-direction:column;min-height:150px;box-sizing:border-box}
+body.carte-pleine main.layout>.stack>.panneau-journal:not(.flottante){flex:1 1 0}
+body.carte-pleine main.layout>.stack>.panneau-journal .journal{flex:1;min-height:0;max-height:none}
+body.carte-pleine main.layout>.stack>.panneau-journal :is(.journal-title,.journal-chat){flex:none}
+body.carte-pleine main.layout>.stack>.piste-des{height:210px}
+@media(max-height:860px){body.carte-pleine main.layout>.stack>.piste-des{height:150px}body.carte-pleine main.layout>.stack #dice-tray{min-height:70px}}
+.place-fenetre{display:none}
+body.carte-pleine main.layout>.stack>.place-fenetre{display:block;flex:none;border:2px dashed var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 35%,transparent)}

@@ -4172,14 +4172,28 @@ function lancerEnZone(a,o,p){if(!mapSize().width){log(o.name+' se lance sur la c
    jusqu'en bas ; sa barre flotte en haut, entre les deux colonnes. Les panneaux — le tour, les combattants, les points de vie,
    les dés, la fiche, le journal — flottent par-dessus, rangés en colonnes comme avant. Chacun se prend par son titre ou par la
    barrette de son bord haut et se pose où l'on veut ; sa place se garde sur l'appareil. Un double-clic sur sa prise le rend à
-   sa colonne. Rien ne se mesure pendant qu'on le promène : une image sur deux au plus, sa seule position. */
-const FENETRES_CLE='amertume-fenetres';
+   sa colonne. Rien ne se mesure pendant qu'on le promène : une image sur deux au plus, sa seule position.
+   v1.132 : la carte se tient dans la zone libre — entre les colonnes, sous sa barre, au-dessus de la barre d'actions — : ajustée,
+   elle y tient tout entière ; zoomée, on la décale jusqu'à mettre son bord au ras de cette zone, du noir sous les colonnes, mais
+   jamais plus loin. Une fenêtre lâchée sur une colonne s'y range, au-dessus ou au-dessous des autres, au même écart. */
+const FENETRES_CLE='amertume-fenetres',COLONNES_CLE='amertume-colonnes';
 const cartePleine=()=>document.body.classList.contains('carte-pleine');
 function lisFenetres(){try{const t=JSON.parse(localStorage.getItem(FENETRES_CLE)||'{}');return t&&typeof t==='object'?t:{}}catch(e){return {}}}
 function gardeFenetres(t){try{localStorage.setItem(FENETRES_CLE,JSON.stringify(t))}catch(e){}}
+function lisColonnes(){try{const t=JSON.parse(localStorage.getItem(COLONNES_CLE)||'null');return t&&Array.isArray(t.left)&&Array.isArray(t.right)?t:null}catch(e){return null}}
+function gardeColonnes(t){try{localStorage.setItem(COLONNES_CLE,JSON.stringify(t))}catch(e){}}
+const PANNEAUX_TABLE=[['tour','#round'],['combattants','#actors'],['pv','#pv-panel'],['des','#piste-des'],['fiche','#sheet'],['journal','#journal']];
 function fenetresTable(){const L=document.querySelector('main.layout');if(!L)return [];
- return [['tour','#round'],['combattants','#actors'],['pv','#pv-panel'],['des','#piste-des'],['fiche','#sheet'],['journal','#journal']]
-  .map(([k,s])=>{const e=L.querySelector(s);return [k,e&&e.closest('.panel')]}).filter(([,p])=>p&&p.parentElement&&p.parentElement.matches('.stack.left,.stack.right'))}
+ return PANNEAUX_TABLE.map(([k,s])=>{const e=L.querySelector(s);return [k,e&&e.closest('.panel')]}).filter(([,p])=>p&&p.parentElement&&p.parentElement.matches('.stack.left,.stack.right'))}
+const colonneTable=c=>document.querySelector('main.layout>.stack.'+c);
+// L'ordre des panneaux dans chaque colonne, lu dans la page ; celui d'origine, gardé pour l'écran étroit.
+function ordreColonnes(){const o={left:[],right:[]};['left','right'].forEach(c=>{const s=colonneTable(c);if(s)o[c]=[...s.children].map(e=>e.dataset&&e.dataset.fenetre).filter(Boolean)});return o}
+let ORDRE_ORIGINE=null;
+function rangeColonnes(o){const tous=new Map(fenetresTable());['left','right'].forEach(c=>{const s=colonneTable(c);if(!s)return;
+ const voulu=(o[c]||[]).filter(k=>tous.has(k));if(ordreColonnes()[c].join()===voulu.join())return;voulu.forEach(k=>s.append(tous.get(k)))})}
+function ordreVoulu(){const o=lisColonnes(),base=ORDRE_ORIGINE||ordreColonnes();if(!o)return base;
+ const vu=new Set(),r={left:[],right:[]};['left','right'].forEach(c=>o[c].forEach(k=>{if(!vu.has(k)&&base.left.concat(base.right).includes(k)){vu.add(k);r[c].push(k)}}));
+ ['left','right'].forEach(c=>base[c].forEach(k=>{if(!vu.has(k)){vu.add(k);r[c].push(k)}}));return r}
 // Une fenêtre posée : sa place, gardée par rapport au cadre de la carte, se rapporte à sa colonne, qui la porte.
 function poseFenetre(p,s,L){const r=L.getBoundingClientRect(),c=p.parentElement.getBoundingClientRect();
  const w=Math.min(Math.max(170,s.w||p.offsetWidth),r.width-16),x=Math.max(0,Math.min(r.width-60,s.x)),y=Math.max(0,Math.min(r.height-40,s.y));
@@ -4188,12 +4202,14 @@ function poseFenetre(p,s,L){const r=L.getBoundingClientRect(),c=p.parentElement.
 function rendFenetre(p){p.classList.remove('flottante','tenue');['left','top','width','height','zIndex'].forEach(k=>p.style[k]='')}
 let hautTable=-1,modePlein=null;
 function placeTablePleine(){const L=document.querySelector('main.layout');if(!L)return;
+ if(!ORDRE_ORIGINE)ORDRE_ORIGINE=ordreColonnes();
  const on=innerWidth>900,change=on!==modePlein;modePlein=on;document.body.classList.toggle('carte-pleine',on);
- if(!on){fenetresTable().forEach(([,p])=>rendFenetre(p));if(change)redessineCarte();return}
+ if(!on){fenetresTable().forEach(([,p])=>rendFenetre(p));rangeColonnes(ORDRE_ORIGINE);if(change)redessineCarte();return}
  if(!L.offsetParent)return;
  const haut=Math.max(0,Math.round(L.getBoundingClientRect().top+scrollY));
  if(haut!==hautTable){hautTable=haut;L.style.setProperty('--haut-table',haut+'px')}
- const r=L.getBoundingClientRect(),g=L.querySelector(':scope>.stack.left'),d=L.querySelector(':scope>.stack.right');
+ if(!document.querySelector('.panel.tenue'))rangeColonnes(ordreVoulu());
+ const r=L.getBoundingClientRect(),g=colonneTable('left'),d=colonneTable('right');
  if(g)L.style.setProperty('--barre-g',Math.round(g.getBoundingClientRect().right-r.left+12)+'px');
  if(d)L.style.setProperty('--barre-d',Math.round(r.right-d.getBoundingClientRect().left+12)+'px');
  const t=lisFenetres();fenetresTable().forEach(([k,p])=>{if(p.classList.contains('tenue'))return;const s=t[k];
@@ -4206,17 +4222,38 @@ function redessineCarte(){redessinePour=hautTable;if(redessinePrevu)return;redes
 // La hauteur de la carte : celle de son panneau, toute la page sous le menu.
 {const h0=hauteurDispoCarte;hauteurDispoCarte=function(el){if(cartePleine()&&el&&el.offsetParent){const p=el.closest('.map-panel');if(p&&p.clientHeight)return p.clientHeight}
  return h0.apply(this,arguments)}}
-// La colonne de droite prend toute la hauteur : la fiche en haut, le journal tout le reste.
-{const c0=calerColonnes;calerColonnes=function(){if(!cartePleine())return c0();
- const L=document.querySelector('main.layout'),d=document.querySelector('.stack.right'),g=document.querySelector('.stack.left');if(!L||!d||!L.offsetParent)return;
- const cs=getComputedStyle(L),h=Math.round(L.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)),H=h+'px';
- if(!d.classList.contains('calee'))d.classList.add('calee');if(d.style.height!==H)d.style.height=H;if(g&&!g.classList.contains('calee'))g.classList.add('calee')}}
+/* La zone libre, dans le panneau de la carte : entre les deux colonnes, sous la barre de la carte, au-dessus de la place de la
+   barre d'actions — chacune à 12 px. Sur un écran trop petit pour elle, tout le panneau. Mesurée quand la carte se cale, gardée
+   pour le zoom, qui la lit à chaque cran sans rien remesurer. */
+let zoneCarte=null;
+function zoneLibreCarte(){return cartePleine()?zoneCarte:null}
+function mesureZoneLibre(p){const pr=p.getBoundingClientRect(),g=colonneTable('left'),d=colonneTable('right'),bar=p.querySelector(':scope>.mapbar'),act=p.querySelector(':scope>.barre-actions');
+ let l=g?g.getBoundingClientRect().right-pr.left+12:12,r=d?d.getBoundingClientRect().left-pr.left-12:pr.width-12;if(r-l<240){l=12;r=pr.width-12}
+ let t=bar&&bar.offsetParent?bar.getBoundingClientRect().bottom-pr.top+12:12,b=pr.height-Math.max(150,act&&act.offsetHeight?act.offsetHeight+26:0);if(b-t<200){t=12;b=pr.height-12}
+ return {l,t,r,b}}
+{const ar=applyMapRatio;applyMapRatio=function(){const el=$('map'),avant=el?[el.style.width,el.style.height,el.style.marginLeft,el.style.marginTop].join():'';
+ const change=ar.apply(this,arguments),p=el&&el.closest('.map-panel');
+ if(!cartePleine()||!p||!el.offsetParent||!p.clientWidth){zoneCarte=null;if(el&&(el.style.marginLeft||el.style.marginTop)){el.style.marginLeft=el.style.marginTop='';return true}return change}
+ const Z=mesureZoneLibre(p),m=currentMap(),zw=Z.r-Z.l,zh=Z.b-Z.t;let x=0,y=0;
+ if(m&&m.ratio){let w=zw,h=w/m.ratio;if(h>zh){h=zh;w=h*m.ratio}w=Math.round(w);h=Math.round(h);x=Math.round(Z.l+(zw-w)/2);y=Math.round(Z.t+(zh-h)/2);
+  el.style.width=w+'px';el.style.height=h+'px';el.style.marginLeft=x+'px';el.style.marginTop=y+'px'}
+ else if(el.style.marginLeft||el.style.marginTop)el.style.marginLeft=el.style.marginTop='';
+ zoneCarte={l:Z.l-x,t:Z.t-y,r:Z.r-x,b:Z.b-y};
+ return [el.style.width,el.style.height,el.style.marginLeft,el.style.marginTop].join()!==avant}}
+// Les deux colonnes prennent toute la hauteur : le journal, où qu'il soit rangé, prend ce qui reste de la sienne.
+{const c0=calerColonnes;calerColonnes=function(){const g=colonneTable('left'),d=colonneTable('right');
+ if(!cartePleine()){[g,d].forEach(s=>{if(s&&s.classList.contains('colonne-pleine')){s.classList.remove('colonne-pleine');s.style.height=''}});return c0()}
+ const L=document.querySelector('main.layout');if(!L||!L.offsetParent)return;
+ const cs=getComputedStyle(L),H=Math.round(L.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom))+'px';
+ [g,d].forEach(s=>{if(!s)return;if(s.classList.contains('calee'))s.classList.remove('calee');if(!s.classList.contains('colonne-pleine'))s.classList.add('colonne-pleine');if(s.style.height!==H)s.style.height=H})}}
 {const a0=appliqueTailles;appliqueTailles=function(){const r=a0.apply(this,arguments);if(cartePleine())placeTablePleine();return r}}
 {const sp=showPage;showPage=function(...x){const r=sp.apply(this,x);requestAnimationFrame(placeTablePleine);return r}}
-// La prise : la barrette du haut, le titre du panneau ; ni un bouton, ni un champ. La fenêtre prise passe devant les autres.
+/* La prise : la barrette du haut, le titre du panneau ; ni un bouton, ni un champ. La fenêtre prise passe devant les autres.
+   Au-dessus d'une colonne, une place s'y ouvre, à l'écart des autres, là où elle se rangera si on la lâche. */
 let fenetreDevant=3;
+const estRangee=e=>e&&e.classList&&e.classList.contains('panel')&&!!e.dataset.fenetre&&!e.classList.contains('flottante')&&!!e.offsetParent;
 function prendFenetres(){const L=document.querySelector('main.layout');if(!L)return;
- fenetresTable().forEach(([k,p])=>{if(p.querySelector(':scope>.prise-fenetre'))return;
+ fenetresTable().forEach(([k,p])=>{if(p.querySelector(':scope>.prise-fenetre'))return;p.dataset.fenetre=k;if(k==='journal')p.classList.add('panneau-journal');
   const prise=document.createElement('div');prise.className='prise-fenetre';prise.setAttribute('aria-hidden','true');p.prepend(prise);
   const estPrise=e=>{if(!cartePleine()||e.target.closest('button,input,select,textarea,a,label,summary,[draggable="true"]'))return false;
    const h=e.target.closest('.prise-fenetre,h2,.eyebrow');return !!h&&(h.parentElement===p||h.parentElement.parentElement===p)};
@@ -4225,15 +4262,24 @@ function prendFenetres(){const L=document.querySelector('main.layout');if(!L)ret
    if(p.classList.contains('flottante'))devant();
    if(e.button!==0||!estPrise(e))return;e.preventDefault();
    const x0=e.clientX,y0=e.clientY,pr=p.getBoundingClientRect();let parti=false,prevu=0,dernier=null;
+   const place=document.createElement('div');place.className='place-fenetre';place.setAttribute('aria-hidden','true');
    const bouge=ev=>{dernier=ev;if(!parti){if(Math.hypot(ev.clientX-x0,ev.clientY-y0)<4)return;parti=true;try{p.setPointerCapture(e.pointerId)}catch(err){}
+     place.style.height=Math.round(pr.height)+'px';if(estRangee(p))p.before(place);
      const r=L.getBoundingClientRect();poseFenetre(p,{x:pr.left-r.left,y:pr.top-r.top,w:pr.width,h:k==='journal'?pr.height:0},L);p.classList.add('tenue');devant()}
     if(prevu)return;prevu=requestAnimationFrame(()=>{prevu=0;const r=L.getBoundingClientRect(),c=p.parentElement.getBoundingClientRect();
      const x=Math.max(0,Math.min(r.width-60,pr.left-r.left+dernier.clientX-x0)),y=Math.max(0,Math.min(r.height-40,pr.top-r.top+dernier.clientY-y0));
-     p.style.left=Math.round(r.left+x-c.left)+'px';p.style.top=Math.round(r.top+y-c.top)+'px'})};
+     p.style.left=Math.round(r.left+x-c.left)+'px';p.style.top=Math.round(r.top+y-c.top)+'px';
+     // La colonne sous le pointeur : la place s'ouvre avant le premier panneau rangé dont le milieu est plus bas que lui.
+     const col=['left','right'].map(colonneTable).find(s=>{if(!s)return false;const q=s.getBoundingClientRect();return dernier.clientX>=q.left-24&&dernier.clientX<=q.right+24});
+     if(!col){if(place.parentElement)place.remove();return}
+     const ref=[...col.children].filter(n=>n!==p&&estRangee(n)).find(n=>{const q=n.getBoundingClientRect();return q.top+q.height/2>dernier.clientY})||null;
+     let n=place.parentElement===col?place.nextElementSibling:undefined;while(n&&n!==ref&&!estRangee(n))n=n.nextElementSibling;
+     if(n!==(ref||null))col.insertBefore(place,ref)})};
    const fin=()=>{removeEventListener('pointermove',bouge);removeEventListener('pointerup',fin);removeEventListener('pointercancel',fin);
-    if(prevu){cancelAnimationFrame(prevu);prevu=0}if(!parti)return;p.classList.remove('tenue');
-    const r=L.getBoundingClientRect(),q=p.getBoundingClientRect(),t=lisFenetres();
-    t[k]={x:Math.round(q.left-r.left),y:Math.round(q.top-r.top),w:Math.round(q.width),...(k==='journal'?{h:Math.round(q.height)}:{})};gardeFenetres(t)};
+    if(prevu){cancelAnimationFrame(prevu);prevu=0}if(!parti)return;p.classList.remove('tenue');const t=lisFenetres();
+    if(place.parentElement){place.replaceWith(p);rendFenetre(p);delete t[k]}
+    else{const r=L.getBoundingClientRect(),q=p.getBoundingClientRect();t[k]={x:Math.round(q.left-r.left),y:Math.round(q.top-r.top),w:Math.round(q.width),...(k==='journal'?{h:Math.round(q.height)}:{})}}
+    gardeFenetres(t);gardeColonnes(ordreColonnes());calerColonnes()};
    addEventListener('pointermove',bouge);addEventListener('pointerup',fin);addEventListener('pointercancel',fin)});
   p.addEventListener('dblclick',e=>{if(!estPrise(e)||!p.classList.contains('flottante'))return;const t=lisFenetres();delete t[k];gardeFenetres(t);rendFenetre(p)})})}
 prendFenetres();placeTablePleine();
