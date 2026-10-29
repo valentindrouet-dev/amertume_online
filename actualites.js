@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.186","d":"2026-10-29","t":"Connaissance : textes des joueurs, seuil abaissé"},
 {"v":"1.185","d":"2026-10-29","t":"La fenêtre Inventaire"},
 {"v":"1.184","d":"2026-10-29","t":"Les Marques paient les talents"},
 {"v":"1.183","d":"2026-10-29","t":"Déclencheurs, titres à Brisure, Tour Mystique"},

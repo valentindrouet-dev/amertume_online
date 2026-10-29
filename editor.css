@@ -4149,3 +4149,5 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .ouvre-inventaire{margin:0;padding:7px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel-2);font:600 13px system-ui;color:var(--ink);cursor:pointer}.ouvre-inventaire:hover{background:var(--hover)}
 .or-fiche{display:inline-flex;align-items:center;gap:5px}.or-fiche b{font:700 15px/1 'Killam',Georgia,serif;color:#a0761a}.or-fiche.zero b{opacity:.55}
 #inventaire .inv-plus{margin-left:auto}#inventaire .inv-plus[hidden]{display:none}
+.vit-savoir-ligne{flex-direction:column;align-items:stretch;gap:4px}.vit-savoir-tete{display:flex;align-items:center;gap:10px}
+.vit-savoir-lu{margin:0;font-size:14.5px;line-height:1.4}.vit-savoir-texte{width:100%;box-sizing:border-box;margin:0;font:400 13.5px/1.35 system-ui;resize:vertical}

@@ -81,6 +81,81 @@ const DECLENCHEURS_GEMMES=[
  {cle:'lire-grimoire',nom:'Lire un grimoire',phase:'hors',couleur:'saphir',auto:false},
  {cle:'identifier',nom:'Identifier un objet magique',phase:'hors',couleur:'saphir',auto:false},
  {cle:'negocier',nom:'Négocier',phase:'hors',couleur:'rubis',auto:false}];
+/* v1.186 — Ce que lisent les joueurs à la Tour Mystique, déclencheur par déclencheur, quand ils en ont acheté le savoir ; le MJ
+   peut récrire chaque texte (onglet Connaissance). Un déclencheur connu de la troupe a son seuil abaissé d'un point. */
+const TEXTES_JOUEURS_GEMMES={
+ 'critique':"Quand deux de vos dés montrent 6, le coup est critique : vous relancez et frappez plus fort. Un tel coup attire une sphère.",
+ 'tuer':"Le coup, ou l’orbe, qui met un adversaire à terre pour de bon.",
+ 'abattre-approche':"Un adversaire a marché vers vous ou vers un allié ce tour : vous l’abattez avant qu’il n’arrive au contact.",
+ 'contribution':"Un adversaire que vous avez blessé pendant ce tour meurt, peu importe qui l’achève : votre part du travail compte.",
+ 'tuer-plusieurs':"D’un seul geste — une attaque, un talent —, vous mettez deux adversaires ou plus à terre.",
+ 'frapper-non-vu':"Vous frappez un adversaire qui ne vous a pas vu venir : surpris, aveuglé, endormi, ou vous-même invisible ou caché.",
+ 'soigner-allie':"Vous rendez des PV à un compagnon, par un talent, une potion ou un objet.",
+ 'critique-soin':"Vos dés de soin s’emballent : deux 6 ou plus sur un talent de soin.",
+ 'fin-tour-intouchable':"Vous finissez votre tour sans adversaire au contact et sans avoir perdu un seul PV.",
+ 'distance-ratee':"Un tir ou un sort adverse vous visait : il vous manque.",
+ 'encaisser-debout':"Vous prenez un coup qui vous blesse, et vous restez debout.",
+ 'subir-25':"Un seul coup adverse vous ôte un quart de vos PV max.",
+ 'subir-50':"Un seul coup adverse vous ôte la moitié de vos PV max.",
+ 'subir-75':"Un seul coup adverse vous ôte les trois quarts de vos PV max.",
+ 'subir-critique':"Un adversaire vous porte un coup critique.",
+ 'degager-sans-do':"Vous quittez le contact d’un adversaire sans qu’il parvienne à vous frapper au passage.",
+ 'toucher-distance':"Un tir qui passe la DEF de sa cible. Une fois par tour.",
+ 'tir-longue-portee':"Un tir qui touche une cible plus loin que ce que vous pourriez parcourir en un mouvement.",
+ 'utiliser-objet':"Vous vous servez d’un objet, d’un piège ou d’une invention en combat.",
+ 'reperer-cache':"Votre Perception, en combat, révèle un adversaire qui se cachait.",
+ 'double-mystique':"Deux de vos dés montrent la même face et l’un d’eux est Mystique : sa puissance double.",
+ 'deplacement-force':"Vous repoussez ou attirez un adversaire, ou vous le mettez au sol.",
+ 'fin-tour-contact-2':"Vous finissez votre tour au contact de deux adversaires ou plus, et vous tenez.",
+ 'attaque-2-round':"Deux attaques adverses ou plus vous visent dans le même round. Une fois par round.",
+ 'degats-etat-debout':"Le Poison, la Saignée ou le Feu vous rongent en fin de tour, et vous restez debout.",
+ 'crans-etat-3':"Vous portez trois crans ou plus d’un même état — Poison 3, Feu 3… La première fois du combat, pour chaque état.",
+ 'liberation':"Vous vous libérez d’Entravé, ou vous vous relevez d’Au sol.",
+ 'ancre':"Une attaque aurait dû vous repousser ou vous mettre au sol : vous ne bougez pas.",
+ 'contact-aller-retour':"Dans le même tour, vous entrez au contact d’un adversaire et vous en ressortez.",
+ 'coup-50':"D’un seul coup, vous ôtez à votre cible au moins la moitié de ses PV max.",
+ 'quatre-des-passent':"Quatre de vos dés ou plus passent la DEF, et aucun n’est arrêté.",
+ 'blesser-3':"Vous blessez trois adversaires différents dans le même tour.",
+ 'trois-couleurs':"Un même coup fait des dégâts avec trois couleurs de dés différentes.",
+ 'rage-3':"Votre Rage atteint trois crans ou plus. Une fois par combat.",
+ 'etat-precision':"Vous aveuglez un adversaire.",
+ 'tir-premier':"Vous tirez le premier du tour, sur un adversaire qui n’a pas encore agi.",
+ 'bouger-premier':"Vous êtes le premier à bouger dans le tour.",
+ 'tuer-pv-max':"Un adversaire intact, à ses PV max, tombe d’un seul de vos coups.",
+ 'sort-touche':"Votre orbe passe la DEF de sa cible.",
+ 'etat-elementaire':"Vous posez un état sur un adversaire — Feu, Gel, Poison… La sphère prend la couleur de l’état.",
+ 'etat-positif-allie':"Vous donnez un état favorable à un compagnon — Blindage, Furie, Invisible, Onde, Vie, Rage. La sphère prend la couleur de l’état.",
+ 'test-mental-combat':"En combat, vous réussissez un test de Mysticisme ou de Savoir.",
+ 'tuer-par-etat':"Un adversaire meurt des dégâts d’un état que vous lui aviez posé.",
+ 'maitrise-unique':"Vous employez votre Maîtrise, ou un talent qui ne joue qu’une fois par combat, pour la première fois du combat.",
+ 'relever-coma':"Un compagnon sort du coma — qu’il se relève, ou que vous l’ayez relevé.",
+ 'reveler-faiblesse':"Votre Analyse d’un adversaire vous apprend quelque chose de nouveau.",
+ 'def-tient':"Une attaque adverse se brise sur votre DEF : aucun dé ne passe.",
+ 'toucher-couvert':"Vous touchez un adversaire qu’un compagnon tient déjà au contact.",
+ 'proteger-allie':"Vous prenez un coup à la place d’un compagnon.",
+ 'absorber-armure':"Un coup passe votre DEF, mais votre Armure ou votre Blindage l’absorbe tout entier.",
+ 'gain-armure':"Vous gagnez de l’Armure ou du Blindage. Une fois par combat.",
+ 'reaction-annule':"Votre Réaction annule une attaque qui vous visait.",
+ 'fin-tour-bas-pv':"Vous finissez votre tour sous un quart de vos PV, encore debout.",
+ 'groupe-sans-coma':"Le combat s’achève sans qu’aucun compagnon ne soit dans le coma.",
+ 'combat-sans-coma':"Le combat s’achève sans que vous soyez jamais tombé dans le coma.",
+ 'larcin':"Un Larcin qui vous rapporte de l’or.",
+ 'intimider':"Vous intimidez quelqu’un. Le MJ lance la sphère.",
+ 'test-competence':"Hors combat, vous réussissez un test de compétence. La sphère prend la couleur de la compétence.",
+ 'escalader':"Vous escaladez, sautez ou nagez. Le MJ lance la sphère.",
+ 'longue-marche':"Vous tenez une longue marche. Le MJ lance la sphère.",
+ 'repos-court':"Vous prenez un repos court.",
+ 'fouiller':"Une fouille qui donne au moins une réussite.",
+ 'crocheter':"Vous crochetez une serrure ou un coffre.",
+ 'desamorcer':"Vous trouvez et désamorcez un piège.",
+ 'reparer':"Vous réparez quelque chose. Le MJ lance la sphère.",
+ 'secret':"Vous percez un indice de la carte.",
+ 'lire-grimoire':"Vous lisez un grimoire. Le MJ lance la sphère.",
+ 'identifier':"Vous identifiez un objet magique. Le MJ lance la sphère.",
+ 'negocier':"Vous négociez. Le MJ lance la sphère."};
+const texteJoueurGemme=cle=>{const r=reglesGemmes().declencheurs[cle];return (r&&r.texte)||TEXTES_JOUEURS_GEMMES[cle]||((declencheurGemme(cle)||{}).nom||'')};
+const declencheurConnu=cle=>typeof savoirSpheres==='function'&&savoirSpheres().includes(cle);
+function seuilGemme(cle){const r=reglesGemmes().declencheurs[cle];if(!r)return 5;return Math.max(1,r.seuil-(declencheurConnu(cle)?1:0))}
 const FACES_GEMMES_DEFAUT={citrine:[0,0,0,0,1,2],emeraude:[0,0,0,0,1,2],saphir:[0,0,0,0,1,2],rubis:[0,0,0,0,1,2],diamant:[0,0,0,0,0,1]};
 const declencheurGemme=cle=>DECLENCHEURS_GEMMES.find(d=>d.cle===cle)||null;
 const nbEntier=(v,lo,hi,d)=>{const n=Math.trunc(Number(v));return Number.isFinite(n)?Math.max(lo,Math.min(hi,n)):d};
@@ -98,7 +173,7 @@ function normaliseReglesGemmes(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:
  fusion:{eclat:nbEntier(g.fusion&&g.fusion.eclat,1,99,5),brome:nbEntier(g.fusion&&g.fusion.brome,1,99,5)},declencheurs:{},titres:{},
  tour:{achat:{},vente:nbEntier(g.tour&&g.tour.vente,0,100,50),conversion:nbEntier(g.tour&&g.tour.conversion,1,99,2),savoir:nbEntier(g.tour&&g.tour.savoir,0,9999,25)}};
  DECLENCHEURS_GEMMES.forEach(d=>{const x=g.declencheurs&&g.declencheurs[d.cle]||{},couleur=COULEURS_GEMMES.includes(x.couleur)||x.couleur==='competence'||x.couleur==='etat'?x.couleur:d.couleur;
-  out.declencheurs[d.cle]={couleur,actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,d.seuil||seuilDesFaces(g,couleur))}});
+  out.declencheurs[d.cle]={couleur,actif:x.actif!==false,seuil:nbEntier(x.seuil,1,6,d.seuil||seuilDesFaces(g,couleur)),...(typeof x.texte==='string'&&x.texte.trim()?{texte:x.texte.trim().slice(0,400)}:{})}});
  TITRES_GEMMES.forEach(([k,c])=>{const x=g.titres&&g.titres[k]||{};out.titres[k]={couleur:COULEURS_GEMMES.includes(x.couleur)?x.couleur:c,actif:x.actif!==false}});
  const ta=g.tour&&g.tour.achat&&typeof g.tour.achat==='object'?g.tour.achat:{};['brisure','eclat','brome'].forEach(t=>{out.tour.achat[t]={};COULEURS_GEMMES.forEach(c=>{out.tour.achat[t][c]=nbEntier(ta[t]&&ta[t][c],0,99999,PRIX_TOUR[t])})});
  return out}
@@ -139,7 +214,8 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  // v1.167 : un seul dé par déclencheur ; le seuil fait la difficulté.
  const des=1;
  const faces=Array.from({length:des},()=>typeof d6==='function'?d6():1+Math.floor(Math.random()*6));
- let gagne=faces.some(f=>f>=r.seuil)?1:0;
+ // v1.186 : un déclencheur que la troupe connaît (Tour Mystique) réussit un point plus bas.
+ const seuil=seuilGemme(cle);let gagne=faces.some(f=>f>=seuil)?1:0;
  /* v1.157 : une même action — un coup, un talent et toutes ses cibles — ne donne qu'une gemme de chaque couleur : chaque
     déclencheur lance ses dés, mais si deux d'une même couleur réussissent, une seule se garde. Le dé du MJ n'y est pas tenu. */
  if(gagne&&!opts.manuel){const kc=a.id+'|'+couleur;if(gemmesCetteAction.has(kc))gagne=0;else{gemmesCetteAction.add(kc);queueMicrotask(()=>gemmesCetteAction.delete(kc))}}

@@ -1328,10 +1328,17 @@ function vitSavoir(corps,client,R){corps.className='vit-corps';const mj=mjDom(),
  const actifs=DECLENCHEURS_GEMMES.filter(d=>R.declencheurs[d.cle].actif),inconnus=actifs.filter(d=>!connu.includes(d.cle));
  const liste=vitEl('div','vit-tour-savoir');corps.append(vitEl('h4','vit-section','Le savoir des sphères'));
  const couleurDe=cle=>{const c=R.declencheurs[cle].couleur;return c==='competence'?'Couleur de la compétence':c==='etat'?'Couleur de l’état':NOM_COULEUR_GEMME[c]};
+ /* v1.186 : chaque ligne porte le texte que lisent les joueurs, et son seuil — abaissé d'un point une fois connu (« 5+ → 4+ »).
+    Le MJ lit toutes les lignes et récrit chaque texte dans son champ ; la troupe ne lit que celles qu'elle a achetées. */
  const ligne=(d,sue)=>{const r=R.declencheurs[d.cle],l=vitEl('div','vit-savoir-ligne'+(sue?'':' inconnue')),c=['competence','etat'].includes(r.couleur)?'citrine':r.couleur;
   const im=document.createElement('img');im.src=imgUrl(iconeGemme('brisure',c)+'.png');im.alt='';im.draggable=false;if(['competence','etat'].includes(r.couleur))im.hidden=true;
-  // Le MJ lit toutes les lignes ; la troupe ne lit que celles qu'elle a achetées.
-  l.append(im,vitEl('span','vit-savoir-nom',sue||mj?d.nom:'?'),vitEl('span','muted',(sue||mj?couleurDe(d.cle)+' · '+r.seuil+'+ · '+(d.phase==='combat'?'en combat':'hors combat'):'')+(sue?'':(mj?' · inconnu de la troupe':'inconnu'))));return l};
+  const tete=vitEl('div','vit-savoir-tete');tete.append(im,vitEl('span','vit-savoir-nom',sue||mj?d.nom:'?'));
+  const seuilTxt=sue?r.seuil+'+ → '+seuilGemme(d.cle)+'+':r.seuil+'+';
+  tete.append(vitEl('span','muted',(sue||mj?couleurDe(d.cle)+' · '+seuilTxt+' · '+(d.phase==='combat'?'en combat':'hors combat'):'')+(sue?'':(mj?' · inconnu de la troupe':'inconnu'))));l.append(tete);
+  if(sue||mj){if(mj){const ch=vitEl('textarea','vit-savoir-texte');ch.rows=2;ch.maxLength=400;ch.value=r.texte||'';ch.placeholder=typeof TEXTES_JOUEURS_GEMMES!=='undefined'&&TEXTES_JOUEURS_GEMMES[d.cle]||'';ch.setAttribute('aria-label','Texte lu par les joueurs : '+d.nom);
+    ch.onchange=()=>{poseReglesGemmes(g=>{const v=ch.value.trim();if(v)g.declencheurs[d.cle].texte=v;else delete g.declencheurs[d.cle].texte})};l.append(ch)}
+   else l.append(vitEl('p','vit-savoir-lu',texteJoueurGemme(d.cle)))}
+  return l};
  const montrees=mj?actifs:actifs.filter(d=>connu.includes(d.cle));
  if(!montrees.length)liste.append(vitEl('p','muted vit-vide','La troupe ne connaît encore aucun déclencheur.'));
  montrees.forEach(d=>liste.append(ligne(d,connu.includes(d.cle))));corps.append(liste);

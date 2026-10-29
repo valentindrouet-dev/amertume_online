@@ -5369,6 +5369,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.186 — Le texte des joueurs par déclencheur (Connaissance) ; un déclencheur connu réussit un point plus bas. */
+{const g=fs.readFileSync('gemmes.js','utf8');assert.ok(g.includes("const TEXTES_JOUEURS_GEMMES={")&&g.includes("function seuilGemme(cle){const r=reglesGemmes().declencheurs[cle];if(!r)return 5;return Math.max(1,r.seuil-(declencheurConnu(cle)?1:0))}")
+ &&g.includes("const seuil=seuilGemme(cle);let gagne=faces.some(f=>f>=seuil)?1:0;")&&fs.readFileSync('domaine.js','utf8').includes("const ch=vitEl('textarea','vit-savoir-texte');"),'v1.186');
+ const cles=[...g.matchAll(/\{cle:'([a-z0-9-]+)'/g)].map(m=>m[1]),T=g.slice(g.indexOf('const TEXTES_JOUEURS_GEMMES={'),g.indexOf('const texteJoueurGemme'));cles.forEach(k=>assert.ok(T.includes("'"+k+"':"),'texte joueur : '+k));}
 /* v1.185 — La fenêtre Inventaire : le schéma à l'échelle et la bourse à gauche, le sac par catégories à droite ; le MJ la redimensionne. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("function openInventaire(a){a=acteurCourant(a);if(!a)return;inventaireActeur=a;renderInventaire();")&&ed.includes("function cadreInventaire(){")
  &&ed.includes("pl.className='place p-bourse';")&&ed.includes("const LIGNES_SAC=fenetre?CATEGORIES_SAC:")&&ed.includes("c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}")
@@ -5484,7 +5488,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes(" if(rm.right+ec+w<=rp.r
 /* v1.155 — Gemmes : un seuil par déclencheur, une sphère au plus, le journal dit seulement qu'elle est acquise ; nouveaux
    déclencheurs ; les bonus de PA et de PM à plusieurs gemmes. */
 {const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');
- assert.ok(gm.includes(" let gagne=faces.some(f=>f>=r.seuil)?1:0;")&&!gm.includes("' · Dé de gemme ('")
+ assert.ok(gm.includes("let gagne=faces.some(f=>f>=seuil)?1:0;")&&!gm.includes("' · Dé de gemme ('")
   &&['tuer-plusieurs','critique-soin','subir-25','subir-50','subir-75','subir-critique'].every(c=>gm.includes("{cle:'"+c+"',"))
   &&gm.includes("const f=lost/Math.max(1,Number(b.max)||1),p=f>=.75?'subir-75':f>=.5?'subir-50':f>=.25?'subir-25':null;")
   &&ed.includes("const PRIX_MULTIPLES=['pa','pm'];")&&ed.includes("natures.splice(Math.max(0,natures.findIndex(([c])=>c==='def')+1),0,['pa','Point d’Action'],['pm','Point de Mouvement']);")&&fs.readFileSync('index.html','utf8').includes("meta.bilan||meta.toujours||meta.ton==='degats'")&&ed.includes("const ouvert=k>0||sphereOuverte(a,t,l),tot=prixSpheres(t);"),'v1.155');}
