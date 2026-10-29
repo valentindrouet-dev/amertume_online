@@ -5368,6 +5368,11 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.133 — Le sphérier : icônes définitives des bonus, clic sur le fond, Maj + clic pour lier, choix des bonus, coût sous le rond. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("function logoBonusFixe(carac){const n={vie:1,endu:2,pv:3,xp:4,dmg:5}[carac],id=n?'planches/caracteristiques_2.webp#'+n:'';")
+  &&ed.includes("if(e.shiftKey&&s&&s!==t){if(!voisinsSphere(t,l).includes(s))s.liensSphere=[...(s.liensSphere||[]),t.id];sphereSel=t.id;arbreChange();return}")
+  &&ed.includes("const choixSphereDialog=dialog('sphere-choix','Ajouter un bonus',")&&ed.includes("c.className='sphere-cout'+(paliersDe(t)>1&&a?' sous-paliers':'');"),'v1.133');}
 /* v1.131 / v1.132 — La carte plein écran sur la Table, sa zone libre, ses panneaux flottants, déplaçables et rangés en colonne. */
 {const mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(mp.includes("const FENETRES_CLE='amertume-fenetres',COLONNES_CLE='amertume-colonnes';")&&mp.includes("function zoneLibreCarte(){return cartePleine()?zoneCarte:null}")

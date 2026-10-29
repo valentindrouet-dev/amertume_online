@@ -3905,3 +3905,9 @@ body.carte-pleine main.layout>.stack>.piste-des{height:210px}
 @media(max-height:860px){body.carte-pleine main.layout>.stack>.piste-des{height:150px}body.carte-pleine main.layout>.stack #dice-tray{min-height:70px}}
 .place-fenetre{display:none}
 body.carte-pleine main.layout>.stack>.place-fenetre{display:block;flex:none;border:2px dashed var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 35%,transparent)}
+/* v1.133 : le sphérier — l'icône plus grande dans son rond ; le coût sous le rond, sous les crans des paliers s'il en a. */
+.sphere-rond>:is(.logo-bonus,.logo-equip){width:84%;height:84%;object-fit:contain}
+.sphere-cout{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:4px;font:700 11px/1 system-ui;color:var(--muted);white-space:nowrap;pointer-events:none}
+.sphere-cout.sous-paliers{margin-top:14px}
+.sphere-noeud.dispo .sphere-cout{color:var(--ink)}
+.sphere-noeud:hover{background:none}

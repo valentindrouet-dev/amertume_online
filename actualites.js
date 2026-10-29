@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.133","d":"2026-10-29","t":"Sphérier : icônes fixes, ajout au clic, Maj + clic pour lier, coûts"},
 {"v":"1.132","d":"2026-10-29","t":"Table : zone libre de la carte, fenêtres rangées en colonne"},
 {"v":"1.131","d":"2026-10-29","t":"Table : carte plein écran, panneaux flottants"},
 {"v":"1.130","d":"2026-10-29","t":"Arbre : onglet Métier toujours visible, onglets aux teintes"},
