@@ -4120,3 +4120,8 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .vit-choix-couleurs{display:flex;flex-wrap:wrap;gap:6px}
 .vit-choix-couleur{display:inline-flex;align-items:center;gap:5px;margin:0;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);color:var(--ink);cursor:pointer;font:600 14px system-ui}
 .vit-choix-couleur:hover{background:var(--hover)}.vit-choix-couleur.inactif{opacity:.5;cursor:not-allowed}.vit-choix-couleur img{width:20px;height:20px}
+/* v1.184 : les Marques — leur icône dans les prix et sur la fiche. */
+.marque-ico{width:18px;height:18px;object-fit:contain;vertical-align:middle;flex:none}.marque-glyphe{display:inline-grid;place-items:center;font-size:14px;color:var(--accent)}
+.detail-prix{display:inline-flex;align-items:center;gap:4px}.detail-prix .marque-ico{width:16px;height:16px}
+.talent-bulle-nom .cout-xp{display:inline-flex;align-items:center;gap:3px}.talent-bulle-nom .cout-xp .marque-ico{width:13px;height:13px}
+.chip.chip-marques{display:inline-flex;align-items:center;gap:4px}.chip.chip-marques .marque-ico{width:15px;height:15px}

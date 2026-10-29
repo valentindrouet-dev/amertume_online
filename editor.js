@@ -749,6 +749,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.154 : « Infliger un état » prend la couleur de l'état posé ; l'ancienne couleur fixe de ce déclencheur cède la place.
  // v1.163 : « Toucher une cible à distance » revient, en Citrine, à 5+.
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('tir-citrine')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['toucher-distance'];if(d&&typeof d==='object'){d.couleur='citrine';d.actif=true;d.seuil=5}c.semisForge.push('tir-citrine')}
+ // v1.184 : les talents se paient en Marques (1 par 100 XP) : chaque coût en XP devient son équivalent en Marques, arrondi au-dessus, une fois.
+ if(Array.isArray(c.semisForge)&&!c.semisForge.includes('marques')){(c.talents||[]).forEach(t=>{if(t&&Array.isArray(t.couts))t.couts=t.couts.map(x=>Math.ceil(Math.max(0,Math.trunc(Number(x))||0)/XP_PAR_MARQUE))});c.semisForge.push('marques')}
  // v1.183 : « Repousser ou attirer » passe en Rubis, un geste de Force, une fois.
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('force-rubis')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['deplacement-force'];if(d&&typeof d==='object'&&d.couleur==='citrine')d.couleur='rubis';c.semisForge.push('force-rubis')}
  if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){const d=c.gemmesRegles&&c.gemmesRegles.declencheurs&&c.gemmesRegles.declencheurs['etat-elementaire'];if(d&&typeof d==='object')d.couleur='etat';c.semisForge.push('etat-couleur')}
@@ -1223,6 +1225,18 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
 // Le voile est déjà dans la page dès le premier affichage : la scène de base ne se montre plus avant la partie.
 const cover=document.getElementById('busy-cover')||Object.assign(document.createElement('div'),{id:'busy-cover',textContent:'Chargement de la partie enregistrée…'});document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
+/* ---------- v1.184 — Les Marques ----------
+   Une Marque par tranche de 100 XP gagnés ; elles paient les talents et les améliorations, et reviennent quand on les rend —
+   hors combat, après un repos court. Leur icône est celle que le MJ a nommée « marque » dans ses planches ; sinon un losange. */
+const texteMarques=n=>n+' '+(n>1?'Marques':'Marque');
+let idMarqueCache=null,idMarqueSource=null;
+function idIconeMarque(){const P=typeof planchesDuCatalogue==='function'?planchesDuCatalogue():[];if(idMarqueSource===P&&idMarqueCache!==null)return idMarqueCache;idMarqueSource=P;idMarqueCache='';
+ P.some(pl=>(pl.icones||[]).some((x,i)=>{if(x&&String(x.nom||'').trim().toLowerCase()==='marque'){idMarqueCache=pl.fichier+'#'+(i+1);return true}return false}));return idMarqueCache}
+function iconeMarque(cls){const id=idIconeMarque(),c=cls||'marque-ico';if(id&&typeof poseIcone==='function'){const im=document.createElement('img');im.className=c;im.alt='';im.draggable=false;poseIcone(im,id);return im}
+ const s=document.createElement('span');s.className=c+' marque-glyphe';s.textContent='✦';return s}
+function remplitMarques(el,n){el.replaceChildren(iconeMarque('marque-ico'),String(n));el.title=texteMarques(n);el.setAttribute('aria-label',texteMarques(n));return el}
+const NOTE_REPOS_MARQUES='Un talent se rend hors combat, après un repos court : ses Marques reviennent alors.';
+function peutRendreTalent(a){return view==='mj'||(!!a&&!aventurierEnCombat(a)&&a.reposPris===true)}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div class="form-actions" id="actor-haut" hidden><button type="button" id="actor-conversion" class="conversion-bouton">🎲</button><button type="submit" class="primary">Enregistrer la fiche</button></div><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
 /* ---------- Stats de Combat ----------
    La fenêtre qu'ouvre le lien de fin de combat, au journal : en tête, les tours et les dégâts de chaque camp face à
@@ -1545,7 +1559,7 @@ function majFiche(carte,a){if(!carte)return;
  {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true,'',a)}
  // Sur la fiche, le « + » serre un peu la valeur des dégâts : une espace fine.
  ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsAffiches(a));{const t=carte.querySelector('.stat-tile.t-dmg');if(t)t.classList.toggle('en-hausse',degatsEnHausse(a))}ecrire('.stat-tile.t-xp strong',a.hero?xpDuNiveau(a).dans:a.xp||0);
- ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
+ ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');{const m=c.querySelector('.chip-marques');if(m){m.replaceChildren(iconeMarque('marque-ico'),xpDisponible(a,catalog.talents)+' / '+marquesGagnees(a))}}
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
  carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('haute',valeurCompetence(a,k)>1)}
   r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k))})}
@@ -1842,6 +1856,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Chez un aventurier, le niveau se lit dans sa classe et l'XP avec ses chiffres.
  if(!a.hero)marques.push(['Niveau '+a.level,'level','chip-niveau','Modifier le niveau de '+a.name],
   [(a.xp||0)+' XP','xp','chip-xp','Modifier l’XP de '+a.name]);
+ // v1.184 : les Marques d'un aventurier — celles qu'il peut dépenser sur celles qu'il a gagnées.
+ if(a.hero){const p=document.createElement('span');p.className='chip chip-marques';p.append(iconeMarque('marque-ico'),xpDisponible(a,catalog.talents)+' / '+marquesGagnees(a));p.title='Marques à dépenser / gagnées (1 par 100 XP)';puces.append(p)}
  marques.forEach(([t,cle,marque,titre])=>{const p=document.createElement('span');
   p.className='chip'+(marque?' '+marque:'');p.textContent=t;
   if(cle)champVif(p,()=>a[cle]||0,v=>poserCarac(a,cle,v,c),titre,'petit');
@@ -4284,7 +4300,7 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  // Une amélioration à paliers en montre deux : la troisième reste au formulaire, cachée.
  const trois=PALIERS.actifs,deux=!trois&&!!(f.type&&f.type.value==='ame'&&f.paliersActifs&&f.paliersActifs.checked);
  let html='<table class="paliers-table'+(trois?'':deux?' deux-paliers':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
-  +ligne('Coût (XP)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="999999" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en XP — palier '+n+'"></td>').join(''))
+  +ligne('Coût (Marques)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="999999" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en Marques — palier '+n+'"></td>').join(''))
   +ligne('Texte de l’effet',[1,2,3].map(n=>'<td>'+texte(n)+'</td>').join(''));
  if(code){const params=code.params||[],volets=Array.isArray(code.volets)?code.volets:[],ouverts=voletsDe({effet:code.cle,volets:d.volets});
   html+='<tr class="paliers-sep"><th colspan="4" scope="rowgroup">Effets câblés : '+esc(code.nom)+'</th></tr>';
@@ -4398,13 +4414,13 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
   +sel('Compétence','b_comp',pb.comp,optBonus('comp'))
   +sel('État','b_etat',pb.etat,optBonus('etat'))
-  +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')
+  +field('Coût (Marques)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')
   // v1.142 : un bonus du sphérier coûte des gemmes — tant de Brisures, d'Éclats ou de Brômes, de la variété de sa caractéristique.
   +(t.spherier===true?field('Prix (gemmes)','b_gemme_n',(t.prixGemmes&&t.prixGemmes.n)||1,'number','min="1" max="99" step="1"')+sel('Taille des gemmes','b_gemme_taille',(t.prixGemmes&&t.prixGemmes.taille)||'brisure',TAILLES_GEMMES.map(([k,n])=>[k,n])):'')
   +'<label class="field-check"><input type="checkbox" name="b_paliers" '+(t.paliersActifs===true&&t.effet==='bonus'?'checked':'')+'>Paliers</label>'
   +'<div id="b-paliers" class="b-paliers-grille"'+(t.paliersActifs===true&&t.effet==='bonus'?'':' hidden')+'>'+[2,3].map(n=>{const q=t.paliers&&t.paliers[n]&&t.paliers[n].params;
    // Deux paliers au plus : les champs du troisième restent au formulaire, cachés, ce qu'ils gardent ne se perd pas.
-   const champs=field('Valeur — palier '+n,'b_valeur_'+n,q&&q.valeur||'','number','min="1" max="20"')+field('Coût (XP) — palier '+n,'b_cout_'+n,coutPalier(t,n)||'','number','min="0" max="999999" step="1"');
+   const champs=field('Valeur — palier '+n,'b_valeur_'+n,q&&q.valeur||'','number','min="1" max="20"')+field('Coût (Marques) — palier '+n,'b_cout_'+n,coutPalier(t,n)||'','number','min="0" max="999999" step="1"');
    return n===3?'<div hidden>'+champs+'</div>':champs}).join('')+'</div>'
   // Son logo : le sien, ou celui de tous les bonus de la même caractéristique.
   +(()=>{const d=(catalog.logosBonus||{})[cleLogoBonus(pb)]||'';return '<div class="bonus-logo-choix">'+selLogos('Logo','b_logo',t.logo||d)
@@ -6088,8 +6104,9 @@ arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;
  if(arbresEspece){const z=arbresDialog.querySelector('.arbres-v2-arbre');if(z&&z.scrollWidth>z.clientWidth+1)arbresDialog.style.width=Math.round(Math.min(innerWidth*.96,arbresDialog.getBoundingClientRect().width+z.scrollWidth-z.clientWidth+2))+'px'}};
 const talentsDEspece=a=>a&&a.hero&&especeDe(a.espece)?(catalog.talents||[]).filter(t=>t&&talentFamily(t)===FAMILLE_ESPECES&&t.espece===a.espece&&!estBonus(t)&&!estVide(t)):[];
 arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
+ if(!peutRendreTalent(a)){noteArbres(NOTE_REPOS_MARQUES);return}
  const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
- if(typeof demander==='function'&&!await demander('Réinitialiser tout l’arbre de talents de '+a.name+' ? Ses talents et améliorations lui sont rendus, et leur XP lui revient. Ses bonus infusés restent.','Réinitialiser'))return;
+ if(typeof demander==='function'&&!await demander('Réinitialiser tout l’arbre de talents de '+a.name+' ? Ses talents et améliorations lui sont rendus, et leurs Marques lui reviennent. Ses bonus infusés restent.','Réinitialiser'))return;
  // v1.142 : les bonus infusés du sphérier restent : leurs gemmes sont consommées, ils ne se rendent pas.
  {const garde=(a.talents||[]).filter(id=>{const x=talent(id);return x&&x.spherier===true}),pal={};garde.forEach(id=>{if(a.paliersTalents&&a.paliersTalents[id])pal[id]=a.paliersTalents[id]});
   a.talents=[...new Set([...fl,...garde])];a.paliersTalents=pal}
@@ -6115,7 +6132,7 @@ function tableMasseTalents(corps,classe){
  const cout=v=>Math.max(0,Math.min(999999,Math.round(Number(v)||0)));
  const COLS=[
   {cle:'type',nom:'Type',type:'choix',opts:TALENT_TYPES.map(([k,,n])=>[k,n]),pour:t=>!estBonus(t),lit:t=>t.type||'act',ecrit:(t,v)=>{if(TALENT_TYPES.some(([k])=>k===v))t.type=v},tri:t=>estBonus(t)?'':talentType(t)[2]},
-  {cle:'cout',nom:'Coût (XP)',type:'nombre',lit:t=>coutPalier(t,1),ecrit:(t,v)=>{const c=[1,2,3].map(n=>coutPalier(t,n));c[0]=cout(v);t.couts=c}},
+  {cle:'cout',nom:'Coût (Marques)',type:'nombre',lit:t=>coutPalier(t,1),ecrit:(t,v)=>{const c=[1,2,3].map(n=>coutPalier(t,n));c[0]=cout(v);t.couts=c}},
   {cle:'meca',nom:'Mécanique',type:'vue',tri:t=>estBonus(t)?'Bonus':nomEffet(t.effet)||'',montre:t=>estBonus(t)?'Bonus':nomEffet(t.effet)||'—'},
   {cle:'texte',nom:'Texte',type:'texte',pour:t=>!estBonus(t),lit:t=>t.effects||'',ecrit:(t,v)=>{t.effects=String(v||'').trim().slice(0,600)}}];
  const vaut=(c,t)=>!c.pour||c.pour(t);
@@ -6363,7 +6380,7 @@ function bulleTalent(t,{a=null,vu:vu0=x=>x,verrou='',note='',des=null,cout=false
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, à cheval sur le bord haut de la bulle, à droite.
  // Rouge si l'aventurier n'a pas l'XP qu'il faut pour le prendre.
  {const tenu=!!a&&(a.talents||[]).includes(t.id),suite=palier||(tenu&&palierDe(a,t)<paliersDe(t)?palierDe(a,t)+1:1),pris=palier?tenu&&palierDe(a,t)>=palier:tenu&&suite===1;
-  if(cout&&coutPalier(t,suite)){const c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,suite)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,suite)+' XP';tete.append(c)}}
+  if(cout&&coutPalier(t,suite)){const c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,suite)>xpDisponible(a,catalog.talents)?' trop-cher':'');remplitMarques(c,coutPalier(t,suite));tete.append(c)}}
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts au bout de la ligne de son nom.
  if(des)desAuTitre(tete,des);
  /* Son coût à la table, juste à gauche de son nom : celui que la table fait payer (« points » le donne), sinon
@@ -6454,7 +6471,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const groupes=[[],[],[]];[...somme].forEach(([k,e])=>groupes[k.startsWith('comp:')?2:CARACS.includes(k)?0:1].push(e));
   groupes[0].sort((x,y)=>CARACS.indexOf(x.p.carac)-CARACS.indexOf(y.p.carac));groupes[2].sort((x,y)=>nomComp('comp:'+x.p.comp).localeCompare(nomComp('comp:'+y.p.comp),'fr'));
   arbresTotal.replaceChildren();arbresTotal.hidden=!total&&!somme.size;
-  if(total)arbresTotal.append(Object.assign(document.createElement('span'),{textContent:'Total '+total.toLocaleString('fr-FR')+' XP'}));
+  if(total)arbresTotal.append(Object.assign(document.createElement('span'),{textContent:'Total '+texteMarques(total)}));
   /* Le total par tranches de niveau, d'après les niveaux marqués sur les lignes : ce qu'un aventurier peut dépenser
      avant de passer chacun d'eux. Un petit rond compte avec son talent. Au MJ seul, comme le total. */
   if(total){const req=niveauxRequis(classe),niv=t=>{const d=lisChemin(t)?departChemin(t):t;return d&&req.get(d.id)||1};
@@ -6462,7 +6479,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    liste.forEach(t=>{const n=niv(t),s=seuils.filter(x=>x<=n).pop();let c=0;for(let k=1;k<=paliersDe(t);k++)c+=coutPalier(t,k);parTranche.set(s,(parTranche.get(s)||0)+c)});
    if(seuils.length>1){const l=document.createElement('span');l.className='arbres-tranches';
     seuils.forEach((s,i)=>{const fin=seuils[i+1],e=document.createElement('span');
-     e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '+(parTranche.get(s)||0).toLocaleString('fr-FR')+' XP';l.append(e)});
+     e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '+texteMarques(parTranche.get(s)||0);l.append(e)});
     arbresTotal.append(l)}}
   /* Ce que les joueurs voient de cet arbre : tout, ou jusqu'à l'une de ses barrières de niveau. */
   // v0.982 : en groupes de niveau, le menu propose les groupes, et le choix vaut pour tous les arbres.
@@ -6621,9 +6638,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // L'XP de l'aventurier : ce que l'arbre a coûté, et ce qui reste à dépenser.
  /* « 100 / 2415 XP disponibles » : ce qui reste à dépenser, sur toute l'XP gagnée, en barre dorée
     comme celle des PV — elle se vide à chaque talent pris, se remplit à chaque talent rendu. */
- if(a){const dispo=xpDisponible(a,catalog.talents),total=Math.max(0,Math.trunc(Number(a.xp))||0),s=document.createElement('div');s.className='arbres-pt';
-  // La jauge se remplit de ce qui est payé : 100 XP dépensées sur 1000 gagnées, « 100 / 1000 XP ».
-  const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+total+' XP';
+ if(a){const dispo=xpDisponible(a,catalog.talents),total=marquesGagnees(a),s=document.createElement('div');s.className='arbres-pt';
+  // v1.184 : la jauge se remplit des Marques dépensées sur celles gagnées, « 3 / 10 Marques ».
+  const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+texteMarques(total);
   s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';if(V2)barreXp=s;else tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  tete.classList.toggle('v2',V2);corps.append(tete);
@@ -6634,7 +6651,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     qui mène à lui ; et partout, ce que son effet réclame. Le tronc libre n'enchaîne rien. Sans
     porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
  // Un talent, un bonus ou une amélioration que l'XP restante ne paie pas se grise, comme un prérequis manquant.
- const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'XP insuffisante':'';
+ const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'Marques insuffisantes':'';
  const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
   const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
@@ -6644,6 +6661,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(V2&&t.id===arbreDetailId)el.classList.add('choisi')
   const agir=()=>{if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
+   if(acquis&&!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};el.agir=agir;
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
@@ -6674,10 +6692,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if((estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // À paliers, le clic monte d'un palier tant que l'XP le paie ; au dernier, il rend l'amélioration.
    if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;if(coutPalier(t,n)>xpDisponible(a,catalog.talents))return;poserPalier(t,n)}
-   else if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
+   else if(acquis){if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}oublier(t,libre?null:col.liste)}else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
   // Le clic droit redescend d'un palier ; au premier, il rend l'amélioration.
-  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;e.preventDefault();
+  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;e.preventDefault();if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}
    const k=palierDe(a,t);if(k>1)poserPalier(t,k-1);else oublier(t,libre?null:col.liste);note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
   return el};
@@ -6803,7 +6821,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      cd.className='detail-amelioration'+(bonus?' detail-bonus':'')+(k>=n?' acquise':'')+(suivante?' achetable':'')+(!a?' editable':'');
      const l=document.createElement('p');l.className='detail-am-nom';const b=document.createElement('b');
      if(bonus){const xp=talentAuPalier(x,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}))}else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n])}
-     l.append(b);if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';l.append(pr)}
+     l.append(b);if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');remplitMarques(pr,prix);l.append(pr)}
      cd.append(l);const tx=bonus?'':talentAuPalier(xv,n).effects||'';if(tx){const e=document.createElement('p');texteEnrichi(e,tx,nomsDeLArbre(x),a);cd.append(e)}
      // Un bonus : sa seule vignette, telle que le panneau la montre au survol de son rond.
      if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
@@ -7124,7 +7142,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(a&&t.flottant!==true){const prix=coutPalier(t,1),dispoT=xpDisponible(a,catalog.talents);
    // Le prix sous le grand rond : le nom garde toute sa ligne, et le cartouche ne sort jamais du cadre.
    // Pris, son prix reste, en vert : de l'XP dépensée.
-   if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(acquis?' paye':prix>dispoT?' trop-cher':'');pr.textContent=prix+' XP';rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
+   if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(acquis?' paye':prix>dispoT?' trop-cher':'');remplitMarques(pr,prix);rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
    const ok=acquis||(!verrou&&!!el&&prix<=dispoT);tete.classList.add('cliquable',acquis?'acquise':ok?'achetable':'fermee');
    if(ok&&el&&el.agir){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>el.agir();
     tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}}
@@ -7155,7 +7173,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       // Un nom long rapetisse, pour tenir sur sa ligne à côté de son prix.
       const L=String(b.textContent||'').length;if(L>18)b.style.fontSize=(L>26?14:L>22?15.5:16.5)+'px'}
      l.append(b);
-     if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';l.append(pr)}
+     if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');remplitMarques(pr,prix);l.append(pr)}
      if(mj&&n===1){const x2=document.createElement('button');x2.type='button';x2.className='detail-oter';x2.textContent='✕';x2.setAttribute('aria-label','Ôter');
       x2.onclick=e=>{e.stopPropagation();if(bonus){laisseCaseVide(x);const i=catalog.talents.indexOf(x);if(i>=0)catalog.talents.splice(i,1);actors.forEach(y=>{if(y.talents)y.talents=y.talents.filter(id=>id!==x.id)})}else videDeLArbre(x);arbreChange()};l.append(x2)}
      c.append(l);
@@ -7164,7 +7182,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}}
      // Le dernier palier tenu se rend d'un clic, ou du clic droit.
-     if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){const rendre=()=>{if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
+     if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){const rendre=()=>{if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
       c.classList.add('rendable');c.tabIndex=0;c.setAttribute('role','button');c.onclick=rendre;c.oncontextmenu=e=>{e.preventDefault();rendre()};
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rendre()}}}
      if(!a&&mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(x),renderArbres);

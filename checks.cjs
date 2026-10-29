@@ -927,8 +927,9 @@ assert.equal(readStat('vie','7,5',1),7.5);                     // La virgule vau
 assert.equal(readStat('endu','3.9',1),3);                      // Une endurance ne se coupe pas en quatre.
 assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20);
 // L'XP paie les talents : il reste l'XP gagnée moins le prix de ce qu'on tient ; le niveau suit toute l'XP.
-{const {xpDisponible}=require('./combat.js');const T=[{id:'a',couts:[100,0,0]},{id:'b',couts:[250,0,0]}];
- assert.equal(xpDisponible({xp:500,talents:['a']},T),400);assert.equal(xpDisponible({xp:300,talents:['a','b']},T),0);assert.equal(xpDisponible({xp:0,talents:[]},T),0);}
+{const {xpDisponible,marquesGagnees}=require('./combat.js');const T=[{id:'a',couts:[1,0,0]},{id:'b',couts:[3,0,0]}];
+ // v1.184 : en Marques — une par 100 XP gagnés.
+ assert.equal(marquesGagnees({xp:550}),5);assert.equal(xpDisponible({xp:500,talents:['a']},T),4);assert.equal(xpDisponible({xp:300,talents:['a','b']},T),0);assert.equal(xpDisponible({xp:0,talents:[]},T),0);}
 /* Un aventurier dont le centre mord sur la matière ne voit pas à travers elle : un donjon d'un seul
    tenant, ses salles en creux, ne s'ouvre pas d'un coup. Il regarde depuis le point libre le plus proche. */
 {const {visionPolygon,pointInPolygon}=require('./combat.js');const r=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
@@ -3408,7 +3409,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.771 — Onglet Aventuriers : un clic sur le token d'une fiche la replie dans la rangée des repliés, un clic l'y déplie. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const HEROS_REPLIES_CLE='amertume-heros-replies';")&&ed.includes("rang.className='heros-replies';")&&ed.includes("b.onclick=()=>replieHeros(a.id,false);"));}
 /* v0.770 — La jauge d'XP de l'arbre se remplit de ce qui est payé. */
-{assert.ok(fs.readFileSync('editor.js','utf8').includes("const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+total+' XP';"));}
+{assert.ok(fs.readFileSync('editor.js','utf8').includes("const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+texteMarques(total);"));}
 /* v0.769 — Hors combat, les PV du moment suivent les PV max ; en combat, ils ne bougent pas. */
 {assert.ok(fs.readFileSync('editor.js','utf8').includes("if(decale&&avant>0&&a.hp>0&&!(typeof estMort==='function'&&estMort(a))&&!aventurierEnCombat(a))a.hp=Math.max(1,Math.min(max,(Number(a.hp)||0)+decale))}"));}
 /* v0.768 — Sas des comptes, connexion MJ de la page fermée, exclusion rebranchée, un aventurier à soi, un seul tirage de départ,
@@ -5368,6 +5369,9 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.184 — Les Marques : une par 100 XP ; elles paient les talents ; un talent se rend hors combat, après un repos court. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function peutRendreTalent(a){return view==='mj'||(!!a&&!aventurierEnCombat(a)&&a.reposPris===true)}")&&ed.includes("if(acquis&&!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}")
+ &&ed.includes("c.semisForge.includes('marques')")&&ed.includes("function remplitMarques(el,n){")&&ed.includes("ligne('Coût (Marques)',")&&fs.readFileSync('combat.js','utf8').includes("const XP_PAR_MARQUE=100;"),'v1.184');}
 /* v1.183 — Treize déclencheurs de plus, les titres de fin de combat qui valent une Brisure, la Tour Mystique ; le détail d'un coup. */
 {const C=require('./combat.js');const r=C.resolveAttack({dice:[[5,0],[6,0],[4,2],[3,3]],def:3,dmg:2,roll:()=>1});
  assert.deepEqual(r.detail,{passes:3,arretes:1,couleurs:[0,2],bloque:3},'le détail du coup');assert.ok(!Object.keys(r).includes('detail'));
