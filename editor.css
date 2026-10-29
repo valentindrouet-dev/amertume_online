@@ -2840,7 +2840,7 @@ body.sombre .arbres-v2 .arbres-detail{background:var(--panel);border-color:var(-
 .arbres-v2 .arbres-detail .detail-droite{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:6px}
 .arbres-v2 .arbres-detail .detail-droite h3{font-size:28px}
 /* La prochaine amélioration à prendre : un clic l'achète. */
-.arbres-v2 .arbres-detail .detail-amelioration.achetable{cursor:pointer;opacity:1;border-left-color:#c99a3c;background:#fffaf0}
+.arbres-v2 .arbres-detail .detail-amelioration.achetable{cursor:pointer;opacity:1;border-left-color:#c99a3c;background:var(--panel)}
 .arbres-v2 .arbres-detail .detail-amelioration.achetable:is(:hover,:focus-visible){border-color:#c99a3c;box-shadow:0 0 0 2px #f2c14e55}
 /* v0.809 : l'éditeur des arbres prend la mise en forme v2 ; les lignes à niveau ne se voient plus, leur cartouche reste. */
 #arbres.v2:not(.du-heros) .dialog-head>.arbres-classe{flex:0 1 auto;text-align:left;margin:0 auto 0 0;order:-2}
@@ -2915,7 +2915,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-bloc{background:var(--panel);bord
 .arbres-v2 .arbres-detail{position:relative;padding:0;min-height:620px;overflow:hidden}
 .arbres-v2 .arbres-detail>.detail-defile{position:absolute;inset:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:20px}
 .arbres-v2 .arbres-detail .detail-tete{padding:8px;margin:-8px;border-radius:12px;border:1.5px solid transparent}
-.arbres-v2 .arbres-detail .detail-tete.cliquable.achetable{cursor:pointer;border-color:#e3cf9f;background:#fffaf0}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.achetable{cursor:pointer;border-color:#e3cf9f;background:var(--panel)}
 .arbres-v2 .arbres-detail .detail-tete.cliquable.achetable:is(:hover,:focus-visible){border-color:#c99a3c;box-shadow:0 0 0 2px #f2c14e55}
 .arbres-v2 .arbres-detail .detail-tete.cliquable.acquise{cursor:pointer;border-color:#9cc59a;background:#eef6ec}
 .arbres-v2 .arbres-detail .detail-tete.cliquable.fermee .detail-rond{filter:grayscale(.5)}
@@ -2972,7 +2972,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 /* v0.817 : le prix du talent sous son grand rond ; les noms ne poussent plus le cartouche hors du cadre ; dans l'éditeur, la tête
    s'ouvre d'un clic. */
 .arbres-v2 .arbres-detail .detail-gauche{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
-.arbres-v2 .arbres-detail .detail-prix-rond{position:relative;margin-top:-20px;z-index:1;background:#fffaf0}
+.arbres-v2 .arbres-detail .detail-prix-rond{position:relative;margin-top:-20px;z-index:1;background:var(--panel)}
 .arbres-v2 .arbres-detail .detail-droite{min-width:0}
 .arbres-v2 .arbres-detail .detail-nom-ligne h3{min-width:0;line-height:1.1;overflow-wrap:anywhere}
 .arbres-v2 .arbres-detail .detail-am-nom b{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
@@ -3027,7 +3027,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .bonus-rond-panneau .rond-bonus{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;box-sizing:border-box;
  background:rgba(var(--tint),.22);border:2px solid rgba(var(--tint),.55);box-shadow:0 1px 3px #0000001a}
 .arbres-v2 .arbres-detail .bonus-rond-panneau .rond-bonus>*{width:62%;height:62%;object-fit:contain}
-.arbres-v2 .arbres-detail .bonus-rond-panneau .detail-prix{margin-top:-11px;position:relative;z-index:1;font-size:10.5px;padding:0 6px;background:#fffaf0}
+.arbres-v2 .arbres-detail .bonus-rond-panneau .detail-prix{margin-top:-11px;position:relative;z-index:1;font-size:10.5px;padding:0 6px;background:var(--panel)}
 .arbres-v2 .arbres-detail .bonus-rond-panneau:not(.acquise):not(.editable) .rond-bonus{background:#ecebe6;border-color:#cfc8ba}
 .arbres-v2 .arbres-detail .bonus-rond-panneau:not(.acquise):not(.editable) .rond-bonus>*{filter:grayscale(1);opacity:.75}
 .arbres-v2 .arbres-detail .bonus-rond-panneau.acquise .rond-bonus{border-color:rgb(var(--tint));background:rgba(var(--tint),.28)}
@@ -3946,3 +3946,20 @@ body:not(.carte-pleine) .interface-message{display:none}
 /* v1.140 : le coût d'un bonus du sphérier dans son cartouche doré, comme dans le panneau ; gris tant qu'il ne s'achète pas. */
 .sphere-cout{padding:1px 7px;border:1.5px solid #c99a3c;border-radius:999px;background:var(--panel);color:var(--ink);font:700 11px/1.25 system-ui}
 .sphere-noeud.verrou .sphere-cout{border-color:var(--line-strong);color:var(--muted)}
+/* v1.142 : les gemmes des bonus — la puce (quantité, icône), la barre « Infuser les Sphères », les ronds marqués, le tableau du MJ. */
+.puce-gemme{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;vertical-align:middle}
+.puce-gemme b{font:800 1em/1 system-ui}
+.puce-gemme img{width:1.45em;height:1.45em;object-fit:contain}
+.puce-gemme.manque b{color:#b8352f}
+.sphere-cout .puce-gemme img{width:15px;height:15px}
+.sphere-infusion{display:flex;justify-content:flex-end;margin:0 0 10px}
+.sphere-infusion .infuser{display:inline-flex;align-items:center;gap:10px}
+.sphere-infusion .infuser .puce-gemme{padding:1px 8px;border-radius:999px;background:var(--panel);color:var(--ink)}
+.sphere-noeud.marque .sphere-rond{border-color:#c99a3c;border-style:dashed;box-shadow:0 0 12px 3px color-mix(in srgb,#c99a3c 50%,transparent)}
+.sphere-noeud.marque .sphere-rond>.logo-bonus{filter:none;opacity:1}
+.spherier-lien.marque{stroke:#c99a3c;stroke-opacity:.75;stroke-dasharray:8 7}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.marquee{cursor:pointer;border-color:#c99a3c;border-style:dashed;background:var(--panel)}
+.gemmes-bonus-liste{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:6px 18px}
+.gemmes-bonus-ligne{display:grid;grid-template-columns:26px 1fr 130px;align-items:center;gap:8px;margin:0}
+.gemmes-bonus-ligne img{width:24px;height:24px;object-fit:contain}
+.gemmes-bonus-ligne select{margin:0}

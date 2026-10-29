@@ -5375,9 +5375,11 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("ctx.lineJoin='round';ct
  &&ed.includes("if(carac==='pa'||carac==='pm'){el=document.createElement('img');el.src=imgUrl('points/'+carac+'.webp');")&&fs.readFileSync('index.html','utf8').includes("im.src=imgUrl('BONUS_DEF.webp')});"),'v1.140');}
 /* v1.139 — Le bloc d'un bonus : sa nature sous le nom, le trait, l'usage des tests d'une compétence. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function natureBonus(p){const c=p&&p.carac||'pv';return c==='comp'?'Compétence':['pv','endu','vie','def','dmg'].includes(c)?'Caractéristique':'Bonus'}"),'v1.139');
-/* v1.138 — Sphérier : un seul bloc à droite, sa description en italique, son coût sous le rond ; un clic achète, le reclic rend. */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function basculeSphere(ctx,t,l){const {a,classe,majTable,poserPalier,note}=ctx;")&&ed.includes("desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);")
- &&ed.includes("else el.onclick=()=>{sphereSel=t.id;if(!(a&&basculeSphere(ctx,t,l)))renderArbres()};"),'v1.138');}
+/* v1.138 / v1.142 — Sphérier : un seul bloc à droite, sa description ; les bonus se paient en gemmes, marqués puis infusés. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);")
+ &&ed.includes("else el.onclick=()=>{sphereSel=t.id;if(!(a&&marqueSphere(ctx,t,l)))renderArbres()};")&&ed.includes("bt.append('Infuser les Sphères');")
+ &&ed.includes("a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});")
+ &&!ed.includes("function basculeSphere("),'v1.142');}
 /* v1.137 — Bonus DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier ; bonus de compétence plus petits. */
 {const C=require('./combat.js'),pt=[{code:{cle:'bonus'},params:{carac:'armure',valeur:5}},{code:{cle:'bonus'},params:{carac:'etat',valeur:2,etat:'Rage'}},{code:{cle:'bonus'},params:{carac:'metres',valeur:3}}];
  assert.deepEqual(C.bonusDebutCombat(pt),{armure:5,etats:{Rage:2}});assert.equal(C.metresBonus(pt),3);
@@ -5622,7 +5624,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
 /* v0.813 — La tête du panneau à la teinte de sa nature, les améliorations en vert ; les talents non tenus grisés ; un bouton remet à zéro
    l'arbre d'un aventurier, talent de classe gardé. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474')")&&src.includes("a.talents=[...fl];a.paliersTalents={};")&&src.includes("arbresReset.hidden=!a||!V2;"),'v0.813');}
+ assert.ok(src.includes("tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474')")&&src.includes("a.talents=[...new Set([...fl,...garde])];a.paliersTalents=pal}")&&src.includes("arbresReset.hidden=!a||!V2;"),'v0.813');}
 /* v0.812 — Arbre v2 : la limite de niveau vaut aussi sur l'arbre d'un aventurier chez le MJ ; plus de bouton XP visible ; le talent
    se prend et se rend par sa tête, une amélioration ou un bonus tenu se rend d'un clic ; le panneau défile dans une hauteur fixe ;
    les bonus deux par ligne ; les points du talent à gauche de son nom. */
