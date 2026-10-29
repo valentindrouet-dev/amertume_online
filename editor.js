@@ -9616,7 +9616,7 @@ function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);
   val.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();coutEdite='';pose(lis())}else if(e.key==='Escape'){e.preventDefault();coutEdite='';renderArbres()}};
   val.onchange=()=>{if(lis()!==prix)pose(lis())};requestAnimationFrame(()=>{if(val.isConnected){val.focus();val.select()}});
   const bp=document.createElement('button');bp.type='button';bp.textContent='+';bp.setAttribute('aria-label','Coût : plus');bp.onclick=e=>{e.stopPropagation();pose(prix+1)};
-  d.append(i,bm,val,bp);d.onclick=e=>e.stopPropagation();return d}
+  d.append(i,bm,val,bp);d.onclick=e=>e.stopPropagation();d._pose=()=>{coutEdite='';if(lis()!==prix)pose(lis());else renderArbres()};return d}
  const pr=document.createElement('span');pr.className=cls;remplitMarques(pr,prix);
  if(view==='mj'){pr.classList.add('cout-editable');pr.setAttribute('role','button');pr.tabIndex=0;pr.setAttribute('aria-label','Coût en Marques : '+prix);
   const ouvre=e=>{e.stopPropagation();e.preventDefault();coutEdite=cle;renderArbres()};pr.onclick=ouvre;pr.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')ouvre(e)}}
@@ -9676,3 +9676,5 @@ function renderMaj(){const boite=$('maj-liste');if(!boite)return;chargeVersions(
   carte.append(h,ul);boite.append(carte)})})}
 // showPage est déclaré plus loin (maps.js) : l'onglet s'y raccroche une fois tous les scripts chargés.
 (function accroche(){if(typeof showPage!=='function'){setTimeout(accroche,100);return}const sp=showPage;showPage=function(p,...x){const r=sp(p,...x);if(p==='maj')renderMaj();return r}})();
+// v1.214 : un clic hors du réglage du coût l'enregistre et le referme.
+document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=document.querySelector('.die-pick.cout-pick');if(!d){coutEdite='';return}if(d.contains(e.target))return;d._pose()},true);

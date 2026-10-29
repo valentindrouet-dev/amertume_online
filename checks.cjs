@@ -5377,6 +5377,8 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];")&&ed.includes("['statistiques','Statistiques','']);")
  &&ed.includes("else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}")&&ed.includes("if(t.flottant!==true){const prix=coutPalier(t,1),dispoT=a?xpDisponible(a,catalog.talents):Infinity;")
  &&ed.includes("const CATEGORIES_SAC=[['armes','Armes',o=>['weapon','ammo'].includes(o.category)],['equipement','Équipements',o=>o.category==='armor'],")&&!ed.includes("dialog('inventaire'")&&!css.includes("#inventaire{")&&css.includes(".inv-fenetre .sac-carte .nom-sac{display:none}"),'v1.187');}
+/* v1.214 — Le réglage du coût se referme d'un clic ailleurs, en enregistrant. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("document.addEventListener('pointerdown',e=>{if(!coutEdite)return;"),'v1.214');
 /* v1.213 — Le coût en Marques se tape au clavier. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("val.className='sphere-val cout-saisie'"),'v1.213');
 /* v1.212 — L'onglet Versions : une carte par publication, une ligne par modification, chacune sa case ; publie.sh tient versions.json à jour. */
