@@ -31,13 +31,28 @@ const DECLENCHEURS_GEMMES=[
  {cle:'tir-longue-portee',nom:'Tir à longue portée, la cible au-delà d’un mouvement',phase:'combat',couleur:'citrine',seuil:6,auto:true,note:'Un tir qui touche une cible plus loin que le mouvement du tireur.'},
  {cle:'utiliser-objet',nom:'Utiliser un objet, un piège ou une invention',phase:'combat',couleur:'citrine',auto:true,note:'Un objet employé, ou une invention qui touche.'},
  {cle:'reperer-cache',nom:'Repérer un adversaire caché',phase:'combat',couleur:'citrine',auto:true,note:'Un test de Perception en combat qui révèle un adversaire.'},
+ {cle:'critique-mystique',nom:'Faire un critique avec un dé Mystique',phase:'combat',couleur:'saphir',auto:true,note:'Un double de 6 dont au moins un dé Mystique : il compte en Saphir à la place du Rubis.'},
+ {cle:'deplacement-force',nom:'Repousser ou attirer un adversaire, ou le mettre Au sol',phase:'combat',couleur:'citrine',auto:true,note:'Un déplacement forcé, ou Au sol infligé.'},
+ {cle:'etat-precision',nom:'Infliger un état de précision (Aveugle)',phase:'combat',couleur:'citrine',auto:true,note:'Aveugle posé sur un adversaire.'},
+ {cle:'tir-premier',nom:'Tirer le premier du tour, sur un adversaire qui n’a pas encore agi',phase:'combat',couleur:'citrine',auto:true,note:'Le premier tir des aventuriers dans le tour.'},
+ {cle:'bouger-premier',nom:'Se déplacer le premier du tour',phase:'combat',couleur:'citrine',auto:true,note:'Le premier combattant qui bouge dans le tour, s’il est aventurier.'},
+ {cle:'tuer-pv-max',nom:'Tuer en un coup un adversaire à ses PV max',phase:'combat',couleur:'citrine',auto:true,note:'Un adversaire intact abattu d’un seul coup.'},
  {cle:'sort-touche',nom:'Lancer un sort ou un talent mystique qui touche',phase:'combat',couleur:'saphir',auto:true,note:'Un orbe qui passe la DEF.'},
  {cle:'etat-elementaire',nom:'Infliger un état',phase:'combat',couleur:'etat',auto:true,note:'Feu, Gel, Poison… posé sur un adversaire ; la couleur est celle de l’état (tableau des couleurs).'},
  {cle:'etat-positif-allie',nom:'Mettre un état positif sur un allié',phase:'combat',couleur:'etat',auto:true,note:'Blindage, Furie, Invisible, Onde, Vie ou Rage posé sur un autre aventurier ; la couleur est celle de l’état.'},
+ {cle:'test-mental-combat',nom:'Réussir un test de Mysticisme ou de Savoir en combat',phase:'combat',couleur:'saphir',auto:true,note:'Un test réussi pendant le combat (résister, analyser).'},
+ {cle:'tuer-par-etat',nom:'Tuer un adversaire avec les dégâts d’un état',phase:'combat',couleur:'saphir',auto:true,note:'Feu, Poison, Nécrose… : à celui qui a posé l’état.'},
+ {cle:'maitrise-unique',nom:'Utiliser une Maîtrise ou un talent « une fois par combat »',phase:'combat',couleur:'saphir',auto:true,note:'Le premier usage du combat, talent par talent.'},
+ {cle:'relever-coma',nom:'Relever un allié du coma, ou être relevé',phase:'combat',couleur:'saphir',seuil:4,auto:true,note:'La sortie du coma : à celui qui se relève et à celui qui l’a soigné.'},
  {cle:'reveler-faiblesse',nom:'Révéler une faiblesse',phase:'combat',couleur:'saphir',auto:true,note:'Une Analyse qui apprend quelque chose.'},
  {cle:'def-tient',nom:'Une attaque adverse ne passe pas votre DEF',phase:'combat',couleur:'diamant',auto:true,note:'Les dés adverses tous arrêtés par la DEF.'},
  {cle:'toucher-couvert',nom:'Toucher un adversaire au contact d’un allié',phase:'combat',couleur:'diamant',auto:true,note:'Le coup ou le tir qui touche un adversaire qu’un autre aventurier tient au contact.'},
  {cle:'proteger-allie',nom:'Protéger un allié à sa place',phase:'combat',couleur:'diamant',auto:true,note:'Gardien, Rempart ou Garde rapprochée qui prend le coup.'},
+ {cle:'absorber-armure',nom:'Absorber entièrement un coup avec l’Armure ou le Blindage',phase:'combat',couleur:'diamant',auto:true,note:'Un coup adverse qui passe la DEF sans faire perdre un PV.'},
+ {cle:'gain-armure',nom:'Gagner de l’Armure ou du Blindage (une fois par combat)',phase:'combat',couleur:'diamant',auto:true,parCombat:true,note:'La première fois du combat.'},
+ {cle:'reaction-annule',nom:'Annuler une attaque par une Réaction',phase:'combat',couleur:'diamant',auto:true,note:'Un Pas de Côté qui laisse le coup sans cible.'},
+ {cle:'fin-tour-bas-pv',nom:'Finir le tour sous 25 % de ses PV sans tomber',phase:'combat',couleur:'diamant',auto:true,note:'À la fin du tour, debout, moins d’un quart de ses PV max.'},
+ {cle:'groupe-sans-coma',nom:'Finir un combat sans aucun allié dans le coma (groupe)',phase:'combat',couleur:'diamant',auto:true,note:'À la fin du combat, chaque aventurier lance le dé si personne n’est dans le coma.'},
  {cle:'combat-sans-coma',nom:'Finir un combat sans être tombé dans le coma',phase:'combat',couleur:'diamant',auto:true,note:'À la fin du combat, pour chaque aventurier debout de bout en bout.'},
  {cle:'larcin',nom:'Voler (Larcin)',phase:'hors',couleur:'rubis',auto:true,note:'Un Larcin qui rapporte de l’or.'},
  {cle:'intimider',nom:'Intimider',phase:'hors',couleur:'rubis',auto:false},
@@ -95,6 +110,8 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  s.decl[couleur]=(s.decl[couleur]||0)+1;
  if(!combat||d.phase==='hors'){const sc=cleSceneGemme(a)+'|'+k;if(s.scenes.includes(sc)&&!opts.manuel)return null;s.scenes=[...s.scenes.filter(x=>x!==sc),sc].slice(-80)}
  // v1.163 : un déclencheur « une fois par tour » ne rejoue pas avant le tour suivant.
+ // v1.169 : « une fois par combat » de même.
+ if(d.parCombat&&!opts.manuel){if(!s.parCombat||typeof s.parCombat!=='object')s.parCombat={};if(s.parCombat[cle]===numeroCombat)return null;s.parCombat[cle]=numeroCombat}
  if(d.parTour&&!opts.manuel&&typeof cleTour==='function'){if(!s.tours||typeof s.tours!=='object')s.tours={};if(s.tours[cle]===cleTour())return null;s.tours[cle]=cleTour()}
  s.compte[cle]=(Math.trunc(Number(s.compte[cle]))||0)+1;
  // v1.167 : un seul dé par déclencheur ; le seuil fait la difficulté.
@@ -137,7 +154,8 @@ let bossVaincuCombat=0,dernierInvisible=null;
 function gemmesApresCoup(a,b,r,hpAvant,lost){if(!a||!b||!r||typeof enCombat!=='function'||!enCombat())return;
  const crit=!!(r.critical&&!r.failed),touche=!r.failed&&!!r.hit,opp={critique:crit};
  if(a.hero&&hostiles(a,b)){
-  if(crit)deGemme(a,'critique',opp);
+  // v1.169 : un critique dont un 6 est un dé Mystique compte en Saphir, à la place du Rubis.
+  if(crit)deGemme(a,(r.dice||[]).some(([v,c])=>v===6&&c===DICE_KEYS.indexOf('blue'))?'critique-mystique':'critique',opp);
   if(b.hp===0&&hpAvant>0){deGemme(a,'tuer',opp);noteTuerie(a,b,opp);if(b.type==='boss')bossVaincuCombat=numeroCombat}
   if(touche&&!r.orbe){const inv=dernierInvisible&&dernierInvisible.id===a.id&&performance.now()-dernierInvisible.t<3000;
    if(inv||hasState(b,'Surpris')||hasState(b,'Aveugle')||hasState(b,'Sommeil')||hasState(a,'Invisible')||hasState(a,'Caché'))deGemme(a,'frapper-non-vu',opp);
@@ -190,7 +208,7 @@ if(typeof appliquerEffetObjet==='function'){const ae=appliquerEffetObjet;appliqu
    combat, la Perception qui révèle un adversaire. Le jet se lit au passage. */
 {const ts=testSkill;testSkill=function(i,fouille,...x){const a=actors[selected],caches=()=>actors.filter(o=>o&&!o.hero&&alive(o)&&(o.hidden||!o.vu)).length,avant=caches();
  let jet=null;const sr=skillRoll;skillRoll=function(...y){const j=sr(...y);jet=j;return j};let r;try{r=ts(i,fouille,...x)}finally{skillRoll=sr}
- if(jet&&a&&a.hero){if(typeof enCombat==='function'&&enCombat()){if(i===PERCEPTION_RANG&&caches()<avant)deGemme(a,'reperer-cache')}
+ if(jet&&a&&a.hero){if(typeof enCombat==='function'&&enCombat()){if(i===PERCEPTION_RANG&&caches()<avant)deGemme(a,'reperer-cache');if(jet.reussites>0&&(skillNames[i]==='Mysticisme'||skillNames[i]==='Savoir'))deGemme(a,'test-mental-combat')}
   else if(jet.reussites>0){if(fouille)deGemme(a,'fouiller');else deGemme(a,'test-competence',{comp:i})}}
  return r}}
 // Crocheter, désamorcer : ce qui s'ouvre.
@@ -212,6 +230,8 @@ let larcinGemme=null;
 {const bm=basculerMode;basculerMode=function(neuf,...x){const finit=mode==='combat'&&neuf!=='combat',spect=typeof spectateur==='function'&&spectateur(),n=numeroCombat;
  if(!finit||spect)return bm(neuf,...x);const R=reglesGemmes(),presents=actors.filter(a=>a&&a.hero&&!a.horsCarte&&!estMort(a)&&!sortiDuCombat(a));
  presents.forEach(a=>{const s=suiviGemmes(a);if(s.combat===n&&s.coma!==n)deGemme(a,'combat-sans-coma',{phase:'combat'})});
+ // v1.169 : personne dans le coma au moment où le combat se ferme : chacun son dé.
+ if(presents.length&&!presents.some(a=>a.comaVie||a.hp<=0||hasState(a,'Coma')))presents.forEach(a=>deGemme(a,'groupe-sans-coma',{phase:'combat'}));
  if(bossVaincuCombat===n&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
   const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n});bossVaincuCombat=0}
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
@@ -315,3 +335,47 @@ function seRapprochait(o){const p=posDebutTour.get(o&&o.id);if(!p||(Math.abs(p.x
   actors.forEach(a=>{if(!a||!a.hero||a.horsCarte||!alive(a)||estMort(a))return;if(blessesTour.get(a.id)===k)return;if(typeof contactsDe==='function'&&contactsDe(a).length)return;deGemme(a,'fin-tour-intouchable')})}
  const r=ts(...x);notePositionsTour();return r}}
 {const bm=basculerMode;basculerMode=function(neuf,...x){const r=bm(neuf,...x);if(neuf==='combat')notePositionsTour();return r}}
+
+/* ---------- v1.169 — Encore des déclencheurs ---------- */
+const enCombatG=()=>typeof enCombat==='function'&&enCombat();
+const sourceG=()=>(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.a)||(typeof auteurCoup!=='undefined'&&auteurCoup)||null;
+// Qui a posé chaque état sur chaque adversaire : la mort par ses dégâts lui revient.
+const auteursEtats=new Map();
+{const ie=infligeEtat;infligeEtat=function(o,etat,...x){const r=ie(o,etat,...x);if(r===true&&o&&!o.hero&&enCombatG()){const s=sourceG();
+  if(s&&s.hero&&hostiles(s,o)){auteursEtats.set(o.id+'|'+etat,s.id);if(etat==='Au sol')deGemme(s,'deplacement-force');if(etat==='Aveugle')deGemme(s,'etat-precision')}}
+ if(r===true&&o&&o.hero&&etat==='Blindage'&&enCombatG())deGemme(o,'gain-armure');return r}}
+{const ae=ajouteEtat;ajouteEtat=function(o,etat,n,...x){const r=ae(o,etat,n,...x);if(r>0&&n>0&&o&&!o.hero&&enCombatG()){const s=sourceG();if(s&&s.hero&&hostiles(s,o))auteursEtats.set(o.id+'|'+etat,s.id)}return r}}
+{const sd=subitDegatsEtat;subitDegatsEtat=function(o,etat,n,...x){const hp=o&&o.hp,r=sd(o,etat,n,...x);
+ if(o&&!o.hero&&hp>0&&o.hp===0&&enCombatG()){const id=auteursEtats.get(o.id+'|'+etat),h=id&&actors.find(a=>a&&a.id===id);if(h&&h.hero)deGemme(h,'tuer-par-etat')}return r}}
+// Une Maîtrise, ou un talent « une fois par combat » : son premier usage du combat.
+{const pt=payeTalent;payeTalent=function(ctx,...x){const r=pt(ctx,...x);const a=ctx&&ctx.a,t=ctx&&ctx.talent;
+ if(a&&a.hero&&t&&t.id&&enCombatG()&&(t.type==='mait'||(typeof limiteTalent==='function'&&limiteTalent(t)==='combat')||/une fois par combat/i.test(String(t.effects||'')))){
+  const s=suiviGemmes(a);if(!s.talentsCombat||typeof s.talentsCombat!=='object')s.talentsCombat={};if(s.talentsCombat[t.id]!==numeroCombat){s.talentsCombat[t.id]=numeroCombat;deGemme(a,'maitrise-unique')}}
+ return r}}
+// Sortir du coma, pendant le combat : à celui qui se relève, et à celui qui l'a soigné.
+function releve(o){if(!o||!o.hero||!enCombatG())return;deGemme(o,'relever-coma');const h=(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.a)||actors[selected];if(h&&h.hero&&h!==o&&alive(h))deGemme(h,'relever-coma')}
+{const ah=applyHeal;applyHeal=function(o,...x){const coma=!!o&&(o.hp<=0||hasState(o,'Coma')),g=ah(o,...x);if(coma&&g>0&&o.hp>0)releve(o);return g}}
+{const ss=setState;setState=function(o,etat,mis,...x){const avant=!!o&&etat==='Coma'&&!mis&&hasState(o,'Coma'),r=ss(o,etat,mis,...x);if(avant&&!hasState(o,'Coma')&&o.hp>0)releve(o);return r}}
+// Repousser, attirer : à qui pousse ou tire. Le pas forcé ne compte ni pour « bouger le premier », ni pour « a agi ».
+let forceEnCours=0;
+{const rp=repousser;repousser=function(b,a,...x){forceEnCours++;let r;try{r=rp(b,a,...x)}finally{forceEnCours--}if(r&&a&&a.hero&&b&&hostiles(a,b)&&enCombatG())deGemme(a,'deplacement-force');return r}}
+{const ra=rapprocher;rapprocher=function(b,a,...x){forceEnCours++;let r;try{r=ra(b,a,...x)}finally{forceEnCours--}if(r&&a&&a.hero&&b&&hostiles(a,b)&&enCombatG())deGemme(a,'deplacement-force');return r}}
+// L'Armure gagnée.
+{const da=donneArmure;donneArmure=function(a,n,...x){const r=da(a,n,...x);if(a&&a.hero&&Math.trunc(Number(n))>0&&enCombatG())deGemme(a,'gain-armure');return r}}
+// Le premier pas, le premier tir du tour ; les adversaires qui ont déjà agi.
+let bougeTour='',tirTour='';const agisTour=new Map();
+const aAgi=o=>!!o&&agisTour.get(o.id)===cleTour();
+{const am=afterMove;afterMove=function(a,...x){const r=am(a,...x);if(a&&!forceEnCours&&enCombatG()){const k=cleTour();if(!a.hero)agisTour.set(a.id,k);
+  if(bougeTour!==k){bougeTour=k;if(a.hero)deGemme(a,'bouger-premier')}}return r}}
+{const ac=gemmesApresCoup;gemmesApresCoup=function(a,b,r,hpAvant,lost,...x){
+ if(a&&b&&r&&enCombatG()){const k=cleTour(),touche=!r.failed&&!!r.hit,aDistance=!r.orbe&&typeof rangeOf==='function'&&rangeOf(a)==='distance';
+  if(a.hero&&hostiles(a,b)){
+   if(aDistance&&tirTour!==k){tirTour=k;if(!aAgi(b))deGemme(a,'tir-premier')}
+   if(hpAvant>0&&hpAvant>=(Number(b.max)||Infinity)&&b.hp===0)deGemme(a,'tuer-pv-max')}
+  if(b.hero&&hostiles(a,b)&&touche&&(Number(r.damage)||0)>0&&!(lost>0)&&b.hp>0)deGemme(b,'absorber-armure');
+  if(!a.hero)agisTour.set(a.id,k)}
+ return ac(a,b,r,hpAvant,lost,...x)}}
+{const en=encaisse;encaisse=function(o,n,de,...x){const hp=o&&o.hp,r=en(o,n,de,...x),s=de===undefined?(typeof auteurCoup!=='undefined'?auteurCoup:null):de;
+ if(s&&s.hero&&o&&!o.hero&&hp>0&&hp>=(Number(o.max)||Infinity)&&o.hp===0&&enCombatG()&&hostiles(s,o))deGemme(s,'tuer-pv-max');return r}}
+// La fin du tour : sous un quart de ses PV, debout.
+{const ts=tourSuivant;tourSuivant=function(...x){if(enCombatG()&&!(typeof spectateur==='function'&&spectateur()))actors.forEach(a=>{if(a&&a.hero&&!a.horsCarte&&alive(a)&&!estMort(a)&&a.hp>0&&a.hp<.25*(Number(a.max)||0))deGemme(a,'fin-tour-bas-pv')});return ts(...x)}}

@@ -5368,6 +5368,10 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.169 — Quinze déclencheurs de plus (Saphir, Citrine, Diamant). */
+{const gm=fs.readFileSync('gemmes.js','utf8');
+ assert.ok(['critique-mystique','test-mental-combat','tuer-par-etat','maitrise-unique','relever-coma','deplacement-force','etat-precision','tir-premier','bouger-premier','tuer-pv-max','absorber-armure','gain-armure','reaction-annule','fin-tour-bas-pv','groupe-sans-coma'].every(c=>gm.includes("{cle:'"+c+"',"))
+  &&gm.includes("if(s.parCombat[cle]===numeroCombat)return null;")&&gm.includes("?'critique-mystique':'critique',opp);")&&fs.readFileSync('index.html','utf8').includes("if(perdu&&typeof deGemme==='function')deGemme(g,'reaction-annule');"),'v1.169');}
 /* v1.168 — Une taille commune aux onglets des arbres ; le bouton Coûts du sphérier. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function tailleCommuneArbres(){")&&ed.includes("['openArbres','openArbresClasse','openArbresMetier'].forEach(n=>{")
  &&ed.includes("function boutonCoutsSphere(){")&&ed.includes("(coutsSphereVus()?'':' sans-couts')")&&fs.readFileSync('editor.css','utf8').includes(".spherier.sans-couts .sphere-cout{display:none}"),'v1.168');}
