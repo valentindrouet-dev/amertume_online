@@ -4121,7 +4121,10 @@ $('talent-add').onclick=()=>openTalent(null);
    Un fichier à part pour les talents : tous, arbres compris — places, lignes, chemins, coûts, textes,
    logos —, avec les noms des colonnes, la classe de chaque mécanique et les mots clés. */
 function sauvegardeTalents(){return {app:'amertume_online',type:'talents',version:1,exporte:new Date().toISOString(),
- talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),nbArbres:structuredClone(catalog.nbArbres||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),ordreEffets:[...(catalog.ordreEffets||[])],reglagesEffets:structuredClone(catalog.reglagesEffets||{}),logosBonus:structuredClone(catalog.logosBonus||{}),motsCles:[...(catalog.motsCles||[])]}}
+ talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),nbArbres:structuredClone(catalog.nbArbres||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),ordreEffets:[...(catalog.ordreEffets||[])],reglagesEffets:structuredClone(catalog.reglagesEffets||{}),logosBonus:structuredClone(catalog.logosBonus||{}),motsCles:[...(catalog.motsCles||[])],
+ // v1.173 : tous les onglets de l'arbre — les couleurs de sphère des Bonus, les métiers, les réglages des espèces, les arbres agencés à la main, leurs limites, la taille de la fenêtre.
+ gemmesBonus:structuredClone(catalog.gemmesBonus||{}),metiers:structuredClone(catalog.metiers||[]),especesReglages:structuredClone(catalog.especesReglages||{}),extensionsEspeces:structuredClone(catalog.extensionsEspeces||{}),
+ arbresLibres:structuredClone(catalog.arbresLibres||{}),limitesArbres:structuredClone(catalog.limitesArbres||{}),...(catalog.tailleArbres?{tailleArbres:structuredClone(catalog.tailleArbres)}:{})}}
 $('talent-sauve').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(sauvegardeTalents(),null,1)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde().replace(/^amertume-/,'amertume-talents-');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
 $('talent-importe').onclick=()=>{$('talent-fichier').value='';$('talent-fichier').click()};
@@ -4138,6 +4141,9 @@ $('talent-fichier').onchange=async()=>{const f=$('talent-fichier').files[0];if(!
  if(d.reglagesEffets&&typeof d.reglagesEffets==='object')catalog.reglagesEffets={...(catalog.reglagesEffets||{}),...d.reglagesEffets};
  if(d.logosBonus&&typeof d.logosBonus==='object')catalog.logosBonus={...(catalog.logosBonus||{}),...d.logosBonus};
  if(Array.isArray(d.motsCles)&&d.motsCles.length)catalog.motsCles=d.motsCles;
+ ['gemmesBonus','especesReglages','extensionsEspeces','arbresLibres','limitesArbres'].forEach(k=>{if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))catalog[k]={...(catalog[k]||{}),...d[k]}});
+ if(Array.isArray(d.metiers))catalog.metiers=[...d.metiers,...(catalog.metiers||[]).filter(m=>m&&!d.metiers.some(x=>x&&x.nom===m.nom))];
+ if(d.tailleArbres&&typeof d.tailleArbres==='object')catalog.tailleArbres=d.tailleArbres;
  normalizeCatalog(catalog);accordeArbres();accordeTalentsHeros();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 /* L'export PDF : une page par classe, ses colonnes, chaque talent dans l'ordre de l'arbre avec tout ce
    qui le fait — nature, coût, mécanique et ce qu'elle fait, texte, liens —, puis ses bonus et
@@ -8487,7 +8493,7 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
    illisible n'empêche pas l'export : le journal dit ce qui manque au fichier. */
 const ANNEXES_SAUVEGARDE=[];
 // Les réglages de l'appareil. Ni l'onglet ouvert, ni la table en ligne, ni les marques de fenêtre : ils ne servent qu'ici.
-const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables'];
+const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables','amertume-couts-sphere','amertume-notes-mj-table'];
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},

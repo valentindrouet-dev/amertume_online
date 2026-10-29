@@ -361,6 +361,9 @@ function cleanRect(r,porte){if(!r)return null;
   if(r.secret&&Number(r.perception)>1)o.perception=Math.min(9,Math.trunc(Number(r.perception)));
   // v0.899 : un passage secret dans la pierre (Vision des profondeurs du Nain).
   if(r.secret&&r.pierre===true)o.pierre=true;
+  // v1.173 : une fenêtre reste une fenêtre, avec son état de départ ; une porte garde la difficulté de son crochetage.
+  if(r.fenetre===true){const e=r.etatInitial==='ouverte'||r.etatInitial==='verrouillee'?r.etatInitial:'fermee';o.fenetre=true;o.etatInitial=e;o.open=e==='ouverte';if(e==='verrouillee')o.keyLocked=true}
+  if(Number(r.crochetage)>1)o.crochetage=Math.min(9,Math.trunc(Number(r.crochetage)));
   // L'angle d'une porte de biais voyage avec elle ; une porte droite n'en porte pas.
   const a=Number(r.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)o.a=((a%180)+180)%180}
  return o}
@@ -484,7 +487,11 @@ function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>
  return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),...(c.pierre===true?{pierre:true}:{}),...(c.groupe===true?{groupe:true}:{}),
   perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),...(cleanDesDegats(c.degatsDes)?{degatsDes:cleanDesDegats(c.degatsDes)}:{}),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
-  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich,...(bourse.length?{bourse}:{})}}
+  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich,...(bourse.length?{bourse}:{}),
+  ...(typeof c.code==='string'&&c.code.trim()?{code:texte(c.code.trim(),40)}:{}),...cleanCrans(c)}}
+// v1.173 : la quantité de chaque état cumulable qu'un coffre piégé inflige, « x » ou « xdy », voyage avec lui.
+function cleanCrans(o){const cr={},etats=Array.isArray(o&&o.etats)?o.etats:[];Object.entries(o&&o.crans&&typeof o.crans==='object'?o.crans:{}).forEach(([e,q])=>{if(!etats.includes(e)||!cumulable(e))return;
+ const d=cleanDesDegats(q&&q.degatsDes),n=Math.max(0,Math.min(99,Math.trunc(Number(q&&q.degats))||0));if(d||n>1)cr[e]=d?{degats:0,degatsDes:d}:{degats:n}});return Object.keys(cr).length?{crans:cr}:{}}
 /* Un piège (v0.615) : un rectangle de la carte, comme un coffre, montré en jeton rond — son icône ou son image dedans — ou en
    image seule, sur fond transparent. Caché ou visible : un test de Perception ou de Ruse, au choix du MJ, le détecte. Il part
    au contact de sa forme, ou à distance par ses déclencheurs liés, des zones et des fils. Désamorçable (Ruse, Technique ou
@@ -548,15 +555,23 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),...(m&&Array.isArray(m.impraticable)&&m.impraticable.length?{impraticable:cleanMatiere(m.impraticable).map(p=>({anneaux:p.anneaux}))}:{}),...(m&&Array.isArray(m.dangers)&&m.dangers.length?{dangers:m.dangers.slice(0,24).map(cleanDanger).filter(Boolean)}:{}),...(m&&Array.isArray(m.difficile)&&m.difficile.length?{difficile:cleanMatiere(m.difficile).map(p=>({anneaux:p.anneaux}))}:{}),lumieres:(Array.isArray(m&&m.lumieres)?m.lumieres:[]).slice(0,100).map(cleanLumiere),doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
-   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),...(f&&typeof f.quete==='string'&&f.quete?{quete:texte(f.quete,60)}:{}),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),...(f&&typeof f.quete==='string'&&f.quete?{quete:texte(f.quete,60)}:{}),locked:!!(f&&f.locked),tpl:modelePose(f&&f.tpl)})),
   coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
   pieges:(Array.isArray(m&&m.pieges)?m.pieges:[]).slice(0,100).map(cleanPiege).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.
   zonesCoupures:cleanSegments(m&&m.zonesCoupures),zonesLiens:cleanSegments(m&&m.zonesLiens),zonesNoms:cleanEtiquettes(m&&m.zonesNoms),
+  // v1.173 : un paysage revient paysage, voile levé ; un lieu garde son rang ; l'obscurité éteinte par le MJ le reste.
+  ...(m&&m.paysage===true?{paysage:true,fogOff:true}:{}),...(m&&typeof m.lieu==='string'&&m.lieu.trim()&&Number.isFinite(m.lieuRang)?{lieuRang:Math.max(0,Math.min(999,Math.trunc(m.lieuRang)))}:{}),...(m&&m.obscuriteOff===true?{obscuriteOff:true}:{}),
   // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
   echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
    t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
+/* v1.173 : le modèle d'un adversaire posé voyage entier — son identifiant, qui le relie au bestiaire, ses talents, son portrait —,
+   ses chiffres repassés au crible ; un portrait qui n'est pas une image reste à la porte. */
+const CLES_MODELE_CRIBLE=['name','type','socle','family','pv','def','damage','xp','menace','esquive','rapide','nyctalope','mouvement','pnj','alignement','unique','bourse','notes','attacks','dice','pa','pm'];
+function modelePose(t){let brut={};try{brut=t&&typeof t==='object'?JSON.parse(JSON.stringify(t)):{}}catch(e){}
+ if(!brut||typeof brut!=='object'||Array.isArray(brut))brut={};CLES_MODELE_CRIBLE.forEach(k=>delete brut[k]);if('image' in brut&&!(typeof brut.image==='string'&&IMAGE_RE.test(brut.image)))delete brut.image;
+ return {...brut,...(typeof brut.id==='string'&&brut.id?{id:texte(brut.id,60)}:{}),...cleanMonster(t)}}
 function packMaps(maps){return {format:MAP_FORMAT,version:1,exporte:new Date().toISOString(),
  maps:(Array.isArray(maps)?maps:[]).map(cleanMap)}}
 function readMapsFile(texteBrut){let data;

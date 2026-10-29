@@ -4484,7 +4484,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(ia.includes("const borne=!appliqueRegleMouvement(a,regle);if(borne)jusquALaBorne(a,regle,q,(u,v)=>moveActor(a,u,v,false,ignorer,true));")&&ia.includes("  if(borne)break}")
   &&ia.includes(" const cout=soldeRegleMouvement(a,regle);if(cout>0)depensePoint(a,'mouvement',cout);")&&ia.includes("q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});moveActor(e,q.x,q.y,false,ignorer,true);"),'l’IA sous la même règle');
  assert.ok(carto.includes("const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');")&&carto.includes("localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')")
-  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);")&&src.includes("'amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
+  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);")&&src.includes("'amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables','amertume-couts-sphere','amertume-notes-mj-table'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
  assert.ok(carto.includes("  if(view==='mj'&&l.pose){let g=null;")&&carto.includes("if(!bouge)return;t._glisse=true;setTimeout(()=>{render();saveMaps()},0)};")
   &&carto.includes("t.onclick=e=>{e.stopPropagation();if(t._glisse){t._glisse=false;return}"),'le MJ déplace les objets posés');
  const noms=['objetsQuiComptent','DISTANCE_MOUVEMENT','bonusMouvementDe','mouvementPropre','distanceMouvement','mouvementLimiteExplo','mouvementBorne','borneMouvement','traceMouvement','mouvementClavier','limiteBtn'];
@@ -5368,6 +5368,13 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
  assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
+/* v1.173 — Les exports emportent tout : fenêtres, crochetage, code et crans des coffres, modèle entier des adversaires, paysages, rang des lieux. */
+{const C=require('./combat.js');const m=C.readMapsFile(JSON.stringify(C.packMaps([{name:'A',paysage:true,lieu:'L',lieuRang:3,doors:[{x:1,y:1,w:4,h:1,fenetre:true,etatInitial:'ouverte'},{x:1,y:5,w:4,h:1,crochetage:5}],
+ coffres:[{x:9,y:9,w:3,h:3,code:'42',piege:1,etats:['Poison'],crans:{Poison:{degats:3}}}],foes:[{x:1,y:1,tpl:{id:'loup',name:'Loup',talents:['x'],image:'javascript:alert(1)'}}]}])))[0];
+ assert.ok(m.paysage&&m.fogOff&&m.lieuRang===3&&m.doors[0].fenetre&&m.doors[0].open&&m.doors[1].crochetage===5&&m.coffres[0].code==='42'&&m.coffres[0].crans.Poison.degats===3,'v1.173 cartes');
+ assert.ok(m.foes[0].tpl.id==='loup'&&m.foes[0].tpl.talents[0]==='x'&&!('image' in m.foes[0].tpl),'v1.173 adversaires');
+ const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ assert.ok(ed.includes("gemmesBonus:structuredClone(catalog.gemmesBonus||{}),metiers:structuredClone(catalog.metiers||[])")&&mp.includes("ANNEXES_SAUVEGARDE.push({nom:'les notes de MJ',")&&mp.includes("paquet.notesMJ=maps.map("),'v1.173 talents et notes');}
 /* v1.172 — « Joueurs connectés » seulement table en ligne ouverte. */
 assert.ok(fs.readFileSync('live.js','utf8').includes("function majBoutonJoueurs(){joueursButton.hidden=!(enLigne&&tableId)}"),'v1.172 joueurs');
 /* v1.172 — La page des talents ne montre plus les améliorations : elles sont dans l'arbre. */

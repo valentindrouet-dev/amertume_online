@@ -1942,7 +1942,9 @@ $('map-name').oninput=()=>{if(mapDraft){mapDraft.name=$('map-name').value;render
 /* Sauvegarde des couches : le fichier se suffit à lui-même, image comprise, et il
    revient toujours en cartes neuves — on ne remplace jamais ce qui est là. */
 $('map-export').onclick=()=>{
- const blob=new Blob([JSON.stringify(packMaps(maps))],{type:'application/json'});
+ // v1.173 : les Notes de MJ de chaque carte partent avec elle, rang pour rang ; le fichier reste celui du MJ.
+ const paquet=packMaps(maps);if(view==='mj'&&maps.some(m=>(notesMJ.cartes[String(m.id)]||[]).length))paquet.notesMJ=maps.map(m=>notesMJ.cartes[String(m.id)]||[]);
+ const blob=new Blob([JSON.stringify(paquet)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='amertume-cartes-'+new Date().toISOString().slice(0,10)+'.json';
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
@@ -1961,7 +1963,10 @@ $('map-json').onchange=()=>{const f=$('map-json').files[0];$('map-json').value='
    else{alert(o&&typeof o==='object'&&Array.isArray(o.actors)?'Ce fichier est une sauvegarde globale de la partie, sans carte à importer ici.\nLe domaine et le reste de la partie se reprennent dans Paramètres → Sauvegarde globale.'
     :o&&o.genre==='domaine'?'Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine, bouton « Importer ».'
     :o&&o.genre==='campagne'?'Ce fichier est une campagne : reprends-la dans Paramètres → Campagnes.':e.message);return}}
-  entrantes.forEach(m=>{m.id=crypto.randomUUID();m.name+=' (importée)';maps.push(m)});
+  let notesFichier=[];try{const o=JSON.parse(String(lecteur.result));notesFichier=o&&Array.isArray(o.notesMJ)&&view==='mj'?o.notesMJ:[]}catch(e){}
+  entrantes.forEach((m,i)=>{m.id=crypto.randomUUID();m.name+=' (importée)';maps.push(m);
+   const n=Array.isArray(notesFichier[i])?normaliseNotesMJ({cartes:{x:notesFichier[i]}}).cartes.x:null;if(n&&n.length)notesMJ.cartes[m.id]=n});
+  if(notesFichier.length)sauveNotesMJ();
   mapDraft=maps[maps.length-1];mapSel=null;undoStack=[];redoStack=[];
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas();saveMaps();
   log(entrantes.length+' carte(s) importée(s).',{local:true})};
@@ -4004,6 +4009,10 @@ async function recoitNotesMJ(){const r=notesMJRef();if(!r)return;try{const d=awa
  if(v.at>notesMJ.at){notesMJ=v;try{localStorage.setItem(NOTES_MJ_CLE,JSON.stringify(notesMJ))}catch(e){}if(typeof renderCanvas==='function'&&mapDraft)renderCanvas();render()}
  else if(notesMJ.at>v.at)envoieNotesMJ()}catch(e){console.warn('Notes de MJ : lecture refusée',e&&e.message)}}
 document.addEventListener('amertume-mj-change',()=>{if(typeof admin!=='undefined'&&admin)recoitNotesMJ()});
+/* v1.173 : la sauvegarde globale du MJ emporte ses Notes, et l'import les repose ; un fichier qui n'en porte pas laisse celles d'ici. */
+ANNEXES_SAUVEGARDE.push({nom:'les notes de MJ',
+ lit:()=>view==='mj'?{notesMJ:normaliseNotesMJ(notesMJ)}:{},
+ pose:s=>{if(view!=='mj'||!s.notesMJ||typeof s.notesMJ!=='object')return;notesMJ=normaliseNotesMJ(s.notesMJ);sauveNotesMJ();if(typeof renderCanvas==='function'&&mapDraft)renderCanvas();render()}});
 KINDS.notemj='Note de MJ';
 HINTS.notemj='Un clic pose une Note de MJ et ouvre sa fiche. Seul le MJ la voit ; à la table, elle se lit au survol.';
 {const sa=shapeAt;shapeAt=function(d){if(d&&d.kind==='notemj')return mapDraft?notesDe(mapDraft.id)[d.i]||null:null;return sa(d)}}
