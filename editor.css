@@ -4536,3 +4536,5 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres .arbres-detail .detail-tete{position:relative}
 #arbres .arbres-detail .detail-tete>.detail-prix.cout-marque.cout-coin{position:absolute;top:14px;right:26px;margin:0;z-index:2}
 #arbres .arbres-detail .detail-tete:has(>.cout-coin) .detail-nom-ligne{padding-right:46px}
+/* v1.237 — Fiche : PA et PM, leurs bulles bleue et brune, sur la ligne sous les Dégâts et le Mouvement. */
+.stat-row.en-icones .stat-tile:is(.t-pa,.t-pm) .stat-ico{width:44px;height:44px;object-fit:contain}

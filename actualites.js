@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.237","d":"2026-10-30","t":"Mouvement, PA et PM"},
 {"v":"1.236","d":"2026-10-30","t":"Placement des coûts en Marques"},
 {"v":"1.235","d":"2026-10-30","t":"Arbre de talents encore remonté"},
 {"v":"1.234","d":"2026-10-30","t":"Arbre des bonus réparé"},

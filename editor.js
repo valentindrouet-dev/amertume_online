@@ -5778,7 +5778,9 @@ function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
   el=document.createElement('span');el.className='bonus-lettres logo-bonus';el.textContent=e.slice(0,2);return el}
  // Le logo que le MJ a donné à tous les bonus de cette caractéristique passe devant l'icône du jeu.
  const perso=(typeof catalog!=='undefined'&&catalog.logosBonus||{})[cleLogoBonus(p)];if(perso){const im=logoImage(perso,LOGOS_TOUS);if(im)return im}
- if(SVG_BONUS[carac]){el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.innerHTML=SVG_BONUS[carac]}
+ // v1.237 : le Mouvement (mètres) — la botte ailée, sur la fiche et dans le sphérier ; le choix du MJ passe devant.
+ if(carac==='metres'){el=document.createElement('img');el.src=imgUrl('MOUVEMENT.webp');el.alt='';el.draggable=false}
+ else if(SVG_BONUS[carac]){el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.innerHTML=SVG_BONUS[carac]}
  else if(carac==='dmg'||carac==='orbe'){el=document.createElement('img');el.src=imgUrl(carac==='dmg'?'DEGATS.webp':'spell_orbes.png');el.alt='';el.draggable=false}
  else if(carac==='comp'){const k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));el=logoCompetence(k);
   if(!el){el=document.createElement('span');el.className='bonus-lettres';el.textContent=skillNames[k].slice(0,2)}}
@@ -8043,8 +8045,8 @@ const LOGOS_ATTAQUE=['attack_griffes'];
    dégâts, vie, personnage. Un talent ou une attaque spéciale peut les prendre pour logo.
    Leur fichier garde son nom en capitales ; DEGATS seul est en .webp. */
 const LOGOS_ETATS=['AU SOL','AVEUGLE','BLINDAGE INITIAL','CIBLAGE','FAILLE','FEU','FOUDRE','GEL','ONDE','POISON','SAIGNEE'];
-const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE','BONUS_DEF'];
-const EXTENSIONS_LOGO={DEGATS:'.webp',BONUS_DEF:'.webp'};
+const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE','BONUS_DEF','MOUVEMENT'];
+const EXTENSIONS_LOGO={DEGATS:'.webp',BONUS_DEF:'.webp',MOUVEMENT:'.webp'};
 /* Les dossiers d'icônes : on y dépose des images, et elles paraissent seules dans le bon menu,
    sans rien déclarer — img/talents pour les logos de talents, img/equipement pour tout ce que
    l'Armurerie range (armes, armures, munitions, objets). Les attaques spéciales et les talents
@@ -9528,15 +9530,20 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
   const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement','']};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['PA',''],pm:['PM','']};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
  // v1.226 : le Mouvement, 8e caractéristique, à côté des Dégâts ; son icône se choisit comme les autres (Icônes, « Mouvement »).
  if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tv=document.createElement('div');tv.className='stat-tile t-metres';tv.style.setProperty('--tint','207,145,82');
   const tot=distanceMouvement(a,catalog.items||[]),n=document.createElement('strong');n.textContent=String(+Number(tot).toFixed(1)).replace('.',',');tv.append(n);
   {const ic=logoBonus({carac:'metres'});if(ic){ic.classList.add('stat-ico');tv.prepend(ic);tv.classList.add('avec-icone')}}
-  tv.classList.toggle('en-hausse',tot>mouvementPropre(a));if(dmg)dmg.after(tv);else ch.append(tv)}
- // v1.218 : les Marques à dépenser, une caractéristique de plus ; v1.226 : après le Mouvement, à côté de l'XP.
- if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-metres')||ch.querySelector(':scope>.stat-tile.t-dmg'),tm=document.createElement('div');tm.className='stat-tile t-marques avec-icone';tm.style.setProperty('--tint',(typeof STAT_TINTS!=='undefined'&&STAT_TINTS.xp)||'201,162,39');
+  tv.classList.toggle('en-hausse',tot>mouvementPropre(a));if(dmg)dmg.after(tv);else ch.append(tv)
+  // v1.237 : les PA et les PM, deux caractéristiques de plus, sur la ligne sous les Dégâts et le Mouvement.
+  let apres=tv;[['pa','action'],['pm','mouvement']].forEach(([k,quoi])=>{const t=document.createElement('div');t.className='stat-tile t-'+k;t.style.setProperty('--tint',k==='pa'?'63,143,224':'207,145,82');
+   const v=pointsMax(a,quoi),n=document.createElement('strong');n.textContent=String(v);t.append(n);
+   const ic=logoBonus({carac:k});if(ic){ic.classList.add('stat-ico');t.prepend(ic);t.classList.add('avec-icone')}
+   t.classList.toggle('en-hausse',v>pointsMax(a,quoi,true));apres.after(t);apres=t})}
+ // v1.218 : les Marques à dépenser, une caractéristique de plus ; v1.226 : après le Mouvement, à côté de l'XP ; v1.237 : après les PM.
+ if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-pm')||ch.querySelector(':scope>.stat-tile.t-metres')||ch.querySelector(':scope>.stat-tile.t-dmg'),tm=document.createElement('div');tm.className='stat-tile t-marques avec-icone';tm.style.setProperty('--tint',(typeof STAT_TINTS!=='undefined'&&STAT_TINTS.xp)||'201,162,39');
   const n=document.createElement('strong');n.textContent=String(Math.max(0,Math.trunc(Number(xpDisponible(a,catalog.talents))||0)));tm.append(iconeMarque('stat-ico'),n);if(dmg)dmg.after(tm);else ch.append(tm)}
  if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const k=([...t.classList].find(x=>x.startsWith('t-'))||'t-').slice(2),s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');
   const [nom,desc]=CARACS_FICHE[k]||[k,''];vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'',nom,'Caractéristique',desc,t.style.getPropertyValue('--tint').trim())});
@@ -9682,6 +9689,7 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  pv:['Endurance × Vie','Plus les bonus de classe, d’espèce et de talents'],
  def:['Chaque dé de dégâts qui ne la dépasse pas est arrêté','Augmentée par l’armure et le bouclier'],
  dmg:['Ajoutés à chaque attaque qui touche'],
+ metres:['Distance parcourue pour chaque PM dépensé','Quitter le contact d’un adversaire déclenche ses Dégâts d’Opportunité'],
  marques:['Achètent les talents de votre arbre','1 Marque tous les '+XP_PAR_MARQUE+' XP'],
  xp:['Fait monter votre niveau','Tous les '+XP_PAR_MARQUE+' XP vous gagnez 1 Marque pour acheter vos talents'],
  'Agilité':['Esquiver un piège','Sauter, grimper, garder l’équilibre','Se dégager d’une mêlée'],
