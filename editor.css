@@ -4633,3 +4633,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 :is(#arbres,body) .detail-prix.cout-marque.trop-cher b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#d32f2f 30%,#fff)!important}
 /* v1.264 — Arbre des Bonus : un bonus inaccessible, à 60 % d'opacité. */
 .sphere-noeud.verrou{opacity:.6}
+/* v1.265 — Le bloc Espèce : un contour, détaché de la description au-dessus ; son titre à la taille de celui de l'arbre. */
+#arbres .arbres-detail>.especes-detail>.especes-place{border:1px solid var(--line);border-radius:14px;padding:12px 14px 18px;background:var(--panel-2);gap:6px}
+#arbres .arbres-detail>:has(+.especes-detail){margin-bottom:18px}
+#arbres .especes-detail .fiche-tete-arbre.especes-titre{margin:0 0 6px}
+#arbres .arbres-detail>.especes-detail{margin:auto 0 0!important;width:auto!important;align-self:stretch;padding:0 20px 20px!important;box-sizing:border-box}

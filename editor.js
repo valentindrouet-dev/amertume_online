@@ -7347,7 +7347,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      talents : Maîtrise, Actions, Mouvements et Réactions sur la première ligne, Passifs sur la seconde, centrés. */
   const tEsp=arbresEspece&&a?talentsDEspece(a):[];
   const colEspece=tEsp=>{const haut=t=>!['pass','crit','ame'].includes(talentType(t)[0]),ordre=(x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]);
-   const lignes=[tEsp.filter(haut).sort(ordre),tEsp.filter(t=>!haut(t)).sort(ordre)].filter(l=>l.length);
+   // v1.265 : deux ronds au plus par ligne — quatre gros ronds font deux lignes de deux.
+   const deux=l=>l.reduce((m,t,i)=>(i%2?m[m.length-1].push(t):m.push([t]),m),[]);
+   const lignes=[...deux(tEsp.filter(haut).sort(ordre)),...deux(tEsp.filter(t=>!haut(t)).sort(ordre))].filter(l=>l.length);
    const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y},liens:[]})));
    const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));return ge};
   // v1.264 : dans l'onglet des Talents, les talents d'Espèce se rangent au bas du panneau de droite (posés après le dessin).
@@ -9914,7 +9916,7 @@ function rondBonusFiche(p){const r=document.createElement('span');r.className='c
    dans l'ancien onglet (en haut les Actions, dessous les Passifs). Le panneau se vide à chaque talent montré : le bloc y revient. */
 function poseEspeceFiche(){if(!arbresDialog.open||arbresOnglet!=='classe'||!especeFiche)return;const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');if(!aside||aside.querySelector(':scope>.especes-detail'))return;
  let w=especeFiche.closest('.especes-detail');if(!w){w=document.createElement('div');w.className='corps especes-detail';const pl=document.createElement('div');pl.className='place p-bourse especes-place';
-  const h=document.createElement('div');h.className='nom-place bourse-titre';h.textContent='Espèce';pl.append(h,especeFiche);w.append(pl)}
+  const h=document.createElement('h3');h.className='fiche-tete-arbre especes-titre';h.textContent='Espèce';pl.append(h,especeFiche);w.append(pl)}
  aside.append(w)}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);poseEspeceFiche();return r}}
 new MutationObserver(()=>{if(arbresOnglet==='classe'&&especeFiche)poseEspeceFiche()}).observe(arbresDialog,{childList:true,subtree:true});
