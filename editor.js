@@ -9607,7 +9607,7 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  // v1.221 : les Talents, sans roue crantée, sous les deux colonnes et centrés ; les deux colonnes ont la même hauteur.
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
  // v1.253 : les Bonus quittent le bloc des Talents pour un bloc à eux, dessous, au même titre.
- const rb=blocTal&&blocTal.querySelector(':scope>.rang-bonus');if(rb){const bb=el('div','fiche-talents fiche-bonus'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Bonus';const g=el('div',blocTal.className);g.append(rb);bb.append(tb,g);livre.append(bb)}
+ const rb=blocTal&&blocTal.querySelector(':scope>.rang-bonus');if(rb){const bb=el('div','fiche-talents fiche-bonus'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Arbre des Bonus';const g=el('div',blocTal.className);g.append(rb);bb.append(tb,g);livre.append(bb)}
  // v1.257 : sous les Bonus, ceux de la classe et de l'espèce, au même dessin ; v1.258 : sur une ligne, trois blocs, Classe, Espèce, Création.
  if(blocTal){const ligne=el('div','fiche-bonus-ligne');[['Classe','classe'],['Espèce','espece'],['Création','creation']].forEach(([nom,src])=>{const l=bonusClasseEspece(a,src);if(!l.length)return;
   const bb=el('div','fiche-talents fiche-bonus fiche-bonus-base'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent=nom;
