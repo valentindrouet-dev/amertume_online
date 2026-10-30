@@ -4730,3 +4730,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .sphere-cout.neutre .puce-gemme b{color:#fff}
 .sphere-cout .puce-gemme,.infuser .puce-gemme{margin-left:6px}
 .sphere-cout:has(>.puce-gemme:nth-child(2))>.puce-gemme:first-child::after{left:calc(100% + 2px)}
+/* v1.285 — Sphères, déclencheurs : un séparateur par couleur, son icône et son nom à gauche, le total des fois à droite. */
+.gemmes-decl tr.gemmes-separateur td{padding:14px 6px 4px;border-bottom:2px solid var(--line-strong);background:none}
+.gemmes-separateur .gemmes-sep-nom{display:inline-flex;align-items:center;gap:8px;font:700 12px/1 system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink)}
+.gemmes-separateur .gemmes-sep-nom .gemmes-icone{width:22px;height:22px}
+.gemmes-separateur .gemmes-sep-fois{float:right;font:800 14px/22px system-ui;color:var(--ink)}

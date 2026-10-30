@@ -380,7 +380,16 @@ function renderGemmes(){const boite=$('gemmes-regles');if(!boite)return;boite.re
   const tr=document.createElement('tr');['Actif','Déclencheur','Couleur','Seuil','Détection','Fois'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tr.append(th)});t.append(tr);
   // v1.183 : les déclencheurs rangés par couleur de sphère ; les derniers venus portent « new ».
   const ordre=c=>{const i=COULEURS_GEMMES.indexOf(c);return i<0?COULEURS_GEMMES.length:i};
-  DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).map((d,i)=>[d,i]).sort(([x,i],[y,j])=>ordre(R.declencheurs[x.cle].couleur)-ordre(R.declencheurs[y.cle].couleur)||i-j).map(([d])=>d).forEach(d=>{const r=R.declencheurs[d.cle],row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
+  // v1.285 : un séparateur par couleur — son icône, son nom, et le total des fois de ses déclencheurs ; changer la couleur d'un
+  // déclencheur le range sous un autre.
+  const liste=DECLENCHEURS_GEMMES.filter(d=>d.phase===ph).map((d,i)=>[d,i]).sort(([x,i],[y,j])=>ordre(R.declencheurs[x.cle].couleur)-ordre(R.declencheurs[y.cle].couleur)||i-j).map(([d])=>d);
+  const nomCouleur=c=>c==='competence'?'Compétence testée':c==='etat'?'Couleur de l’état':NOM_COULEUR_GEMME[c]||c;let avant=null;
+  liste.forEach(d=>{const r=R.declencheurs[d.cle];
+   if(r.couleur!==avant){avant=r.couleur;const sep=document.createElement('tr');sep.className='gemmes-separateur';const td=document.createElement('td');td.colSpan=6;
+    const tot=liste.filter(x=>R.declencheurs[x.cle].couleur===r.couleur).reduce((n,x)=>n+fois(x.cle),0);
+    const nom=document.createElement('span');nom.className='gemmes-sep-nom';if(!['competence','etat'].includes(r.couleur))nom.append(icone('brisure',r.couleur));nom.append(nomCouleur(r.couleur));
+    const n=document.createElement('b');n.className='gemmes-sep-fois';n.textContent=String(tot);td.append(nom,n);sep.append(td);t.append(sep)}
+   const row=document.createElement('tr');if(!r.actif)row.classList.add('inactif');
    const c1=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';cb.checked=r.actif;cb.onchange=()=>{poseReglesGemmes(g=>{g.declencheurs[d.cle].actif=cb.checked});renderGemmes()};c1.append(cb);
    const c2=document.createElement('td');c2.className='gemmes-nom';c2.textContent=d.nom;if(d.neuf){const nv=document.createElement('span');nv.className='gemmes-neuf';nv.textContent='new';c2.append(' ',nv)}
    const c3=document.createElement('td');c3.className='gemmes-couleur';const s=document.createElement('select');COULEURS_GEMMES.forEach(c=>s.add(new Option(NOM_COULEUR_GEMME[c],c)));if(d.couleur==='competence'||d.cle==='test-competence')s.add(new Option('Compétence testée','competence'));if(d.couleur==='etat')s.add(new Option('Couleur de l’état','etat'));
