@@ -4580,3 +4580,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #textes-fiche .textes-fiche-champ textarea{width:100%;box-sizing:border-box;font:13px/1.4 system-ui;resize:vertical}
 #textes-fiche .textes-fiche-aide{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0 0 10px}
 #textes-fiche .textes-fiche-aide .puce-ico{width:18px;height:18px;object-fit:contain}
+/* v1.252 — Les repères « ? » au-delà de la limite sont pleins : ils cachent le trait qui relie les paliers ; seul leur « ? » pâlit. */
+.arbre-noeud.remplissage.masque-limite,.arbre-noeud.remplissage.masque-limite.hors-limite-mj{opacity:1}
+.arbre-noeud.remplissage.masque-limite .arbre-rond{position:relative;isolation:isolate}
+.arbre-noeud.remplissage.masque-limite .arbre-rond::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--panel-2);z-index:-1}
+.arbre-noeud.remplissage.masque-limite .arbre-rond>*{opacity:.5}

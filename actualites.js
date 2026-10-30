@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.252","d":"2026-10-30","t":"Repères pleins"},
 {"v":"1.251","d":"2026-10-30","t":"Tous les emplacements en ?, plus de défilement"},
 {"v":"1.250","d":"2026-10-30","t":"Textes de la fiche éditables"},
 {"v":"1.249","d":"2026-10-30","t":"Marges de l'arbre, repères au-delà de la limite"},
