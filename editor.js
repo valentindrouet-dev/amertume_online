@@ -2827,7 +2827,10 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
   if(cle==='bottes'&&a.hero){const m=document.createElement('span');m.className='mouvement-corps';
    const e=document.createElement('span');e.className='etiquette';e.textContent='Mouvement\u00a0: ';
    const v=document.createElement('span');v.className='valeur';v.textContent=String(+distanceMouvement(a,catalog.items||[]).toFixed(1)).replace('.',',')+'\u00a0m';
-   m.append(e,v);pl.append(m)}
+   // v1.222 : un bonus de mouvement (talents, bonus, objets) : le total en doré, et à sa droite, en noir, « (9 m + 1 m) ».
+   {const fm=n=>String(+Number(n).toFixed(1)).replace('.',',')+'\u00a0m',tot=distanceMouvement(a,catalog.items||[]),base=mouvementPropre(a),plus=+(tot-base).toFixed(1);
+    if(plus>0){const ligne=document.createElement('span');ligne.className='mouvement-ligne';v.classList.add('avec-bonus');const d=document.createElement('span');d.className='mouvement-detail';d.textContent='('+fm(base)+' + '+fm(plus)+')';ligne.append(v,d);m.append(e,ligne);pl.append(m)}
+    else{m.append(e,v);pl.append(m)}}}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
  // En bas à gauche du schéma, l'or de l'aventurier : la pièce et le nombre. Le MJ y ajoute ou retire or et gemmes d'un clic.
  if(a.hero&&fenetre){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
@@ -6908,7 +6911,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const AME='72,152,64',AME_CLAIR='142,206,112',AME_SOMBRE='44,96,40';
    /* Les segments gardent la même longueur (29 px) et le même jour (8,5 px), qu'il y en ait un ou quatre : la file se centre
       sur la gauche du rond ; le premier, en haut. */
-   if(ams.length){const n=ams.length,la=29*kE/rA*deg,ja=8.5*kE/rA*deg,haut=180+(n*la+(n-1)*ja)/2,R1=rA+ep/2,R0=rA-ep/2;
+   /* v1.222 — Plus d'arc segmenté pour les améliorations : une Marque par amélioration, en file contre le rond, du côté de ses
+      arcs ; orange quand l'aventurier la tient, grise sinon. MARQUES_AMELIORATIONS à false rend les arcs. */
+   const MARQUES_AMELIORATIONS=true;
+   if(ams.length&&MARQUES_AMELIORATIONS){const n=ams.length,T=18,rM=Ro+3+T/2,pas=(T+3)/rM*deg,haut=180+(n-1)*pas/2;
+    const boite=document.createElement('div');boite.className='arbre-satellites sat-marques';boite.style.width=boite.style.height=S+'px';
+    ams.forEach((x,k)=>{let [px,py]=pt(haut-k*pas,rM);if(droite)px=S-px;const on=tenu(x),m=iconeMarque('sat-marque'+(on?' tenu':'')+(gris(x)?' gris':''));
+     m.style.left=(px-T/2).toFixed(1)+'px';m.style.top=(py-T/2).toFixed(1)+'px';m.style.width=m.style.height=T+'px';boite.append(m)});
+    const rd=el.querySelector('.arbre-rond');(rd||el).append(boite)}
+   else if(ams.length){const n=ams.length,la=29*kE/rA*deg,ja=8.5*kE/rA*deg,haut=180+(n*la+(n-1)*ja)/2,R1=rA+ep/2,R0=rA-ep/2;
     const g=mk('linearGradient',{id:uid+'a',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:0,y2:S});
     g.append(mk('stop',{offset:'0','stop-color':'rgb('+AME_CLAIR+')'}),mk('stop',{offset:'1','stop-color':'rgb('+AME+')'}));defs.append(g);
     ams.forEach((x,k)=>{const a1=haut-k*(la+ja),a0=a1-la,[x1,y1]=pt(a0,R1),[x2,y2]=pt(a1,R1),[x3,y3]=pt(a1,R0),[x4,y4]=pt(a0,R0),on=tenu(x);
@@ -9639,6 +9650,8 @@ function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);
   const bp=document.createElement('button');bp.type='button';bp.textContent='+';bp.setAttribute('aria-label','Coût : plus');bp.onclick=e=>{e.stopPropagation();pose(prix+1)};
   d.append(i,bm,val,bp);d.onclick=e=>e.stopPropagation();d._pose=()=>{coutEdite='';if(lis()!==prix)pose(lis());else renderArbres()};return d}
  const pr=document.createElement('span');pr.className=cls;remplitMarques(pr,prix);
+ // v1.222 : le coût s'écrit sur le logo de la Marque, en bas à droite, comme le nombre d'une sphère de l'inventaire.
+ {pr.classList.add('cout-marque');const b=document.createElement('b');b.textContent=String(prix);[...pr.childNodes].forEach(x=>{if(x.nodeType===3)x.remove()});pr.append(b)}
  if(view==='mj'){pr.classList.add('cout-editable');pr.setAttribute('role','button');pr.tabIndex=0;pr.setAttribute('aria-label','Coût en Marques : '+prix);
   const ouvre=e=>{e.stopPropagation();e.preventDefault();coutEdite=cle;renderArbres()};pr.onclick=ouvre;pr.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')ouvre(e)}}
  return pr}

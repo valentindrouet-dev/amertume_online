@@ -4417,3 +4417,31 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .fiche-onglet .fiche-livre{align-items:stretch}
 .hero-card.fiche-onglet .fiche-page>:is(.stat-row.en-icones,.comp-ronds.cadre-comps){flex:1 1 auto}
 .fiche-onglet .fiche-livre>.fiche-talents{grid-column:1/-1;justify-self:center;width:calc(50% - 7px);gap:8px;margin-top:10px}
+/* v1.222 — Le coût d'un talent ou d'une amélioration : le logo de la Marque, son nombre posé dessus en bas à droite, comme les
+   sphères de l'inventaire. Payé, le nombre verdit ; trop cher, il rougit. */
+#arbres .detail-prix.cout-marque{position:relative;display:inline-grid;place-items:center;width:30px;height:30px;padding:0!important;border:0!important;border-radius:0;background:none!important;box-shadow:none;overflow:visible}
+#arbres .detail-prix.cout-marque .marque-ico{grid-area:1/1;width:30px;height:30px}
+#arbres .detail-prix.cout-marque b{position:absolute;right:-4px;bottom:-5px;margin:0;color:#fff;font:900 17px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+#arbres .detail-prix.cout-marque.paye b{color:color-mix(in srgb,#fff 35%,var(--green))}
+#arbres .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 45%,var(--red-mat))}
+#arbres .detail-prix.cout-marque.cout-editable:hover{box-shadow:none;filter:brightness(1.12) drop-shadow(0 0 4px color-mix(in srgb,var(--accent) 60%,transparent))}
+#arbres .detail-bonus .detail-prix.cout-marque,#arbres .bonus-rond-panneau .detail-prix.cout-marque{width:24px;height:24px}
+#arbres .detail-bonus .detail-prix.cout-marque .marque-ico,#arbres .bonus-rond-panneau .detail-prix.cout-marque .marque-ico{width:24px;height:24px}
+#arbres .detail-bonus .detail-prix.cout-marque b,#arbres .bonus-rond-panneau .detail-prix.cout-marque b{font-size:14px;-webkit-text-stroke:3px #1d1a16}
+#arbres .detail-prix.cout-marque .marque-glyphe{font-size:24px;line-height:30px;text-align:center}
+/* v1.222 — Mouvement accru par un bonus : le total doré, le détail « (9 m + 1 m) » en noir à sa droite. */
+.corps .mouvement-corps .mouvement-ligne{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap}
+.corps .mouvement-corps .valeur.avec-bonus{color:#c99a3c}
+.corps .mouvement-corps .mouvement-detail{font:600 12px/1 system-ui;color:var(--ink);white-space:nowrap}
+/* v1.222 — Richesses : le nombre d'or compte dans la largeur de la pièce, le « + » se pousse d'autant ; il ne touche jamais
+   ni la pièce ni le nombre, quelle que soit la somme. */
+.corps .place.p-bourse .bourse-lignes .bourse-ligne:not(.gemmes-corps) .bourse-items{display:flex;align-items:center;gap:16px}
+.corps .place.p-bourse .bourse-lignes .bourse-ligne:not(.gemmes-corps) .or-corps{display:inline-flex;align-items:flex-end;flex:none}
+.corps .place.p-bourse .bourse-lignes .bourse-ligne:not(.gemmes-corps) .or-corps b{position:static;margin:0 0 0 -18px;transform:translateY(4px)}
+.corps .place.p-bourse .bourse-lignes .bourse-ligne:not(.gemmes-corps) .bourse-ajout-or{flex:none}
+.corps .place.p-bourse .bourse-lignes .bourse-ligne:not(.gemmes-corps) .or-corps .piece-or{order:-1}
+/* v1.222 — Arbre : une Marque par amélioration contre le rond, à la place de l'arc segmenté ; tenue, orange ; sinon, grise. */
+.arbre-satellites.sat-marques{position:absolute}
+.arbre-satellites.sat-marques .sat-marque{position:absolute;display:block;object-fit:contain;filter:grayscale(1);opacity:.55;pointer-events:none}
+.arbre-satellites.sat-marques .sat-marque.tenu{filter:drop-shadow(0 1px 1px color-mix(in srgb,var(--ink) 35%,transparent));opacity:1}
+.arbre-satellites.sat-marques .sat-marque.marque-glyphe{display:grid;place-items:center;font-size:14px;line-height:1;color:#c99a3c}
