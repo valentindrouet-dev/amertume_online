@@ -9546,7 +9546,7 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
   const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['PA',['pa']],pm:['PM',['pm']]};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['PA (Point d’Action)',['pa']],pm:['PM (Point de Mouvement)',['pm']]};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
  // v1.226 : le Mouvement, 8e caractéristique, à côté des Dégâts ; son icône se choisit comme les autres (Icônes, « Mouvement »).
  if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tv=document.createElement('div');tv.className='stat-tile t-metres';tv.style.setProperty('--tint','207,145,82');
@@ -9580,6 +9580,8 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  if(titreTal){titreTal.classList.add('fiche-titre');titreTal.querySelectorAll('button').forEach(b=>b.remove())}
  // v1.221 : les Talents, sans roue crantée, sous les deux colonnes et centrés ; les deux colonnes ont la même hauteur.
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
+ // v1.253 : les Bonus quittent le bloc des Talents pour un bloc à eux, dessous, au même titre.
+ const rb=blocTal&&blocTal.querySelector(':scope>.rang-bonus');if(rb){const bb=el('div','fiche-talents fiche-bonus'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Bonus';const g=el('div',blocTal.className);g.append(rb);bb.append(tb,g);livre.append(bb)}
  pd.append(el('h3','fiche-titre','Compétences'));if(cp){const pi=el('p','comps-intro');texteFiche(pi,'intro-comps');cp.prepend(pi);pd.append(cp)}
  // v1.250 : chez le MJ, un bouton réécrit les textes de la page, balises comprises pour les icônes.
  if(view==='mj'){const b=el('button','ico textes-fiche-btn','✎ Textes');b.type='button';b.title='Modifier les textes de la page';b.onclick=e=>{e.stopPropagation();ouvreTextesFiche()};livre.append(b)}

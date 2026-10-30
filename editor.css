@@ -4585,3 +4585,10 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .arbre-noeud.remplissage.masque-limite .arbre-rond{position:relative;isolation:isolate}
 .arbre-noeud.remplissage.masque-limite .arbre-rond::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--panel-2);z-index:-1}
 .arbre-noeud.remplissage.masque-limite .arbre-rond>*{opacity:.5}
+/* v1.253 — Le bloc des Talents se serre sur ses ronds ; les Bonus ont leur bloc, dessous, aux ronds de la taille des grands. */
+.hero-card.fiche-onglet .fiche-talents>.talent-grille{align-self:center;width:auto;max-width:100%;box-sizing:border-box;padding-inline:24px}
+.hero-card.fiche-onglet .fiche-talents>.talent-grille>*{width:auto;max-width:100%}
+.hero-card.fiche-onglet .fiche-bonus .talent-ameliorations.rang-bonus{border-top:0;padding-top:0;gap:10px 14px}
+.hero-card.fiche-onglet .fiche-bonus .rang-bonus>.cat-pill.bonus-rond{flex:0 0 62px;width:62px;max-width:62px;height:62px}
+.hero-card.fiche-onglet .fiche-bonus .rang-bonus>.cat-pill.bonus-rond .bonus-valeur{font-size:22px;-webkit-text-stroke-width:4.2px}
+.hero-card.fiche-onglet .fiche-bonus .rang-bonus>.cat-pill.bonus-rond .bonus-valeur::before{font-size:14px;-webkit-text-stroke-width:2.8px}
