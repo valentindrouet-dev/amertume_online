@@ -4495,3 +4495,12 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres.fiche-aventurier .arbres-pt.marques-dispo .marque-ico{width:68px;height:68px}
 #arbres.fiche-aventurier .arbres-pt.marques-dispo b{left:24px;top:20px;font-size:36px;-webkit-text-stroke:6px #1d1a16}
 #arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp{min-height:80px}
+/* v1.228 — Onglet Caractéristiques : l'icône d'une compétence se lit comme celle d'une caractéristique — sans rond derrière,
+   44 px, son chiffre blanc en Killam 27 px cerné de 5 px ; amélioré, le chiffre passe à l'or. */
+.fiche-onglet .vignette-icone .comp-rond{width:44px;height:44px;border:0;border-radius:0;background:none;box-shadow:none}
+.fiche-onglet .vignette-icone .comp-rond:hover{background:none}
+.fiche-onglet .vignette-icone .comp-rond .logo-equip.skill-ico,.fiche-onglet .vignette-icone .comp-rond>img{width:44px;height:44px}
+.fiche-onglet .vignette-icone .comp-rond .comp-val{font:900 27px/1 'Killam',system-ui;-webkit-text-stroke:5px #1d1a16}
+.fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:#f2c14e}
+/* v1.228 — Arbre des paliers : plus d'aura dorée autour du talent initial. */
+.aura-palier{display:none!important}
