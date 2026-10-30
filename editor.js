@@ -6864,7 +6864,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      ancien) continue en lignes dessous. */
   // v0.9998 : l'arbre s'élargit d'un cinquième pour loger les satellites des ronds.
   // v1.098 : BONUS_SATELLITES à false — plus rien à droite des ronds pour les bonus ; à true, ils reviennent (arcs, ou billes avec ARCS_BONUS à false).
-  let satN=0;const ARBRE_PALIERS=true,ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:120,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
+  let satN=0;const ARBRE_PALIERS=true,ARBRE_COLONNES=true,BONUS_SATELLITES=false,ARCS_BONUS=true,D={centre:102,gros:84,moyen:62},PAS_G=162,PAS_MX=118,PAS_MY=104,ECART=127,MARGE=30;
   /* v0.9998 : les satellites d'un rond. À gauche, un arc segmenté au vert des Améliorations, un segment par amélioration du
      talent (4 au plus au centre et sur les gros ronds, 3 sur les moyens) ; à droite, une bille par bonus de caractéristique
      ou de compétence, à la couleur de ce bonus (4, 3 et 2 au plus). Ce que l'aventurier tient est plein ; le reste, pâle. */

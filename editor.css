@@ -4472,3 +4472,5 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:color-mix(in srgb,#fff 30%,#58b09f);background:none;border:0}
 .fiche-onglet .vignette-icone .comp-rond .comp-lettre{visibility:hidden}
 #arbres .arbres-detail>.spheres-detail{border:0;padding:0;box-shadow:none;min-height:0}
+/* v1.224 — Arbre des paliers : le talent initial 15 % plus petit (102 px au lieu de 120). */
+.arbre-roue.arbre-paliers>.roue-centre .arbre-rond,.arbre-roue.arbre-paliers>.arbre-place-groupe.roue-centre,.arbre-roue.arbre-paliers>.arbre-noeud.choisi.roue-centre::after{width:102px;height:102px}
