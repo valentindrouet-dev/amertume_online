@@ -9688,7 +9688,8 @@ const ICONES_FICHE=[['stats','Caractéristiques','<circle cx="12" cy="8" r="3.6"
  ['statistiques','Statistiques','<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx=".8"/><rect x="10.5" y="7" width="3" height="11" rx=".8"/><rect x="15.5" y="10" width="3" height="8" rx=".8"/>']];
 function iconesFiche(a){const g=document.createElement('span');g.className='fiche-icones';const cl=classeDuHeros(a),dispo=new Set(ongletsArbre(a,cl).map(([k])=>k));
  const e=especeDe(a.espece),teintes={stats:actorTint(a),inventaire:'',classe:teinteClasse(cl)||actorTint(a),bonus:'#c99a3c',espece:e&&e.teinte||'',metier:a.metier?teinteMetier(a.metier):'',statistiques:''};
- ICONES_FICHE.forEach(([k,nom,svg])=>{const b=document.createElement('button');b.type='button';b.className='fiche-icone'+(dispo.has(k)?'':' absente');b.setAttribute('aria-label',nom+' de '+a.name);
+ // v1.266 : plus d'icône Espèce — ses talents vivent dans l'onglet Talents.
+ ICONES_FICHE.filter(([k])=>k!=='espece').forEach(([k,nom,svg])=>{const b=document.createElement('button');b.type='button';b.className='fiche-icone'+(dispo.has(k)?'':' absente');b.setAttribute('aria-label',nom+' de '+a.name);
   if(teintes[k])b.style.setProperty('--teinte',teintes[k]);
   // v1.204 : l'icône que le MJ a choisie (Icônes des caracs et compétences), sinon le dessin.
   const l=(catalog.iconesFiche||{})[k];if(l&&typeof poseLogo==='function'){const im=document.createElement('img');im.alt='';im.draggable=false;poseLogo(im,l);b.append(im)}else b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+svg+'</svg>';

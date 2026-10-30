@@ -4638,3 +4638,5 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #arbres .arbres-detail>:has(+.especes-detail){margin-bottom:18px}
 #arbres .especes-detail .fiche-tete-arbre.especes-titre{margin:0 0 6px}
 #arbres .arbres-detail>.especes-detail{margin:auto 0 0!important;width:auto!important;align-self:stretch;padding:0 20px 20px!important;box-sizing:border-box}
+/* v1.266 — Bonus : le bloc Sphères remonte sous la description (et son bouton), au même écart que celui qui sépare l'arbre de ce panneau. */
+#arbres .arbres-detail>.spheres-detail{margin-top:14px!important}
