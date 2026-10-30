@@ -9759,12 +9759,13 @@ document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=documen
 /* v1.223 — Fiche d'un aventurier : au-dessus de l'arbre de chaque onglet (Talents, Bonus, Espèce, Métier, Statistiques), l'en-tête
    orné des Caractéristiques. Le bandeau coloré du haut de l'arbre s'efface : les Marques à dépenser passent dans son coin haut
    gauche, en grand. Dans l'onglet Bonus, en bas du panneau de droite, ses Sphères — le bloc de l'inventaire, sans l'or. */
-const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Espèce',metier:'Métier',statistiques:'Statistiques'};
+const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Arbre des Bonus',espece:'Espèce',metier:'Métier',statistiques:'Statistiques'};
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||!a.hero)return r;
  const zone=arbresDialog.querySelector('.arbres-v2>.arbres-v2-arbre'),titre=TITRES_ONGLETS_FICHE[arbresOnglet];
  // v1.234 : dans l'onglet Bonus, l'en-tête se pose dans le bloc du sphérier, au-dessus de lui : le sphérier garde sa place et son échelle.
- const cadreSph=arbresOnglet==='bonus'&&zone&&zone.querySelector(':scope>.spherier-zone'),hote=cadreSph||zone;
- if(hote&&titre&&!hote.querySelector(':scope>.fiche-tete-arbre')){const h=document.createElement('h3');h.className='fiche-tete-arbre';h.textContent=titre;hote.prepend(h)}
+ // v1.241 : l'en-tête passe au-dessus des deux colonnes, centré : l'arbre et le panneau de droite commencent à la même hauteur.
+ const grille=zone&&zone.parentElement;
+ if(grille&&titre&&!grille.querySelector(':scope>.fiche-tete-arbre')){const h=document.createElement('h3');h.className='fiche-tete-arbre';h.textContent=titre;grille.prepend(h)}
  // v1.227 : la bourse du haut du sphérier quitte la fiche : les Sphères se lisent au bas du panneau de droite.
  if(arbresOnglet==='bonus')arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion>.sphere-bourse').forEach(e=>e.remove());
  const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');
@@ -9772,7 +9773,7 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Esp�
   if(pl){const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Sphères';
    const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.append(w);
    // v1.238 : le bloc Sphères à la taille exacte des Richesses de l'inventaire — même largeur, même échelle (bornée au panneau).
-   const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,place=Math.max(1,aside.clientWidth-8),k=Math.min(echelleRichesses?echelleRichesses.k:9,place/base);
+   const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,place=Math.max(1,aside.clientWidth-40),k=Math.min(echelleRichesses?echelleRichesses.k:9,place/base);
    pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4))}}
  // v1.230 : « Coûts » quitte le haut du sphérier, où il décalait l'arbre : il passe dans le panneau de droite, au-dessus des Sphères ;
  // la barre vidée disparaît.

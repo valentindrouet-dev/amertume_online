@@ -4545,3 +4545,9 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .stat-row.en-icones .stat-tile.t-metres strong{transform:none}
 .stat-row.en-icones .stat-tile.t-metres strong::after{display:inline;margin:0 0 0 1px;font-size:16px;line-height:1;-webkit-text-stroke:3.5px #1d1a16}
 .fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:#ffc35a}
+/* v1.241 — Fiche : l'en-tête de l'onglet au-dessus des deux colonnes, centré ; l'arbre et le panneau de droite à la même hauteur ;
+   un jour entre les blocs, qui ne se touchent plus ; le bloc Sphères reste dans son panneau. */
+#arbres .arbres-v2>.fiche-tete-arbre{grid-column:1/-1;justify-self:stretch;align-self:start;margin:0 0 8px}
+#arbres .arbres-v2:has(>.fiche-tete-arbre){grid-template-rows:auto minmax(0,1fr)}
+#arbres.fiche-aventurier .arbres-v2{column-gap:14px}
+#arbres .arbres-detail>.spheres-detail{margin-left:0;margin-right:0}
