@@ -6978,9 +6978,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       un pas et demi ; le pas vaut le tiers de l'angle du chemin (le chemin passe à trois pas). L'axe du niveau 1 : l'opposé de son chemin. */
    const PS=CH/3;
    // v1.118 : les arcs des talents initiaux sont du côté de ceux de leur palier ; les gros s'écartent pour les laisser passer.
-   const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite;if(cache&&!limiteVue)return null;
+   /* v1.249 : au-delà de la limite, les joueurs voient l'arbre entier — chaque talent remplacé par son repère « ? » à la couleur de
+      sa nature, grisé, sans clic ; le MJ le voit comme avant. */
+   const groupes=GROUPES_ARBRE.map(g=>{const cache=limite&&g>limite,masque=cache&&!limiteVue;
     const centre=centreDe(g),gros=anneau(g,'gros'),moyens=anneau(g,'moyen');if(!centre&&!gros.length&&!moyens.length&&!mj)return null;
-    return {g,cache,centre,gros,moyens}}).filter(Boolean);
+    return {g,cache,masque,centre,gros,moyens}}).filter(Boolean);
+   const repere=t=>{const el=document.createElement('div');el.className='arbre-noeud remplissage masque-limite t-'+talentType(t)[0];el.setAttribute('aria-hidden','true');
+    const r=document.createElement('span');r.className='arbre-rond';r.append(iconeRemplissage());el.append(r);return el};
    const dernier=groupes.length-1,suivant=dernier>=0?GROUPES_ARBRE[GROUPES_ARBRE.indexOf(groupes[dernier].g)+1]:undefined;
    // Les places de chaque palier, en degrés (0 : à droite, 90 : en bas) ; de gauche à droite, de haut en bas.
    const gabarit=(i,g)=>{if(g===1&&i===0)return {gros:[AX1-PS1/2,AX1+PS1/2],moyen:[AX1-1.5*PS1,AX1+1.5*PS1],r:RAYONS[1]};
@@ -7066,11 +7070,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(i){const avant=sh(plans[i-1].c0);lien(avant,c0,plans[i-1].g,g);pastille(g,(avant.x+c0.x)/2,(avant.y+c0.y)/2,niveauA<g)}
     if(i===dernier&&suivant){const p=sh(fin(x,i));trait(c0.x,c0.y,p.x,p.y,true);if(niveauA<suivant)svg.lastChild.classList.add('gris');pastille(suivant,p.x,p.y,niveauA<suivant)}
     // Le centre : le talent initial du palier.
-    if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===0);
+    if(x.centre&&x.masque){if(!estVide(x.centre))pose(repere(x.centre),c0,'centre',x)}
+    else if(x.centre){const el=estVide(x.centre)?noeudVide(x.centre,c,false):noeudArbre(x.centre,c,libre);if(!estVide(x.centre))satellites(el,x.centre,'centre',i%2===0);
      else if(mj){const t=x.centre;el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:'act',centreGroupe:true,remplace:t.id})}}if(x.centre===initial)el.classList.add('racine');
      if(mj)surDepot(el,g,'centre',x.centre===initial?null:x.centre);pose(el,c0,'centre',x)}
     else if(mj&&(g>1||!(c.rang>0)))pose(place('centre',g,'centre'),c0,'centre',x);
-    const rond=(ligne,t,p)=>{let el;if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne,i%2===0)}else{el=noeudVide(t,c,false);
+    const rond=(ligne,t,p)=>{let el;if(x.masque){if(estVide(t))return;pose(repere(t),sh(lieu(x,t,p)),ligne,x);return}if(!estVide(t)){el=noeudArbre(t,c,libre);satellites(el,t,ligne,i%2===0)}else{el=noeudVide(t,c,false);
       if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',remplace:t.id})}}
      if(mj){surDepot(el,g,ligne,t);if(enLibre)glisseLibre(el,t,ligne,g)}pose(el,sh(lieu(x,t,p)),ligne,x)};
     ['gros','moyen'].forEach(ligne=>x.G[ligne].forEach((v,k)=>{const t=x.P[ligne][k],p=sh(autour(x.c0,v,ligne,x.G));
@@ -9801,7 +9806,7 @@ function ajusteArbreTalents(){if(!arbresDialog.open||!arbresActeur||arbresOnglet
  zone.querySelectorAll('.arbre-col>.arbre-plan-groupes').forEach(pl=>{const col=pl.closest('.arbre-col');pl.style.transform='';pl.style.marginTop='';pl.style.marginBottom='';
   const h=pl.offsetHeight,w=pl.offsetWidth;if(!h||!w)return;const cs=getComputedStyle(col),n=v=>parseFloat(v)||0;
   const H=zone.clientHeight-n(cs.paddingTop)-n(cs.paddingBottom)-n(cs.borderTopWidth)-n(cs.borderBottomWidth)-4,W=col.clientWidth-n(cs.paddingLeft)-n(cs.paddingRight);
-  const k=Math.max(.4,Math.min(1.15,(H-24)/h,(W-16)/w)),jour=Math.max(0,(H-h*k)/2);
+  const k=Math.max(.4,Math.min(1,(H-48)/h,(W-72)/w)),jour=Math.max(0,(H-h*k)/2);
   pl.style.transformOrigin='top center';pl.style.transform='scale('+k.toFixed(4)+')';pl.style.marginTop=jour.toFixed(1)+'px';pl.style.marginBottom=(H-jour-h).toFixed(1)+'px'})}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);try{ajusteArbreTalents()}catch(e){}return r}}
 addEventListener('resize',()=>{try{ajusteArbreTalents()}catch(e){}});
