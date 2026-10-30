@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.254","d":"2026-10-30","t":"Icônes des espèces"},
 {"v":"1.253","d":"2026-10-30","t":"Bloc Bonus"},
 {"v":"1.252","d":"2026-10-30","t":"Repères pleins"},
 {"v":"1.251","d":"2026-10-30","t":"Tous les emplacements en ?, plus de défilement"},

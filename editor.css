@@ -4592,3 +4592,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .hero-card.fiche-onglet .fiche-bonus .rang-bonus>.cat-pill.bonus-rond{flex:0 0 62px;width:62px;max-width:62px;height:62px}
 .hero-card.fiche-onglet .fiche-bonus .rang-bonus>.cat-pill.bonus-rond .bonus-valeur{font-size:22px;-webkit-text-stroke-width:4.2px}
 .hero-card.fiche-onglet .fiche-bonus .rang-bonus>.cat-pill.bonus-rond .bonus-valeur::before{font-size:14px;-webkit-text-stroke-width:2.8px}
+/* v1.253 — L'icône de l'espèce devant son nom : à la création et sur la fiche. */
+#creation-aventurier .creation-classe .creation-espece-nom{display:inline-flex;align-items:center;gap:8px}
+.espece-ico{flex:none;object-fit:contain}
+#creation-aventurier .creation-espece-nom>.espece-ico{width:30px;height:30px;margin:-4px 0}
+.hero-cartouche.c-espece>.espece-ico{width:1.45em;height:1.45em;margin:-3px 0 -3px -4px}

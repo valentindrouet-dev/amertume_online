@@ -1440,6 +1440,8 @@ function choixMenu(ancre,options,poser){if(view!=='mj'||!ancre||!ancre.parentNod
  menu.onblur=()=>fermer(false);
  menu.onkeydown=ev=>{if(ev.key==='Escape'){ev.preventDefault();fermer(false)}}}
 // « fn » nul : l'intitulé paraît sans son bouton — un outil que ce regard n'a pas.
+// v1.253 : l'icône d'une espèce, img/especes/<id>.webp ; une espèce sans icône n'en montre pas.
+function iconeEspece(e){if(!e||!e.id)return null;const i=document.createElement('img');i.className='espece-ico';i.alt='';i.src='img/especes/'+e.id+'.webp';i.onerror=()=>i.remove();return i}
 function sousTitre(texte,titre,fn,glyphe='+'){const h=document.createElement('h4');h.className='hero-sous';
  h.append(texte);
  if(!fn)return h;
@@ -1849,6 +1851,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   const cart=(txt,cls)=>{const s=document.createElement('span');s.className='hero-cartouche '+cls;s.textContent=txt;return s};
   if(a.sexe)ident.append(cart((a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe,'c-genre'));
   if(String(a.race||'').trim()){const e=cart(String(a.race).trim(),'c-espece'),es=typeof especeDe==='function'?especeDe(a.espece):null;
+   // v1.253 : l'icône de l'espèce devant son nom.
+   {const ic=es?iconeEspece(es):null;if(ic)e.prepend(ic)}
    const px=es?pastilleExtension(extensionEspece(es)):null;if(px){e.classList.add('avec-extension');e.append(px)}ident.append(e)}
   // v0.997 : la classe porte aussi la pastille de son Extension.
   {const cl=(catalog.classes||[]).find(x=>x&&x.name===a.role),px=cl?pastilleExtension(extensionClasse(cl)):null;if(px){classe.classList.add('avec-extension');classe.append(px)}}
@@ -5132,7 +5136,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   /* v0.893 : les espèces sans Extension d'abord, puis par Extension, dans l'ordre des Extensions ; dans chaque groupe, par nom. */
   const rangExt=e=>{const k=extensionEspece(e);return k?1+EXTENSIONS.findIndex(([c])=>c===k):0};
   [...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr')).forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
-   const n=document.createElement('b');n.textContent=e.nom;b.append(n);
+   const n=document.createElement('b');n.className='creation-espece-nom';n.textContent=e.nom;{const ic=iconeEspece(e);if(ic)n.prepend(ic)}b.append(n);
    {const px=pastilleExtension(extensionEspece(e));if(px)b.append(px)}
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
   const e=especeCreation(c);
