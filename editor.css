@@ -4631,12 +4631,17 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #arbres .arbres-detail>.spheres-detail>.place.p-bourse{margin-left:auto!important;margin-right:auto!important}
 /* v1.264 — Le coût d'un talent trop cher : le rose de la pastille D&D (son rouge #d32f2f éclairci), plus le brun-rouge. */
 :is(#arbres,body) .detail-prix.cout-marque.trop-cher b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#d32f2f 30%,#fff)!important}
-/* v1.264 — Arbre des Bonus : un bonus inaccessible, à 60 % d'opacité. */
-.sphere-noeud.verrou{opacity:.6}
 /* v1.265 — Le bloc Espèce : un contour, détaché de la description au-dessus ; son titre à la taille de celui de l'arbre. */
 #arbres .arbres-detail>.especes-detail>.especes-place{border:1px solid var(--line);border-radius:14px;padding:12px 14px 18px;background:var(--panel-2);gap:6px}
 #arbres .arbres-detail>:has(+.especes-detail){margin-bottom:18px}
 #arbres .especes-detail .fiche-tete-arbre.especes-titre{margin:0 0 6px}
-#arbres .arbres-detail>.especes-detail{margin:auto 0 0!important;width:auto!important;align-self:stretch;padding:0 20px 20px!important;box-sizing:border-box}
-/* v1.266 — Bonus : le bloc Sphères remonte sous la description (et son bouton), au même écart que celui qui sépare l'arbre de ce panneau. */
-#arbres .arbres-detail>.spheres-detail{margin-top:14px!important}
+#arbres .arbres-detail>.especes-detail{margin:auto 0 0!important;width:auto!important;align-self:stretch;padding:0 20px 20px!important;box-sizing:border-box;flex:none}
+/* v1.267 — Panneau de droite (Talents, Bonus) : la description ne couvre plus toute la colonne ; elle prend la place au-dessus du bloc
+   du bas (Espèce, Sphères) et défile s'il le faut. Le bloc reste aligné en bas, à 14 px d'elle. */
+#arbres .arbres-detail:has(>.spheres-detail,>.especes-detail){display:flex;flex-direction:column;gap:14px}
+#arbres .arbres-detail:has(>.spheres-detail,>.especes-detail)>.detail-defile{position:static;inset:auto;flex:1 1 0;min-height:0}
+#arbres .arbres-detail>.spheres-detail{flex:none;margin-top:auto}
+/* v1.267 — Arbre des Bonus : un bonus inaccessible à 60 % de transparence, comme les liens ; son rond reste couvrant, les liens ne passent pas dessous. */
+.sphere-noeud.verrou .sphere-rond{background:color-mix(in srgb,color-mix(in srgb,#7d7a74 24%,var(--panel)) 40%,var(--panel-2))}
+.sphere-noeud.verrou .sphere-rond>*,.sphere-noeud.verrou>:not(.sphere-rond){opacity:.4!important}
+#arbres .arbres-detail:has(>.spheres-detail,>.especes-detail)>.detail-defile{margin-bottom:0}
