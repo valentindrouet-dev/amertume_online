@@ -4530,3 +4530,9 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 /* v1.235 — Onglet Talents : l'arbre remonte encore (l'en-tête plus serré, le plan de l'arbre 26 px plus haut), il tient sans défiler. */
 #arbres.fiche-aventurier .arbres-v2-arbre>.fiche-tete-arbre{margin:0 0 4px}
 #arbres.fiche-aventurier .arbres-v2 .arbre-col>:is(.arbre-plan-groupes,.arbre-plan){margin-top:-26px}
+/* v1.236 — Coût en Marques : dans une amélioration, il s'écarte du bord droit de la carte sans toucher le texte ; celui d'un talent
+   passe en haut à droite du bloc du talent. */
+:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque{margin-right:14px;margin-left:10px;flex:none}
+#arbres .arbres-detail .detail-tete{position:relative}
+#arbres .arbres-detail .detail-tete>.detail-prix.cout-marque.cout-coin{position:absolute;top:14px;right:26px;margin:0;z-index:2}
+#arbres .arbres-detail .detail-tete:has(>.cout-coin) .detail-nom-ligne{padding-right:46px}

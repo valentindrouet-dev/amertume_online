@@ -9763,3 +9763,7 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Esp�
  if(arbresOnglet==='bonus'&&aside){arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion').forEach(bar=>{const bc=bar.querySelector('.couts-sphere');
   if(bc){bc.classList.add('couts-dans-detail');const w=aside.querySelector('.spheres-detail');if(w)w.before(bc);else aside.append(bc)}if(!bar.querySelector('*'))bar.remove()})}
  return r}}
+// v1.236 : le coût en Marques d'un talent quitte le dessous de son rond : il se pose en haut à droite du bloc du talent.
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);
+ arbresDialog.querySelectorAll('.arbres-detail .detail-tete .detail-prix-rond.cout-marque').forEach(pr=>{const tete=pr.closest('.detail-tete');if(!tete||pr.parentElement===tete)return;pr.classList.add('cout-coin');tete.append(pr)});
+ return r}}
