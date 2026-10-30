@@ -9750,6 +9750,8 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Esp�
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||!a.hero)return r;
  const zone=arbresDialog.querySelector('.arbres-v2>.arbres-v2-arbre'),titre=TITRES_ONGLETS_FICHE[arbresOnglet];
  if(zone&&titre&&!zone.querySelector(':scope>.fiche-tete-arbre')){const h=document.createElement('h3');h.className='fiche-tete-arbre';h.textContent=titre;zone.prepend(h)}
+ // v1.227 : la bourse du haut du sphérier quitte la fiche : les Sphères se lisent au bas du panneau de droite.
+ if(arbresOnglet==='bonus')arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion>.sphere-bourse').forEach(e=>e.remove());
  const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');
  if(arbresOnglet==='bonus'&&aside&&!aside.querySelector('.spheres-detail')){const inv=corpsEtSac(a,true),pl=inv&&inv.querySelector('.place.p-bourse');
   if(pl){const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Sphères';

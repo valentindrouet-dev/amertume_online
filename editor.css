@@ -4489,3 +4489,9 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .stat-row.en-icones .stat-tile.t-metres strong::after{content:'m';display:block;margin-top:-3px;text-align:center;font-size:13px;line-height:1;-webkit-text-stroke:3.5px #1d1a16}
 .stat-row.en-icones .stat-tile.t-metres strong{transform:translateY(5px)}
 .stat-row.en-icones .stat-tile.t-metres .stat-ico{width:44px;height:44px}
+/* v1.227 — Fiche : sans sa bourse, la barre du sphérier ne garde que « Coûts », à droite, sur toute la largeur ; les Marques du
+   coin haut gauche de l'arbre deux fois plus grandes. */
+#arbres.fiche-aventurier .spherier-zone>.sphere-infusion{align-self:stretch;justify-content:flex-end}
+#arbres.fiche-aventurier .arbres-pt.marques-dispo .marque-ico{width:68px;height:68px}
+#arbres.fiche-aventurier .arbres-pt.marques-dispo b{left:24px;top:20px;font-size:36px;-webkit-text-stroke:6px #1d1a16}
+#arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp{min-height:80px}
