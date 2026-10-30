@@ -9487,7 +9487,10 @@ function openInventaire(a){a=acteurCourant(a);if(!a)return;openArbres(a);if(!arb
 // Le schéma à l'échelle : tracé à sa largeur de référence, il grandit ou rapetisse d'un bloc pour remplir la partie gauche.
 function cadreInventaire(){const sch=arbresDialog.querySelector('.inv-schema'),g=arbresDialog.querySelector('.inv-gauche');if(!sch||!g)return;
  sch.style.transform='';const W=INV_LARGEUR,H=sch.offsetHeight,gw=g.clientWidth,gh=g.clientHeight;if(!H||!gw||!gh)return;
- const k=Math.max(.3,Math.min(gw/W,gh/H));sch.style.transformOrigin='0 0';sch.style.transform='translate('+((gw-W*k)/2).toFixed(1)+'px,0px) scale('+k.toFixed(4)+')'}
+ const k=Math.max(.3,Math.min(gw/W,gh/H));sch.style.transformOrigin='0 0';sch.style.transform='translate('+((gw-W*k)/2).toFixed(1)+'px,0px) scale('+k.toFixed(4)+')';
+ // v1.238 : l'échelle et la largeur des Richesses, que reprend le bloc Sphères de l'onglet Bonus.
+ {const pl=sch.querySelector('.place.p-bourse');if(pl&&pl.offsetWidth)echelleRichesses={k,w:pl.offsetWidth}}}
+let echelleRichesses=null;
 // La fiche et l'inventaire, dans la fenêtre, suivent ce qui change sur la page des Aventuriers.
 let enRenduArbres=false;
 {const rh=renderHeroes;renderHeroes=function(...x){const r=rh(...x);if(arbresDialog.open&&arbresActeur&&(arbresOnglet==='stats'||arbresOnglet==='inventaire'||arbresOnglet==='statistiques')&&!enRenduArbres){enRenduArbres=true;try{renderArbres()}finally{enRenduArbres=false}}return r}}
@@ -9765,7 +9768,10 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Esp�
  const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');
  if(arbresOnglet==='bonus'&&aside&&!aside.querySelector('.spheres-detail')){const inv=corpsEtSac(a,true),pl=inv&&inv.querySelector('.place.p-bourse');
   if(pl){const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Sphères';
-   const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.append(w)}}
+   const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.append(w);
+   // v1.238 : le bloc Sphères à la taille exacte des Richesses de l'inventaire — même largeur, même échelle (bornée au panneau).
+   const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,place=Math.max(1,aside.clientWidth-8),k=Math.min(echelleRichesses?echelleRichesses.k:9,place/base);
+   pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4))}}
  // v1.230 : « Coûts » quitte le haut du sphérier, où il décalait l'arbre : il passe dans le panneau de droite, au-dessus des Sphères ;
  // la barre vidée disparaît.
  if(arbresOnglet==='bonus'&&aside){arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion').forEach(bar=>{const bc=bar.querySelector('.couts-sphere');
