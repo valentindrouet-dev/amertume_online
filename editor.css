@@ -4474,3 +4474,11 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres .arbres-detail>.spheres-detail{border:0;padding:0;box-shadow:none;min-height:0}
 /* v1.224 — Arbre des paliers : le talent initial 15 % plus petit (102 px au lieu de 120). */
 .arbre-roue.arbre-paliers>.roue-centre .arbre-rond,.arbre-roue.arbre-paliers>.arbre-place-groupe.roue-centre,.arbre-roue.arbre-paliers>.arbre-noeud.choisi.roue-centre::after{width:102px;height:102px}
+/* v1.225 — Le coût sur la Marque, partout où il paraît (arbre, panneau, bulles) : chiffre deux fois plus gros, vert pâle quand
+   les Marques suffisent (ou quand c'est payé), rouge pâle sinon. */
+:is(#arbres,body) .detail-prix.cout-marque{position:relative;display:inline-grid;place-items:center;width:30px;height:30px;padding:0!important;border:0!important;border-radius:0;background:none!important;box-shadow:none;overflow:visible}
+:is(#arbres,body) .detail-prix.cout-marque .marque-ico{grid-area:1/1;width:30px;height:30px}
+:is(#arbres,body) .detail-prix.cout-marque b{position:absolute;right:-12px;bottom:-12px;margin:0;color:color-mix(in srgb,#fff 50%,#58b09f);font:900 30px/1 'Killam',system-ui;-webkit-text-stroke:5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+:is(#arbres,body) .detail-prix.cout-marque.paye b{color:color-mix(in srgb,#fff 50%,#58b09f)}
+:is(#arbres,body) .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 45%,var(--red-mat))}
+:is(#arbres,body) :is(.detail-bonus,.bonus-rond-panneau) .detail-prix.cout-marque b{font-size:26px;-webkit-text-stroke:4.5px #1d1a16;right:-10px;bottom:-10px}
