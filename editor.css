@@ -4664,3 +4664,6 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .sphere-noeud.acquis .sphere-rond{background:#d3e5cd!important}
 .sphere-noeud.dispo:not(.acquis):not(.cher) .sphere-rond{background:color-mix(in srgb,#f2c14e 50%,var(--panel))!important}
 .sphere-noeud.dispo.cher:not(.acquis) .sphere-rond{background:color-mix(in srgb,rgb(214,86,118) 15%,var(--panel))!important}
+/* v1.271 — Vignettes : actif, portrait en couleur ; inactif, portrait gris. Hors de la table ne grise plus rien ; le contour reste coloré. */
+#hero-grid.en-vignettes .accueil-avatar.hors-table,#hero-grid.en-vignettes .accueil-avatar.hors-table:hover{opacity:1;filter:none}
+#hero-grid.en-vignettes .accueil-avatar.inactif>img{filter:grayscale(1)}

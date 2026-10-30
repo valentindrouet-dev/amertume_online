@@ -9627,7 +9627,8 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
    d'un aventurier en attente. */
 function vignetteHeros(a,i){const c=document.createElement('div');c.className='accueil-heros hero-vignette';c.dataset.heros=a.id||'';c.setAttribute('role','button');c.tabIndex=0;c.setAttribute('aria-label','Fiche de '+a.name);
  const teinte=(typeof actorTint==='function'&&actorTint(a))||'';if(teinte)c.style.setProperty('--teinte',teinte);
- const av=document.createElement('span');av.className='accueil-avatar'+(a.horsCarte&&view==='mj'?' hors-table':'');
+ // v1.271 : le portrait se grise si l'aventurier est inactif, et seulement alors ; son contour garde sa couleur.
+ const av=document.createElement('span');av.className='accueil-avatar'+(a.horsCarte&&view==='mj'?' hors-table':'')+(a.enAventure!==true?' inactif':'');
  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
  const t=document.createElement('span');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
  const d=document.createElement('small');d.className='accueil-classe';d.textContent=String(a.role||'');
