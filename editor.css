@@ -4735,3 +4735,5 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .gemmes-separateur .gemmes-sep-nom{display:inline-flex;align-items:center;gap:8px;font:700 12px/1 system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink)}
 .gemmes-separateur .gemmes-sep-nom .gemmes-icone{width:22px;height:22px}
 .gemmes-separateur .gemmes-sep-fois{float:right;font:800 14px/22px system-ui;color:var(--ink)}
+/* v1.286 — Le chiffre du coût en sphères posé sur l'icône, en bas à gauche, comme celui des Marques. */
+.sphere-cout .puce-gemme b,.infuser .puce-gemme b{left:1px;bottom:-3px}
