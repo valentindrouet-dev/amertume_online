@@ -2168,7 +2168,7 @@ function openExtensions(){if(view!=='mj')return;const groupes=groupesLogosCompet
  extensionsDialog.showModal()}
 const competencesDialog=dialog('competences-icones','Icônes des caracs et compétences','<form id="competences-icones-form"><p class="muted">Une icône par caractéristique et par compétence, sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
 // Les caractéristiques dont l'icône se choisit : celle de leurs bonus, dans l'arbre comme sur la fiche.
-const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement'],['soin','Soin']];
+const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['metres','Mouvement'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement'],['soin','Soin']];
 $('competences-icones-form').onsubmit=e=>e.preventDefault();
 function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
  /* Vingt-huit menus de toutes les icônes : des dizaines de milliers d'options à bâtir, plusieurs secondes d'attente. Chaque
@@ -2829,7 +2829,7 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
    const v=document.createElement('span');v.className='valeur';v.textContent=String(+distanceMouvement(a,catalog.items||[]).toFixed(1)).replace('.',',')+'\u00a0m';
    // v1.222 : un bonus de mouvement (talents, bonus, objets) : le total en doré, et à sa droite, en noir, « (9 m + 1 m) ».
    {const fm=n=>String(+Number(n).toFixed(1)).replace('.',',')+'\u00a0m',tot=distanceMouvement(a,catalog.items||[]),base=mouvementPropre(a),plus=+(tot-base).toFixed(1);
-    if(plus>0){const ligne=document.createElement('span');ligne.className='mouvement-ligne';v.classList.add('avec-bonus');const d=document.createElement('span');d.className='mouvement-detail';d.textContent='('+fm(base)+' + '+fm(plus)+')';ligne.append(v,d);m.append(e,ligne);pl.append(m)}
+    if(plus>0){const ligne=document.createElement('span');ligne.className='mouvement-ligne';v.classList.add('avec-bonus');const d=document.createElement('span');d.className='mouvement-detail';d.append('('+fm(base)+' + ');{const g=document.createElement('span');g.className='mouvement-plus';g.textContent=fm(plus);d.append(g,')')}ligne.append(v,d);m.append(e,ligne);pl.append(m)}
     else{m.append(e,v);pl.append(m)}}}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
  // En bas à gauche du schéma, l'or de l'aventurier : la pièce et le nombre. Le MJ y ajoute ou retire or et gemmes d'un clic.
@@ -9528,10 +9528,15 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
   const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']]};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement','']};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
- // v1.218 : les Marques à dépenser, une caractéristique de plus, sur la ligne des Dégâts ; l'XP passe dessous.
- if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tm=document.createElement('div');tm.className='stat-tile t-marques avec-icone';tm.style.setProperty('--tint',(typeof STAT_TINTS!=='undefined'&&STAT_TINTS.xp)||'201,162,39');
+ // v1.226 : le Mouvement, 8e caractéristique, à côté des Dégâts ; son icône se choisit comme les autres (Icônes, « Mouvement »).
+ if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tv=document.createElement('div');tv.className='stat-tile t-metres';tv.style.setProperty('--tint','207,145,82');
+  const tot=distanceMouvement(a,catalog.items||[]),n=document.createElement('strong');n.textContent=String(+Number(tot).toFixed(1)).replace('.',',');tv.append(n);
+  {const ic=logoBonus({carac:'metres'});if(ic){ic.classList.add('stat-ico');tv.prepend(ic);tv.classList.add('avec-icone')}}
+  tv.classList.toggle('en-hausse',tot>mouvementPropre(a));if(dmg)dmg.after(tv);else ch.append(tv)}
+ // v1.218 : les Marques à dépenser, une caractéristique de plus ; v1.226 : après le Mouvement, à côté de l'XP.
+ if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-metres')||ch.querySelector(':scope>.stat-tile.t-dmg'),tm=document.createElement('div');tm.className='stat-tile t-marques avec-icone';tm.style.setProperty('--tint',(typeof STAT_TINTS!=='undefined'&&STAT_TINTS.xp)||'201,162,39');
   const n=document.createElement('strong');n.textContent=String(Math.max(0,Math.trunc(Number(xpDisponible(a,catalog.talents))||0)));tm.append(iconeMarque('stat-ico'),n);if(dmg)dmg.after(tm);else ch.append(tm)}
  if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const k=([...t.classList].find(x=>x.startsWith('t-'))||'t-').slice(2),s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');
   const [nom,desc]=CARACS_FICHE[k]||[k,''];vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'',nom,'Caractéristique',desc,t.style.getPropertyValue('--tint').trim())});

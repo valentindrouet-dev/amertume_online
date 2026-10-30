@@ -4482,3 +4482,10 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 :is(#arbres,body) .detail-prix.cout-marque.paye b{color:color-mix(in srgb,#fff 50%,#58b09f)}
 :is(#arbres,body) .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 45%,var(--red-mat))}
 :is(#arbres,body) :is(.detail-bonus,.bonus-rond-panneau) .detail-prix.cout-marque b{font-size:26px;-webkit-text-stroke:4.5px #1d1a16;right:-10px;bottom:-10px}
+/* v1.226 — Le bonus du Mouvement doré dans son détail ; le Mouvement, 8e caractéristique de la fiche, à côté des Dégâts ; l'XP
+   reprend sa place à côté des Marques. */
+.corps .mouvement-corps .mouvement-detail .mouvement-plus{color:#c99a3c}
+.hero-card.fiche-onglet .fiche-page>.stat-row.en-icones>.vignette:has(.t-xp){grid-column:auto;justify-self:stretch;width:auto}
+.stat-row.en-icones .stat-tile.t-metres strong::after{content:'m';display:block;margin-top:-3px;text-align:center;font-size:13px;line-height:1;-webkit-text-stroke:3.5px #1d1a16}
+.stat-row.en-icones .stat-tile.t-metres strong{transform:translateY(5px)}
+.stat-row.en-icones .stat-tile.t-metres .stat-ico{width:44px;height:44px}

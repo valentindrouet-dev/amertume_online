@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.226","d":"2026-10-30","t":"Mouvement, 8e caractéristique"},
 {"v":"1.225","d":"2026-10-30","t":"Chiffre du coût en Marques"},
 {"v":"1.224","d":"2026-10-30","t":"Talent initial plus petit"},
 {"v":"1.223","d":"2026-10-30","t":"En-têtes des onglets, PV des combattants"},
