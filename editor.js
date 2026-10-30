@@ -1334,7 +1334,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
 const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
- +'<select id="hero-tri" aria-label="Ordre des aventuriers"><option value="libre">Tri : libre</option><option value="nom">Tri : nom</option><option value="niveau">Tri : niveau</option><option value="classe">Tri : classe</option><option value="xp">Tri : XP</option></select>'
+ +'<select id="hero-tri" aria-label="Ordre des aventuriers"><option value="libre">Tri : libre</option><option value="nom">Tri : nom</option><option value="niveau">Tri : Marques</option><option value="classe">Tri : classe</option><option value="xp">Tri : XP</option></select>'
  +'<button id="hero-repos-long" type="button" title="VIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage ; ceux retournés au domaine reviennent">🌙 Repos long</button>'
  +'<button id="hero-icones-comp" type="button" title="Choisir l’icône de chaque caractéristique et de chaque compétence, la même sur toutes les fiches">🖼 Icônes des caracs et compétences</button>'
  +'<button id="hero-extensions" type="button" title="Les icônes des Extensions, et l’Extension de chaque classe et de chaque espèce">🖼 Extensions</button>'
@@ -1638,11 +1638,9 @@ function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:d
   if(!f||(cle==='xp'&&!a.hero))return;calculAuSurvol(t,()=>f(a));if(BULLES){const e=t.querySelector('.ecu');if(e)e.removeAttribute('title')}})}
 // L'XP d'un aventurier au survol : son niveau, le suivant et ce qu'il reste à gagner pour l'atteindre.
 // v1.124 : l'XP du niveau en cours sur ce qu'il demande, puis ce qu'il reste avant le suivant.
-function detailXp(a){const x=xpDuNiveau(a),f=n=>n.toLocaleString('fr-FR')+' XP';
- const l=[['Niveau '+x.niveau,x.pour?x.dans.toLocaleString('fr-FR')+' / '+f(x.pour):f(x.dans)]];
- if(!x.pour)l.push(['Niveau maximum','atteint']);
- else l.push(['Reste à gagner',f(x.pour-x.dans)]);
- return l}
+// v1.256 : plus de niveau — les Marques gagnées, et ce qu'il reste à gagner avant la suivante.
+function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a&&a.xp))||0),f=n=>n.toLocaleString('fr-FR')+' XP';
+ return [['Marques gagnées',String(marquesGagnees(a))],['Reste à gagner',f(XP_PAR_MARQUE-xp%XP_PAR_MARQUE)]]}
 function calculAuSurvol(tuile,lignes){if(!tuile)return;
  const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle';
   lignes().forEach(([k,v],i,t)=>{const r=document.createElement('div');r.className='calcul-ligne'+(i===0?' tete':i===t.length-1?' total':'');
@@ -1804,7 +1802,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const classe=document.createElement('span');classe.className='sheet-class';
  classe.textContent=(a.role||'Aventurier').split('·')[0].trim().toUpperCase();
  // Le niveau suit la classe : « GARDIEN niv. 3 ».
- {const niv=document.createElement('span');niv.className='classe-niv';niv.textContent=' niv. '+a.level;classe.append(niv)}
+ // v1.256 : un aventurier n'a plus de niveau ; un adversaire garde le sien.
+ if(!a.hero){const niv=document.createElement('span');niv.className='classe-niv';niv.textContent=' niv. '+a.level;classe.append(niv)}
  classe.style.color=classe.style.borderColor=teinte;classe.style.background='color-mix(in srgb,'+teinte+' 16%,transparent)';
  /* Au survol, la classe se présente : son nom, ce qu'elle apporte aux PV, sa description. Au
     clic, son arbre de talents s'ouvre — celui de l'aventurier, ou celui de la classe pour le MJ. */
@@ -1948,7 +1947,7 @@ const TRIS_HEROS=['libre','nom','niveau','classe','xp'];
 function triHeros(){try{const t=localStorage.getItem('amertume-tri-heros');return TRIS_HEROS.includes(t)?t:'libre'}catch(e){return 'libre'}}
 const rangLibre=a=>Number.isFinite(a.rangFiche)?a.rangFiche:100000+actors.indexOf(a);
 function trieHeros(l){const t=triHeros(),nom=(x,y)=>String(x.name||'').localeCompare(String(y.name||''),'fr',{sensitivity:'base'});
- const par={nom,niveau:(x,y)=>(Number(y.level)||1)-(Number(x.level)||1)||nom(x,y),classe:(x,y)=>String(x.role||'').localeCompare(String(y.role||''),'fr',{sensitivity:'base'})||nom(x,y),
+ const par={nom,niveau:(x,y)=>marquesGagnees(y)-marquesGagnees(x)||nom(x,y),classe:(x,y)=>String(x.role||'').localeCompare(String(y.role||''),'fr',{sensitivity:'base'})||nom(x,y),
   xp:(x,y)=>(Number(y.xp)||0)-(Number(x.xp)||0)||nom(x,y),libre:(x,y)=>rangLibre(x)-rangLibre(y)};
  return [...l].sort(par[t])}
 // Glisser une fiche avant ou après une autre : toute la troupe reprend un rang, dans l'ordre affiché.
@@ -4934,7 +4933,7 @@ function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.r
   const av=document.createElement('span');av.className='accueil-avatar';
   if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
   const t=document.createElement('span');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
-  const d=document.createElement('small');d.className='accueil-classe';d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'Niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
+  const d=document.createElement('small');d.className='accueil-classe';d.textContent=String(a.role||'');
   const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
   const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
   t.append(n,d,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';
@@ -5850,7 +5849,7 @@ function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
  return (haut.length?haut:v).map(x=>x.name).filter(Boolean).join(' ou ')||'—'}
 // v0.972 : sans lignes, un talent s'ouvre au niveau de son groupe ; un petit rond attend toujours son talent.
 {const v0=verrouArbre;verrouArbre=function(portes,liste,t,niveau=Infinity){if(!(typeof ARBRE_V3!=='undefined'&&ARBRE_V3)||!t||lisChemin(t))return v0(portes,liste,t,niveau);
- const g=groupeArbre(t,liste);return niveau>=g?'':'Niveau '+g}}
+ const g=groupeArbre(t,liste);return niveau>=g?'':(MARQUES_PALIER[g]||0)+' Marques dépensées au palier précédent'}}
 /* v1.111 — Les paliers : les ronds d'un palier ne s'ouvrent qu'une fois son talent initial (le centre) acquis ; le centre d'un palier,
    une fois celui du palier d'avant acquis — le talent de classe du premier palier compte toujours pour acquis. */
 {const v1=verrouArbre;verrouArbre=function(portes,liste,t,niveau=Infinity){const r=v1(portes,liste,t,niveau);
@@ -6145,6 +6144,18 @@ function niveauxParLignes(liste){const L=(liste||[]).filter(Boolean),out=new Map
   voisinsDe(L,t).forEach(v=>{const m=Math.max(n,niveauLien(t,v)||1);if(!out.has(v.id)||m<out.get(v.id)){out.set(v.id,m);file.push(v.id)}})}
  return out}
 function groupeArbre(t,liste){if(GROUPES_ARBRE.includes(Number(t&&t.groupe)))return Number(t.groupe);const n=niveauxParLignes(liste).get(t&&t.id);return groupeDeNiveau(n||1)}
+/* v1.256 : plus de niveau pour les aventuriers. Un palier s'ouvre une fois dépensées, dans le palier d'avant, assez de Marques :
+   talents, améliorations et bonus de ce palier (le talent initial, offert, n'en coûte pas). */
+const MARQUES_PALIER={5:20,10:40,20:60,40:100};
+function groupeElement(t,liste){const b=t&&lisChemin(t)?departChemin(t)||t:t;return b?groupeArbre(b,liste):GROUPES_ARBRE[0]}
+function marquesDuPalier(a,liste,g){const ids=new Set((liste||[]).filter(Boolean).map(t=>t.id)),base=t=>lisChemin(t)?departChemin(t)||t:t;
+ return talentsTenus(a&&a.talents,catalog.talents).filter(t=>t&&t.flottant!==true&&ids.has(base(t).id)&&groupeElement(t,liste)===g)
+  .reduce((s,t)=>{let n=0;for(let i=1;i<=palierDe(a,t);i++)n+=coutPalier(t,i);return s+n},0)}
+// Rendre un talent ne referme pas un palier où l'on tient encore quelque chose.
+const NOTE_PALIER='Rendre ce talent refermerait un palier entamé.';
+function fermeraitPalier(a,liste,t){if(!a||!Array.isArray(liste)||!t)return false;const sans={...a,talents:(a.talents||[]).filter(id=>id!==t.id)},o=palierOuvert(sans,liste),ids=new Set(liste.filter(Boolean).map(x=>x.id));
+ return talentsTenus(sans.talents,catalog.talents).some(x=>x&&x.flottant!==true&&ids.has((lisChemin(x)?departChemin(x)||x:x).id)&&groupeElement(x,liste)>o)}
+function palierOuvert(a,liste){let o=GROUPES_ARBRE[0];for(let i=1;i<GROUPES_ARBRE.length;i++){const g=GROUPES_ARBRE[i];if(marquesDuPalier(a,liste,GROUPES_ARBRE[i-1])>=MARQUES_PALIER[g])o=g;else break}return o}
 const ordreArbre=t=>Number.isFinite(Number(t&&t.ordreArbre))?Number(t.ordreArbre):(()=>{const p=posDe(t);return p?p.x*100+p.y:0})();
 // Le talent d'où part la ligne que le MJ est en train de tracer.
 let lienDepuis=null;
@@ -6573,7 +6584,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* Ce que les joueurs voient de cet arbre : tout, ou jusqu'à l'une de ses barrières de niveau. */
   // v0.982 : en groupes de niveau, le menu propose les groupes, et le choix vaut pour tous les arbres.
   if(liste.length&&ARBRE_V3){const L=limiteArbre(classe),v=L?GROUPES_ARBRE.filter(g=>g<=L).pop()||0:0,s=document.createElement('select');s.className='arbres-limite';s.setAttribute('aria-label','Talents visibles des joueurs');
-   s.append(new Option('Tout l’arbre','0'),...GROUPES_ARBRE.slice(0,-1).map(n=>new Option('Jusqu’au niv. '+n,String(n))));s.value=String(v===GROUPES_ARBRE[GROUPES_ARBRE.length-1]?0:v);
+   s.append(new Option('Tout l’arbre','0'),...GROUPES_ARBRE.slice(0,-1).map((n,i)=>new Option('Jusqu’au palier '+['I','II','III','IV','V'][i],String(n))));s.value=String(v===GROUPES_ARBRE[GROUPES_ARBRE.length-1]?0:v);
    s.onchange=()=>{const n=Math.trunc(Number(s.value))||0;if(n)catalog.limitesArbres={'*':n};else delete catalog.limitesArbres;
     document.querySelectorAll('select.arbres-limite').forEach(x=>{if(x!==s)x.value=s.value});renderArbres();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
    arbresTotal.hidden=false;arbresTotal.append(s);
@@ -6744,7 +6755,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Un talent, un bonus ou une amélioration que l'XP restante ne paie pas se grise, comme un prérequis manquant.
  const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'Marques insuffisantes':'';
  const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,palierOuvert(a,col.liste)))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');if(t.flottant===true)el.classList.add('talent-classe');
   /* v2 : son vrai nom sous le rond, deux lignes au plus, sous les améliorations du bas s'il en porte. */
@@ -6753,6 +6764,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const agir=()=>{if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
    if(acquis&&!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}
+   if(acquis&&!libre&&fermeraitPalier(a,col.liste,t)){note(NOTE_PALIER);return}
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};el.agir=agir;
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
@@ -6783,7 +6795,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if((estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // À paliers, le clic monte d'un palier tant que l'XP le paie ; au dernier, il rend l'amélioration.
    if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;if(coutPalier(t,n)>xpDisponible(a,catalog.talents))return;poserPalier(t,n)}
-   else if(acquis){if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}oublier(t,libre?null:col.liste)}else if(!verrou)a.talents=[...a.talents,t.id];else return;
+   else if(acquis){if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}if(!libre&&fermeraitPalier(a,col.liste,t)){note(NOTE_PALIER);return}oublier(t,libre?null:col.liste)}else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
   // Le clic droit redescend d'un palier ; au premier, il rend l'amélioration.
   if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;e.preventDefault();if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}
@@ -7042,8 +7054,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const trait=(x1,y1,x2,y2,pointille,r1=0,r2=0)=>{const d=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/d,uy=(y2-y1)/d;x1+=ux*r1;y1+=uy*r1;x2-=ux*r2;y2-=uy*r2;const l=document.createElementNS(NS,'line');[['x1',x1],['y1',y1],['x2',x2],['y2',y2]].forEach(([k,v])=>l.setAttribute(k,v.toFixed(1)));l.setAttribute('class','chemin-palier'+(pointille?' suite':''));svg.append(l)};
    const pastille=(g,x,y,ferme)=>{const b=document.createElement('span');b.className='arbre-niveau-pastille pastille-palier'+(ferme?' fermee':'');
     // v1.117 : le seul nombre du niveau.
-    const n=document.createElement('b');n.textContent=String(g);b.append(n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
-   const niveauA=a?(Number(a.level)||1):Infinity;
+    const n=document.createElement('b');n.textContent=String(MARQUES_PALIER[g]||g);b.append(n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
+   const niveauA=a?palierOuvert(a,c.liste):Infinity;
+   // v1.256 : le lien se dore à proportion des Marques dépensées dans le palier d'avant, sur celles qu'il demande.
+   const partPalier=(g1,g2)=>a?Math.max(0,Math.min(1,marquesDuPalier(a,c.liste,g1)/(MARQUES_PALIER[g2]||1))):1;
    const pose=(el,p,cls,x)=>{el.classList.add('roue-'+cls);if(x.cache)el.classList.add('hors-limite-mj');el.style.left=p.x+'px';el.style.top=p.y+'px';roue.append(el)};
    /* En placement libre, chez le MJ : un rond se prend et se pose où l'on veut ; près d'un autre centre, il change de palier ;
       lâché sur un centre, il reprend sa place du gabarit. Un clic sans bouger l'ouvre, comme avant. */
@@ -7070,7 +7084,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      ci.setAttribute('cx',p.x.toFixed(1));ci.setAttribute('cy',p.y.toFixed(1));ci.setAttribute('r',r.toFixed(1));ci.setAttribute('class','aura-palier'+(atteint?'':' gris'));ci.style.fill='url(#'+ids[atteint?'':'gris-']+')';svg.append(ci)})}
    /* v1.122, v1.123 : le lien entre deux paliers, une barre qui se remplit — entre les bords des centres, d'une part par niveau qui
       les sépare ; chaque niveau atteint au-delà du premier palier en dore une de plus, le reste est gris. Sous chaque centre, la couleur de son palier. */
-   const lien=(p1,p2,g1,g2)=>{const d=Math.hypot(p2.x-p1.x,p2.y-p1.y)||1,ux=(p2.x-p1.x)/d,uy=(p2.y-p1.y)/d,RC=D.centre/2+3,N=Math.max(1,g2-g1),fait=Math.max(0,Math.min(N,niveauA-g1));
+   const lien=(p1,p2,g1,g2)=>{const d=Math.hypot(p2.x-p1.x,p2.y-p1.y)||1,ux=(p2.x-p1.x)/d,uy=(p2.y-p1.y)/d,RC=D.centre/2+3,N=1,fait=partPalier(g1,g2);
     const seg=(a,b,cls)=>{const l=document.createElementNS(NS,'line');[['x1',p1.x+ux*a],['y1',p1.y+uy*a],['x2',p1.x+ux*b],['y2',p1.y+uy*b]].forEach(([k,v])=>l.setAttribute(k,v.toFixed(1)));l.setAttribute('class','chemin-palier '+cls);svg.append(l)};
     const bout=niveauA>=g2?d:niveauA>=g1?RC+(d-2*RC)*fait/N:0;if(bout>0)seg(0,bout,'cran');if(bout<d)seg(bout,d,'cran gris')};
 
@@ -7455,7 +7469,8 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
   l.append(c,' '+nom);return l}))}
  majPageAccueil();
  // Les paliers d'XP, au MJ : l'XP qu'il faut pour chaque niveau, du 2 au dernier.
- $('bloc-niveaux').hidden=view!=='mj';
+ // v1.256 : plus de niveaux pour les aventuriers, plus de table d'XP à régler.
+ $('bloc-niveaux').hidden=true;
  if(view==='mj'&&!$('niveaux-xp').contains(document.activeElement)){const seuils=seuilsXp(),champs=[];
   $('niveaux-xp').replaceChildren(...seuils.slice(1).map((v,i)=>{const l=document.createElement('label'),c=document.createElement('input');
    c.type='number';c.min='1';c.max=String(XP_PALIER_MAX);c.step='1';c.inputMode='numeric';c.value=String(v);champs.push(c);
@@ -9600,14 +9615,14 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  const av=document.createElement('span');av.className='accueil-avatar'+(a.horsCarte&&view==='mj'?' hors-table':'');
  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
  const t=document.createElement('span');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
- const d=document.createElement('small');d.className='accueil-classe';d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'Niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
+ const d=document.createElement('small');d.className='accueil-classe';d.textContent=String(a.role||'');
  const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
  const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
  // v1.202 : sous le nom, six icônes, une par onglet de la fiche ; chacune l'ouvre sur son onglet.
  t.append(n,iconesFiche(a));
  // v1.211 : sous le portrait, remonté, une pastille sur deux lignes : la classe, son niveau.
  const gauche=document.createElement('span');gauche.className='vignette-gauche';const pc=document.createElement('span');pc.className='vignette-classe';if(teinte)pc.style.setProperty('--teinte',teinte);
- const pn=document.createElement('b');pn.textContent=String((a.role||'Aventurier').split('·')[0].trim());const pv=document.createElement('span');pv.textContent='niv. '+(Math.trunc(Number(a.level))||1);pc.append(pn,pv);{const n=Math.max(...pn.textContent.split(/\s+/).map(m=>m.length));if(n>9)pn.style.fontSize=Math.max(7,Math.min(10.5,(90-n*.7)/(n*.74))).toFixed(1)+'px'}
+ const pn=document.createElement('b');pn.textContent=String((a.role||'Aventurier').split('·')[0].trim());pc.append(pn);{const n=Math.max(...pn.textContent.split(/\s+/).map(m=>m.length));if(n>9)pn.style.fontSize=Math.max(7,Math.min(10.5,(90-n*.7)/(n*.74))).toFixed(1)+'px'}
  gauche.append(av,pc);c.append(gauche,t);
  // v1.203 : retiré de la table, son portrait pâlit ; chez le MJ, un clic dessus le ramène sur la carte, comme sur l'ancienne fiche.
  if(av.classList.contains('hors-table')){av.setAttribute('role','button');av.tabIndex=0;av.setAttribute('aria-label','Ramener '+a.name+' sur la table');av.onclick=e=>{e.stopPropagation();ramenerSurLaTable(a);renderHeroes()};av.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();ramenerSurLaTable(a);renderHeroes()}}}
@@ -9719,7 +9734,7 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  pm:['Points de Mouvement disponibles à chaque tour','1 PM = 1 mouvement jusqu’à votre distance de Mouvement','Les talents de Mouvement coûtent aussi 1 PM','Rendus au début de votre tour, ceux non dépensés sont perdus'],
  metres:['Distance parcourue pour chaque PM dépensé','Quitter le contact d’un adversaire déclenche ses Dégâts d’Opportunité'],
  marques:['Achètent les talents de votre arbre','1 Marque tous les '+XP_PAR_MARQUE+' XP'],
- xp:['Fait monter votre niveau','Tous les '+XP_PAR_MARQUE+' XP vous gagnez 1 Marque pour acheter vos talents'],
+ xp:['Tous les '+XP_PAR_MARQUE+' XP vous gagnez 1 Marque pour acheter vos talents'],
  'Agilité':['Esquiver un piège','Sauter, grimper, garder l’équilibre','Se dégager d’une mêlée'],
  'Force':['Enfoncer une porte, soulever, pousser','Se libérer d’une prise','Retenir un allié qui tombe'],
  'Mysticisme':['Résister à un sort ou à un charme','Sentir le surnaturel','Utiliser un objet ou un rituel mystique'],
@@ -9856,3 +9871,13 @@ addEventListener('resize',()=>{try{ajusteArbreTalents()}catch(e){}});
 function coutsAuCoin(){arbresDialog.querySelectorAll('.arbres-detail .detail-tete .detail-prix-rond.cout-marque').forEach(pr=>{const tete=pr.closest('.detail-tete');if(!tete||pr.parentElement===tete)return;pr.classList.add('cout-coin');tete.append(pr)})}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);coutsAuCoin();return r}}
 new MutationObserver(()=>{if(arbresDialog.open)coutsAuCoin()}).observe(arbresDialog,{childList:true,subtree:true});
+
+/* v1.256 — Les aventuriers n'ont plus de niveau, mais ces talents le lisent encore (valeur provisoire : le niveau que donnerait
+   leur XP). Chez le MJ seulement, une petite alerte sur chacun, au catalogue et dans l'arbre, en attendant leur réécriture. */
+const EFFETS_NIVEAU=['adrenaline','voldraconique','oeilelfique','gageur','toucheatout','murelem','morsure','maitrisetellurique','orbestatiquerampant','ragedepart'];
+function suitLeNiveau(t){if(!t)return false;const p=(typeof paramsTalent==='function'&&paramsTalent(t))||t.params||{};
+ return EFFETS_NIVEAU.includes((talentCode(t)||{}).cle)||p.base==='niveau'||p.forme==='niveau'}
+function alerteNiveau(){const s=document.createElement('span');s.className='alerte-niveau';s.textContent='⚠';s.title='Suit encore le niveau : à réécrire';s.setAttribute('aria-label',s.title);return s}
+{const tr=talentRow;talentRow=function(t,...x){const c=tr(t,...x);if(view==='mj'&&c&&suitLeNiveau(t))c.append(alerteNiveau());return c}}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(view==='mj'&&arbresDialog)arbresDialog.querySelectorAll('.arbre-noeud[data-id]').forEach(n=>{const t=talent(n.dataset.id);
+  if(t&&suitLeNiveau(t)&&!n.querySelector(':scope>.alerte-niveau'))n.append(alerteNiveau())});return r}}

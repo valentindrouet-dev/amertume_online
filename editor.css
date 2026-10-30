@@ -4597,3 +4597,6 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .espece-ico{flex:none;object-fit:contain}
 #creation-aventurier .creation-espece-nom>.espece-ico{width:30px;height:30px;margin:-4px 0}
 .hero-cartouche.c-espece>.espece-ico{width:1.45em;height:1.45em;margin:-3px 0 -3px -4px}
+/* v1.256 — L'alerte du MJ sur un talent qui suit encore le niveau : un petit signe au coin. */
+.alerte-niveau{position:absolute;top:-4px;left:-4px;z-index:3;width:16px;height:16px;border-radius:50%;background:var(--panel);border:1px solid var(--red-mat);color:var(--red-mat);font:700 10px/14px system-ui;text-align:center;pointer-events:auto;cursor:help}
+.cat-carte:has(>.alerte-niveau),.arbre-noeud:has(>.alerte-niveau){position:relative}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.256","d":"2026-10-30","t":"Paliers en Marques"},
 {"v":"1.255","d":"2026-10-30","t":"Ordre des bonus"},
 {"v":"1.254","d":"2026-10-30","t":"Icônes des espèces"},
 {"v":"1.253","d":"2026-10-30","t":"Bloc Bonus"},

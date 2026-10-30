@@ -3074,7 +3074,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   ctxN.poseNiveauLien(B,A,3);assert.equal(JSON.stringify(A.niveaux),'{"B":3}','le niveau tient sur le talent d’où part la ligne');assert.equal(ctxN.niveauLien(B,A),3);
   assert.equal(ctxN.verrouArbre(['A'],L,B,2),'Niveau 3','niveau 2 : fermé');assert.equal(ctxN.verrouArbre(['A'],L,B,3),'','niveau 3 : ouvert');
   ctxN.poseNiveauLien(A,B,1);assert.equal(A.niveaux,undefined,'sous 2, le niveau s’ôte');}
- assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
+ assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,palierOuvert(a,col.liste)))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
  /* v0.487 — Munitions équipées toutes ensemble ; bulle d'arme à distance avec sa place de munition et le bonus de
    dégâts du porteur ; l'écu de DEF garde sa forme. */
  assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")
@@ -4928,10 +4928,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(C.niveauDeXp(400),3,'sans réglage, ceux d’origine');
  assert.ok(src.includes("if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;")
   &&src.includes("+'<div id=\"bloc-niveaux\" hidden><div class=\"divider\"></div><h3 class=\"reglage-titre\">Niveaux d’XP</h3><div id=\"niveaux-xp\" class=\"niveaux-xp\"></div></div>'")
-  &&src.includes("$('bloc-niveaux').hidden=view!=='mj';")&&src.includes("catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();")
+  &&src.includes("$('bloc-niveaux').hidden=true;")&&src.includes("catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();")
   &&src.includes("function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}")
   &&src.includes("catalog=normalizeCatalog(s.catalog);syncForges();niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();")
-  &&src.includes("function detailXp(a){const x=xpDuNiveau(a)"),'les paliers d’XP à la main');
+  &&src.includes("function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a&&a.xp))||0)"),'les paliers d’XP à la main');
  assert.deepEqual(C.voletsDe({effet:'contagioncontact'}),{vue:2});assert.ok(T.contagionvue.retire);
  assert.ok(C.phraseTalent('contagioncontact',{},2).includes('visibles')&&C.phraseTalent('contagioncontact',{},1).includes('au contact'));
  assert.ok(page.includes("vue=porteEffet(codes,'contagionvue')||codes.some(x=>x.code.cle==='contagioncontact'&&voletOuvert(x,'vue'))"),'Contagion en vue au palier 2');
