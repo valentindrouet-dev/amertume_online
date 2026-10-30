@@ -4600,3 +4600,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 /* v1.256 — L'alerte du MJ sur un talent qui suit encore le niveau : un petit signe au coin. */
 .alerte-niveau{position:absolute;top:-4px;left:-4px;z-index:3;width:16px;height:16px;border-radius:50%;background:var(--panel);border:1px solid var(--red-mat);color:var(--red-mat);font:700 10px/14px system-ui;text-align:center;pointer-events:auto;cursor:help}
 .cat-carte:has(>.alerte-niveau),.arbre-noeud:has(>.alerte-niveau){position:relative}
+/* v1.257 — La création : une fenêtre plus large, quatre espèces par ligne, l'icône et le nom tiennent dans leur vignette. */
+#creation-aventurier{width:min(820px,94vw)}
+#creation-aventurier .creation-classes.creation-especes{grid-template-columns:repeat(4,minmax(0,1fr))}
+#creation-aventurier .creation-especes .creation-espece-nom{white-space:nowrap}

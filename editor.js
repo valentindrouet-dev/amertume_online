@@ -1441,6 +1441,9 @@ function choixMenu(ancre,options,poser){if(view!=='mj'||!ancre||!ancre.parentNod
  menu.onkeydown=ev=>{if(ev.key==='Escape'){ev.preventDefault();fermer(false)}}}
 // « fn » nul : l'intitulé paraît sans son bouton — un outil que ce regard n'a pas.
 // v1.253 : l'icône d'une espèce, img/especes/<id>.webp ; une espèce sans icône n'en montre pas.
+// v1.257 : la couleur de chaque icône d'espèce, celle de son nom à la création.
+const COULEURS_ICONES_ESPECES={allsteiner:'#a85521',charognard:'#333231',dhampire:'#871332',drakeide:'#d5391c',elfe:'#64823a',fielsang:'#ab1513',gnome:'#0199a7',goliath:'#49637b',
+ hephosien:'#288dd9',humain:'#ae591e',lupin:'#496680',nain:'#c76f0d',orc:'#5d742d',ressuscite:'#f0deb4',tellure:'#02a1bf',tieffelin:'#761f96'};
 function iconeEspece(e){if(!e||!e.id)return null;const i=document.createElement('img');i.className='espece-ico';i.alt='';i.src='img/especes/'+e.id+'.webp';i.onerror=()=>i.remove();return i}
 function sousTitre(texte,titre,fn,glyphe='+'){const h=document.createElement('h4');h.className='hero-sous';
  h.append(texte);
@@ -5133,11 +5136,11 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
     b.onclick=async()=>{c.image=t.image;c.tokenPropose=t.id;c.imageTable=await imagePourTable(t.image);if(creation===c)renderCreation()};g.append(b)});
    corps.append(g)};
   liste(adaptes,true);liste(autres,false)}
- else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes';
+ else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes creation-especes';
   /* v0.893 : les espèces sans Extension d'abord, puis par Extension, dans l'ordre des Extensions ; dans chaque groupe, par nom. */
   const rangExt=e=>{const k=extensionEspece(e);return k?1+EXTENSIONS.findIndex(([c])=>c===k):0};
   [...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr')).forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
-   const n=document.createElement('b');n.className='creation-espece-nom';n.textContent=e.nom;{const ic=iconeEspece(e);if(ic)n.prepend(ic)}b.append(n);
+   const n=document.createElement('b');n.className='creation-espece-nom';n.textContent=e.nom;if(COULEURS_ICONES_ESPECES[e.id])n.style.color=COULEURS_ICONES_ESPECES[e.id];{const ic=iconeEspece(e);if(ic)n.prepend(ic)}b.append(n);
    {const px=pastilleExtension(extensionEspece(e));if(px)b.append(px)}
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
   const e=especeCreation(c);
@@ -9603,6 +9606,9 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
  // v1.253 : les Bonus quittent le bloc des Talents pour un bloc à eux, dessous, au même titre.
  const rb=blocTal&&blocTal.querySelector(':scope>.rang-bonus');if(rb){const bb=el('div','fiche-talents fiche-bonus'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Bonus';const g=el('div',blocTal.className);g.append(rb);bb.append(tb,g);livre.append(bb)}
+ // v1.257 : sous les Bonus, ceux de la classe et de l'espèce, au même dessin.
+ {const l=bonusClasseEspece(a);if(l.length&&blocTal){const bb=el('div','fiche-talents fiche-bonus fiche-bonus-base'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Bonus (Classe & Espèce)';
+  const g=el('div',blocTal.className),r=el('div','talent-ameliorations rang-bonus');l.forEach(p=>r.append(rondBonusFiche(p)));g.append(r);bb.append(tb,g);livre.append(bb)}}
  pd.append(el('h3','fiche-titre','Compétences'));if(cp){const pi=el('p','comps-intro');texteFiche(pi,'intro-comps');cp.prepend(pi);pd.append(cp)}
  // v1.250 : chez le MJ, un bouton réécrit les textes de la page, balises comprises pour les icônes.
  if(view==='mj'){const b=el('button','ico textes-fiche-btn','✎ Textes');b.type='button';b.title='Modifier les textes de la page';b.onclick=e=>{e.stopPropagation();ouvreTextesFiche()};livre.append(b)}
@@ -9881,3 +9887,17 @@ function alerteNiveau(){const s=document.createElement('span');s.className='aler
 {const tr=talentRow;talentRow=function(t,...x){const c=tr(t,...x);if(view==='mj'&&c&&suitLeNiveau(t))c.append(alerteNiveau());return c}}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(view==='mj'&&arbresDialog)arbresDialog.querySelectorAll('.arbre-noeud[data-id]').forEach(n=>{const t=talent(n.dataset.id);
   if(t&&suitLeNiveau(t)&&!n.querySelector(':scope>.alerte-niveau'))n.append(alerteNiveau())});return r}}
+
+/* v1.257 — Les bonus que donnent la classe et l'espèce d'un aventurier : PV, Vie, Endurance, Dégâts, compétences ; deux sources
+   du même chiffre s'additionnent ; dans l'ordre de la fiche. */
+function bonusClasseEspece(a){if(!a||!a.hero)return [];const m=new Map(),ajoute=(carac,valeur,comp)=>{const v=Math.trunc(Number(valeur))||0;if(v<=0)return;
+  const k=carac+(carac==='comp'?':'+comp:''),g=m.get(k)||{carac,valeur:0,...(carac==='comp'?{comp}:{})};g.valeur+=v;m.set(k,g)};
+ const e=bonusEspece(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,e[k]));(e.skills||[]).forEach((v,i)=>ajoute('comp',v,i));
+ const c=classeDe(catalog.classes,a.role);if(c)ajoute('pv',c.pv);competencesDeClasse(a.role).forEach((v,i)=>ajoute('comp',v,i));
+ const ORDRE=['vie','endu','pv','def','dmg','metres','pa','pm'],rang=p=>p.carac==='comp'?100+p.comp:(i=>i<0?50:i)(ORDRE.indexOf(p.carac));
+ return [...m.values()].sort((x,y)=>rang(x)-rang(y))}
+function rondBonusFiche(p){const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+p.carac;r.tabIndex=0;
+ const l=logoBonus(p);if(l)r.append(remplitCase(l));const v=document.createElement('b');v.className='bonus-valeur';v.textContent=String(p.valeur);r.append(v);
+ r.setAttribute('aria-label',libelleBonus(p));
+ surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+p.carac;const tete=document.createElement('p');tete.className='talent-bulle-nom';
+  const b=document.createElement('b');b.append(libelleBonusEl(p));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});return r}
