@@ -9917,7 +9917,8 @@ function bonusClasseEspece(a,source){if(!a||!a.hero)return [];const de=k=>!sourc
  if(de('espece')){const e=bonusEspece(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,e[k]));(e.skills||[]).forEach((v,i)=>ajoute('comp',v,i))}
  if(de('classe')){const c=classeDe(catalog.classes,a.role);if(c)ajoute('pv',c.pv);competencesDeClasse(a.role).forEach((v,i)=>ajoute('comp',v,i))}
  // Les points de la création : Vie, Endurance, Dégâts.
- if(de('creation')){const c=bonusCreation(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,c[k]))}
+ // v1.283 : et les points de compétence répartis à la création.
+ if(de('creation')){const c=bonusCreation(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,c[k]));(Array.isArray(a.skills)?a.skills:[]).forEach((v,i)=>ajoute('comp',v,i))}
  const ORDRE=['vie','endu','pv','def','dmg','metres','pa','pm'],rang=p=>p.carac==='comp'?100+p.comp:(i=>i<0?50:i)(ORDRE.indexOf(p.carac));
  return [...m.values()].sort((x,y)=>rang(x)-rang(y))}
 function rondBonusFiche(p){const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+p.carac;r.tabIndex=0;
