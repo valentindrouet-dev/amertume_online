@@ -4607,3 +4607,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 /* v1.258 — Les bonus de Classe, d'Espèce et de Création : trois blocs sur une ligne, alignés en haut et centrés. */
 .hero-card.fiche-onglet .fiche-livre>.fiche-bonus-ligne{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:10px 28px;margin-top:10px}
 .hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents{width:auto;max-width:100%;margin:0;gap:8px}
+/* v1.259 — Les trois blocs Classe, Espèce, Création : même largeur chacun, plus espacés, et les traits de leurs titres d'une même longueur. */
+.hero-card.fiche-onglet .fiche-livre>.fiche-bonus-ligne{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;justify-self:center;width:max-content;max-width:100%;gap:10px 44px}
+.hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents{min-width:0}
+.hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents>.fiche-titre::before,.hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents>.fiche-titre::after{flex:0 0 90px}

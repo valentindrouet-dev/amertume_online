@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.259","d":"2026-10-30","t":"Titres des bonus"},
 {"v":"1.258","d":"2026-10-30","t":"Bonus par origine"},
 {"v":"1.257","d":"2026-10-30","t":"Bonus de classe et d'espèce"},
 {"v":"1.256","d":"2026-10-30","t":"Paliers en Marques"},
