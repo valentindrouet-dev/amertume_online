@@ -3306,7 +3306,9 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   // Au palier que l'aventurier tient : un bonus monté au palier 2 compte sa valeur du palier 2.
   (a.talents||[]).map(talent).filter(x=>x&&estBonus(x)).forEach(x=>{const p=paramsTalent(talentAuPalier(x,palierDe(a,x)))||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');
    const g=groupes.get(k)||{p:{...p,carac,valeur:0},t:x};g.p.valeur+=Math.max(1,Math.trunc(Number(p.valeur))||1);groupes.set(k,g)});
-  groupes.forEach(g=>{const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+g.p.carac;r.tabIndex=0;
+  // v1.255 : dans l'ordre de la fiche, les caractéristiques ligne après ligne, puis les compétences.
+  const ORDRE_BONUS=['vie','endu','pv','def','dmg','metres','pa','pm'],rangBonus=p=>p.carac==='comp'?100+(Number(p.comp)||0):(i=>i<0?50:i)(ORDRE_BONUS.indexOf(p.carac));
+  [...groupes.values()].sort((x,y)=>rangBonus(x.p)-rangBonus(y.p)).forEach(g=>{const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+g.p.carac;r.tabIndex=0;
    const l=(g.t.logo&&logoTalent(g.t))||logoBonus(g.p);if(l)r.append(remplitCase(l));
    const v=document.createElement('b');v.className='bonus-valeur';v.textContent=String(g.p.valeur);r.append(v);
    const nom=libelleBonus(g.p);r.setAttribute('aria-label',nom);
@@ -9550,7 +9552,7 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
   const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['PA (Point d’Action)',['pa']],pm:['PM (Point de Mouvement)',['pm']]};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['Point d’Action',['pa']],pm:['Point de Mouvement',['pm']]};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
  // v1.226 : le Mouvement, 8e caractéristique, à côté des Dégâts ; son icône se choisit comme les autres (Icônes, « Mouvement »).
  if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tv=document.createElement('div');tv.className='stat-tile t-metres';tv.style.setProperty('--tint','207,145,82');
