@@ -9322,6 +9322,8 @@ function desacheteSphere(ctx,t,l){const {a,classe,poserPalier,note,majTable}=ctx
  else{a.talents=(a.talents||[]).filter(id=>id!==t.id);rend(t,1);const garde=spheresTenues(a,classe);
   l.forEach(x=>{if(x!==t&&tientSphere(a,x)&&!garde.has(x.id)){rend(x,palierDe(a,x));a.talents=a.talents.filter(id=>id!==x.id);poserPalier(x,1)}})}
  a.richesses={...(a.richesses||{})};rendus.forEach((n,cle)=>{a.richesses[cle]=(Math.trunc(Number(a.richesses[cle]))||0)+n});
+ // v1.289 : ce qui est rendu ne compte plus comme dépensé.
+ if(a.statsVie&&a.statsVie.gemmesDep){let r=0;rendus.forEach(n=>{r+=n});a.statsVie.gemmesDep=Math.max(0,a.statsVie.gemmesDep-r)}
  a.paliersTalents=normalisePaliersActeur(a);marquesDe(a).clear();
 
  note('');majTable()}
@@ -9329,6 +9331,8 @@ function infuseSpheres(ctx,l,seul){const {a,poserPalier,note,majTable}=ctx;if(!a
  const tm=new Map();marques.forEach(t=>prixSpheres(t).forEach(p=>{const e=tm.get(p.cle)||{...p,n:0};e.n+=p.n;tm.set(p.cle,e)}));const tot=[...tm.values()];
  if(!marques.length||tot.some(p=>gemmesDe(a,p.cle)<p.n))return;
  a.richesses={...(a.richesses||{})};tot.forEach(p=>{a.richesses[p.cle]=gemmesDe(a,p.cle)-p.n;if(!a.richesses[p.cle])delete a.richesses[p.cle]});
+ // v1.289 : les sphères dépensées, aux statistiques de l'aventurier.
+ if(typeof ajouteVie==='function')ajouteVie(a,'gemmesDep',tot.reduce((n,p)=>n+p.n,0));
  marques.forEach(t=>{const k=palierDe(a,t);if(k===0)a.talents=[...(a.talents||[]),t.id];else poserPalier(t,k+1)});
  m.clear();a.paliersTalents=normalisePaliersActeur(a);
  note('');majTable()}
@@ -9551,7 +9555,10 @@ function noteTrouve(a,o,n=1){if(a&&o)ajouteVie(a,'rar_'+rareteDe(o),Math.max(0,M
 const STATS_VIE=[['Combat',[['combats','Combats'],['inf','Dégâts infligés'],['pic','Coup le plus fort'],['coups','Coups portés'],['crit','Critiques'],['abat','Mises à Mort'],['tir','Dégâts à distance'],['etats','États infligés'],['bloc','Dégâts bloqués par la DEF'],['titres','Titres']]],
  ['Survie',[['sub','Dégâts subis'],['soin','PV récupérés'],['donne','PV soignés aux autres'],['chutes','Comas'],['morts','Morts'],['repos','Repos courts'],['objets','Objets utilisés']]],
  ['Exploration',[['dist','Distance parcourue'],['tests','Tests'],['reussis','Tests réussis']]],
- ['Richesses',[['or','Or gagné'],['gemmes','Sphères gagnées'],['xp','XP'],['marques','Marques gagnées']]]];
+ // v1.289 : l'or et les sphères dépensés, et les sphères gagnées couleur par couleur.
+ ['Richesses',[['or','Or gagné'],['orDep','Or dépensé'],['gemmes','Sphères gagnées'],['gemmesDep','Sphères dépensées'],
+  ...[['citrine','Citrines gagnées'],['emeraude','Émeraudes gagnées'],['saphir','Saphirs gagnés'],['rubis','Rubis gagnés'],['diamant','Diamants gagnés']].map(([c,l])=>['gemmes_'+c,l]),
+  ['xp','XP'],['marques','Marques gagnées']]]];
 function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsVie:{},n=k=>Math.max(0,Math.floor(Number(s[k])||0));
  const val=k=>k==='xp'?Math.max(0,Math.trunc(Number(a.xp))||0):k==='marques'?marquesGagnees(a):n(k);
  const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
@@ -9565,7 +9572,7 @@ function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsV
 // Le contenu tient dans le bloc, sans barre de défilement : trop haut, il se réduit.
 function cadreStatsVie(zone,sel='.vie-stats'){const c=zone&&zone.querySelector(sel);if(!c)return;c.style.zoom='';const h=zone.clientHeight,ch=c.scrollHeight;if(h>0&&ch>h)c.style.zoom=String(Math.max(.5,h/ch).toFixed(3))}
 // Ce qui se compte ailleurs : l'or gagné (pas celui repris du Coffre, ni l'or rendu, ni la bourse de départ), les repos courts, les comas et les morts.
-{const ao=ajouteOr;ajouteOr=function(a,d,...x){const avant=a?orDe(a):0,r=ao(a,d,...x);if(a&&a.hero&&!orSansGain&&actors.includes(a)){const g=orDe(a)-avant;if(g>0)ajouteVie(a,'or',g)}return r}}
+{const ao=ajouteOr;ajouteOr=function(a,d,...x){const avant=a?orDe(a):0,r=ao(a,d,...x);if(a&&a.hero&&!orSansGain&&actors.includes(a)){const g=orDe(a)-avant;if(g>0)ajouteVie(a,'or',g);else if(g<0)ajouteVie(a,'orDep',-g)}return r}}
 {const rc=reposCourt;reposCourt=function(a,...x){const mort=estMort(a),r=rc(a,...x);if(a&&!mort)ajouteVie(a,'repos',1);return r}}
 function noteChutes(fn){return function(...x){const avant=new Map(actors.filter(a=>a&&a.hero).map(a=>[a,{coma:a.comaVie===true,mort:estMort(a)}])),r=fn.apply(this,x);
  avant.forEach((v,a)=>{if(!v.coma&&a.comaVie===true&&!estMort(a))ajouteVie(a,'chutes',1);if(!v.mort&&estMort(a))ajouteVie(a,'morts',1)});return r}}

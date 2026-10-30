@@ -749,7 +749,8 @@ function fabriquerHerbo(a,o,b){if(!o||!o.herbo||!(o.herbo.forge?aLaForge(a):o.he
   while(reste>0&&p&&(a.inventaire||[]).includes(id)){retirerInventaire(a,p);reste--}
   coffreVue().tabs.forEach((t,tab)=>{if(reste<=0)return;const k=Math.min(reste,t.filter(x=>x===id).length);if(k){versCoffre(a,{item:id,tab,n:-k,fab:o.id});reste-=k}})});
  prendRecette(a,o);
- Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>{a.richesses={...(a.richesses||{})};a.richesses[k]=Math.max(0,(Number(a.richesses[k])||0)-n);if(!a.richesses[k])delete a.richesses[k]});
+ // v1.289 : les sphères d'une recette comptent comme dépensées.
+ Object.entries(normaliseGemmesRecette(o.gemmes)).forEach(([k,n])=>{a.richesses={...(a.richesses||{})};if(typeof ajouteVie==='function')ajouteVie(a,'gemmesDep',Math.min(n,Math.max(0,Number(a.richesses[k])||0)));a.richesses[k]=Math.max(0,(Number(a.richesses[k])||0)-n);if(!a.richesses[k])delete a.richesses[k]});
  // v1.014 : une recette peut en donner plusieurs.
  const q=o.herbo.quantite||1;let n=0;for(let i=0;i<q;i++){if(!ajouterInventaire(a,o))break;n++}
  log(nomNum(a)+' fabrique '+(n>1?n+' × ':'')+o.name+(o.herbo.forge?' à la forge.':o.herbo.tannerie?' à la tannerie.':' à l’herboristerie.'));apresMagasin()}
