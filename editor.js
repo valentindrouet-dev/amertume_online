@@ -7057,7 +7057,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const trait=(x1,y1,x2,y2,pointille,r1=0,r2=0)=>{const d=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/d,uy=(y2-y1)/d;x1+=ux*r1;y1+=uy*r1;x2-=ux*r2;y2-=uy*r2;const l=document.createElementNS(NS,'line');[['x1',x1],['y1',y1],['x2',x2],['y2',y2]].forEach(([k,v])=>l.setAttribute(k,v.toFixed(1)));l.setAttribute('class','chemin-palier'+(pointille?' suite':''));svg.append(l)};
    const pastille=(g,x,y,ferme)=>{const b=document.createElement('span');b.className='arbre-niveau-pastille pastille-palier'+(ferme?' fermee':'');
     // v1.117 : le seul nombre du niveau.
-    const n=document.createElement('b');n.textContent=String(MARQUES_PALIER[g]||g);b.append(n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
+    // v1.260 : les Marques demandées, écrites sur l'icône de la Marque, comme le coût des talents.
+    const n=document.createElement('b');n.textContent=String(MARQUES_PALIER[g]||g);b.classList.add('palier-marques');b.append(iconeMarque('marque-ico'),n);b.style.left=x+'px';b.style.top=y+'px';roue.append(b)};
    const niveauA=a?palierOuvert(a,c.liste):Infinity;
    // v1.256 : le lien se dore à proportion des Marques dépensées dans le palier d'avant, sur celles qu'il demande.
    const partPalier=(g1,g2)=>a?Math.max(0,Math.min(1,marquesDuPalier(a,c.liste,g1)/(MARQUES_PALIER[g2]||1))):1;

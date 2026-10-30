@@ -4611,3 +4611,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .hero-card.fiche-onglet .fiche-livre>.fiche-bonus-ligne{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;justify-self:center;width:max-content;max-width:100%;gap:10px 44px}
 .hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents{min-width:0}
 .hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents>.fiche-titre::before,.hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents>.fiche-titre::after{flex:0 0 90px}
+/* v1.260 — Entre deux paliers, les Marques demandées : l'icône de la Marque, le nombre dessus en bas à droite, comme le coût d'un talent. */
+.arbre-roue>.pastille-palier.palier-marques{display:inline-grid;place-items:center;width:42px;height:42px;padding:0;border:0;border-radius:0;background:none;overflow:visible}
+.arbre-roue>.pastille-palier.palier-marques .marque-ico{grid-area:1/1;width:42px;height:42px}
+.arbre-roue>.pastille-palier.palier-marques b{position:absolute;left:56%;top:56%;margin:0;color:#fff;font:900 24px/1 'Killam',system-ui;letter-spacing:0;-webkit-text-stroke:4.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
