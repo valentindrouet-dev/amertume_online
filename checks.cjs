@@ -5448,7 +5448,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#arbres.v2 .arbres-tete
  assert.ok(pg.includes("function ajouteBilan(a,k,n){if(!a||!(n>0))return;ajouteVie(a,k,n);if(!enCombat())return;")&&pg.includes("ajouteVie(a,'tests',1);if(jet.reussites>0)ajouteVie(a,'reussis',1);")
   &&pg.includes("if(h)ajouteVie(h,'combats',1)")&&lv.includes("CHAMPS_VIVANTS.push('statsVie');")&&dm.includes("function orAuCoffre(a,n,sens){orSansGain=true;")
   &&ed.includes("else if(arbresOnglet==='statistiques'&&a){g.classList.add('arbres-statistiques');g.append(statsVieEl(a))}")&&ed.includes("comaAventuriers=noteChutes(comaAventuriers);")
-  &&ed.includes("l.push(['espece','Espèce',e.teinte]);")&&ed.includes("['metier','Métier',fm?teinteMetier(a.metier):'']"),'v1.190');}
+  &&ed.includes("// v1.264 : plus d'onglet Espèce")&&ed.includes("['metier','Métier',fm?teinteMetier(a.metier):'']"),'v1.190');}
 /* v1.186 — Le texte des joueurs par déclencheur (Connaissance) ; un déclencheur connu réussit un point plus bas. */
 {const g=fs.readFileSync('gemmes.js','utf8');assert.ok(g.includes("const TEXTES_JOUEURS_GEMMES={")&&g.includes("function seuilGemme(cle){const r=reglesGemmes().declencheurs[cle];if(!r)return 5;return Math.max(1,r.seuil-(declencheurConnu(cle)?1:0))}")
  &&g.includes("const seuil=seuilGemme(cle);let gagne=faces.some(f=>f>=seuil)?1:0;")&&fs.readFileSync('domaine.js','utf8').includes("const ch=vitEl('textarea','vit-savoir-texte');"),'v1.186');

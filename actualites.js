@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.264","d":"2026-10-30","t":"Espèce dans les Talents"},
 {"v":"1.263","d":"2026-10-30","t":"Ronds sans contour"},
 {"v":"1.262","d":"2026-10-30","t":"Titre Arbre des Bonus"},
 {"v":"1.261","d":"2026-10-30","t":"XP et Marques"},

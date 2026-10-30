@@ -6187,7 +6187,7 @@ const arbresReset=document.createElement('button');arbresReset.type='button';arb
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresReset,arbresVue);
 /* v0.890 : le bouton de l'espèce de l'aventurier, en haut de son arbre : il montre ses Talents d'Espèce à la place de l'arbre de
    sa classe — Actions, Mouvements et Réactions en haut, Passifs dessous ; un clic sur l'un d'eux le décrit dans le panneau. */
-let arbresEspece=false;
+let arbresEspece=false,especeFiche=null;
 const arbresEspeceBtn=document.createElement('button');arbresEspeceBtn.type='button';arbresEspeceBtn.id='arbres-espece';arbresEspeceBtn.className='arbres-vue';arbresEspeceBtn.hidden=true;
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresEspeceBtn,arbresReset);
 arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;
@@ -7346,10 +7346,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* v0.894 : l'arbre d'espèce est un arbre comme celui d'une classe — une colonne, ses ronds, son bandeau — sans lien entre les
      talents : Maîtrise, Actions, Mouvements et Réactions sur la première ligne, Passifs sur la seconde, centrés. */
   const tEsp=arbresEspece&&a?talentsDEspece(a):[];
-  if(tEsp.length){const haut=t=>!['pass','crit','ame'].includes(talentType(t)[0]),ordre=(x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]);
+  const colEspece=tEsp=>{const haut=t=>!['pass','crit','ame'].includes(talentType(t)[0]),ordre=(x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]);
    const lignes=[tEsp.filter(haut).sort(ordre),tEsp.filter(t=>!haut(t)).sort(ordre)].filter(l=>l.length);
    const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y},liens:[]})));
-   const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));g.append(ge)}
+   const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));return ge};
+  // v1.264 : dans l'onglet des Talents, les talents d'Espèce se rangent au bas du panneau de droite (posés après le dessin).
+  especeFiche=null;if(arbresOnglet==='classe'&&a&&a.hero){const tE=talentsDEspece(a);if(tE.length){const bx=barreXp;barreXp=null;especeFiche=colEspece(tE);barreXp=bx}}
+  if(tEsp.length)g.append(colEspece(tEsp))
   else if(sphere)g.append(sphere.el);
   // v1.187 : la fiche de l'aventurier, et son inventaire en deux parties.
   else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}
@@ -8976,7 +8979,7 @@ function ongletsArbre(a,classe){if(!a&&estFamilleMetier(classe)){const n=classe.
  // v1.190 : pour un aventurier — Caractéristiques, Inventaire, Talents, Bonus, Espèce, Métier, Statistiques.
  const plan=view==='mj'&&!a&&!arbresVueJoueur,fm=familleMetierVue(a),l=a?[['stats','Caractéristiques',''],['inventaire','Inventaire',''],['classe','Talents',teinteClasse(classe)]]:[['classe',classe||'Classe',teinteClasse(classe)]];
  if(classe&&(plan||talentsSphere(classe).length))l.push(['bonus','Bonus','#c99a3c']);
- const e=a?especeDe(a.espece):null;if(e&&talentsDEspece(a).length)l.push(['espece','Espèce',e.teinte]);
+ // v1.264 : plus d'onglet Espèce — ses talents se lisent au bas du panneau de droite de l'onglet Talents.
  if(a)l.push(['metier','Métier',fm?teinteMetier(a.metier):''],['statistiques','Statistiques','']);
  return l}
 function barreOngletsArbre(onglets){const b=document.createElement('div');b.className='vit-onglets arbres-onglets';b.setAttribute('role','tablist');
@@ -9906,3 +9909,12 @@ function rondBonusFiche(p){const r=document.createElement('span');r.className='c
  r.setAttribute('aria-label',libelleBonus(p));
  surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+p.carac;const tete=document.createElement('p');tete.className='talent-bulle-nom';
   const b=document.createElement('b');b.append(libelleBonusEl(p));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});return r}
+
+/* v1.264 — Onglet Talents : au bas du panneau de droite, sous la description, un bloc « Espèce » porte les talents d'Espèce, rangés comme
+   dans l'ancien onglet (en haut les Actions, dessous les Passifs). Le panneau se vide à chaque talent montré : le bloc y revient. */
+function poseEspeceFiche(){if(!arbresDialog.open||arbresOnglet!=='classe'||!especeFiche)return;const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');if(!aside||aside.querySelector(':scope>.especes-detail'))return;
+ let w=especeFiche.closest('.especes-detail');if(!w){w=document.createElement('div');w.className='corps especes-detail';const pl=document.createElement('div');pl.className='place p-bourse especes-place';
+  const h=document.createElement('div');h.className='nom-place bourse-titre';h.textContent='Espèce';pl.append(h,especeFiche);w.append(pl)}
+ aside.append(w)}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);poseEspeceFiche();return r}}
+new MutationObserver(()=>{if(arbresOnglet==='classe'&&especeFiche)poseEspeceFiche()}).observe(arbresDialog,{childList:true,subtree:true});

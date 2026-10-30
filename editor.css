@@ -4619,3 +4619,17 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .sphere-noeud .sphere-rond,.sphere-noeud:is(.acquis,.dispo,.choisi,.verrou,.marque,.cher) .sphere-rond{border-color:transparent!important}
 .sphere-noeud:is(.acquis,.depart,.selec) .sphere-rond,.sphere-noeud.acquis.depart .sphere-rond,.sphere-noeud.selec:is(.depart,.acquis) .sphere-rond{box-shadow:0 2px 6px rgba(0,0,0,.2)!important}
 .sphere-noeud.acquis.dispo .sphere-rond,.sphere-noeud.dispo:not(.acquis):not(.cher) .sphere-rond{box-shadow:0 0 10px 3px color-mix(in srgb,#c99a3c 50%,transparent)!important}
+/* v1.264 — Onglet Talents : le bloc Espèce au bas du panneau de droite, au dessin du bloc Sphères ; ses quatre ronds centrés, sans compteur. */
+#arbres .arbres-detail>.especes-detail{margin-top:auto;position:static;display:block;width:100%;height:auto;background:none;border:0;padding:0;box-shadow:none;min-height:0}
+#arbres .arbres-detail>.especes-detail>.especes-place{position:static;width:100%;margin:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:center}
+#arbres .especes-detail .arbres-cols-espece{display:flex;justify-content:center;width:100%;margin:0;padding:0;overflow:visible}
+#arbres .especes-detail .arbre-col{width:auto;min-width:0;margin:0;padding:0;border:0;background:none;box-shadow:none}
+#arbres .especes-detail .arbre-col>.arbre-titre{display:none}
+#arbres .especes-detail .arbre-col>svg{display:none}
+#arbres .especes-detail .arbre-titre{display:none!important}
+/* v1.264 — Bonus : le bloc Sphères centré dans le panneau de droite. */
+#arbres .arbres-detail>.spheres-detail>.place.p-bourse{margin-left:auto!important;margin-right:auto!important}
+/* v1.264 — Le coût d'un talent trop cher : le rose de la pastille D&D (son rouge #d32f2f éclairci), plus le brun-rouge. */
+:is(#arbres,body) .detail-prix.cout-marque.trop-cher b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#d32f2f 30%,#fff)!important}
+/* v1.264 — Arbre des Bonus : un bonus inaccessible, à 60 % d'opacité. */
+.sphere-noeud.verrou{opacity:.6}
