@@ -9305,6 +9305,8 @@ function boutonInfuser(ctx,t,l){const {a}=ctx,k=palierDe(a,t);if(k>=paliersDe(t)
  const assez=tot.every(p=>gemmesDe(a,p.cle)>=p.n),b=document.createElement('div');b.className='sphere-infuser-bloc';
  const bt=document.createElement('button');bt.type='button';bt.className='primary infuser';bt.append('Infuser les Sphères');tot.forEach(p=>bt.append(puceGemme(p,gemmesDe(a,p.cle)<p.n)));
  bt.disabled=!ouvert||!assez||(estMort(a)&&view!=='mj')||figeEnCombat(a);
+ // v1.281 : le bouton à la couleur du nom du bonus ; accessible mais faute de sphères, il reste plein, le prix manquant en rouge.
+ teinteSphere(t,v=>bt.style.setProperty('--teinte-bonus','rgb('+v+')'));if(ouvert&&!assez)bt.classList.add('manque-spheres');
  bt.title=!ouvert?'Ce bonus n’est relié ni à un bonus de départ, ni à un bonus tenu.':!assez?'Il manque des gemmes de cette couleur.':figeEnCombat(a)?'Pas pendant un combat.':'';
  bt.onclick=()=>infuseSpheres(ctx,l,t);b.append(bt);return b}
 /* v1.148 — Au MJ seul, sous le bloc d'un bonus infusé : « Désacheter » rend le dernier palier — le bonus entier s'il n'en a qu'un —

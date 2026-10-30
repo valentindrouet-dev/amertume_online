@@ -4713,3 +4713,9 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 :is(#arbres,body) .detail-prix.cout-marque b,:is(#arbres,body) :is(.detail-bonus,.bonus-rond-panneau) .detail-prix.cout-marque b{left:-12px;right:auto}
 :is(#arbres,body) .detail-prix.cout-marque:not(.paye):not(.trop-cher) b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque:not(.paye):not(.trop-cher) b{color:#d3e5cd!important}
 .arbre-roue>.pastille-palier.palier-marques b{left:auto;right:56%}
+/* v1.281 — Infuser : le bouton à la couleur du nom du bonus. Accessible mais faute de sphères : plein, pas translucide ; le chiffre
+   des sphères qui manquent en rouge. Coût en Marques : le chiffre davantage sur la Marque, à gauche. */
+.infuser.primary{background:var(--teinte-bonus,var(--accent));border-color:var(--teinte-bonus,var(--accent))}
+.infuser.primary.manque-spheres:disabled{opacity:1;filter:none;cursor:not-allowed}
+.infuser .puce-gemme.manque b{color:color-mix(in srgb,#d32f2f 80%,#fff)}
+:is(#arbres,body) .detail-prix.cout-marque b,:is(#arbres,body) :is(.detail-bonus,.bonus-rond-panneau) .detail-prix.cout-marque b{left:-3px}
