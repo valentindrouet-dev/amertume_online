@@ -4400,3 +4400,20 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
    par ligne, les sphères de chaque taille alignées en colonnes. */
 .corps .place.p-bourse .bourse-lignes .bourse-items{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;gap:12px 4px;padding:2px 4px 4px 0}
 .corps .place.p-bourse .bourse-lignes .bourse-items>.bourse-palette{grid-column:1/-1;justify-self:start}
+/* v1.221 — Inventaire : « + Objet » en bas à droite du bloc ; Munitions et Anneaux un peu plus bas, les anneaux un peu plus
+   écartés, les autres lignes inchangées ; « Mouvement » décalé à droite du pied de la silhouette ; « + » de l'or ; le joueur de
+   l'aventurier à droite de l'en-tête. */
+.inv-droite:has(>.inv-plus){display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr)}
+.inv-droite>.inv-plus{align-self:end;justify-self:end;margin:10px 0 0}
+.inv-schema .corps>.p-munitions,.inv-schema .corps>.anneaux-groupe{transform:translateY(10px)}
+.inv-schema .corps>.anneaux-groupe{gap:12px}
+.inv-schema .corps .mouvement-corps{transform:translateX(26px)}
+.corps .place.p-bourse .bourse-saisie-or{width:7ch;height:28px;box-sizing:border-box;padding:2px 6px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel);font:700 14px/1 system-ui;color:var(--ink);text-align:center;-moz-appearance:textfield;appearance:textfield}
+.corps .place.p-bourse .bourse-saisie-or::-webkit-inner-spin-button,.corps .place.p-bourse .bourse-saisie-or::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+#arbres .dialog-head .arbres-ident-outils .hero-joueur{margin-right:8px}
+#arbres .dialog-head .arbres-ident-apres .chip.chip-marques{display:none}
+.inv-fenetre .inv-droite>.sac .sac-ligne{flex:none}
+/* v1.221 — Onglet Caractéristiques : les deux colonnes de même hauteur ; les Talents sous les deux, centrés, aérés comme elles. */
+.fiche-onglet .fiche-livre{align-items:stretch}
+.hero-card.fiche-onglet .fiche-page>:is(.stat-row.en-icones,.comp-ronds.cadre-comps){flex:1 1 auto}
+.fiche-onglet .fiche-livre>.fiche-talents{grid-column:1/-1;justify-self:center;width:calc(50% - 7px);gap:8px;margin-top:10px}

@@ -5414,7 +5414,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("av.onclick=e=>{e.stopPro
 /* v1.200 — L'en-tête d'arbre tout caché d'un Mystique ne laisse plus d'espace sous les onglets. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes("#arbres.v2 .arbres-tete.v2:not(:has(>:not([hidden]))){display:none}"),'v1.200');
 /* v1.199 — La bourse : le nom de chaque ligne à gauche (Or, Brisure, Éclat, Brôme), les icônes alignées, le chiffre plus gros. */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("or.append(piece);{const d=contenu();d.append(or);lo.append(nomLigne('Or'),d)}rang.append(lo);")&&ed.includes("if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});"),'v1.199');}
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("or.append(piece);{const d=contenu();d.append(or);if(view==='mj')d.append(plusOr(a));lo.append(nomLigne('Or'),d)}rang.append(lo);")&&ed.includes("if(d.childElementCount){l.append(nomLigne(un),d);rang.append(l)}});"),'v1.199');}
 /* v1.198 — L'onglet Caractéristiques sans habit de livre, la nature retirée des vignettes, les talents à la teinte de la classe. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');")&&!css.includes('.fiche-livre{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px;border-radius:16px')
  &&css.includes(".hero-card.fiche-onglet .talent-grille.a-cases{background:linear-gradient(135deg,color-mix(in srgb,var(--classe,var(--accent)) 24%"),'v1.198');}

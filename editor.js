@@ -2837,7 +2837,7 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
   const rang=document.createElement('div');rang.className='bourse-corps bourse-lignes';const lo=document.createElement('div');lo.className='bourse-ligne';
   // v1.199 : chaque ligne porte son nom à gauche, et ses icônes s'alignent d'une ligne à l'autre ; l'or s'écrit « Or : 248 » puis la pièce.
   const nomLigne=t=>{const s=document.createElement('span');s.className='bourse-nom';s.textContent=t;return s},contenu=()=>{const d=document.createElement('div');d.className='bourse-items';return d};
-  or.append(piece);{const d=contenu();d.append(or);lo.append(nomLigne('Or'),d)}rang.append(lo);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
+  or.append(piece);{const d=contenu();d.append(or);if(view==='mj')d.append(plusOr(a));lo.append(nomLigne('Or'),d)}rang.append(lo);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
   /* v1.194 : l'or, puis une ligne par taille — Brisures, Éclats, Brômes. v1.197 : seules les sphères qu'il possède, leur nombre
      posé sur l'icône comme celui d'un bonus ; une taille dont il n'a rien ne fait pas de ligne. */
   TAILLES_GEMMES.forEach(([ta,nomT,un])=>{const l=document.createElement('div');l.className='bourse-ligne gemmes-corps';l.setAttribute('aria-label',nomT);const d=contenu();
@@ -2877,7 +2877,8 @@ function corpsEtSac(a,fenetre){const out=document.createElement('div');out.class
  const ligneDe=o=>lignes.get((LIGNES_SAC.find(([,,f])=>f(o))||LIGNES_SAC.find(([k])=>k==='object')||LIGNES_SAC[1])[0]);
  // v1.197 : armes et équipements par rareté croissante, dans la fenêtre.
  const rangRar=o=>{const r=rareteDe(o),i=RARETES.findIndex(([k])=>k===r);return i<0?RARETES.length:i},estEq=o=>['weapon','armor','ammo'].includes(o.category),entrees=[...comptes.entries()];
- (fenetre?[...entrees.filter(([o])=>estEq(o)).sort(([x],[y])=>rangRar(x)-rangRar(y)),...entrees.filter(([o])=>!estEq(o))]:entrees).forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
+ // v1.221 : toutes les lignes de la fenêtre par rareté croissante, pas seulement les armes et équipements.
+ (fenetre?[...entrees].sort(([x],[y])=>rangRar(x)-rangRar(y)):entrees).forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
   const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
   /* Au survol, une petite croix rouge retire de l'inventaire — après confirmation ; s'il y en a plusieurs, on choisit
@@ -7303,7 +7304,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // v1.187 : la fiche de l'aventurier, et son inventaire en deux parties.
   else if(arbresOnglet==='stats'&&a){g.classList.add('arbres-stats');g.append(ficheOnglet(a))}
   else if(arbresOnglet==='inventaire'&&a){g.classList.add('arbres-inventaire');const inv=corpsEtSac(a,true);
-   if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='inv-plus';plus.textContent='+ Ajouter';plus.title='Ajouter à l’inventaire de '+a.name;plus.onclick=()=>openPicker(a,'gear');const d=inv.querySelector('.inv-droite');if(d)d.prepend(plus)}
+   if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='inv-plus';plus.textContent='+ Objet';plus.title='Ajouter à l’inventaire de '+a.name;plus.onclick=()=>openPicker(a,'gear');const d=inv.querySelector('.inv-droite');if(d)d.append(plus)}
    g.append(inv)}
   else if(arbresOnglet==='statistiques'&&a){g.classList.add('arbres-statistiques');g.append(statsVieEl(a))}
   else if(arbresOnglet==='metier'&&!famMetier){if(a){const m=document.createElement('p');m.className='arbres-sans-metier';m.textContent='Vous n’avez pas encore de Métier, rendez-vous au Domaine pour en apprendre un !';g.append(m)}}
@@ -9537,8 +9538,9 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  c.querySelectorAll(':scope>.hero-head,:scope>.hero-pv,:scope>.chips').forEach(x=>x.remove());
  pg.append(el('h3','fiche-titre','Caractéristiques'));if(ch)pg.append(ch);
  // v1.218 : le titre des Talents au dessin de celui des Caractéristiques.
- if(titreTal)titreTal.classList.add('fiche-titre');
- if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);pg.append(bt)}
+ if(titreTal){titreTal.classList.add('fiche-titre');titreTal.querySelectorAll('button').forEach(b=>b.remove())}
+ // v1.221 : les Talents, sans roue crantée, sous les deux colonnes et centrés ; les deux colonnes ont la même hauteur.
+ if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
  pd.append(el('h3','fiche-titre','Compétences'));if(cp)pd.append(cp);
  return c}
 /* v1.194 — La page Aventuriers : une vignette par aventurier, comme à l'Accueil — son portrait cerclé de sa classe, son nom, sa
@@ -9653,6 +9655,8 @@ function pastilleCout(t,n,cls){const cle=t.id+'|'+n,prix=coutPalier(t,n);
  nom.before(avant);
  if(ident){const apres=document.createElement('span');apres.className='arbres-ident-apres';apres.append(...ident.childNodes);nom.after(apres)}
  const outils=tete&&tete.querySelector('.cat-tools');if(outils&&outils.childElementCount){const o=document.createElement('span');o.className='arbres-ident-outils';o.append(...outils.childNodes);const x2=h.querySelector('[data-close]');(h.querySelector('#arbres-vue')||x2).before(o)}
+ // v1.221 : le joueur de l'aventurier, choisi par le MJ, se range à droite avec ses outils : l'en-tête garde une seule ligne.
+ {const qui=h.querySelector(':scope>.arbres-ident-apres .hero-joueur');if(qui){let o=h.querySelector(':scope>.arbres-ident-outils');if(!o){o=document.createElement('span');o.className='arbres-ident-outils';const x2=h.querySelector('[data-close]');(h.querySelector('#arbres-vue')||x2).before(o)}o.prepend(qui)}}
  return r}}
 /* v1.209 — Ce que disent les caractéristiques et les compétences, en puces : onglet Caractéristiques, arbre des Bonus. */
 const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 PV vous perdez 1 Vie','À 0 Vie vous mourez'],
@@ -9672,6 +9676,19 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  'Technique':['Crocheter une serrure','Désamorcer un piège','Réparer, fabriquer, manier une invention']};
 function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const ul=document.createElement('ul');ul.className=cls||'';l.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});return ul}
 // v1.210 : une sphère de plus ou de moins dans les Richesses d'un aventurier, chez le MJ, sans ouvrir de fenêtre.
+/* v1.221 — Richesses, chez le MJ : un « + » après l'or ouvre un champ ; on y tape la somme, Entrée l'ajoute (une somme négative
+   retire), Échap referme, un clic ailleurs l'ajoute aussi. */
+function plusOr(a){const b=document.createElement('button');b.type='button';b.className='bourse-ajout bourse-ajout-or';b.textContent='+';b.setAttribute('aria-label','Ajouter de l’or à '+a.name);
+ b.onclick=e=>{e.stopPropagation();const c=document.createElement('input');c.type='number';c.step='1';c.inputMode='numeric';c.className='bourse-saisie-or';c.setAttribute('aria-label','Or à ajouter');
+  let fini=false;const pose=ok=>{if(fini)return;fini=true;document.removeEventListener('pointerdown',dehors,true);const n=Math.trunc(Number(c.value))||0;
+   if(ok&&n){a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);poseCompte(a.richesses,'or',Math.max(0,(Math.trunc(Number(a.richesses.or))||0)+n));a.richesses={...a.richesses};
+    if(typeof renderHeroes==='function')renderHeroes();if(arbresDialog.open&&typeof renderArbres==='function')renderArbres();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+   else if(c.isConnected)c.replaceWith(b)};
+  const dehors=ev=>{if(ev.target!==c)pose(true)};
+  c.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter'){ev.preventDefault();pose(true)}else if(ev.key==='Escape'){ev.preventDefault();pose(false)}};
+  ['click','pointerdown'].forEach(t=>c.addEventListener(t,ev=>ev.stopPropagation()));
+  b.replaceWith(c);c.focus();setTimeout(()=>document.addEventListener('pointerdown',dehors,true),0)};
+ return b}
 function sphereEnPlus(a,k,pas){if(view!=='mj'||!a)return;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);const n=Math.max(0,(Math.trunc(Number(a.richesses[k]))||0)+pas);
  if(n)a.richesses[k]=n;else delete a.richesses[k];a.richesses={...a.richesses};if(typeof renderHeroes==='function')renderHeroes();if(arbresDialog.open&&typeof renderArbres==='function')renderArbres();render();scheduleSave()}
 /* v1.210 — L'onglet MAJ, chez le MJ seul. v1.212 : il s'appelle Versions — une carte par publication, son numéro, sa date ; dessous,

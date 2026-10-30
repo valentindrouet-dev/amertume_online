@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.221","d":"2026-10-30","t":"Inventaire, Richesses et fiche"},
 {"v":"1.220","d":"2026-10-29","t":"Touche V après une case cochée"},
 {"v":"1.219","d":"2026-10-29","t":"Richesses et talents de la fiche"},
 {"v":"1.218","d":"2026-10-29","t":"Fiche, Marques et raccourci Versions"},
