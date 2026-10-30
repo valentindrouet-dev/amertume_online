@@ -9533,7 +9533,7 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  const vignette=(icone,val,nom,nature,desc,teinte)=>{const w=el('div','vignette');icone.before(w);const g=el('span','vignette-icone');g.append(icone);
   const m=el('div','vignette-texte'),h=el('b','vignette-nom',nom);if(teinte)h.style.color='rgb('+teinte+')';m.append(h);if(Array.isArray(desc)){const ul=pucesFiche(desc[0],'vignette-desc vignette-puces');if(ul)m.append(ul)}else if(desc)m.append(el('span','vignette-desc',desc));
   w.append(g,m,el('b','vignette-val',val))};
- const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['PA',''],pm:['PM','']};
+ const CARACS_FICHE={vie:['Vie',['vie']],endu:['Endurance',['endu']],pv:['PV max',['pv']],def:['DEF',['def']],dmg:['Dégâts',['dmg']],xp:['XP',['xp']],marques:['Marques',['marques']],metres:['Mouvement',['metres']],pa:['PA',['pa']],pm:['PM',['pm']]};
  const ch=c.querySelector(':scope>.stat-row'),cp=c.querySelector(':scope>.cadre-comps');
  // v1.226 : le Mouvement, 8e caractéristique, à côté des Dégâts ; son icône se choisit comme les autres (Icônes, « Mouvement »).
  if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-dmg'),tv=document.createElement('div');tv.className='stat-tile t-metres';tv.style.setProperty('--tint','207,145,82');
@@ -9692,6 +9692,8 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  pv:['Endurance × Vie','Plus les bonus de classe, d’espèce et de talents'],
  def:['Chaque dé de dégâts qui ne la dépasse pas est arrêté','Augmentée par l’armure et le bouclier'],
  dmg:['Ajoutés à chaque attaque qui touche'],
+ pa:['Points d’Action disponibles à chaque tour','Une Attaque ou un talent Action coûte 1 ou 2 PA','Rendus au début de votre tour, ceux non dépensés sont perdus'],
+ pm:['Points de Mouvement disponibles à chaque tour','1 PM = 1 mouvement jusqu’à votre distance de Mouvement','Les talents de Mouvement coûtent aussi 1 PM','Rendus au début de votre tour, ceux non dépensés sont perdus'],
  metres:['Distance parcourue pour chaque PM dépensé','Quitter le contact d’un adversaire déclenche ses Dégâts d’Opportunité'],
  marques:['Achètent les talents de votre arbre','1 Marque tous les '+XP_PAR_MARQUE+' XP'],
  xp:['Fait monter votre niveau','Tous les '+XP_PAR_MARQUE+' XP vous gagnez 1 Marque pour acheter vos talents'],

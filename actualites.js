@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.240","d":"2026-10-30","t":"Puces des PA et PM"},
 {"v":"1.239","d":"2026-10-30","t":"Coût des talents, 10m, doré"},
 {"v":"1.238","d":"2026-10-30","t":"Sphères à l'échelle, arbre réduit"},
 {"v":"1.237","d":"2026-10-30","t":"Mouvement, PA et PM"},
