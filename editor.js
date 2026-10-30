@@ -5864,7 +5864,9 @@ function atteintsDepuis(portes,liste,sans){const tient=new Set((portes||[]).filt
  return vus}
 {const at0=atteintsDepuis;atteintsDepuis=function(portes,liste,sans){if(!(typeof ARBRE_V3!=='undefined'&&ARBRE_V3))return at0(portes,liste,sans);
  const tient=new Set((portes||[]).filter(id=>id!==sans)),L=(liste||[]).filter(Boolean),vus=new Set(),passe=x=>tient.has(x.id)||estVide(x);
- L.forEach(t=>{if(!passe(t))return;vus.add(t.id);Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!passe(p))break;vus.add(p.id)}})});return vus}}
+ // v1.246 : une amélioration n'exige que son talent de base (Règles) : rendre l'une ne fait plus tomber celles qui la suivent dans
+ // la même direction. Les bonus du chemin, eux, restent à la file.
+ L.forEach(t=>{if(!passe(t))return;vus.add(t.id);Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!passe(p)){if(estBonus(p))break;continue}vus.add(p.id)}})});return vus}}
 /* Oublier un talent fait tomber tout ce qu'on n'atteint plus depuis un départ, petits ronds compris,
    sans exception. */
 function chuteArbre(portes,liste,t){const apres=atteintsDepuis(portes,liste,t.id),tient=new Set(portes||[]);
