@@ -4508,7 +4508,7 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
    rouge quand c'est trop cher. */
 :is(#arbres,body) .detail-prix.cout-marque b{color:rgb(142,206,112)}
 :is(#arbres,body) .detail-prix.cout-marque.paye b{color:#fff}
-:is(#arbres,body) .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 25%,var(--red-mat))}
+:is(#arbres,body) .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 40%,var(--red-mat))}
 /* v1.230 — « Coûts » au bas du panneau de droite de l'onglet Bonus, à droite, juste au-dessus des Sphères. */
 #arbres .arbres-detail>.couts-sphere.couts-dans-detail{align-self:flex-end;margin:auto 0 0}
 #arbres .arbres-detail>.couts-sphere.couts-dans-detail+.spheres-detail{margin-top:8px}
@@ -4519,3 +4519,9 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp>*{pointer-events:auto}
 /* v1.232 — Le doré d'une compétence améliorée, plus clair pour se lire sur son icône. */
 .fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:color-mix(in srgb,#fff 45%,#f2c14e)}
+/* v1.233 — Le chiffre du coût sur la Marque échappe au gris des améliorations non acquises (règle .detail-am-nom b, !important) :
+   vert si les Marques suffisent, blanc une fois payé, rouge pâle si c'est trop cher. */
+:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque b{color:rgb(142,206,112)!important}
+:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.paye b{color:#fff!important}
+:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 40%,var(--red-mat))!important}
+:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque .marque-ico{filter:none}
