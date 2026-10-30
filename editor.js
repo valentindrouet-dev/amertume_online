@@ -9864,7 +9864,13 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Arbre des Bonus',es
    const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.after(w);
    // v1.238 : le bloc Sphères à la taille exacte des Richesses de l'inventaire — même largeur, même échelle (bornée au panneau).
    const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,place=Math.max(1,aside.offsetWidth),k=Math.min(echelleRichesses?echelleRichesses.k:9,place/base);
-   pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4))}}
+   pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4));
+   /* v1.275 : au-dessus des Sphères, au même dessin, les « Bonus Infusés » : ce que l'aventurier a acheté dans l'arbre, comme sur
+      sa fiche ; une ligne pour les caractéristiques, une pour les compétences. */
+   const l=bonusInfuses(a);if(l.length){const pi=pl.cloneNode(true);pi.classList.add('infuses-place');const c=pi.querySelector('.bourse-corps')||pi;
+    c.querySelectorAll(':scope>.bourse-ligne').forEach(x=>x.remove());const ti=pi.querySelector('.bourse-titre');if(ti)ti.textContent='Bonus Infusés';
+    [l.filter(p=>p.carac!=='comp'),l.filter(p=>p.carac==='comp')].forEach(g=>{if(!g.length)return;const r=document.createElement('div');r.className='bourse-ligne infuses-ligne';g.forEach(p=>r.append(rondBonusFiche(p)));c.append(r)});
+    const wi=document.createElement('div');wi.className='corps infuses-detail';wi.style.zoom=w.style.zoom;wi.append(pi);w.before(wi)}}}
  // v1.230 : « Coûts » quitte le haut du sphérier, où il décalait l'arbre : il passe dans le panneau de droite, au-dessus des Sphères ;
  // la barre vidée disparaît.
  if(arbresOnglet==='bonus'&&aside){arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion').forEach(bar=>{const bc=bar.querySelector('.couts-sphere');
@@ -9927,3 +9933,10 @@ function poseEspeceFiche(){if(!arbresDialog.open||arbresOnglet!=='classe'||!espe
  aside.after(w)}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);poseEspeceFiche();return r}}
 new MutationObserver(()=>{if(arbresOnglet==='classe'&&especeFiche)poseEspeceFiche()}).observe(arbresDialog,{childList:true,subtree:true});
+
+/* v1.275 — Les bonus achetés dans l'arbre, comme sur la fiche : les bonus identiques s'additionnent, chacun à son palier ; dans
+   l'ordre de la fiche, caractéristiques puis compétences. */
+function bonusInfuses(a){const m=new Map();(a&&a.talents||[]).map(talent).filter(x=>x&&estBonus(x)).forEach(x=>{const p=paramsTalent(talentAuPalier(x,palierDe(a,x)))||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');
+  const g=m.get(k)||{...p,carac,valeur:0};g.valeur+=Math.max(1,Math.trunc(Number(p.valeur))||1);m.set(k,g)});
+ const ORDRE=['vie','endu','pv','def','dmg','metres','pa','pm'],rang=p=>p.carac==='comp'?100+(Number(p.comp)||0):(i=>i<0?50:i)(ORDRE.indexOf(p.carac));
+ return [...m.values()].sort((x,y)=>rang(x)-rang(y))}

@@ -4678,3 +4678,15 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .sphere-cout .puce-gemme img{grid-area:1/1;width:28px;height:28px}
 .sphere-cout .puce-gemme b{position:absolute;right:-8px;bottom:-6px;color:#fff;font:900 18px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
 .sphere-cout .puce-gemme+.puce-gemme{margin-left:0}
+/* v1.275 — Bonus : le bloc « Bonus Infusés », au dessin du bloc Sphères, juste au-dessus ; ses ronds comme ceux de la fiche. */
+#arbres .arbres-v2:has(>.infuses-detail){grid-template-rows:auto minmax(0,1fr) auto auto}
+#arbres .arbres-v2:has(>.infuses-detail)>.arbres-v2-arbre{grid-row:2/5}
+#arbres .arbres-v2>.infuses-detail{grid-row:3;grid-column:2;margin:14px 0 0;padding:0;position:static;display:block;height:auto;min-height:0;border:0;background:none;box-shadow:none}
+#arbres .arbres-v2:has(>.infuses-detail)>.spheres-detail{grid-row:4}
+#arbres .arbres-v2>.infuses-detail>.place.p-bourse{margin-left:auto;margin-right:auto}
+#arbres .infuses-detail .bourse-corps{align-items:center!important}
+#arbres .infuses-detail .infuses-ligne{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;width:100%}
+#arbres .infuses-detail .cat-pill.bonus-rond{position:relative;display:grid;place-items:center;width:46px;height:46px;min-width:0;min-height:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+#arbres .infuses-detail .cat-pill.bonus-rond>:is(img,svg,.logo-equip,.bonus-lettres){width:100%;height:100%;margin:0;object-fit:contain}
+#arbres .infuses-detail .cat-pill.bonus-rond .bonus-valeur{position:absolute;left:62%;top:62%;color:#fff;font:900 17px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+#arbres .infuses-detail .cat-pill.bonus-rond .bonus-valeur::before{content:'+'}
