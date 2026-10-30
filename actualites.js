@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.280","d":"2026-10-30","t":"Coût en Marques"},
 {"v":"1.279","d":"2026-10-30","t":"Coût du bouton Infuser"},
 {"v":"1.278","d":"2026-10-30","t":"Coûts masqués"},
 {"v":"1.277","d":"2026-10-30","t":"Coût multiple abrégé"},

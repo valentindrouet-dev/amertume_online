@@ -4708,3 +4708,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .infuser .puce-gemme b{position:absolute;right:-5px;bottom:-4px;color:#fff;font:900 17px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
 .infuser .puce-gemme+.puce-gemme{margin-left:4px}
 .infuser .puce-gemme.manque b{color:color-mix(in srgb,#d32f2f 30%,#fff)}
+/* v1.280 — Coût en Marques des talents : le chiffre en bas à gauche de la Marque (c'est un coût), comme entre les paliers ;
+   payable, le vert pâle du fond des bonus acquis. */
+:is(#arbres,body) .detail-prix.cout-marque b,:is(#arbres,body) :is(.detail-bonus,.bonus-rond-panneau) .detail-prix.cout-marque b{left:-12px;right:auto}
+:is(#arbres,body) .detail-prix.cout-marque:not(.paye):not(.trop-cher) b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque:not(.paye):not(.trop-cher) b{color:#d3e5cd!important}
+.arbre-roue>.pastille-palier.palier-marques b{left:auto;right:56%}
