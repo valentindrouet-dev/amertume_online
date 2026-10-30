@@ -4657,3 +4657,5 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #arbres .arbres-v2>.spheres-detail{position:static;display:block;height:auto;min-height:0;border:0;background:none;box-shadow:none}
 #arbres .arbres-v2>.especes-detail{position:static;display:block;height:auto;min-height:0;border:0;background:none;box-shadow:none}
 #arbres .arbres-v2>.especes-detail>.especes-place{position:static;width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;min-height:0;height:auto;border:1px solid var(--line);border-radius:14px;padding:12px 14px 18px;background:var(--panel-2);gap:6px}
+/* v1.269 — Vignette d'aventurier : six boutons (sans Espèce), deux lignes de trois. */
+#hero-grid .fiche-icones{grid-template-columns:repeat(3,44px)}
