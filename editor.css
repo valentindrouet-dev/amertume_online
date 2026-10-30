@@ -4672,3 +4672,9 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .spherier-lien.pris{stroke:#d3e5cd;stroke-opacity:1}
 .spherier-lien.ouvert{stroke:color-mix(in srgb,#f2c14e 50%,var(--panel));stroke-opacity:1}
 .spherier-lien.ouvert.cher{stroke:color-mix(in srgb,rgb(214,86,118) 28%,var(--panel))}
+/* v1.274 — Le coût d'un bonus sous son rond, comme celui des Marques : l'icône de la sphère, son nombre en blanc cerné de noir en bas à droite. */
+.sphere-cout{padding:0;border:0;border-radius:0;background:none;display:inline-flex;align-items:center;gap:10px}
+.sphere-cout .puce-gemme{position:relative;display:inline-grid;place-items:center;gap:0}
+.sphere-cout .puce-gemme img{grid-area:1/1;width:28px;height:28px}
+.sphere-cout .puce-gemme b{position:absolute;right:-8px;bottom:-6px;color:#fff;font:900 18px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+.sphere-cout .puce-gemme+.puce-gemme{margin-left:0}
