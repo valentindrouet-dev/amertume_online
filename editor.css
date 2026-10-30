@@ -4690,3 +4690,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #arbres .infuses-detail .cat-pill.bonus-rond>:is(img,svg,.logo-equip,.bonus-lettres){width:100%;height:100%;margin:0;object-fit:contain}
 #arbres .infuses-detail .cat-pill.bonus-rond .bonus-valeur{position:absolute;left:62%;top:62%;color:#fff;font:900 17px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
 #arbres .infuses-detail .cat-pill.bonus-rond .bonus-valeur::before{content:'+'}
+/* v1.276 — Le coût d'un bonus en bas à gauche de son rond, à cheval dessus ; le chiffre serré sur la sphère ; cinq sphères sur deux lignes. */
+.sphere-cout,.sphere-cout.sous-paliers{left:-12px;top:auto;bottom:-12px;transform:none;margin:0;z-index:2;gap:2px 4px;justify-content:flex-start}
+.sphere-cout:has(>.puce-gemme:nth-child(4)){display:grid;grid-template-columns:repeat(3,auto);top:calc(100% - 14px);bottom:auto}
+.sphere-cout .puce-gemme b{right:-3px;bottom:-3px}
