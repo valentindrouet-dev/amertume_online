@@ -4541,3 +4541,7 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .stat-row.en-icones .stat-tile:is(.t-pa,.t-pm) .stat-ico{width:44px;height:44px;object-fit:contain}
 /* v1.238 — Onglet Bonus : le bloc Sphères déborde le retrait du panneau pour garder l'échelle des Richesses de l'inventaire. */
 #arbres .arbres-detail>.spheres-detail{margin-left:-16px;margin-right:-16px;align-self:center}
+/* v1.239 — Le Mouvement s'écrit « 10m » sur une ligne ; une compétence améliorée prend le même doré qu'une caractéristique en hausse. */
+.stat-row.en-icones .stat-tile.t-metres strong{transform:none}
+.stat-row.en-icones .stat-tile.t-metres strong::after{display:inline;margin:0 0 0 1px;font-size:16px;line-height:1;-webkit-text-stroke:3.5px #1d1a16}
+.fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:#ffc35a}

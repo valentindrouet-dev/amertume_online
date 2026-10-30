@@ -112,6 +112,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 **Token d'espèce** (`.creation-token-espece`) : à la création, rond dans le coin bas droit de la fiche de l'espèce, liseré de sa teinte, ombre `#0003`. Dans les Tokens, ★ le désigne, doré `#f2c14e` une fois choisi.
 
 **Valeur de Radiance** (`.pv-rad-val`) : le chiffre seul, en noir, centré sur la part dorée de la barre de PV.
+**Chiffre en hausse** (`.en-hausse`, compétence améliorée `.comp-val.haute` sur la fiche) : le doré `#ffc35a`, cerné de `#1d1a16` — une caractéristique ou une compétence qu’un bonus monte.
 
 **Calcul** (`.calcul-talent`) : {3×Niveau} s'affiche par son résultat, chiffre gras noir ; Maj tenue, par le calcul : « 3 × Niveau (2) ».
 
