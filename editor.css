@@ -4663,7 +4663,12 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
    atteignable mais trop cher, le rose des PV éclairci ; inaccessible, inchangé (gris, pâli). */
 .sphere-noeud.acquis .sphere-rond{background:#d3e5cd!important}
 .sphere-noeud.dispo:not(.acquis):not(.cher) .sphere-rond{background:color-mix(in srgb,#f2c14e 50%,var(--panel))!important}
-.sphere-noeud.dispo.cher:not(.acquis) .sphere-rond{background:color-mix(in srgb,rgb(214,86,118) 15%,var(--panel))!important}
+.sphere-noeud.dispo.cher:not(.acquis) .sphere-rond{background:color-mix(in srgb,rgb(214,86,118) 28%,var(--panel))!important}
 /* v1.271 — Vignettes : actif, portrait en couleur ; inactif, portrait gris. Hors de la table ne grise plus rien ; le contour reste coloré. */
 #hero-grid.en-vignettes .accueil-avatar.hors-table,#hero-grid.en-vignettes .accueil-avatar.hors-table:hover{opacity:1;filter:none}
 #hero-grid.en-vignettes .accueil-avatar.inactif>img{filter:grayscale(1);opacity:.5}
+/* v1.273 — Les liens du sphérier à la couleur du fond des ronds : entre deux bonus acquis, le vert pâle ; vers un bonus achetable,
+   l'or jaune ; vers un bonus trop cher, le rose ; vers un bonus inaccessible, gris comme avant. */
+.spherier-lien.pris{stroke:#d3e5cd;stroke-opacity:1}
+.spherier-lien.ouvert{stroke:color-mix(in srgb,#f2c14e 50%,var(--panel));stroke-opacity:1}
+.spherier-lien.ouvert.cher{stroke:color-mix(in srgb,rgb(214,86,118) 28%,var(--panel))}

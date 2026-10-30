@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.273","d":"2026-10-30","t":"Liens des bonus"},
 {"v":"1.272","d":"2026-10-30","t":"Gris pâle des inactifs"},
 {"v":"1.271","d":"2026-10-30","t":"Portraits actifs et inactifs"},
 {"v":"1.270","d":"2026-10-30","t":"Couleurs des bonus"},

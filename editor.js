@@ -9051,7 +9051,9 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
  // Les liens, sous les ronds : dorés quand l'aventurier tient leurs deux bouts.
  const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('class','spherier-liens');svg.setAttribute('viewBox',OX+' '+OY+' '+W+' '+H);svg.style.width=W+'px';svg.style.height=H+'px';plan.append(svg);
  const vus=new Set();l.forEach(t=>voisinsSphere(t,l).forEach(x=>{const k=[t.id,x.id].sort().join('|');if(vus.has(k))return;vus.add(k);const ln=document.createElementNS(NS,'line');
-  [['x1',t.sphere.x],['y1',t.sphere.y],['x2',x.sphere.x],['y2',x.sphere.y]].forEach(([c,v])=>ln.setAttribute(c,String(v)));ln.setAttribute('class','spherier-lien'+(tient(t)&&tient(x)?' pris':(tient(t)||tient(x))&&a?' ouvert':''));
+  [['x1',t.sphere.x],['y1',t.sphere.y],['x2',x.sphere.x],['y2',x.sphere.y]].forEach(([c,v])=>ln.setAttribute(c,String(v)));// v1.273 : un lien ouvert prend l'état du bonus qu'il mène : achetable, ou trop cher.
+  const bout=tient(t)?x:t,cherL=!!a&&prixSpheres(bout).some(p=>gemmesDe(a,p.cle)<p.n);
+  ln.setAttribute('class','spherier-lien'+(tient(t)&&tient(x)?' pris':(tient(t)||tient(x))&&a?' ouvert'+(cherL?' cher':''):''));
   if(mj){ln.addEventListener('click',()=>{t.liensSphere=(t.liensSphere||[]).filter(id=>id!==x.id);x.liensSphere=(x.liensSphere||[]).filter(id=>id!==t.id);arbreChange()})}svg.append(ln)}));
  const dispo=a?xpDisponible(a,catalog.talents):0;
  l.forEach(t=>{const el=document.createElement('button');el.type='button';el.dataset.id=t.id;const k=a?palierDe(a,t):0,ouvert=!!a&&sphereOuverte(a,t,l);
