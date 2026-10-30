@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.288","d":"2026-10-30","t":"Bonus sur une ligne"},
 {"v":"1.287","d":"2026-10-30","t":"Coûts des accessibles"},
 {"v":"1.286","d":"2026-10-30","t":"Chiffre sur la sphère"},
 {"v":"1.285","d":"2026-10-30","t":"Déclencheurs par couleur"},

@@ -4739,3 +4739,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .sphere-cout .puce-gemme b,.infuser .puce-gemme b{left:1px;bottom:-3px}
 /* v1.287 — Coûts décochés : les coûts des bonus accessibles (achetables ou trop chers) restent ; les autres disparaissent. */
 .spherier.sans-couts .sphere-noeud.dispo .sphere-cout{display:inline-flex}
+/* v1.288 — Bonus de Classe, d'Espèce et de Création : toujours sur une ligne ; faute de place, les ronds se resserrent puis rétrécissent. */
+.hero-card.fiche-onglet .fiche-bonus-ligne .talent-ameliorations.rang-bonus{flex-wrap:nowrap}
+.hero-card.fiche-onglet .fiche-bonus-ligne .rang-bonus>.cat-pill.bonus-rond{flex:0 1 62px;width:62px;min-width:30px;height:auto;aspect-ratio:1}
+.hero-card.fiche-onglet .fiche-bonus-ligne .talent-grille{padding-inline:14px}
+.hero-card.fiche-onglet .fiche-bonus-ligne .talent-grille>.rang-bonus{gap:10px clamp(4px,1vw,14px)}
