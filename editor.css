@@ -4702,3 +4702,9 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 /* v1.278 — Couts masqués : le coût à plusieurs sphères se masque aussi. Le « + » sur la ligne du chiffre, juste après lui. */
 .spherier.sans-couts .sphere-cout{display:none!important}
 .sphere-cout:has(>.puce-gemme:nth-child(2))>.puce-gemme:first-child::after{top:auto;bottom:-3px;left:calc(100% + 5px);transform:none}
+/* v1.279 — Le coût sur le bouton Infuser, au dessin de celui de l'arbre : l'icône de la sphère, son chiffre blanc cerné de noir en bas à droite. */
+.infuser .puce-gemme{position:relative;display:inline-grid;place-items:center;gap:0;padding:0;border-radius:0;background:none;margin-right:6px}
+.infuser .puce-gemme img{grid-area:1/1;width:26px;height:26px}
+.infuser .puce-gemme b{position:absolute;right:-5px;bottom:-4px;color:#fff;font:900 17px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+.infuser .puce-gemme+.puce-gemme{margin-left:4px}
+.infuser .puce-gemme.manque b{color:color-mix(in srgb,#d32f2f 30%,#fff)}
