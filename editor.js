@@ -9778,7 +9778,8 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Arbre des Bonus',es
  // v1.230 : « Coûts » quitte le haut du sphérier, où il décalait l'arbre : il passe dans le panneau de droite, au-dessus des Sphères ;
  // la barre vidée disparaît.
  if(arbresOnglet==='bonus'&&aside){arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion').forEach(bar=>{const bc=bar.querySelector('.couts-sphere');
-  if(bc){bc.classList.add('couts-dans-detail');const w=aside.querySelector('.spheres-detail');if(w)w.before(bc);else aside.append(bc)}if(!bar.querySelector('*'))bar.remove()})}
+  // v1.243 : il se pose en bas à gauche de l'arbre des Bonus.
+  const sz=bar.closest('.spherier-zone');if(bc&&sz){bc.classList.add('couts-dans-arbre');sz.append(bc)}if(!bar.querySelector('*'))bar.remove()})}
  return r}}
 // v1.242 : sur la fiche, l'arbre de Talents réduit à 88 % par une mise à l'échelle, sa place rendue d'autant en bas.
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresActeur&&arbresOnglet==='classe')arbresDialog.querySelectorAll('.arbres-v2 .arbre-col>.arbre-plan-groupes').forEach(pl=>{

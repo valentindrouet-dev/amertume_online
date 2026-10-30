@@ -4556,3 +4556,10 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
    faisait remonter sur l'en-tête). Onglet Caractéristiques : une phrase en tête du bloc des Compétences. */
 .hero-card.fiche-onglet .fiche-page>.comp-ronds.cadre-comps>.comps-intro{grid-column:1/-1;margin:0 4px 2px;font:italic 400 13px/1.4 system-ui;color:color-mix(in srgb,var(--ink) 75%,transparent);text-align:center}
 .hero-card.fiche-onglet .fiche-page>.comp-ronds.cadre-comps:has(>.comps-intro){grid-template-rows:auto repeat(4,1fr)}
+/* v1.243 — Fiche : l'écart entre l'arbre et le panneau de droite l'emporte sur le « sans vide » du sphérier ; l'en-tête centré en
+   hauteur entre les onglets et les blocs ; « Coûts » en bas à gauche de l'arbre des Bonus. */
+#arbres.fiche-aventurier .arbres-v2,#arbres.fiche-aventurier.taille-mj .arbres-v2.sphere-plein,#arbres.fiche-aventurier .arbres-v2.sphere-plein{column-gap:14px!important}
+#arbres.fiche-aventurier .arbres-v2:has(>.fiche-tete-arbre){row-gap:0}
+#arbres.fiche-aventurier .arbres-v2>.fiche-tete-arbre{margin:4px 0 16px}
+#arbres .spherier-zone{position:relative}
+#arbres .spherier-zone>.couts-sphere.couts-dans-arbre{position:absolute;left:12px;bottom:12px;z-index:4;margin:0}
