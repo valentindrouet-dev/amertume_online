@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.268","d":"2026-10-30","t":"Blocs séparés"},
 {"v":"1.267","d":"2026-10-30","t":"Panneaux et bonus verrouillés"},
 {"v":"1.266","d":"2026-10-30","t":"Sphères remontées"},
 {"v":"1.265","d":"2026-10-30","t":"Bloc Espèce"},

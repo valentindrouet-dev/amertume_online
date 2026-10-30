@@ -4645,3 +4645,15 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .sphere-noeud.verrou .sphere-rond{background:color-mix(in srgb,color-mix(in srgb,#7d7a74 24%,var(--panel)) 40%,var(--panel-2))}
 .sphere-noeud.verrou .sphere-rond>*,.sphere-noeud.verrou>:not(.sphere-rond){opacity:.4!important}
 #arbres .arbres-detail:has(>.spheres-detail,>.especes-detail)>.detail-defile{margin-bottom:0}
+/* v1.268 — Les blocs Sphères (Bonus) et Espèce (Talents) quittent le panneau de la description : une rangée à eux sous ce panneau,
+   à 14 px, leur bas aligné sur celui de l'arbre ; le panneau s'arrête au-dessus. Les valeurs des bonus inaccessibles restent pleines. */
+#arbres .arbres-v2:has(>.spheres-detail,>.especes-detail){grid-template-rows:auto minmax(0,1fr) auto;row-gap:0}
+#arbres .arbres-v2:has(>.spheres-detail,>.especes-detail)>.arbres-v2-arbre{grid-row:2/4;grid-column:1}
+#arbres .arbres-v2:has(>.spheres-detail,>.especes-detail)>.arbres-detail{grid-row:2;grid-column:2;align-self:stretch}
+#arbres .arbres-v2>:is(.spheres-detail,.especes-detail){grid-row:3;grid-column:2;margin:14px 0 0!important;padding:0!important;align-self:end;width:auto!important}
+#arbres .arbres-v2>.especes-detail>.especes-place{margin:0}
+.sphere-noeud.verrou .sphere-rond>.bonus-valeur{opacity:1!important}
+#arbres .arbres-v2>.spheres-detail>.place.p-bourse{margin-left:auto!important;margin-right:auto!important}
+#arbres .arbres-v2>.spheres-detail{position:static;display:block;height:auto;min-height:0;border:0;background:none;box-shadow:none}
+#arbres .arbres-v2>.especes-detail{position:static;display:block;height:auto;min-height:0;border:0;background:none;box-shadow:none}
+#arbres .arbres-v2>.especes-detail>.especes-place{position:static;width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;min-height:0;height:auto;border:1px solid var(--line);border-radius:14px;padding:12px 14px 18px;background:var(--panel-2);gap:6px}

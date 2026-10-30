@@ -9855,11 +9855,12 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Arbre des Bonus',es
  // v1.227 : la bourse du haut du sphérier quitte la fiche : les Sphères se lisent au bas du panneau de droite.
  if(arbresOnglet==='bonus')arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion>.sphere-bourse').forEach(e=>e.remove());
  const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');
- if(arbresOnglet==='bonus'&&aside&&!aside.querySelector('.spheres-detail')){const inv=corpsEtSac(a,true),pl=inv&&inv.querySelector('.place.p-bourse');
+ if(arbresOnglet==='bonus'&&aside&&!aside.parentElement.querySelector(':scope>.spheres-detail')){const inv=corpsEtSac(a,true),pl=inv&&inv.querySelector('.place.p-bourse');
   if(pl){const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Sphères';
-   const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.append(w);
+   // v1.268 : hors du panneau de la description, dessous : deux blocs séparés.
+   const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.after(w);
    // v1.238 : le bloc Sphères à la taille exacte des Richesses de l'inventaire — même largeur, même échelle (bornée au panneau).
-   const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,place=Math.max(1,aside.clientWidth-40),k=Math.min(echelleRichesses?echelleRichesses.k:9,place/base);
+   const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,place=Math.max(1,aside.offsetWidth),k=Math.min(echelleRichesses?echelleRichesses.k:9,place/base);
    pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4))}}
  // v1.230 : « Coûts » quitte le haut du sphérier, où il décalait l'arbre : il passe dans le panneau de droite, au-dessus des Sphères ;
  // la barre vidée disparaît.
@@ -9916,9 +9917,10 @@ function rondBonusFiche(p){const r=document.createElement('span');r.className='c
 
 /* v1.264 — Onglet Talents : au bas du panneau de droite, sous la description, un bloc « Espèce » porte les talents d'Espèce, rangés comme
    dans l'ancien onglet (en haut les Actions, dessous les Passifs). Le panneau se vide à chaque talent montré : le bloc y revient. */
-function poseEspeceFiche(){if(!arbresDialog.open||arbresOnglet!=='classe'||!especeFiche)return;const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');if(!aside||aside.querySelector(':scope>.especes-detail'))return;
+function poseEspeceFiche(){if(!arbresDialog.open||arbresOnglet!=='classe'||!especeFiche)return;const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');if(!aside||aside.parentElement.querySelector(':scope>.especes-detail'))return;
  let w=especeFiche.closest('.especes-detail');if(!w){w=document.createElement('div');w.className='corps especes-detail';const pl=document.createElement('div');pl.className='place p-bourse especes-place';
   const h=document.createElement('h3');h.className='fiche-tete-arbre especes-titre';h.textContent='Espèce';pl.append(h,especeFiche);w.append(pl)}
- aside.append(w)}
+ // v1.268 : hors du panneau de la description, dessous.
+ aside.after(w)}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);poseEspeceFiche();return r}}
 new MutationObserver(()=>{if(arbresOnglet==='classe'&&especeFiche)poseEspeceFiche()}).observe(arbresDialog,{childList:true,subtree:true});
