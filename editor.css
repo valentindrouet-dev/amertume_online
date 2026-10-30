@@ -4527,3 +4527,6 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 :is(#arbres,body) .detail-am-nom .detail-prix.cout-marque .marque-ico{filter:none}
 /* v1.234 — Onglet Bonus : l'en-tête dans le bloc du sphérier (colonne), sur sa largeur, sans en prendre la hauteur. */
 #arbres .spherier-zone>.fiche-tete-arbre{flex:none!important;align-self:stretch!important;width:auto}
+/* v1.235 — Onglet Talents : l'arbre remonte encore (l'en-tête plus serré, le plan de l'arbre 26 px plus haut), il tient sans défiler. */
+#arbres.fiche-aventurier .arbres-v2-arbre>.fiche-tete-arbre{margin:0 0 4px}
+#arbres.fiche-aventurier .arbres-v2 .arbre-col>:is(.arbre-plan-groupes,.arbre-plan){margin-top:-26px}
