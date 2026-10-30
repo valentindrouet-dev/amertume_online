@@ -114,6 +114,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 **Valeur de Radiance** (`.pv-rad-val`) : le chiffre seul, en noir, centré sur la part dorée de la barre de PV.
 **Bloc d’un bonus** (`.detail-tete-sphere`, panneau de droite du sphérier) : sur le fond clair `#ecebe6` des cartes d’amélioration, plus sur le gris sombre des talents sans nature.
 **Chiffre en hausse** (`.en-hausse`, compétence améliorée `.comp-val.haute` sur la fiche) : le doré `#ffc35a`, cerné de `#1d1a16` — une caractéristique ou une compétence qu’un bonus monte.
+**Chiffre d’un coût** (`.cout-marque`, coût en Marques d’un talent ; sphères qui manquent sur « Infuser les Sphères ») : payable, le vert `#a9eb90` ; trop cher ou manquant, le rouge `#e98575` ; payé, blanc — toujours cerné de `#1d1a16`.
 
 **Calcul** (`.calcul-talent`) : {3×Niveau} s'affiche par son résultat, chiffre gras noir ; Maj tenue, par le calcul : « 3 × Niveau (2) ».
 

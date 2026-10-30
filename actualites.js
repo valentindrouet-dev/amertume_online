@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.282","d":"2026-10-30","t":"Vert et rouge des coûts"},
 {"v":"1.281","d":"2026-10-30","t":"Bouton Infuser"},
 {"v":"1.280","d":"2026-10-30","t":"Coût en Marques"},
 {"v":"1.279","d":"2026-10-30","t":"Coût du bouton Infuser"},

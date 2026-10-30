@@ -4719,3 +4719,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .infuser.primary.manque-spheres:disabled{opacity:1;filter:none;cursor:not-allowed}
 .infuser .puce-gemme.manque b{color:color-mix(in srgb,#d32f2f 80%,#fff)}
 :is(#arbres,body) .detail-prix.cout-marque b,:is(#arbres,body) :is(.detail-bonus,.bonus-rond-panneau) .detail-prix.cout-marque b{left:-3px}
+/* v1.282 — Le chiffre d'un coût : payable, vert #a9eb90 ; trop cher (Marques) ou sphère manquante (Infuser), rouge #e98575. */
+:is(#arbres,body) .detail-prix.cout-marque:not(.paye):not(.trop-cher) b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque:not(.paye):not(.trop-cher) b{color:#a9eb90!important}
+:is(#arbres,body) .detail-prix.cout-marque.trop-cher b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:#e98575!important}
+.infuser .puce-gemme.manque b{color:#e98575}
