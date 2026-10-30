@@ -4504,3 +4504,8 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:#f2c14e}
 /* v1.228 — Arbre des paliers : plus d'aura dorée autour du talent initial. */
 .aura-palier{display:none!important}
+/* v1.229 — Le chiffre du coût sur la Marque en couleurs franches : vert quand les Marques suffisent, blanc une fois payé,
+   rouge quand c'est trop cher. */
+:is(#arbres,body) .detail-prix.cout-marque b{color:rgb(142,206,112)}
+:is(#arbres,body) .detail-prix.cout-marque.paye b{color:#fff}
+:is(#arbres,body) .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 25%,var(--red-mat))}

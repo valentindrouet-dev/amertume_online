@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.229","d":"2026-10-30","t":"Couleurs du coût en Marques"},
 {"v":"1.228","d":"2026-10-30","t":"Icônes des compétences, aura retirée"},
 {"v":"1.227","d":"2026-10-30","t":"Arbre Bonus réparé, Marques plus grandes"},
 {"v":"1.226","d":"2026-10-30","t":"Mouvement, 8e caractéristique"},
