@@ -4563,3 +4563,6 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres.fiche-aventurier .arbres-v2>.fiche-tete-arbre{margin:4px 0 16px}
 #arbres .spherier-zone{position:relative}
 #arbres .spherier-zone>.couts-sphere.couts-dans-arbre{position:absolute;left:12px;bottom:12px;z-index:4;margin:0}
+/* v1.244 — Les icônes posées à la place des mots dans les puces : à la hauteur du texte. */
+li>.puce-ico,li>img.puce-ico,li>svg.puce-ico{display:inline-block;width:1.3em;height:1.3em;margin:0 .08em;vertical-align:-.3em;object-fit:contain}
+li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}

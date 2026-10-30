@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.244","d":"2026-10-30","t":"Icônes dans les puces"},
 {"v":"1.243","d":"2026-10-30","t":"Coûts, écart des colonnes, en-tête centré"},
 {"v":"1.242","d":"2026-10-30","t":"Arbre réduit, phrase des Compétences"},
 {"v":"1.241","d":"2026-10-30","t":"En-têtes centrés, blocs alignés"},

@@ -9705,7 +9705,15 @@ const TEXTES_PUCES={vie:['Nombre de fois où vous pouvez tomber à 0 PV','À 0 P
  'Ruse':['Voler (Larcin)','Mentir, tromper, se cacher'],
  'Savoir':['Analyser un adversaire : chaque réussite révèle une information','Se souvenir, déchiffrer, identifier'],
  'Technique':['Crocheter une serrure','Désamorcer un piège','Réparer, fabriquer, manier une invention']};
-function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const ul=document.createElement('ul');ul.className=cls||'';l.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});return ul}
+/* v1.244 — Dans les puces, chaque mot qui a son icône (PV, Vie, Endurance, DEF, PA, PM, Marques, Dégâts, XP, Mouvement) cède la
+   place à cette icône, à la taille du texte. */
+// Les expressions passent avant les mots : « Points de Mouvement » sont des PM ; un « talent de Mouvement » garde son nom.
+const MOTS_ICONES=[['Points d’Action','pa'],['Points de Mouvement','pm'],['talents de Mouvement',null],['talent de Mouvement',null],['PV','pv'],['Vie','vie'],['Endurance','endu'],['DEF','def'],['PA','pa'],['PM','pm'],['Marques','marque'],['Marque','marque'],['Dégâts','dmg'],['XP','xp'],['Mouvement','metres']];
+const RE_MOTS_ICONES=new RegExp('(?<![\\p{L}])('+MOTS_ICONES.map(([m])=>m).join('|')+')(?![\\p{L}])','gu');
+function texteAIcones(li,t){let i=0;for(const m of String(t).matchAll(RE_MOTS_ICONES)){if(m.index>i)li.append(t.slice(i,m.index));const k=(MOTS_ICONES.find(([w])=>w===m[1])||[])[1];
+  let ic=!k?null:k==='marque'?iconeMarque('puce-ico'):logoBonus({carac:k});if(ic){ic.classList.add('puce-ico');ic.setAttribute&&ic.setAttribute('aria-label',m[1]);li.append(ic)}else li.append(m[1]);i=m.index+m[1].length}
+ if(i<t.length)li.append(t.slice(i))}
+function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const ul=document.createElement('ul');ul.className=cls||'';l.forEach(t=>{const li=document.createElement('li');texteAIcones(li,t);ul.append(li)});return ul}
 // v1.210 : une sphère de plus ou de moins dans les Richesses d'un aventurier, chez le MJ, sans ouvrir de fenêtre.
 /* v1.221 — Richesses, chez le MJ : un « + » après l'or ouvre un champ ; on y tape la somme, Entrée l'ajoute (une somme négative
    retire), Échap referme, un clic ailleurs l'ajoute aussi. */
