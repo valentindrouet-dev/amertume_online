@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.242","d":"2026-10-30","t":"Arbre réduit, phrase des Compétences"},
 {"v":"1.241","d":"2026-10-30","t":"En-têtes centrés, blocs alignés"},
 {"v":"1.240","d":"2026-10-30","t":"Puces des PA et PM"},
 {"v":"1.239","d":"2026-10-30","t":"Coût des talents, 10m, doré"},

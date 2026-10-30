@@ -9567,7 +9567,7 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  if(titreTal){titreTal.classList.add('fiche-titre');titreTal.querySelectorAll('button').forEach(b=>b.remove())}
  // v1.221 : les Talents, sans roue crantée, sous les deux colonnes et centrés ; les deux colonnes ont la même hauteur.
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
- pd.append(el('h3','fiche-titre','Compétences'));if(cp)pd.append(cp);
+ pd.append(el('h3','fiche-titre','Compétences'));if(cp){cp.prepend(el('p','comps-intro','Pour un test, vous lancez autant de dés que la compétence, et vous visez le nombre de réussites demandé.'));pd.append(cp)}
  return c}
 /* v1.194 — La page Aventuriers : une vignette par aventurier, comme à l'Accueil — son portrait cerclé de sa classe, son nom, sa
    classe et son niveau, son lieu. Un clic ouvre sa fiche. Le MJ y garde la case de l'aventure, le rang qu'on glisse, l'accueil
@@ -9780,6 +9780,9 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Arbre des Bonus',es
  if(arbresOnglet==='bonus'&&aside){arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion').forEach(bar=>{const bc=bar.querySelector('.couts-sphere');
   if(bc){bc.classList.add('couts-dans-detail');const w=aside.querySelector('.spheres-detail');if(w)w.before(bc);else aside.append(bc)}if(!bar.querySelector('*'))bar.remove()})}
  return r}}
+// v1.242 : sur la fiche, l'arbre de Talents réduit à 88 % par une mise à l'échelle, sa place rendue d'autant en bas.
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresActeur&&arbresOnglet==='classe')arbresDialog.querySelectorAll('.arbres-v2 .arbre-col>.arbre-plan-groupes').forEach(pl=>{
+  pl.style.transform='';pl.style.marginBottom='';const h=pl.offsetHeight;pl.style.transformOrigin='top center';pl.style.transform='scale(.88)';pl.style.marginBottom=(-.12*h).toFixed(1)+'px'});return r}}
 // v1.236 : le coût en Marques d'un talent quitte le dessous de son rond : il se pose en haut à droite du bloc du talent.
 // v1.239 : le panneau se redessine aussi au clic sur un talent, sans redessiner la fenêtre : un observateur suit chaque changement.
 function coutsAuCoin(){arbresDialog.querySelectorAll('.arbres-detail .detail-tete .detail-prix-rond.cout-marque').forEach(pr=>{const tete=pr.closest('.detail-tete');if(!tete||pr.parentElement===tete)return;pr.classList.add('cout-coin');tete.append(pr)})}

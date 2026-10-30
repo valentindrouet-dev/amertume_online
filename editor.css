@@ -4530,7 +4530,7 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 /* v1.235 — Onglet Talents : l'arbre remonte encore (l'en-tête plus serré, le plan de l'arbre 26 px plus haut), il tient sans défiler. */
 #arbres.fiche-aventurier .arbres-v2-arbre>.fiche-tete-arbre{margin:0 0 4px}
 /* v1.238 : plus de remontée qui recouvre l'en-tête ; l'arbre lui-même rapetisse un peu (12 %) pour tenir sans défiler. */
-#arbres.fiche-aventurier .arbres-v2 .arbre-col>:is(.arbre-plan-groupes,.arbre-plan){margin-top:0;zoom:.88}
+#arbres.fiche-aventurier .arbres-v2 .arbre-col>:is(.arbre-plan-groupes,.arbre-plan){margin-top:0}
 /* v1.236 — Coût en Marques : dans une amélioration, il s'écarte du bord droit de la carte sans toucher le texte ; celui d'un talent
    passe en haut à droite du bloc du talent. */
 :is(#arbres,body) .detail-am-nom .detail-prix.cout-marque{margin-right:14px;margin-left:10px;flex:none}
@@ -4551,3 +4551,8 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres .arbres-v2:has(>.fiche-tete-arbre){grid-template-rows:auto minmax(0,1fr)}
 #arbres.fiche-aventurier .arbres-v2{column-gap:14px}
 #arbres .arbres-detail>.spheres-detail{margin-left:0;margin-right:0}
+
+/* v1.242 — Onglet Talents : l'arbre se réduit par une mise à l'échelle (la même dans tous les navigateurs ; le zoom de Safari le
+   faisait remonter sur l'en-tête). Onglet Caractéristiques : une phrase en tête du bloc des Compétences. */
+.hero-card.fiche-onglet .fiche-page>.comp-ronds.cadre-comps>.comps-intro{grid-column:1/-1;margin:0 4px 2px;font:italic 400 13px/1.4 system-ui;color:color-mix(in srgb,var(--ink) 75%,transparent);text-align:center}
+.hero-card.fiche-onglet .fiche-page>.comp-ronds.cadre-comps:has(>.comps-intro){grid-template-rows:auto repeat(4,1fr)}
