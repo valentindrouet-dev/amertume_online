@@ -9756,4 +9756,8 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Esp�
  if(arbresOnglet==='bonus'&&aside&&!aside.querySelector('.spheres-detail')){const inv=corpsEtSac(a,true),pl=inv&&inv.querySelector('.place.p-bourse');
   if(pl){const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Sphères';
    const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.append(w)}}
+ // v1.230 : « Coûts » quitte le haut du sphérier, où il décalait l'arbre : il passe dans le panneau de droite, au-dessus des Sphères ;
+ // la barre vidée disparaît.
+ if(arbresOnglet==='bonus'&&aside){arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion').forEach(bar=>{const bc=bar.querySelector('.couts-sphere');
+  if(bc){bc.classList.add('couts-dans-detail');const w=aside.querySelector('.spheres-detail');if(w)w.before(bc);else aside.append(bc)}if(!bar.querySelector('*'))bar.remove()})}
  return r}}

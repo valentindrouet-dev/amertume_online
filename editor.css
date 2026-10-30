@@ -4509,3 +4509,6 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 :is(#arbres,body) .detail-prix.cout-marque b{color:rgb(142,206,112)}
 :is(#arbres,body) .detail-prix.cout-marque.paye b{color:#fff}
 :is(#arbres,body) .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 25%,var(--red-mat))}
+/* v1.230 — « Coûts » au bas du panneau de droite de l'onglet Bonus, à droite, juste au-dessus des Sphères. */
+#arbres .arbres-detail>.couts-sphere.couts-dans-detail{align-self:flex-end;margin:auto 0 0}
+#arbres .arbres-detail>.couts-sphere.couts-dans-detail+.spheres-detail{margin-top:8px}
