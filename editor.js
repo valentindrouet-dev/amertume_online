@@ -5831,7 +5831,8 @@ function departsDeNiveau(liste){const L=(liste||[]).filter(Boolean),out=new Map(
 function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
  // Une case vide se traverse une fois atteinte : le talent qui y manque ne ferme pas ce qui la suit.
  let atteints=null;const tenu=x=>tous.includes(x.id)||(estVide(x)&&(atteints||=atteintsDepuis(tous,liste,null)).has(x.id));
- if(lisChemin(t)){const d=departChemin(t);if(!d)return '';const av=precedentChemin(t)||d;return tenu(av)?'':av.name||'—'}
+ // v1.248 : une amélioration ne s'ouvre qu'avec son talent de base ; un bonus du chemin, avec celui qui le précède.
+ if(lisChemin(t)){const d=departChemin(t);if(!d)return '';const av=(estBonus(t)&&precedentChemin(t))||d;return tenu(av)?'':av.name||'—'}
  if(departsDe(liste).has(t.id))return '';
  {const dn=typeof departsDeNiveau==='function'?departsDeNiveau(liste):new Map();if(dn.has(t.id))return dn.get(t.id)<=niveau?'':'Niveau '+dn.get(t.id)}
  const v=voisinsDe(liste,t);if(!v.length)return '';
@@ -5961,7 +5962,9 @@ function accordeArbres(){let change=false;
 // Un petit rond dont le talent, ou le petit rond d'avant, n'est plus tenu tombe avec lui.
 function sansBonusOrphelins(liste){let l=[...(liste||[])];
  for(;;){const tient=new Set(l),n=l.filter(id=>{const t=tousTalents().find(x=>x.id===id);if(!t||!lisChemin(t))return true;
-   const d=departChemin(t);if(!d||!(tient.has(d.id)||estVide(d)))return false;const av=precedentChemin(t);return !av||tient.has(av.id)||estVide(av)});
+   const d=departChemin(t);if(!d||!(tient.has(d.id)||estVide(d)))return false;
+   // v1.248 : une amélioration ne tient qu'à son talent de base (Règles), pas à celle qui la précède sur son chemin ; un bonus, si.
+   if(!estBonus(t))return true;const av=precedentChemin(t);return !av||tient.has(av.id)||estVide(av)});
   if(n.length===l.length)return n;l=n}}
 /* Quitter l'arbre : les lignes qui menaient à lui s'effacent, ses petits ronds — et ceux qui le
    suivaient sur son chemin, s'il en est un — le quittent aussi. */
