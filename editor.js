@@ -718,6 +718,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.012 : les types de ressource de la carte, partagés par toutes les cartes.
  c.typesRessources=normaliseTypesRessources(c.typesRessources);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
+ // v1.250 : les textes de la fiche que le MJ a réécrits — une liste de lignes par caractéristique ou compétence.
+ if(c.textesFiche&&typeof c.textesFiche==='object'&&!Array.isArray(c.textesFiche)){const o={};Object.entries(c.textesFiche).forEach(([k,v])=>{if(/^[\wÀ-ÿ’' -]{1,40}$/.test(k)&&Array.isArray(v))o[k]=v.filter(x=>typeof x==='string').map(x=>x.slice(0,400)).slice(0,12)});if(Object.keys(o).length)c.textesFiche=o;else delete c.textesFiche}else delete c.textesFiche;
  if(Array.isArray(c.majVerifiees))c.majVerifiees=c.majVerifiees.filter(v=>typeof v==='string'&&/^\d+\.\d+(#\d{1,3})?$/.test(v)).slice(-8000);else delete c.majVerifiees;
  {const o=c.iconesFiche&&typeof c.iconesFiche==='object'&&!Array.isArray(c.iconesFiche)?c.iconesFiche:{};c.iconesFiche={};['stats','inventaire','classe','bonus','espece','metier','statistiques'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.iconesFiche[k]=v})}
  // v1.195 : l'icône choisie de chaque sphère ; et la planche des sphères, 6 × 5, découpée une fois.
@@ -9577,7 +9579,9 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  if(titreTal){titreTal.classList.add('fiche-titre');titreTal.querySelectorAll('button').forEach(b=>b.remove())}
  // v1.221 : les Talents, sans roue crantée, sous les deux colonnes et centrés ; les deux colonnes ont la même hauteur.
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
- pd.append(el('h3','fiche-titre','Compétences'));if(cp){cp.prepend(el('p','comps-intro','Pour un test, vous lancez autant de dés que la compétence, et vous visez le nombre de réussites demandé.'));pd.append(cp)}
+ pd.append(el('h3','fiche-titre','Compétences'));if(cp){const pi=el('p','comps-intro');texteFiche(pi,'intro-comps');cp.prepend(pi);pd.append(cp)}
+ // v1.250 : chez le MJ, un bouton réécrit les textes de la page, balises comprises pour les icônes.
+ if(view==='mj'){const b=el('button','ico textes-fiche-btn','✎ Textes');b.type='button';b.title='Modifier les textes de la page';b.onclick=e=>{e.stopPropagation();ouvreTextesFiche()};livre.append(b)}
  return c}
 /* v1.194 — La page Aventuriers : une vignette par aventurier, comme à l'Accueil — son portrait cerclé de sa classe, son nom, sa
    classe et son niveau, son lieu. Un clic ouvre sa fiche. Le MJ y garde la case de l'aventure, le rang qu'on glisse, l'accueil
@@ -9723,7 +9727,31 @@ const RE_MOTS_ICONES=new RegExp('(?<![\\p{L}])('+MOTS_ICONES.map(([m])=>m).join(
 function texteAIcones(li,t){let i=0;for(const m of String(t).matchAll(RE_MOTS_ICONES)){if(m.index>i)li.append(t.slice(i,m.index));const k=(MOTS_ICONES.find(([w])=>w===m[1])||[])[1];
   let ic=!k?null:k==='marque'?iconeMarque('puce-ico'):logoBonus({carac:k});if(ic){ic.classList.add('puce-ico');ic.setAttribute&&ic.setAttribute('aria-label',m[1]);li.append(ic)}else li.append(m[1]);i=m.index+m[1].length}
  if(i<t.length)li.append(t.slice(i))}
-function pucesFiche(cle,cls){const l=TEXTES_PUCES[cle];if(!l)return null;const ul=document.createElement('ul');ul.className=cls||'';l.forEach(t=>{const li=document.createElement('li');texteAIcones(li,t);ul.append(li)});return ul}
+function pucesFiche(cle,cls){const perso=catalog.textesFiche&&catalog.textesFiche[cle],l=perso||TEXTES_PUCES[cle];if(!l||!l.length)return null;const ul=document.createElement('ul');ul.className=cls||'';
+ l.forEach(t=>{const li=document.createElement('li');if(perso)texteABalises(li,t);else texteAIcones(li,t);ul.append(li)});return ul}
+/* v1.250 — Les textes de la fiche, réécrits par le MJ : une ligne par puce ; {pv}, {vie}, {endu}, {def}, {pa}, {pm}, {marque},
+   {dmg}, {xp}, {mouvement} posent l'icône, à la taille du texte. */
+const BALISES_FICHE={pv:'pv',vie:'vie',endu:'endu',def:'def',pa:'pa',pm:'pm',marque:'marque',dmg:'dmg',xp:'xp',mouvement:'metres'};
+const TEXTE_INTRO_COMPS='Pour un test, vous lancez autant de dés que la compétence, et vous visez le nombre de réussites demandé.';
+function iconeBalise(k){const c=BALISES_FICHE[k];if(!c)return null;const ic=c==='marque'?iconeMarque('puce-ico'):logoBonus({carac:c});if(ic)ic.classList.add('puce-ico');return ic}
+function texteABalises(el,t){let i=0;const s=String(t);for(const m of s.matchAll(/\{([a-z]+)\}/g)){const ic=iconeBalise(m[1]);if(!ic)continue;if(m.index>i)el.append(s.slice(i,m.index));el.append(ic);i=m.index+m[0].length}if(i<s.length)el.append(s.slice(i))}
+function texteFiche(el,cle){const p=catalog.textesFiche&&catalog.textesFiche[cle];if(p&&p.length)texteABalises(el,p.join(' '));else el.textContent=cle==='intro-comps'?TEXTE_INTRO_COMPS:''}
+// Le texte d'origine, ses mots à icône écrits en balises : ce que le MJ trouve dans l'éditeur tant qu'il n'a rien changé.
+const enBalises=t=>String(t).replace(RE_MOTS_ICONES,m=>{const k=(MOTS_ICONES.find(([w])=>w===m)||[])[1];if(!k)return m;const b=Object.keys(BALISES_FICHE).find(x=>BALISES_FICHE[x]===k);return b?'{'+b+'}':m});
+let textesFicheDialog=null;
+function ouvreTextesFiche(){if(view!=='mj')return;
+ if(!textesFicheDialog){textesFicheDialog=dialog('textes-fiche','Textes de la fiche','<form method="dialog" id="textes-fiche-form"><p class="muted textes-fiche-aide"></p><div id="textes-fiche-champs"></div><div class="dialog-actions"><button type="button" id="textes-fiche-defaut">Rétablir les textes d’origine</button><button class="primary" id="textes-fiche-ok">Enregistrer</button></div></form>');
+  $('textes-fiche-form').onsubmit=e=>{e.preventDefault();const o={};textesFicheDialog.querySelectorAll('textarea[data-cle]').forEach(t=>{const k=t.dataset.cle,l=t.value.split('\n').map(x=>x.trim()).filter(Boolean);if(l.join('\n')!==t.dataset.origine)o[k]=l});
+   if(Object.keys(o).length)catalog.textesFiche=o;else delete catalog.textesFiche;normalizeCatalog(catalog);scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));textesFicheDialog.close();if(arbresDialog.open)renderArbres()};
+  $('textes-fiche-defaut').onclick=()=>{textesFicheDialog.querySelectorAll('textarea[data-cle]').forEach(t=>{t.value=t.dataset.origine})}}
+ const aide=textesFicheDialog.querySelector('.textes-fiche-aide');aide.replaceChildren('Une ligne par puce. Balises : ');
+ Object.keys(BALISES_FICHE).forEach((k,i)=>{if(i)aide.append(' ');const c=document.createElement('code');c.textContent='{'+k+'}';const ic=iconeBalise(k);aide.append(c);if(ic)aide.append(' ',ic)});
+ const champs=$('textes-fiche-champs');champs.replaceChildren();const perso=catalog.textesFiche||{};
+ const champ=(cle,titre,origine)=>{const l=document.createElement('label');l.className='textes-fiche-champ';const b=document.createElement('b');b.textContent=titre;const t=document.createElement('textarea');t.dataset.cle=cle;t.dataset.origine=origine;t.rows=Math.max(2,origine.split('\n').length+1);t.value=perso[cle]?perso[cle].join('\n'):origine;l.append(b,t);champs.append(l)};
+ [['vie','Vie'],['endu','Endurance'],['pv','PV max'],['def','DEF'],['dmg','Dégâts'],['metres','Mouvement'],['pa','PA'],['pm','PM'],['marques','Marques'],['xp','XP']].forEach(([k,n])=>champ(k,n,(TEXTES_PUCES[k]||[]).map(enBalises).join('\n')));
+ champ('intro-comps','Compétences — phrase d’en-tête',enBalises(TEXTE_INTRO_COMPS));
+ skillNames.forEach(n=>champ(n,n,(TEXTES_PUCES[n]||[]).map(enBalises).join('\n')));
+ textesFicheDialog.showModal()}
 // v1.210 : une sphère de plus ou de moins dans les Richesses d'un aventurier, chez le MJ, sans ouvrir de fenêtre.
 /* v1.221 — Richesses, chez le MJ : un « + » après l'or ouvre un champ ; on y tape la somme, Entrée l'ajoute (une somme négative
    retire), Échap referme, un clic ailleurs l'ajoute aussi. */

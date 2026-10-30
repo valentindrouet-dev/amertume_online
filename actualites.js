@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.250","d":"2026-10-30","t":"Textes de la fiche éditables"},
 {"v":"1.249","d":"2026-10-30","t":"Marges de l'arbre, repères au-delà de la limite"},
 {"v":"1.248","d":"2026-10-30","t":"Améliorations vraiment indépendantes"},
 {"v":"1.247","d":"2026-10-30","t":"Arbre de talents ajusté à son bloc"},

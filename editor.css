@@ -4570,3 +4570,13 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .arbres-v2 .arbres-detail .detail-tete.detail-tete.detail-tete-sphere{background:#ecebe6}
 /* v1.249 — Arbre des paliers, chez les joueurs, au-delà de la limite : le repère « ? » de chaque talent, grisé, sans clic. */
 .arbre-noeud.remplissage.masque-limite{filter:grayscale(1);opacity:.45;pointer-events:none;cursor:default}
+/* v1.250 — Le bouton « ✎ Textes » de l'onglet Caractéristiques, chez le MJ, et sa fenêtre : un champ par caractéristique. */
+.fiche-onglet .fiche-livre{position:relative}
+.fiche-onglet .fiche-livre>.textes-fiche-btn{position:absolute;top:0;right:0;z-index:2;padding:3px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel);font:600 12px/1.2 system-ui;color:var(--ink);cursor:pointer}
+#textes-fiche{width:min(760px,94vw)}
+#textes-fiche #textes-fiche-champs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;max-height:62vh;overflow:auto;padding:2px}
+#textes-fiche .textes-fiche-champ{display:flex;flex-direction:column;gap:3px}
+#textes-fiche .textes-fiche-champ b{font:700 13px/1.2 system-ui;color:var(--ink)}
+#textes-fiche .textes-fiche-champ textarea{width:100%;box-sizing:border-box;font:13px/1.4 system-ui;resize:vertical}
+#textes-fiche .textes-fiche-aide{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0 0 10px}
+#textes-fiche .textes-fiche-aide .puce-ico{width:18px;height:18px;object-fit:contain}
