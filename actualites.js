@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.270","d":"2026-10-30","t":"Couleurs des bonus"},
 {"v":"1.269","d":"2026-10-30","t":"Boutons des vignettes"},
 {"v":"1.268","d":"2026-10-30","t":"Blocs séparés"},
 {"v":"1.267","d":"2026-10-30","t":"Panneaux et bonus verrouillés"},

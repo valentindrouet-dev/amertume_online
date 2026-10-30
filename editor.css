@@ -4659,3 +4659,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #arbres .arbres-v2>.especes-detail>.especes-place{position:static;width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;min-height:0;height:auto;border:1px solid var(--line);border-radius:14px;padding:12px 14px 18px;background:var(--panel-2);gap:6px}
 /* v1.269 — Vignette d'aventurier : six boutons (sans Espèce), deux lignes de trois. */
 #hero-grid .fiche-icones{grid-template-columns:repeat(3,44px)}
+/* v1.270 — Arbre des Bonus : le fond du rond dit son état. Acquis, vert pâle (celui d'une amélioration acquise) ; achetable, or jaune ;
+   atteignable mais trop cher, le rose des PV éclairci ; inaccessible, inchangé (gris, pâli). */
+.sphere-noeud.acquis .sphere-rond{background:#d3e5cd!important}
+.sphere-noeud.dispo:not(.acquis):not(.cher) .sphere-rond{background:color-mix(in srgb,#f2c14e 50%,var(--panel))!important}
+.sphere-noeud.dispo.cher:not(.acquis) .sphere-rond{background:color-mix(in srgb,rgb(214,86,118) 15%,var(--panel))!important}
