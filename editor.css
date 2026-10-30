@@ -4290,13 +4290,13 @@ body.page-gemmes .intro,body.page-gemmes .mj-tools,body.page-gemmes main.layout,
 .vie-stats.vie-colonnes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
 .vie-colonne{display:flex;flex-direction:column;gap:12px;min-width:0}
 .vie-lignes{display:flex;flex-direction:column;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;background:var(--panel-2)}
-.vie-ligne{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 14px;border-top:1px solid var(--line)}
-.vie-ligne:first-child{border-top:0}.vie-ligne:nth-child(even){background:color-mix(in srgb,var(--ink) 4%,transparent)}
-.vie-ligne span{font:600 13px/1.2 system-ui;color:var(--ink)}
-.vie-ligne b{font:700 19px/1 'Killam',Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
-.vie-ligne.zero b{color:color-mix(in srgb,var(--muted) 60%,transparent)}
-.vie-ligne.vie-rar span,.vie-ligne.vie-rar b{color:var(--rarete)}
-.vie-ligne.vie-rar{box-shadow:inset 4px 0 0 var(--rarete)}
+.vie-lignes>.vie-ligne{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 14px;border-top:1px solid var(--line)}
+.vie-lignes>.vie-ligne:first-child{border-top:0}.vie-lignes>.vie-ligne:nth-child(even){background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.vie-lignes>.vie-ligne span{font:600 13px/1.2 system-ui;color:var(--ink)}
+.vie-lignes>.vie-ligne b{font:700 19px/1 'Killam',Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+.vie-lignes>.vie-ligne.zero b{color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.vie-lignes>.vie-ligne.vie-rar span,.vie-lignes>.vie-ligne.vie-rar b{color:var(--rarete)}
+.vie-lignes>.vie-ligne.vie-rar{box-shadow:inset 4px 0 0 var(--rarete)}
 /* v1.206 — Les Marques à dépenser au-dessus de l'arbre ; « Réinitialiser l'arbre » dans son coin. */
 .arbres-v2 .arbre-titre.a-xp .arbres-pt.marques-dispo{display:flex;align-items:center;justify-content:center;gap:8px;width:auto}
 .arbres-pt.marques-dispo .marque-ico{width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--ink) 50%,transparent))}
@@ -4445,3 +4445,30 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .arbre-satellites.sat-marques .sat-marque{position:absolute;display:block;object-fit:contain;filter:grayscale(1);opacity:.55;pointer-events:none}
 .arbre-satellites.sat-marques .sat-marque.tenu{filter:drop-shadow(0 1px 1px color-mix(in srgb,var(--ink) 35%,transparent));opacity:1}
 .arbre-satellites.sat-marques .sat-marque.marque-glyphe{display:grid;place-items:center;font-size:14px;line-height:1;color:#c99a3c}
+/* v1.223 — Fiche d'un aventurier : l'en-tête orné au-dessus de chaque arbre ; plus de bandeau coloré en haut de l'arbre, les
+   Marques en grand dans son coin haut gauche ; dans l'onglet Bonus, les Sphères au bas du panneau de droite. */
+#arbres .arbres-v2-arbre>.fiche-tete-arbre{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 10px;font:700 26px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;text-transform:none;color:color-mix(in srgb,var(--accent) 45%,var(--ink));text-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent)}
+#arbres .arbres-v2-arbre>.fiche-tete-arbre::before,#arbres .arbres-v2-arbre>.fiche-tete-arbre::after{content:'';flex:0 1 120px;height:12px;background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) right center / 12px 12px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 16px) 1.5px no-repeat}
+#arbres .arbres-v2-arbre>.fiche-tete-arbre::after{background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) left center / 12px 12px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 16px) 1.5px no-repeat}
+#arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp{display:flex;align-items:center;justify-content:flex-start;min-height:44px;margin:0 0 6px;padding:6px 10px;background:none;clip-path:none;border-radius:0;box-shadow:none}
+#arbres.fiche-aventurier .arbres-v2 .arbre-titre.a-xp .arbres-pt.marques-dispo{margin:0;justify-content:flex-start;position:relative;display:inline-grid;place-items:center;width:auto}
+#arbres.fiche-aventurier .arbres-pt.marques-dispo>*{grid-area:1/1}
+#arbres.fiche-aventurier .arbres-pt.marques-dispo .marque-ico{width:34px;height:34px}
+#arbres.fiche-aventurier .arbres-pt.marques-dispo b{position:relative;left:12px;top:10px;font:900 18px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+#arbres.fiche-aventurier #arbres-reset.dans-arbre{left:auto;right:10px}
+#arbres .arbres-detail>.spheres-detail{margin-top:auto;position:static;display:block;width:100%;height:auto;background:none}
+#arbres .arbres-detail>.spheres-detail>.place.p-bourse{position:static;width:100%;margin:0}
+#arbres .arbres-v2-arbre:has(>.fiche-tete-arbre){flex-wrap:wrap;align-content:flex-start}
+#arbres .arbres-v2-arbre>.fiche-tete-arbre{flex:0 0 100%;width:100%}
+#arbres .arbres-v2-arbre>.fiche-tete-arbre{height:auto!important;min-height:0!important;max-height:none;padding:0!important;box-sizing:border-box;align-self:flex-start}
+#arbres .arbres-v2-arbre>.fiche-tete-arbre::before,#arbres .arbres-v2-arbre>.fiche-tete-arbre::after{flex:none;width:120px}
+#arbres .arbres-v2-arbre>.fiche-tete-arbre{flex-direction:row!important;flex-wrap:nowrap!important}
+/* v1.223 — Onglet Caractéristiques : plus de valeur répétée à droite des vignettes ; la valeur d'une compétence s'écrit sur son
+   icône, comme celle d'une caractéristique — chiffre blanc en Killam cerné de sombre, vert quand un bonus la monte. */
+.fiche-onglet .vignette{grid-template-columns:auto minmax(0,1fr)}
+.fiche-onglet .vignette>.vignette-val{display:none}
+.fiche-onglet .vignette-icone .comp-rond{position:relative}
+.fiche-onglet .vignette-icone .comp-rond .comp-val{left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%);width:auto;height:auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:#fff;font:900 24px/1 'Killam',system-ui;-webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap;z-index:1}
+.fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:color-mix(in srgb,#fff 30%,#58b09f);background:none;border:0}
+.fiche-onglet .vignette-icone .comp-rond .comp-lettre{visibility:hidden}
+#arbres .arbres-detail>.spheres-detail{border:0;padding:0;box-shadow:none;min-height:0}

@@ -9738,3 +9738,15 @@ document.addEventListener('keydown',e=>{const k=raccourcis.versions;
  if(e.key==='Escape'&&versionsFen.open){e.preventDefault();e.stopPropagation();versionsFen.close()}},true);
 // v1.214 : un clic hors du réglage du coût l'enregistre et le referme.
 document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=document.querySelector('.die-pick.cout-pick');if(!d){coutEdite='';return}if(d.contains(e.target))return;d._pose()},true);
+/* v1.223 — Fiche d'un aventurier : au-dessus de l'arbre de chaque onglet (Talents, Bonus, Espèce, Métier, Statistiques), l'en-tête
+   orné des Caractéristiques. Le bandeau coloré du haut de l'arbre s'efface : les Marques à dépenser passent dans son coin haut
+   gauche, en grand. Dans l'onglet Bonus, en bas du panneau de droite, ses Sphères — le bloc de l'inventaire, sans l'or. */
+const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Espèce',metier:'Métier',statistiques:'Statistiques'};
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||!a.hero)return r;
+ const zone=arbresDialog.querySelector('.arbres-v2>.arbres-v2-arbre'),titre=TITRES_ONGLETS_FICHE[arbresOnglet];
+ if(zone&&titre&&!zone.querySelector(':scope>.fiche-tete-arbre')){const h=document.createElement('h3');h.className='fiche-tete-arbre';h.textContent=titre;zone.prepend(h)}
+ const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');
+ if(arbresOnglet==='bonus'&&aside&&!aside.querySelector('.spheres-detail')){const inv=corpsEtSac(a,true),pl=inv&&inv.querySelector('.place.p-bourse');
+  if(pl){const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Sphères';
+   const w=document.createElement('div');w.className='corps spheres-detail';w.append(pl);aside.append(w)}}
+ return r}}
