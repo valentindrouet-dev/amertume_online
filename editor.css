@@ -4615,3 +4615,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .arbre-roue>.pastille-palier.palier-marques{display:inline-grid;place-items:center;width:42px;height:42px;padding:0;border:0;border-radius:0;background:none;overflow:visible}
 .arbre-roue>.pastille-palier.palier-marques .marque-ico{grid-area:1/1;width:42px;height:42px}
 .arbre-roue>.pastille-palier.palier-marques b{position:absolute;left:56%;top:56%;margin:0;color:#fff;font:900 24px/1 'Killam',system-ui;letter-spacing:0;-webkit-text-stroke:4.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+/* v1.263 — Arbre des Bonus : les ronds n'ont plus de contour derrière leurs icônes (bordure et anneaux) ; fond, halo et ombre restent. */
+.sphere-noeud .sphere-rond,.sphere-noeud:is(.acquis,.dispo,.choisi,.verrou,.marque,.cher) .sphere-rond{border-color:transparent!important}
+.sphere-noeud:is(.acquis,.depart,.selec) .sphere-rond,.sphere-noeud.acquis.depart .sphere-rond,.sphere-noeud.selec:is(.depart,.acquis) .sphere-rond{box-shadow:0 2px 6px rgba(0,0,0,.2)!important}
+.sphere-noeud.acquis.dispo .sphere-rond,.sphere-noeud.dispo:not(.acquis):not(.cher) .sphere-rond{box-shadow:0 0 10px 3px color-mix(in srgb,#c99a3c 50%,transparent)!important}
