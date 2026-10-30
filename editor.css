@@ -4517,3 +4517,5 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres.fiche-aventurier .arbres-v2 .arbre-col{position:relative}
 #arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp{position:absolute;left:0;right:0;top:0;z-index:3;min-height:0;height:auto;margin:0;padding:6px 10px;pointer-events:none}
 #arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp>*{pointer-events:auto}
+/* v1.232 — Le doré d'une compétence améliorée, plus clair pour se lire sur son icône. */
+.fiche-onglet .vignette-icone .comp-rond .comp-val.haute{color:color-mix(in srgb,#fff 45%,#f2c14e)}
