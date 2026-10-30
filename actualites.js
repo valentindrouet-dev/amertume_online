@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.277","d":"2026-10-30","t":"Coût multiple abrégé"},
 {"v":"1.276","d":"2026-10-30","t":"Coûts à cheval"},
 {"v":"1.275","d":"2026-10-30","t":"Bonus Infusés"},
 {"v":"1.274","d":"2026-10-30","t":"Coût des bonus"},
