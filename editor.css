@@ -4512,3 +4512,8 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 /* v1.230 — « Coûts » au bas du panneau de droite de l'onglet Bonus, à droite, juste au-dessus des Sphères. */
 #arbres .arbres-detail>.couts-sphere.couts-dans-detail{align-self:flex-end;margin:auto 0 0}
 #arbres .arbres-detail>.couts-sphere.couts-dans-detail+.spheres-detail{margin-top:8px}
+/* v1.231 — Onglet Talents : les Marques et « Réinitialiser l'arbre » se posent sur le haut de l'arbre sans y prendre de place ;
+   l'arbre remonte d'autant et ne déborde plus en bas. */
+#arbres.fiche-aventurier .arbres-v2 .arbre-col{position:relative}
+#arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp{position:absolute;left:0;right:0;top:0;z-index:3;min-height:0;height:auto;margin:0;padding:6px 10px;pointer-events:none}
+#arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp>*{pointer-events:auto}

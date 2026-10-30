@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.231","d":"2026-10-30","t":"Arbre de talents remonté"},
 {"v":"1.230","d":"2026-10-30","t":"Bouton Coûts déplacé"},
 {"v":"1.229","d":"2026-10-30","t":"Couleurs du coût en Marques"},
 {"v":"1.228","d":"2026-10-30","t":"Icônes des compétences, aura retirée"},
