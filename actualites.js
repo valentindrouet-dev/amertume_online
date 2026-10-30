@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.234","d":"2026-10-30","t":"Arbre des bonus réparé"},
 {"v":"1.233","d":"2026-10-30","t":"Coût en Marques jamais gris"},
 {"v":"1.232","d":"2026-10-30","t":"Doré des compétences plus clair"},
 {"v":"1.231","d":"2026-10-30","t":"Arbre de talents remonté"},

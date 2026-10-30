@@ -9749,7 +9749,9 @@ document.addEventListener('pointerdown',e=>{if(!coutEdite)return;const d=documen
 const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Bonus',espece:'Espèce',metier:'Métier',statistiques:'Statistiques'};
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||!a.hero)return r;
  const zone=arbresDialog.querySelector('.arbres-v2>.arbres-v2-arbre'),titre=TITRES_ONGLETS_FICHE[arbresOnglet];
- if(zone&&titre&&!zone.querySelector(':scope>.fiche-tete-arbre')){const h=document.createElement('h3');h.className='fiche-tete-arbre';h.textContent=titre;zone.prepend(h)}
+ // v1.234 : dans l'onglet Bonus, l'en-tête se pose dans le bloc du sphérier, au-dessus de lui : le sphérier garde sa place et son échelle.
+ const cadreSph=arbresOnglet==='bonus'&&zone&&zone.querySelector(':scope>.spherier-zone'),hote=cadreSph||zone;
+ if(hote&&titre&&!hote.querySelector(':scope>.fiche-tete-arbre')){const h=document.createElement('h3');h.className='fiche-tete-arbre';h.textContent=titre;hote.prepend(h)}
  // v1.227 : la bourse du haut du sphérier quitte la fiche : les Sphères se lisent au bas du panneau de droite.
  if(arbresOnglet==='bonus')arbresDialog.querySelectorAll('.spherier-zone>.sphere-infusion>.sphere-bourse').forEach(e=>e.remove());
  const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');

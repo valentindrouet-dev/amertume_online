@@ -4447,9 +4447,9 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 .arbre-satellites.sat-marques .sat-marque.marque-glyphe{display:grid;place-items:center;font-size:14px;line-height:1;color:#c99a3c}
 /* v1.223 — Fiche d'un aventurier : l'en-tête orné au-dessus de chaque arbre ; plus de bandeau coloré en haut de l'arbre, les
    Marques en grand dans son coin haut gauche ; dans l'onglet Bonus, les Sphères au bas du panneau de droite. */
-#arbres .arbres-v2-arbre>.fiche-tete-arbre{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 10px;font:700 26px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;text-transform:none;color:color-mix(in srgb,var(--accent) 45%,var(--ink));text-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent)}
-#arbres .arbres-v2-arbre>.fiche-tete-arbre::before,#arbres .arbres-v2-arbre>.fiche-tete-arbre::after{content:'';flex:0 1 120px;height:12px;background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) right center / 12px 12px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 16px) 1.5px no-repeat}
-#arbres .arbres-v2-arbre>.fiche-tete-arbre::after{background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) left center / 12px 12px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 16px) 1.5px no-repeat}
+#arbres .fiche-tete-arbre{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 10px;font:700 26px/1 'Killam',Georgia,serif;font-variant:small-caps;letter-spacing:1.2px;text-transform:none;color:color-mix(in srgb,var(--accent) 45%,var(--ink));text-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent)}
+#arbres .fiche-tete-arbre::before,#arbres .fiche-tete-arbre::after{content:'';flex:0 1 120px;height:12px;background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) right center / 12px 12px no-repeat,linear-gradient(90deg,transparent,var(--accent)) left center / calc(100% - 16px) 1.5px no-repeat}
+#arbres .fiche-tete-arbre::after{background:radial-gradient(circle,var(--accent) 0 2.6px,transparent 3.2px) left center / 12px 12px no-repeat,linear-gradient(90deg,var(--accent),transparent) right center / calc(100% - 16px) 1.5px no-repeat}
 #arbres.fiche-aventurier .arbres-v2 .arbre-col>.arbre-titre.a-xp{display:flex;align-items:center;justify-content:flex-start;min-height:44px;margin:0 0 6px;padding:6px 10px;background:none;clip-path:none;border-radius:0;box-shadow:none}
 #arbres.fiche-aventurier .arbres-v2 .arbre-titre.a-xp .arbres-pt.marques-dispo{margin:0;justify-content:flex-start;position:relative;display:inline-grid;place-items:center;width:auto}
 #arbres.fiche-aventurier .arbres-pt.marques-dispo>*{grid-area:1/1}
@@ -4459,10 +4459,10 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 #arbres .arbres-detail>.spheres-detail{margin-top:auto;position:static;display:block;width:100%;height:auto;background:none}
 #arbres .arbres-detail>.spheres-detail>.place.p-bourse{position:static;width:100%;margin:0}
 #arbres .arbres-v2-arbre:has(>.fiche-tete-arbre){flex-wrap:wrap;align-content:flex-start}
-#arbres .arbres-v2-arbre>.fiche-tete-arbre{flex:0 0 100%;width:100%}
-#arbres .arbres-v2-arbre>.fiche-tete-arbre{height:auto!important;min-height:0!important;max-height:none;padding:0!important;box-sizing:border-box;align-self:flex-start}
-#arbres .arbres-v2-arbre>.fiche-tete-arbre::before,#arbres .arbres-v2-arbre>.fiche-tete-arbre::after{flex:none;width:120px}
-#arbres .arbres-v2-arbre>.fiche-tete-arbre{flex-direction:row!important;flex-wrap:nowrap!important}
+#arbres .fiche-tete-arbre{flex:0 0 100%;width:100%}
+#arbres .fiche-tete-arbre{height:auto!important;min-height:0!important;max-height:none;padding:0!important;box-sizing:border-box;align-self:flex-start}
+#arbres .fiche-tete-arbre::before,#arbres .fiche-tete-arbre::after{flex:none;width:120px}
+#arbres .fiche-tete-arbre{flex-direction:row!important;flex-wrap:nowrap!important}
 /* v1.223 — Onglet Caractéristiques : plus de valeur répétée à droite des vignettes ; la valeur d'une compétence s'écrit sur son
    icône, comme celle d'une caractéristique — chiffre blanc en Killam cerné de sombre, vert quand un bonus la monte. */
 .fiche-onglet .vignette{grid-template-columns:auto minmax(0,1fr)}
@@ -4525,3 +4525,5 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 :is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.paye b{color:#fff!important}
 :is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:color-mix(in srgb,#fff 40%,var(--red-mat))!important}
 :is(#arbres,body) .detail-am-nom .detail-prix.cout-marque .marque-ico{filter:none}
+/* v1.234 — Onglet Bonus : l'en-tête dans le bloc du sphérier (colonne), sur sa largeur, sans en prendre la hauteur. */
+#arbres .spherier-zone>.fiche-tete-arbre{flex:none!important;align-self:stretch!important;width:auto}
