@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.247","d":"2026-10-30","t":"Arbre de talents ajusté à son bloc"},
 {"v":"1.246","d":"2026-10-30","t":"Améliorations indépendantes"},
 {"v":"1.245","d":"2026-10-30","t":"Fond du bloc d'un bonus"},
 {"v":"1.244","d":"2026-10-30","t":"Icônes dans les puces"},

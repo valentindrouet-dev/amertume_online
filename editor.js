@@ -9792,8 +9792,16 @@ const TITRES_ONGLETS_FICHE={classe:'Arbre de Talents',bonus:'Arbre des Bonus',es
   const sz=bar.closest('.spherier-zone');if(bc&&sz){bc.classList.add('couts-dans-arbre');sz.append(bc)}if(!bar.querySelector('*'))bar.remove()})}
  return r}}
 // v1.242 : sur la fiche, l'arbre de Talents réduit à 88 % par une mise à l'échelle, sa place rendue d'autant en bas.
-{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);if(arbresActeur&&arbresOnglet==='classe')arbresDialog.querySelectorAll('.arbres-v2 .arbre-col>.arbre-plan-groupes').forEach(pl=>{
-  pl.style.transform='';pl.style.marginBottom='';const h=pl.offsetHeight;pl.style.transformOrigin='top center';pl.style.transform='scale(.88)';pl.style.marginBottom=(-.12*h).toFixed(1)+'px'});return r}}
+// v1.247 : plus de 88 % fixes — l'arbre prend l'échelle qui le fait tenir dans son bloc, en largeur comme en hauteur, avec le même
+// jour en haut et en bas (et jamais plus de 115 %).
+function ajusteArbreTalents(){if(!arbresDialog.open||!arbresActeur||arbresOnglet!=='classe')return;const zone=arbresDialog.querySelector('.arbres-v2>.arbres-v2-arbre');if(!zone)return;
+ zone.querySelectorAll('.arbre-col>.arbre-plan-groupes').forEach(pl=>{const col=pl.closest('.arbre-col');pl.style.transform='';pl.style.marginTop='';pl.style.marginBottom='';
+  const h=pl.offsetHeight,w=pl.offsetWidth;if(!h||!w)return;const cs=getComputedStyle(col),n=v=>parseFloat(v)||0;
+  const H=zone.clientHeight-n(cs.paddingTop)-n(cs.paddingBottom)-n(cs.borderTopWidth)-n(cs.borderBottomWidth)-4,W=col.clientWidth-n(cs.paddingLeft)-n(cs.paddingRight);
+  const k=Math.max(.4,Math.min(1.15,(H-24)/h,(W-16)/w)),jour=Math.max(0,(H-h*k)/2);
+  pl.style.transformOrigin='top center';pl.style.transform='scale('+k.toFixed(4)+')';pl.style.marginTop=jour.toFixed(1)+'px';pl.style.marginBottom=(H-jour-h).toFixed(1)+'px'})}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);try{ajusteArbreTalents()}catch(e){}return r}}
+addEventListener('resize',()=>{try{ajusteArbreTalents()}catch(e){}});
 // v1.236 : le coût en Marques d'un talent quitte le dessous de son rond : il se pose en haut à droite du bloc du talent.
 // v1.239 : le panneau se redessine aussi au clic sur un talent, sans redessiner la fenêtre : un observateur suit chaque changement.
 function coutsAuCoin(){arbresDialog.querySelectorAll('.arbres-detail .detail-tete .detail-prix-rond.cout-marque').forEach(pr=>{const tete=pr.closest('.detail-tete');if(!tete||pr.parentElement===tete)return;pr.classList.add('cout-coin');tete.append(pr)})}
