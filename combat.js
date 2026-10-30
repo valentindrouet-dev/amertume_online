@@ -3150,8 +3150,10 @@ function niveauxXpValides(l){return Array.isArray(l)&&l.length===NIVEAUX_XP.leng
 function seuilsXp(){const l=typeof catalog!=='undefined'&&catalog?catalog.niveauxXp:null;return niveauxXpValides(l)?l:NIVEAUX_XP}
 /* v1.124 : l'XP se lit dans le niveau — elle repart de 0 à chaque passage : « dans », ce qui est gagné depuis ; « pour », ce que
    le niveau demande (0 au dernier). L'XP totale reste celle de la fiche. */
-function xpDuNiveau(a){const s=seuilsXp(),xp=Math.max(0,Math.trunc(Number(a&&a.xp))||0),n=niveauDeXp(xp),bas=s[n-1]||0,haut=s[n];
- return {niveau:n,dans:xp-bas,pour:haut===undefined?0:haut-bas,bas}}
+/* v1.261 : plus de niveau pour les aventuriers — l'XP se lit dans la Marque en cours : de 0 à 99, elle repart de 0 à chaque
+   Marque gagnée. L'XP totale reste celle de la fiche ; « niveau » garde le niveau provisoire des talents qui le lisent encore. */
+function xpDuNiveau(a){const xp=Math.max(0,Math.trunc(Number(a&&a.xp))||0),bas=xp-xp%XP_PAR_MARQUE;
+ return {niveau:niveauDeXp(xp),dans:xp-bas,pour:XP_PAR_MARQUE,bas}}
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;seuilsXp().forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  const v=readStat(cle,texte,a[cle]);a[cle]=v;

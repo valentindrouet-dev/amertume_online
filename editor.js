@@ -9585,7 +9585,8 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
    t.classList.toggle('en-hausse',v>pointsMax(a,quoi,true));apres.after(t);apres=t})}
  // v1.218 : les Marques à dépenser, une caractéristique de plus ; v1.226 : après le Mouvement, à côté de l'XP ; v1.237 : après les PM.
  if(ch){const dmg=ch.querySelector(':scope>.stat-tile.t-pm')||ch.querySelector(':scope>.stat-tile.t-metres')||ch.querySelector(':scope>.stat-tile.t-dmg'),tm=document.createElement('div');tm.className='stat-tile t-marques avec-icone';tm.style.setProperty('--tint',(typeof STAT_TINTS!=='undefined'&&STAT_TINTS.xp)||'201,162,39');
-  const n=document.createElement('strong');n.textContent=String(Math.max(0,Math.trunc(Number(xpDisponible(a,catalog.talents))||0)));tm.append(iconeMarque('stat-ico'),n);if(dmg)dmg.after(tm);else ch.append(tm)}
+  // v1.261 : les Marques gagnées en tout, celles dépensées dans l'arbre comprises.
+  const n=document.createElement('strong');n.textContent=String(marquesGagnees(a));tm.append(iconeMarque('stat-ico'),n);if(dmg)dmg.after(tm);else ch.append(tm)}
  if(ch)[...ch.querySelectorAll(':scope>.stat-tile')].forEach(t=>{const k=([...t.classList].find(x=>x.startsWith('t-'))||'t-').slice(2),s=t.querySelector('strong'),e=t.querySelector('.ecu[aria-label]');
   const [nom,desc]=CARACS_FICHE[k]||[k,''];vignette(t,s?s.textContent.trim():e?e.getAttribute('aria-label').replace(/^\D+/,''):'',nom,'Caractéristique',desc,t.style.getPropertyValue('--tint').trim())});
  if(cp)[...cp.querySelectorAll(':scope>.comp-carte')].forEach((k,i)=>{const r=k.querySelector('.comp-rond'),v=k.querySelector('.comp-val'),n=skillNames[i]||'';
