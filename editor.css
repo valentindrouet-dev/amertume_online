@@ -4566,3 +4566,5 @@ body.page-maj .intro,body.page-maj .mj-tools,body.page-maj main.layout,body.page
 /* v1.244 — Les icônes posées à la place des mots dans les puces : à la hauteur du texte. */
 li>.puce-ico,li>img.puce-ico,li>svg.puce-ico{display:inline-block;width:1.3em;height:1.3em;margin:0 .08em;vertical-align:-.3em;object-fit:contain}
 li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
+/* v1.245 — Le bloc d'un bonus, dans le panneau de droite du sphérier : le fond clair des cartes d'amélioration, plus le gris sombre. */
+.arbres-v2 .arbres-detail .detail-tete.detail-tete.detail-tete-sphere{background:#ecebe6}
