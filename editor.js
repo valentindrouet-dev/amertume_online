@@ -9066,7 +9066,8 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   if(paliersDe(t)>1&&a){const p=document.createElement('span');p.className='sphere-paliers';for(let n=1;n<=paliersDe(t);n++){const i=document.createElement('i');if(k>=n)i.className='on';p.append(i)}el.append(p)}
   // v1.133 : sous le rond, son coût — celui du palier suivant chez un aventurier, rien quand il les tient tous.
   // v1.142 : sous le rond, son prix en gemmes — rien quand l'aventurier en tient tous les paliers.
-  if(!a||k<paliersDe(t)){const c=document.createElement('span');c.className='sphere-cout'+(paliersDe(t)>1&&a?' sous-paliers':'');prixSpheres(t).forEach(p=>c.append(puceGemme(p)));el.append(c)}
+  if(!a||k<paliersDe(t)){const c=document.createElement('span');c.className='sphere-cout'+(paliersDe(t)>1&&a?' sous-paliers':'');// v1.284 : chaque sphère dit si l'aventurier l'a (vert) ou non (rouge), comme un coût en Marques.
+   prixSpheres(t).forEach(p=>c.append(puceGemme(p,!!a&&gemmesDe(a,p.cle)<p.n)));if(!a)c.classList.add('neutre');el.append(c)}
   bulleSphere(el,t,k||1);
   // Chez le MJ, un rond se prend et se pose où l'on veut ; un clic le choisit ; en mode Lier, un clic lie (ou délie) le rond choisi à celui-ci.
   /* v1.147 : plusieurs bonus se sélectionnent — Ctrl (⌘) + clic, ou un rectangle tracé sur le fond — et bougent ensemble : le
@@ -9134,7 +9135,8 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   const vu=talentAuPalier(t,Math.max(1,k)),p=paramsTalent(vu)||{};
   const tete=document.createElement('div');tete.className='detail-tete detail-tete-sphere';const rond=document.createElement('span');rond.className='sphere-rond detail-sphere';poseLogoBonus(rond,vu);teinteSphere(t,v=>rond.style.setProperty('--tint',v));
   const pile=document.createElement('span');pile.className='detail-gauche';pile.append(rond);
-  {const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(a&&k>=max?' paye':'');prixSpheres(t).forEach(p=>pr.append(puceGemme(p)));pile.append(pr)}
+  // v1.284 : chez un aventurier, plus de prix sous le rond : le bouton Infuser le porte. Le plan du MJ le garde.
+  if(!a){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond';prixSpheres(t).forEach(p=>pr.append(puceGemme(p)));pile.append(pr)}
   const droite=document.createElement('div');droite.className='detail-droite';const nom=document.createElement('h3');nom.className='detail-nom-bonus';nom.append(libelleBonusEl(p,{talent:vu}));
   {const L=String(nom.textContent||'').length;if(L>12)nom.style.fontSize=(L>26?17:L>20?20:L>16?23:26)+'px'}
   // v1.139 : sous le nom, sa nature — Caractéristique, Compétence ou Bonus — et le trait, comme pour un talent.

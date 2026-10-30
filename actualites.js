@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.284","d":"2026-10-30","t":"Coût en sphères"},
 {"v":"1.283","d":"2026-10-30","t":"Compétences de création"},
 {"v":"1.282","d":"2026-10-30","t":"Vert et rouge des coûts"},
 {"v":"1.281","d":"2026-10-30","t":"Bouton Infuser"},

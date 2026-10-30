@@ -4723,3 +4723,10 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 :is(#arbres,body) .detail-prix.cout-marque:not(.paye):not(.trop-cher) b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque:not(.paye):not(.trop-cher) b{color:#a9eb90!important}
 :is(#arbres,body) .detail-prix.cout-marque.trop-cher b,:is(#arbres,body) .detail-am-nom .detail-prix.cout-marque.trop-cher b{color:#e98575!important}
 .infuser .puce-gemme.manque b{color:#e98575}
+/* v1.284 — Le coût en sphères (arbre des Bonus, bouton Infuser) au dessin du coût en Marques : le chiffre en bas à gauche de l'icône,
+   vert #a9eb90 si l'aventurier a la sphère, rouge #e98575 sinon ; blanc sur le plan du MJ. */
+.sphere-cout .puce-gemme b,.infuser .puce-gemme b{left:-6px;right:auto;bottom:-6px;color:#a9eb90}
+.sphere-cout .puce-gemme.manque b,.infuser .puce-gemme.manque b{color:#e98575}
+.sphere-cout.neutre .puce-gemme b{color:#fff}
+.sphere-cout .puce-gemme,.infuser .puce-gemme{margin-left:6px}
+.sphere-cout:has(>.puce-gemme:nth-child(2))>.puce-gemme:first-child::after{left:calc(100% + 2px)}
