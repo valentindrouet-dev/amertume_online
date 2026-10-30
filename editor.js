@@ -9606,9 +9606,10 @@ function ficheOnglet(a){const c=heroCard(a,actors.indexOf(a));c.classList.add('f
  if(titreTal||blocTal){const bt=el('div','fiche-talents');if(titreTal)bt.append(titreTal);if(blocTal)bt.append(blocTal);livre.append(bt)}
  // v1.253 : les Bonus quittent le bloc des Talents pour un bloc à eux, dessous, au même titre.
  const rb=blocTal&&blocTal.querySelector(':scope>.rang-bonus');if(rb){const bb=el('div','fiche-talents fiche-bonus'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Bonus';const g=el('div',blocTal.className);g.append(rb);bb.append(tb,g);livre.append(bb)}
- // v1.257 : sous les Bonus, ceux de la classe et de l'espèce, au même dessin.
- {const l=bonusClasseEspece(a);if(l.length&&blocTal){const bb=el('div','fiche-talents fiche-bonus fiche-bonus-base'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent='Bonus (Classe & Espèce)';
-  const g=el('div',blocTal.className),r=el('div','talent-ameliorations rang-bonus');l.forEach(p=>r.append(rondBonusFiche(p)));g.append(r);bb.append(tb,g);livre.append(bb)}}
+ // v1.257 : sous les Bonus, ceux de la classe et de l'espèce, au même dessin ; v1.258 : sur une ligne, trois blocs, Classe, Espèce, Création.
+ if(blocTal){const ligne=el('div','fiche-bonus-ligne');[['Classe','classe'],['Espèce','espece'],['Création','creation']].forEach(([nom,src])=>{const l=bonusClasseEspece(a,src);if(!l.length)return;
+  const bb=el('div','fiche-talents fiche-bonus fiche-bonus-base'),tb=titreTal?titreTal.cloneNode(false):el('h4','hero-sous titre-tal fiche-titre');tb.textContent=nom;
+  const g=el('div',blocTal.className),r=el('div','talent-ameliorations rang-bonus');l.forEach(p=>r.append(rondBonusFiche(p)));g.append(r);bb.append(tb,g);ligne.append(bb)});if(ligne.childElementCount)livre.append(ligne)}
  pd.append(el('h3','fiche-titre','Compétences'));if(cp){const pi=el('p','comps-intro');texteFiche(pi,'intro-comps');cp.prepend(pi);pd.append(cp)}
  // v1.250 : chez le MJ, un bouton réécrit les textes de la page, balises comprises pour les icônes.
  if(view==='mj'){const b=el('button','ico textes-fiche-btn','✎ Textes');b.type='button';b.title='Modifier les textes de la page';b.onclick=e=>{e.stopPropagation();ouvreTextesFiche()};livre.append(b)}
@@ -9890,10 +9891,12 @@ function alerteNiveau(){const s=document.createElement('span');s.className='aler
 
 /* v1.257 — Les bonus que donnent la classe et l'espèce d'un aventurier : PV, Vie, Endurance, Dégâts, compétences ; deux sources
    du même chiffre s'additionnent ; dans l'ordre de la fiche. */
-function bonusClasseEspece(a){if(!a||!a.hero)return [];const m=new Map(),ajoute=(carac,valeur,comp)=>{const v=Math.trunc(Number(valeur))||0;if(v<=0)return;
+function bonusClasseEspece(a,source){if(!a||!a.hero)return [];const de=k=>!source||source===k;const m=new Map(),ajoute=(carac,valeur,comp)=>{const v=Math.trunc(Number(valeur))||0;if(v<=0)return;
   const k=carac+(carac==='comp'?':'+comp:''),g=m.get(k)||{carac,valeur:0,...(carac==='comp'?{comp}:{})};g.valeur+=v;m.set(k,g)};
- const e=bonusEspece(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,e[k]));(e.skills||[]).forEach((v,i)=>ajoute('comp',v,i));
- const c=classeDe(catalog.classes,a.role);if(c)ajoute('pv',c.pv);competencesDeClasse(a.role).forEach((v,i)=>ajoute('comp',v,i));
+ if(de('espece')){const e=bonusEspece(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,e[k]));(e.skills||[]).forEach((v,i)=>ajoute('comp',v,i))}
+ if(de('classe')){const c=classeDe(catalog.classes,a.role);if(c)ajoute('pv',c.pv);competencesDeClasse(a.role).forEach((v,i)=>ajoute('comp',v,i))}
+ // Les points de la création : Vie, Endurance, Dégâts.
+ if(de('creation')){const c=bonusCreation(a);['vie','endu','pv','dmg'].forEach(k=>ajoute(k,c[k]))}
  const ORDRE=['vie','endu','pv','def','dmg','metres','pa','pm'],rang=p=>p.carac==='comp'?100+p.comp:(i=>i<0?50:i)(ORDRE.indexOf(p.carac));
  return [...m.values()].sort((x,y)=>rang(x)-rang(y))}
 function rondBonusFiche(p){const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+p.carac;r.tabIndex=0;

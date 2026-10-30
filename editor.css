@@ -4604,3 +4604,6 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 #creation-aventurier{width:min(820px,94vw)}
 #creation-aventurier .creation-classes.creation-especes{grid-template-columns:repeat(4,minmax(0,1fr))}
 #creation-aventurier .creation-especes .creation-espece-nom{white-space:nowrap}
+/* v1.258 — Les bonus de Classe, d'Espèce et de Création : trois blocs sur une ligne, alignés en haut et centrés. */
+.hero-card.fiche-onglet .fiche-livre>.fiche-bonus-ligne{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:10px 28px;margin-top:10px}
+.hero-card.fiche-onglet .fiche-bonus-ligne>.fiche-talents{width:auto;max-width:100%;margin:0;gap:8px}
