@@ -4744,3 +4744,12 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .hero-card.fiche-onglet .fiche-bonus-ligne .rang-bonus>.cat-pill.bonus-rond{flex:0 1 62px;width:62px;min-width:30px;height:auto;aspect-ratio:1}
 .hero-card.fiche-onglet .fiche-bonus-ligne .talent-grille{padding-inline:14px}
 .hero-card.fiche-onglet .fiche-bonus-ligne .talent-grille>.rang-bonus{gap:10px clamp(4px,1vw,14px)}
+/* v1.290 — Les Marques que rapporte de l'XP : l'icône de la Marque, le nombre blanc cerné de noir en bas à droite (un gain). */
+.marque-gain{position:relative;display:inline-grid;place-items:center;vertical-align:middle;margin-left:8px}
+.marque-gain>.marque-ico{grid-area:1/1;width:26px;height:26px;object-fit:contain}
+.marque-gain>b{position:absolute;left:55%;top:52%;color:#fff;font:900 15px/1 'Killam',system-ui;letter-spacing:0;-webkit-text-stroke:3px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+.stat-row>.marque-gain{align-self:center;margin:0 18px 0 4px}
+.stat-row>.marque-gain>.marque-ico{width:38px;height:38px}
+.stat-row>.marque-gain>b{font-size:20px;-webkit-text-stroke:4px #1d1a16}
+#carte-titre .xp-carte .marque-gain>.marque-ico{width:22px;height:22px}
+#carte-titre .xp-carte .marque-gain>b{font-size:13px;-webkit-text-stroke:2.6px #1d1a16}

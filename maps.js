@@ -2296,7 +2296,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':adv&&(modeleActuel(adv.tpl)||adv.tpl).pnj?'PNJ':KINDS[mapSel.kind])
   +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(lum?' · '+lum.nom+' · '+lum.rayon+' m':'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(piege?' · '+piege.nom+(piege.cache?' · caché':''):'')+(piegeDuDecl?' · '+piegeDuDecl.nom:'')+(verrou?' · verrouillée':''):'Aucune sélection.';
- $('map-xp').textContent=(m.jcj===true?0:xpDeCarte(m))+' xp';
+ {const xp=m.jcj===true?0:xpDeCarte(m);$('map-xp').textContent=xp+' xp';if(typeof marqueGain==='function')$('map-xp').append(marqueGain(xp))}
  $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+obscuriteDe(m).length+' zone(s) d’obscurité, '+(m.lumieres||[]).length+' lumière(s), '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s), '+m.coffres.length+' coffre(s), '+(m.pieges||[]).length+' piège(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
@@ -3361,7 +3361,7 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
     l'accordée plus celle des adversaires encore en scène. */
  document.body.classList.toggle('vue-paysage',estPaysage(m));paysageFin.hidden=!mj||!estPaysage(m);
  if(titre&&mj&&m&&!estPaysage(m)){const donne=Math.max(0,Math.trunc(Number(m.xpAccordee))||0),reste=actors.filter(a=>a&&!duCoteTroupe(a)).reduce((s,a)=>s+(Math.max(0,Math.trunc(Number(a.xp))||0)),0);
-  const x=document.createElement('span');x.className='xp-carte';x.textContent=donne+'/'+(donne+reste)+' xp';titre.append(x)}
+  const x=document.createElement('span');x.className='xp-carte';x.textContent=donne+'/'+(donne+reste)+' xp';if(typeof marqueGain==='function')x.append(marqueGain(donne+reste));titre.append(x)}
  fogBar.hidden=!mj||estPaysage(m);fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
  zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);zonesBtn.title=zonesVisibles?'Cacher les zones de la carte':'Voir les zones de la carte';

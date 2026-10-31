@@ -1240,6 +1240,11 @@ const texteMarques=n=>n+' '+(n>1?'Marques':'Marque');
 let idMarqueCache=null,idMarqueSource=null;
 function idIconeMarque(){const P=typeof planchesDuCatalogue==='function'?planchesDuCatalogue():[];if(idMarqueSource===P&&idMarqueCache!==null)return idMarqueCache;idMarqueSource=P;idMarqueCache='';
  P.some(pl=>(pl.icones||[]).some((x,i)=>{if(x&&String(x.nom||'').trim().toLowerCase()==='marque'){idMarqueCache=pl.fichier+'#'+(i+1);return true}return false}));return idMarqueCache}
+/* v1.290 — Les Marques que rapporte de l'XP, au dixième, arrondies vers le bas : 10 XP → 0,1 ; 250 XP → 2,5. Dessinées comme un gain :
+   l'icône de la Marque, le nombre en bas à droite. */
+const marquesDeXp=xp=>Math.floor(Math.max(0,Number(xp)||0)/(XP_PAR_MARQUE/10))/10;
+function marqueGain(xp){const s=document.createElement('span');s.className='marque-gain';const n=marquesDeXp(xp),t=n.toLocaleString('fr-FR',{maximumFractionDigits:1});
+ s.title=t+' Marque'+(n>=2?'s':'');s.setAttribute('aria-label',s.title);const b=document.createElement('b');b.textContent=t;s.append(iconeMarque('marque-ico'),b);return s}
 function iconeMarque(cls){const id=idIconeMarque(),c=cls||'marque-ico';if(id&&typeof poseIcone==='function'){const im=document.createElement('img');im.className=c;im.alt='';im.draggable=false;poseIcone(im,id);return im}
  const s=document.createElement('span');s.className=c+' marque-glyphe';s.textContent='✦';return s}
 function remplitMarques(el,n){el.replaceChildren(iconeMarque('marque-ico'),String(n));el.title=texteMarques(n);el.setAttribute('aria-label',texteMarques(n));return el}
@@ -3598,6 +3603,8 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  const eq=equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]});
  const defPortee=equippedDef(eq,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
  [['pv','PV',sait('pv')?m.pv||0:'?'],['def','DEF',sait('def')?defPlafonnee(defPortee===null?m.def:defPortee):'?',true],['dmg','Dég.',sait('dmg')?'+'+(m.damage||0):'?'],['xp','XP',sait('xp')?m.xp||0:'?']].forEach(x=>chiffres.append(statTile(...x)));
+ // v1.290 : à côté de son XP, les Marques qu'il rapporte.
+ if(sait('xp'))chiffres.append(marqueGain(Number(m.xp)||0));
  d.append(chiffres);
  /* Ses attaques, celles de son équipement comme ses attaques spéciales : le logo, le nom, puis
     les états qu'elles infligent, les dés et le bonus de dégâts, comme sur un bouton de table. */
