@@ -775,6 +775,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('paliers-5')){const M={4:5,7:10,10:15};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
   if(c.limitesArbres)Object.keys(c.limitesArbres).forEach(k=>{const n=M[c.limitesArbres[k]];if(n)c.limitesArbres[k]=n});c.semisForge.push('paliers-5')}
  // v1.123 : les paliers passent à 1, 5, 10, 20, 40 — ceux du 15 vont au 20, ceux du 20 au 40.
+ // v1.294 : la classe Mécaniste vient de l'Extension Nimble (posé une fois : le MJ peut le changer dans les Réglages).
+ if(!c.semisForge.includes('mecaniste-nimble')){(c.classes||[]).forEach(k=>{if(k&&/^m[ée]caniste$/i.test(String(k.name||'').trim()))k.extension='nimble'});c.semisForge.push('mecaniste-nimble')}
  // v1.291 : la Marque, un Trésor de l'Armurerie ; reçue, elle vaut 100 XP. Posée une fois : le MJ peut la retirer.
  if(!c.semisForge.includes('tresor-marque')){if(!c.items.some(o=>o&&o.id==='tresor-marque'))c.items.push({id:'tresor-marque',name:'Marque',category:'treasure',price:0,qty:1,logo:'',rarete:'rare',magasin:false,effects:'Reçue, elle vaut '+XP_PAR_MARQUE+' XP : une Marque de plus.'});c.semisForge.push('tresor-marque')}
  if(!c.semisForge.includes('paliers-40')){const M={15:20,20:40};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
