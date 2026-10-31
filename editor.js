@@ -775,6 +775,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('paliers-5')){const M={4:5,7:10,10:15};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
   if(c.limitesArbres)Object.keys(c.limitesArbres).forEach(k=>{const n=M[c.limitesArbres[k]];if(n)c.limitesArbres[k]=n});c.semisForge.push('paliers-5')}
  // v1.123 : les paliers passent à 1, 5, 10, 20, 40 — ceux du 15 vont au 20, ceux du 20 au 40.
+ // v1.291 : la Marque, un Trésor de l'Armurerie ; reçue, elle vaut 100 XP. Posée une fois : le MJ peut la retirer.
+ if(!c.semisForge.includes('tresor-marque')){if(!c.items.some(o=>o&&o.id==='tresor-marque'))c.items.push({id:'tresor-marque',name:'Marque',category:'treasure',price:0,qty:1,logo:'',rarete:'rare',magasin:false,effects:'Reçue, elle vaut '+XP_PAR_MARQUE+' XP : une Marque de plus.'});c.semisForge.push('tresor-marque')}
  if(!c.semisForge.includes('paliers-40')){const M={15:20,20:40};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});
   if(c.limitesArbres)Object.keys(c.limitesArbres).forEach(k=>{const n=M[c.limitesArbres[k]];if(n)c.limitesArbres[k]=n});c.semisForge.push('paliers-40')}
  // L'icône et le texte des actions spéciales.
@@ -5501,7 +5503,7 @@ function ajouterInventaire(a,o){if(!a||!o)return false;a.inventaire??=[];if(inve
  // Un aventurier prend une pièce unique : elle quitte le sac où elle était, quel qu'il soit sur la table.
  if(o.forge)deplaceForge(a,o.id);
  if(a.hero&&estUnique(o)&&typeof actors!=='undefined')actors.forEach(x=>{if(x&&x!==a&&x.id!==a.id)while((x.inventaire||[]).includes(o.id))retirerInventaire(x,o)});
- a.inventaire.push(o.id);return true}
+ a.inventaire.push(o.id);if(o.id==='tresor-marque'&&typeof encaisseMarque==='function')encaisseMarque(a);return true}
 function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inventaire.lastIndexOf(o.id);if(i<0)return;
  a.inventaire.splice(i,1);const reste=a.inventaire.filter(x=>x===o.id).length;
  if(o.category==='weapon'){while(gearCount(a,o.id)>reste){const k=(a.weapons||[]).lastIndexOf(o.id);a.weapons.splice(k,1)}}
@@ -8240,7 +8242,16 @@ function menuIcones(sel,icone){
 // L'icône d'une ressource, par sa clé : celle de sa pièce à l'Armurerie.
 function iconeRessource(k){const r=ressourcesJeu().find(x=>x.cle===k);return r&&r.piece?logoEquipement(r.piece,'menu-icones-img'):null}
 // Une ressource ou un trésor peut prendre une gemme, un éclat : ces logos-là s'affichent aussi.
-function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)}
+function logoEquipement(o,cls){if(o&&o.id===ID_MARQUE_OBJET&&!o.logo)return logoMarqueObjet(cls);return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)}
+// v1.291 : le Trésor « Marque » se dessine en Marque, son gain écrit en bas à droite.
+const ID_MARQUE_OBJET='tresor-marque';
+function logoMarqueObjet(cls){const s=document.createElement('span');s.className=(cls?cls+' ':'')+'logo-marque-objet';const b=document.createElement('b');b.textContent='1';s.append(iconeMarque('marque-ico'),b);return s}
+/* Reçue, une Marque se change aussitôt en 100 XP et quitte le sac : par où qu'elle arrive (butin, coffre, MJ), le MJ l'encaisse au
+   dessin suivant ; prise par ajouterInventaire, elle s'encaisse tout de suite. */
+function encaisseMarque(a){if(!a||!a.hero||!Array.isArray(a.inventaire))return false;const n=a.inventaire.filter(id=>id===ID_MARQUE_OBJET).length;if(!n)return false;
+ a.inventaire=a.inventaire.filter(id=>id!==ID_MARQUE_OBJET);writeStat(a,'xp',String((Math.trunc(Number(a.xp))||0)+n*XP_PAR_MARQUE));
+ if(typeof floatNumber==='function'&&typeof mapSize==='function'&&!a.horsCarte)try{floatNumber(a,'+'+n+' Marque'+(n>1?'s':''),'gain')}catch(e){}
+ if(typeof log==='function')log(nomNum(a)+' reçoit '+n+' Marque'+(n>1?'s':'')+' (+'+n*XP_PAR_MARQUE+' XP).');return true}
 // Le logo d'un talent : n'importe quelle image du dossier.
 /* Un talent Invulnérable n'a pas à choisir son logo : c'est l'état ou le dé qu'il refuse,
    barré de rouge, à son élément s'il en suit un. */
@@ -9959,3 +9970,6 @@ function bonusInfuses(a){const m=new Map();(a&&a.talents||[]).map(talent).filter
   const g=m.get(k)||{...p,carac,valeur:0};g.valeur+=Math.max(1,Math.trunc(Number(p.valeur))||1);m.set(k,g)});
  const ORDRE=['vie','endu','pv','def','dmg','metres','pa','pm'],rang=p=>p.carac==='comp'?100+(Number(p.comp)||0):(i=>i<0?50:i)(ORDRE.indexOf(p.carac));
  return [...m.values()].sort((x,y)=>rang(x)-rang(y))}
+
+// v1.291 : chez le MJ, chaque dessin de la table encaisse les Marques arrivées dans un sac.
+{const r0=render;render=function(...x){if(view==='mj'){let ch=false;actors.forEach(a=>{if(encaisseMarque(a))ch=true});if(ch&&typeof scheduleSave==='function')scheduleSave()}return r0.apply(this,x)}}

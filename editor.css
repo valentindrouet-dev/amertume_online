@@ -4753,3 +4753,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .stat-row>.marque-gain>b{font-size:20px;-webkit-text-stroke:4px #1d1a16}
 #carte-titre .xp-carte .marque-gain>.marque-ico{width:22px;height:22px}
 #carte-titre .xp-carte .marque-gain>b{font-size:13px;-webkit-text-stroke:2.6px #1d1a16}
+/* v1.291 — Le Trésor « Marque » : l'icône de la Marque, son gain écrit en bas à droite. */
+.logo-marque-objet{position:relative;display:inline-grid;place-items:center}
+.logo-marque-objet>.marque-ico{grid-area:1/1;width:100%;height:100%;object-fit:contain}
+.logo-marque-objet>b{position:absolute;right:-2px;bottom:-3px;color:#fff;font:900 15px/1 'Killam',system-ui;-webkit-text-stroke:3px #1d1a16;paint-order:stroke fill}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.291","d":"2026-10-31","t":"Trésor Marque"},
 {"v":"1.290","d":"2026-10-31","t":"Marques des monstres et des cartes"},
 {"v":"1.289","d":"2026-10-30","t":"Statistiques de richesses"},
 {"v":"1.288","d":"2026-10-30","t":"Bonus sur une ligne"},
