@@ -329,12 +329,17 @@ let larcinGemme=null;
    a réglé) de la couleur qu'il a le plus déclenchée. */
 /* v1.160 : elles tombent juste avant que le combat se ferme : le bilan de fin de combat les compte. */
 {const bm=basculerMode;basculerMode=function(neuf,...x){const finit=mode==='combat'&&neuf!=='combat',spect=typeof spectateur==='function'&&spectateur(),n=numeroCombat;
+ // v1.295 : un combat qui commence oublie le boss d'un combat d'avant.
+ if(mode!=='combat'&&neuf==='combat')bossVaincuCombat=0;
  if(!finit||spect)return bm(neuf,...x);const R=reglesGemmes(),presents=actors.filter(a=>a&&a.hero&&!a.horsCarte&&!estMort(a)&&!sortiDuCombat(a));
  presents.forEach(a=>{const s=suiviGemmes(a);if(s.combat===n&&s.coma!==n)deGemme(a,'combat-sans-coma',{phase:'combat'})});
  // v1.169 : personne dans le coma au moment où le combat se ferme : chacun son dé.
  if(presents.length&&!presents.some(a=>a.comaVie||a.hp<=0||hasState(a,'Coma')))presents.forEach(a=>deGemme(a,'groupe-sans-coma',{phase:'combat'}));
- if(bossVaincuCombat===n&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
+ // v1.295 : la récompense du boss exige un boss vaincu dans ce combat-ci, et un boss adverse bel et bien à terre sur la carte.
+ const bossATerre=actors.some(o=>o&&o.type==='boss'&&!o.hero&&!o.horsCarte&&(Number(o.hp)||0)<=0);
+ if(bossVaincuCombat===n&&bossATerre&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
   const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',R.boss.n);ajouteVie(a,'gemmes_'+c,R.boss.n)}s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n});bossVaincuCombat=0}
+ bossVaincuCombat=0;
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
 const deGemmeDialog=dialog('de-gemme','Dé de gemme','<form id="de-gemme-form"><div class="edit-grid"><label>Déclencheur<select name="decl" id="de-gemme-decl"></select></label>'
