@@ -7326,7 +7326,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
        c.addEventListener('dragleave',()=>c.classList.remove('survol'));
        c.addEventListener('drop',e=>{e.preventDefault();c.classList.remove('survol');if(!glisse||glisse===x||estBonus(glisse)!==bonus)return;
         const l2=gens.filter(y=>y!==glisse),i=l2.indexOf(x),de=gens.indexOf(glisse),vers=gens.indexOf(x);l2.splice(de<vers?i+1:i,0,glisse);
-        const places=gens.map(y=>({...lisChemin(y)}));l2.forEach((y,m)=>{y.chemin=places[m]});glisse=null;arbreChange()})}}
+        const places=gens.map(y=>({...lisChemin(y)}));l2.forEach((y,m)=>{y.chemin=places[m]});if(!bonus)t.ordreAmeliorationsManuel=true;glisse=null;arbreChange()})}}
      /* v0.836 : un bonus, en petit rond — le logo de sa caractéristique sur le fond pâle de sa couleur, le prix à cheval sur
         son bas ; ce qu'il donne se lit dans sa bulle, au survol. */
      if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
@@ -7339,7 +7339,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       surveille(c,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+carac;const t=document.createElement('p');t.className='talent-bulle-nom';
        const b2=document.createElement('b');b2.append(libelleBonusEl(pb,{talent:xp}));t.append(b2);d.append(t);ouvrirBulle(c,d,'bulle-talent')})}
      panneau.append(c)}})};
-  section('Améliorations',tousP.filter(x=>!estBonus(x)));
+  /* v1.293 : les améliorations, de la moins chère (en haut) à la plus chère ; chez le MJ, l'ordre s'écrit dans l'arbre (les chemins).
+     Celui que le MJ a réglé à la main en glissant une carte reste le sien. */
+  {let ams=tousP.filter(x=>!estBonus(x));const cout=x=>Number(coutPalier(x,1))||0;
+   if(!t.ordreAmeliorationsManuel&&ams.length>1){const tri=[...ams].sort((x,y)=>cout(x)-cout(y));
+    if(tri.some((x,i)=>x!==ams[i])){if(view==='mj'){const places=ams.map(y=>({...lisChemin(y)}));tri.forEach((y,m)=>{y.chemin=places[m]});scheduleSave()}ams=tri}}
+   section('Améliorations',ams)}
   {const bs=[...panneau.querySelectorAll(':scope>.detail-bonus')];if(bs.length){const g=document.createElement('div');g.className='detail-bonus-grille';bs[0].before(g);g.append(...bs)}}
 };
  const grille=document.createElement('div');grille.className='arbres-cols';

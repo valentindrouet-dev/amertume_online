@@ -5879,7 +5879,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
 /* v0.810 — Plus de petits ronds dans l'arbre v2 : améliorations et bonus vivent dans le panneau, s'y achètent, s'y ajoutent et s'y
    réordonnent ; ils restent au catalogue avec leur chemin. La vue joueur de l'éditeur suit celle d'un aventurier. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("ch[d].petits.forEach(s=>{if(V2)return;")&&src.includes("section('Améliorations',tousP.filter(x=>!estBonus(x)));")&&!src.includes("section('Bonus',tousP.filter(estBonus));")
+ assert.ok(src.includes("ch[d].petits.forEach(s=>{if(V2)return;")&&src.includes("section('Améliorations',ams)}")&&!src.includes("section('Bonus',tousP.filter(estBonus));")
   &&src.includes("const places=gens.map(y=>({...lisChemin(y)}));l2.forEach((y,m)=>{y.chemin=places[m]});")&&src.includes("function petitsHorsDesLignes(x){if(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)return;"),'le panneau porte les petits ronds');}
 /* v0.809 — L'éditeur des arbres en v2, éditable ; plus de noms sous les ronds ; les lignes à niveau invisibles partout. */
 {const src=fs.readFileSync('editor.js','utf8');
