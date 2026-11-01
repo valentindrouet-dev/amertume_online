@@ -9980,3 +9980,15 @@ function bonusInfuses(a){const m=new Map();(a&&a.talents||[]).map(talent).filter
 
 // v1.291 : chez le MJ, chaque dessin de la table encaisse les Marques arrivées dans un sac.
 {const r0=render;render=function(...x){if(view==='mj'){let ch=false;actors.forEach(a=>{if(encaisseMarque(a))ch=true});if(ch&&typeof scheduleSave==='function')scheduleSave()}return r0.apply(this,x)}}
+/* v1.298 — Chez le MJ, sur le plan de l'arbre des Bonus d'une classe : au bas de la colonne de droite, au dessin du bloc Sphères de
+   l'aventurier, ce que coûte l'arbre entier — chaque bonus à tous ses paliers —, pour l'équilibrer. */
+function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=>{for(let k=1;k<=Math.max(1,paliersDe(t));k++)prixSpheres(talentAuPalier(t,k)||t).forEach(p=>{tot[p.cle]=(tot[p.cle]||0)+p.n})});return tot}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);
+ if(view!=='mj'||arbresActeur||arbresOnglet!=='bonus'||!arbresClasse)return r;const aside=arbresDialog.querySelector('.arbres-v2>.arbres-detail');
+ if(!aside||aside.parentElement.querySelector(':scope>.spheres-detail'))return r;
+ const inv=corpsEtSac({hero:true,name:'',inventaire:[],richesses:coutTotalSpherier(arbresClasse)},true),src=inv&&inv.querySelector('.place.p-bourse');if(!src)return r;
+ const pl=src.cloneNode(true);pl.classList.remove('cliquable');pl.classList.add('cout-arbre-place');pl.querySelectorAll('.bourse-ajout').forEach(e=>e.remove());
+ const lo=pl.querySelector('.bourse-ligne:not(.gemmes-corps)');if(lo)lo.remove();const t=pl.querySelector('.bourse-titre');if(t)t.textContent='Coût de l’arbre';
+ const w=document.createElement('div');w.className='corps spheres-detail cout-arbre-detail';w.append(pl);aside.after(w);
+ const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,k=Math.min(echelleRichesses?echelleRichesses.k:9,Math.max(1,aside.offsetWidth)/base);
+ pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4));return r}}
