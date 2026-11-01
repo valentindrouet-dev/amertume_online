@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.297","d":"2026-11-01","t":"Icône du talent sur la carte"},
 {"v":"1.296","d":"2026-11-01","t":"Anneau du talent sur la carte"},
 {"v":"1.295","d":"2026-10-31","t":"Correctif récompense de boss"},
 {"v":"1.294","d":"2026-10-31","t":"Mécaniste de Nimble"},

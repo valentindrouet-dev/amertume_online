@@ -4761,3 +4761,5 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
    celui du bouton de la barre d'actions. */
 #pv-layer .debut-bouton{border-width:1px;border-color:#ffe08a;animation-name:debut-rayonne-jeton}
 @keyframes debut-rayonne-jeton{0%,100%{box-shadow:0 0 0 1px #ffe08a,0 0 4px 1px #ffcf5a}50%{box-shadow:0 0 0 1.5px #ffe08a,0 0 10px 4px #ffcf5a}}
+/* v1.297 — Le talent à actionner au-dessus du token, un tiers plus petit. */
+#pv-layer .debut-bouton{width:calc(var(--token)*.335);height:calc(var(--token)*.335);min-width:16px;min-height:16px;max-width:27px;max-height:27px;font-size:10px}
