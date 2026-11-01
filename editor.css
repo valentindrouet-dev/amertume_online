@@ -4757,3 +4757,7 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .logo-marque-objet{position:relative;display:inline-grid;place-items:center}
 .logo-marque-objet>.marque-ico{grid-area:1/1;width:100%;height:100%;object-fit:contain}
 .logo-marque-objet>b{position:absolute;right:-2px;bottom:-3px;color:#fff;font:900 15px/1 'Killam',system-ui;-webkit-text-stroke:3px #1d1a16;paint-order:stroke fill}
+/* v1.296 — Le talent à actionner posé sur la carte : un anneau doré moitié moins épais (la carte zoomée le grossissait), comme
+   celui du bouton de la barre d'actions. */
+#pv-layer .debut-bouton{border-width:1px;border-color:#ffe08a;animation-name:debut-rayonne-jeton}
+@keyframes debut-rayonne-jeton{0%,100%{box-shadow:0 0 0 1px #ffe08a,0 0 4px 1px #ffcf5a}50%{box-shadow:0 0 0 1.5px #ffe08a,0 0 10px 4px #ffcf5a}}
