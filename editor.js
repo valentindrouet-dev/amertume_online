@@ -1262,10 +1262,20 @@ const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-for
 function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return null;const n=v=>Math.max(0,Math.min(1e6,Math.trunc(Number(v))||0));
  return {tours:n(o.tours),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
   inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),tir:n(x.tir),etats:n(x.etats),objets:n(x.objets),donne:n(x.donne),bloc:n(x.bloc),
-  sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0))})),
+  sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0)),
+  // v1.299 : la source de chaque sphère gagnée — « déclencheur|sphère » —, pour la bulle du MJ.
+  sphSrc:Object.fromEntries(Object.entries(x.sphSrc&&typeof x.sphSrc==='object'?x.sphSrc:{}).slice(0,80).filter(([k])=>/^[a-z0-9-]{1,40}\|(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0))})),
   // v1.183 : les titres remportés, et la Brisure que chacun a valu.
   titres:Object.fromEntries(Object.entries(o.titres&&typeof o.titres==='object'?o.titres:{}).filter(([k,v])=>DISTINCTIONS.some(d=>d[0]===k)&&v&&typeof v==='object'&&/^(citrine|emeraude|saphir|rubis|diamant)$/.test(v.couleur)).map(([k,v])=>[k,{id:String(v.id||'').slice(0,80),couleur:v.couleur}]))}}
 const statsDialog=dialog('stats-combat','Stats de Combat','<div id="stats-combat-corps"></div>');
+/* v1.299 — Au MJ seul (les joueurs apprennent en jouant) : au survol des sphères d'un aventurier, ou du total, d'où chacune vient —
+   le déclencheur, la récompense du boss ou un titre —, une ligne par source, sa sphère et son nombre. */
+function sourcesSph(cell,l){if(view!=='mj')return;const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};const src={};l.forEach(x=>Object.entries(x.sphSrc||{}).forEach(([k,v])=>{src[k]=(src[k]||0)+v}));if(!Object.keys(src).length)return;
+ const nomSrc=c=>c==='boss'?'Boss vaincu':c.startsWith('titre-')?((DISTINCTIONS.find(d=>d[0]===c.slice(6))||[])[2]||'Titre'):((typeof DECLENCHEURS_GEMMES!=='undefined'&&DECLENCHEURS_GEMMES.find(d=>d.cle===c)||{}).nom||c);
+ cell.classList.add('stats-sph-sources');
+ surveille(cell,()=>{const d=el('div','talent-detail large bulle-sources-sph'),t=el('p','talent-bulle-nom');t.append(el('b','','Sources des sphères'));d.append(t);const ul=el('ul','sources-sph');
+  Object.entries(src).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{const [c,g]=k.split('|'),[ta,co]=g.split('-'),li=el('li');if(typeof iconeDeGemme==='function')li.append(iconeDeGemme(ta,co,false));li.append(el('b','',String(v)),' ',nomSrc(c));ul.append(li)});
+  d.append(ul);ouvrirBulle(cell,d,'bulle-talent')})}
 /* v1.183 : le Meilleur soigneur se lit aux PV qu'il a soignés aux autres (« donne ») ; cinq titres de plus, et l'Intouchable, le moins
    de dégâts subis parmi les aventuriers (cinquième champ : le minimum l'emporte). Chaque titre vaut une Brisure (gemmes.js). */
 const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['sub','🩸','Le plus éprouvé','PV perdus'],['donne','✚','Meilleur soigneur','PV soignés'],
@@ -1309,9 +1319,9 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
    nom.append(portraitStats(x),el('span','',x.nom));n.append(nom);
    COLONNES_STATS.forEach(([c])=>{const d=r.insertCell();d.className='stats-n '+c+(x[c]?'':' zero');d.textContent=valeur(c,x[c]);
     if(c==='inf'&&x.inf){const barre=el('i','stats-barre');barre.style.width=Math.round(x.inf/maxInf*100)+'%';d.append(barre)}});
-   if(k==='troupe')sph(r.insertCell(),x.sph||{})});
+   if(k==='troupe'){const d=r.insertCell();sph(d,x.sph||{});sourcesSph(d,[x])}});
   const tf=t.createTFoot().insertRow();tf.insertCell().textContent='Total';COLONNES_STATS.forEach(([c])=>{const d=tf.insertCell();d.className='stats-n';d.textContent=valeur(c,somme(l,c))});
-  if(k==='troupe'){const tot={};l.forEach(x=>Object.entries(x.sph||{}).forEach(([g,v])=>{tot[g]=(tot[g]||0)+v}));sph(tf.insertCell(),tot)}
+  if(k==='troupe'){const tot={};l.forEach(x=>Object.entries(x.sph||{}).forEach(([g,v])=>{tot[g]=(tot[g]||0)+v}));const d=tf.insertCell();sph(d,tot);sourcesSph(d,l)}
   s.append(t);corps.append(s)});
  statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */

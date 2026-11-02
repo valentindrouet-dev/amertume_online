@@ -4763,3 +4763,9 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 @keyframes debut-rayonne-jeton{0%,100%{box-shadow:0 0 0 1px #ffe08a,0 0 4px 1px #ffcf5a}50%{box-shadow:0 0 0 1.5px #ffe08a,0 0 10px 4px #ffcf5a}}
 /* v1.297 — Le talent à actionner au-dessus du token, un tiers plus petit. */
 #pv-layer .debut-bouton{width:calc(var(--token)*.335);height:calc(var(--token)*.335);min-width:16px;min-height:16px;max-width:27px;max-height:27px;font-size:10px}
+/* v1.299 — Bilan de combat, au MJ : la bulle des sources des sphères. */
+.stats-sph.stats-sph-sources{cursor:help}
+.bulle-sources-sph .sources-sph{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.bulle-sources-sph .sources-sph li{display:flex;align-items:center;gap:6px;font-size:13px}
+.bulle-sources-sph .sources-sph li img,.bulle-sources-sph .sources-sph li svg{width:20px;height:20px;object-fit:contain;flex:none}
+.bulle .talent-detail.bulle-sources-sph{background:var(--panel);border-color:var(--line-strong);min-width:260px}

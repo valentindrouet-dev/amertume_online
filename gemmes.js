@@ -185,10 +185,10 @@ function poseReglesGemmes(f){catalog.gemmesRegles=reglesGemmes();f(catalog.gemme
    ses déclencheurs par couleur, s'il est tombé dans le coma ; et, hors combat, les déclencheurs déjà joués par zone. */
 function suiviGemmes(a){let s=a.gemmesSuivi;if(!s||typeof s!=='object')s=a.gemmesSuivi={};
  const n=typeof numeroCombat!=='undefined'?numeroCombat:0;
- if(s.combat!==n&&typeof enCombat==='function'&&enCombat()){s.combat=n;s.brisures={};s.decl={};s.gagnes={};delete s.coma}
+ if(s.combat!==n&&typeof enCombat==='function'&&enCombat()){s.combat=n;s.brisures={};s.decl={};s.gagnes={};s.src={};delete s.coma}
  if(!s.brisures||typeof s.brisures!=='object')s.brisures={};
  // v1.160 : les gemmes gagnées pendant le combat, pour son bilan ; et chaque déclenchement compté, depuis le début.
- if(!s.gagnes||typeof s.gagnes!=='object')s.gagnes={};if(!s.compte||typeof s.compte!=='object')s.compte={};if(!s.decl||typeof s.decl!=='object')s.decl={};if(!Array.isArray(s.scenes))s.scenes=[];return s}
+ if(!s.gagnes||typeof s.gagnes!=='object')s.gagnes={};if(!s.src||typeof s.src!=='object')s.src={};if(!s.compte||typeof s.compte!=='object')s.compte={};if(!s.decl||typeof s.decl!=='object')s.decl={};if(!Array.isArray(s.scenes))s.scenes=[];return s}
 // La zone de la carte où se tient l'aventurier : la scène des déclencheurs hors combat.
 function cleSceneGemme(a){const m=typeof currentMap==='function'?currentMap():null,id=typeof currentMapId!=='undefined'?currentMapId||'':'';
  const z=m&&typeof zonesDe==='function'?zonesDe(m):null;return id+':'+(z&&typeof zoneAu==='function'?zoneAu(z,a.x,a.y):0)}
@@ -222,7 +222,9 @@ function deGemme(a,cle,opts={}){if(!a||!a.hero||typeof spectateur==='function'&&
  // Le plafond du combat : ce qui dépasse ne tombe pas.
  if(combat&&d.phase==='combat'){const deja=s.brisures[couleur]||0;gagne=Math.max(0,Math.min(gagne,R.plafond-deja));s.brisures[couleur]=deja+gagne}
  if(gagne>0){const cg=cleGemme('brisure',couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+gagne;
-  flotteGemme(a,'brisure',couleur,gagne);if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',gagne);ajouteVie(a,'gemmes_'+couleur,gagne)}if(combat)s.gagnes[cg]=(s.gagnes[cg]||0)+gagne}
+  flotteGemme(a,'brisure',couleur,gagne);if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',gagne);ajouteVie(a,'gemmes_'+couleur,gagne)}if(combat){s.gagnes[cg]=(s.gagnes[cg]||0)+gagne;
+   // v1.299 : d'où vient chaque sphère du combat — son déclencheur —, que le MJ lit au survol du bilan.
+   const ks=cle+'|'+cg;s.src[ks]=(s.src[ks]||0)+gagne}}
  if(typeof scheduleSave==='function')scheduleSave();return {faces,gagne,couleur}}
 // La petite sphère qui monte au-dessus du socle quand une Brisure tombe.
 /* v1.166 : la sphère gagnée — des éclats de sa couleur jaillissent tout autour du socle, puis se rassemblent à sa droite, à mi-hauteur,
@@ -338,7 +340,7 @@ let larcinGemme=null;
  // v1.295 : la récompense du boss exige un boss vaincu dans ce combat-ci, et un boss adverse bel et bien à terre sur la carte.
  const bossATerre=actors.some(o=>o&&o.type==='boss'&&!o.hero&&!o.horsCarte&&(Number(o.hp)||0)<=0);
  if(bossVaincuCombat===n&&bossATerre&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
-  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',R.boss.n);ajouteVie(a,'gemmes_'+c,R.boss.n)}s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n});bossVaincuCombat=0}
+  const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',R.boss.n);ajouteVie(a,'gemmes_'+c,R.boss.n)}s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n;s.src['boss|'+cg]=(s.src['boss|'+cg]||0)+R.boss.n});bossVaincuCombat=0}
  bossVaincuCombat=0;
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
 /* ---------- Le dé à la main, par le MJ ---------- */
@@ -597,7 +599,7 @@ function titresDuCombat(){const R=reglesGemmes(),b=typeof bilanDuCombat==='funct
   const top=[...l].sort((x,y)=>min?x.sub-y.sub:y[k]-x[k])[0];if(!top||(!min&&!(top[k]>0)))return;const a=actors.find(o=>o&&o.id===top.id&&o.hero);if(!a)return;
   const cg=cleGemme('brisure',t.couleur,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+1;flotteGemme(a,'brisure',t.couleur,1);
   if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',1);ajouteVie(a,'gemmes_'+t.couleur,1);ajouteVie(a,'titres',1)}
-  const s=suiviGemmes(a);s.gagnes[cg]=(s.gagnes[cg]||0)+1;out[k]={id:a.id,couleur:t.couleur}});
+  const s=suiviGemmes(a);s.gagnes[cg]=(s.gagnes[cg]||0)+1;s.src['titre-'+k+'|'+cg]=(s.src['titre-'+k+'|'+cg]||0)+1;out[k]={id:a.id,couleur:t.couleur}});
  return out}
 {const bm=basculerMode;basculerMode=function(neuf,...x){const finit=mode==='combat'&&neuf!=='combat',spect=typeof spectateur==='function'&&spectateur();
  if(finit&&!spect){try{titresDerniers={combat:numeroCombat,titres:titresDuCombat()}}catch(e){titresDerniers=null}}

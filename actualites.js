@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.299","d":"2026-11-02","t":"Sources des sphères"},
 {"v":"1.298","d":"2026-11-01","t":"Coût de l'arbre des Bonus"},
 {"v":"1.297","d":"2026-11-01","t":"Icône du talent sur la carte"},
 {"v":"1.296","d":"2026-11-01","t":"Anneau du talent sur la carte"},

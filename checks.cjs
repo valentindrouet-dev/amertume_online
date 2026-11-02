@@ -5541,7 +5541,7 @@ assert.ok(fs.readFileSync('gemmes.js','utf8').includes("ss.classList.add('seuil-
  &&fs.readFileSync('gemmes.js','utf8').includes('<h2>Sphères</h2>'),'v1.161');}
 /* v1.160 — Les sphères du combat au bilan ; l'or et les gemmes sur une ligne ; les déclenchements comptés ; Ctrl+Z au sphérier. */
 {const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes("a.gemmesSuivi.combat===numeroCombat&&a.gemmesSuivi.gagnes&&Object.keys(a.gemmesSuivi.gagnes).length?{sph:{...a.gemmesSuivi.gagnes}}:{})}}")
+ assert.ok(page.includes("a.gemmesSuivi.combat===numeroCombat&&a.gemmesSuivi.gagnes&&Object.keys(a.gemmesSuivi.gagnes).length?{sph:{...a.gemmesSuivi.gagnes},")
   &&ed.includes("['',...COLONNES_STATS.map(c=>c[1]),...(k==='troupe'?['Sphères']:[])]")&&ed.includes("rang.className='richesses-corps';rang.append(or);")
   &&gm.includes(" s.compte[cle]=(Math.trunc(Number(s.compte[cle]))||0)+1;")&&gm.includes("bt.textContent='Rafraîchir les stats de déclenchement';")
   &&ed.includes("function annuleSphere(){")&&ed.includes("String(e.key).toLowerCase()!=='z'||!enEditionSphere())return;"),'v1.160');}
