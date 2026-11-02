@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.307","d":"2026-11-02","t":"PA et PM Bonus, titre de bonus dans son cadre"},
 {"v":"1.306","d":"2026-11-02","t":"Bonus d'état infligé, total du talent initial, menu flottant retiré"},
 {"v":"1.305","d":"2026-11-02","t":"Déluge en Action bonus, total à cheval sur l'icône"},
 {"v":"1.304","d":"2026-11-02","t":"Marques par palier et par talent (MJ)"},

@@ -4771,3 +4771,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .bulle .talent-detail.bulle-sources-sph{background:var(--panel);border-color:var(--line-strong);min-width:260px}
 /* v1.305 : au MJ, le coût total du talent à cheval sur le bas de son grand rond, sans agrandir le bloc. */
 .arbres-v2 .arbres-detail .detail-gauche>.detail-total{position:relative;z-index:1;margin-top:-30px}
+/* v1.307 : un point Bonus (PA ou PM gagné) se garde jusqu'à être dépensé : un léger halo vert dans la colonne des combattants. */
+.pastilles .pt.bonus:is(.action,.mvt){border-radius:50%;box-shadow:0 0 3px 2px #a9eb90}
+/* v1.307 : un titre de bonus long passe à la ligne, mot après mot, dans son cadre. */
+.arbres-detail h3.detail-nom-bonus.titre-long .bonus-libelle{display:inline}
+.arbres-detail h3.detail-nom-bonus.titre-long .bonus-libelle .bonus-ico{display:inline-grid;vertical-align:-.12em;margin:0 .15em}

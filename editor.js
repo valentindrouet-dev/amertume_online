@@ -9198,7 +9198,9 @@ function spherierArbre(ctx){const {a,mj,classe,majTable,poserPalier,note}=ctx,l=
   // v1.284 : chez un aventurier, plus de prix sous le rond : le bouton Infuser le porte. Le plan du MJ le garde.
   if(!a){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond';prixSpheres(t).forEach(p=>pr.append(puceGemme(p)));pile.append(pr)}
   const droite=document.createElement('div');droite.className='detail-droite';const nom=document.createElement('h3');nom.className='detail-nom-bonus';nom.append(libelleBonusEl(p,{talent:vu}));
-  {const L=String(nom.textContent||'').length;if(L>12)nom.style.fontSize=(L>26?17:L>20?20:L>16?23:26)+'px'}
+  {const L=String(nom.textContent||'').length;if(L>12)nom.style.fontSize=(L>26?17:L>20?20:L>16?23:26)+'px';
+   // v1.307 : un titre long — « Inflige Feu 1 à un adversaire au début du combat » — passe à la ligne et reste dans son cadre.
+   if(L>30){nom.classList.add('titre-long');nom.style.whiteSpace='normal';nom.style.fontSize='20px';nom.style.lineHeight='1.2'}}
   // v1.139 : sous le nom, sa nature — Caractéristique, Compétence ou Bonus — et le trait, comme pour un talent.
   const nat=document.createElement('p');nat.className='detail-type-bonus';nat.textContent=natureBonus(p);
   const desc=document.createElement('p');desc.className='detail-desc-bonus';desc.textContent=descriptionBonus(p);
