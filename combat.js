@@ -1300,6 +1300,17 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[{cle:'mode',nom:'Un critique adverse contre le porteur',type:'choix',defaut:'echec',options:[['echec','devient un échec'],['riposte','lui vaut une attaque gratuite en retour']]}],
   phrase(p){return (p&&p.mode)==='riposte'?'Le porteur effectue <b>une attaque gratuite</b> contre l’adversaire qui réalise <b>un critique</b> contre lui.':'Les <b>attaques critiques</b> adverses contre le porteur deviennent des <b>échecs</b>.'}},
  /* Ombrelame élémentaire : une amélioration d’Ombrelame. Ses dégâts infligent aussi l'état réglé. */
+ /* v1.308 — Corps de Feu : un passif. Le porteur ne subit jamais Feu, et les adversaires qui arrivent à son contact le subissent ;
+    ses améliorations le donnent aussi à qui l'attaque au contact, et lui font ignorer la DEF des adversaires qui le portent. */
+ corpsfeu:{cle:'corpsfeu',nom:'Corps de Feu',type:'pass',
+  aide:'Passif : le porteur ne subit jamais Feu, et les adversaires qui arrivent à son contact subissent Feu.',params:[],
+  phrase(){return 'Vous ne subissez jamais <b>Feu</b> et vous infligez <b>FEU</b> aux adversaires qui arrivent au contact.'}},
+ corpsfeuattaque:{cle:'corpsfeuattaque',nom:'Corps de Feu — Riposte',court:'attaque au contact',type:'ame',
+  aide:'Amélioration de Corps de Feu : les adversaires qui attaquent le porteur au contact subissent Feu.',params:[],
+  phrase(){return 'Les adversaires qui effectuent une <b>attaque au contact</b> contre vous subissent <b>FEU</b>.'}},
+ corpsfeudef:{cle:'corpsfeudef',nom:'Corps de Feu — Brèche',court:'DEF ignorée',type:'ame',
+  aide:'Amélioration de Corps de Feu : le porteur ignore la DEF des adversaires qui portent Feu.',params:[],
+  phrase(){return 'Vous ignorez la <b>DEF</b> des adversaires avec <b>FEU</b>.'}},
  /* Corps élémentaire : une amélioration d'Invulnérable. Qui attaque le porteur en garde l'état, au
     moment même où il attaque, qu'il le touche ou non : au contact, puis toute attaque au palier 2. */
  corpselem:{cle:'corpselem',nom:'Corps élémentaire',court:'Corps élémentaire',type:'ame',
@@ -2487,7 +2498,7 @@ Object.assign(TALENTS_CODES,{
    s'écrit « Talent — court », d'un seul modèle pour toutes ; l'ancien nom reste connu, pour retrouver
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
-{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
+{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',corpsfeuattaque:'corpsfeu',corpsfeudef:'corpsfeu',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',boutoirsol:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',inspirationbonus:'inspiration',inspirationreussite:'inspiration',inspirationrage:'inspiration',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
@@ -2706,6 +2717,8 @@ const ditEtatOrbe=o=>o?o.etat+(o.crans>1?' '+o.crans:'')+(o.blesse?' s’il bles
 /* Une affection que le porteur ne subit jamais : Invulnérable la refuse avant qu'elle ne
    se pose, d'où qu'elle vienne. */
 function etatRefuse(portes,etat){if(!etat)return false;
+ // v1.308 : Corps de Feu — jamais Feu.
+ if(etat==='Feu'&&(portes||[]).some(t=>t&&t.code&&t.code.cle==='corpsfeu'))return true;
  return (portes||[]).some(t=>t&&t.code&&t.code.cle==='invulnerable'&&(t.params&&t.params.contre)!=='des'&&String(t.params&&t.params.etat||'Feu')===etat)}
 // Les couleurs de dés dont un talent Invulnérable rend le porteur insensible.
 function desRefuses(portes){return (portes||[]).filter(t=>t&&t.code&&t.code.cle==='invulnerable'&&t.params&&t.params.contre==='des').map(t=>String(t.params.des||'red'))}
@@ -2718,7 +2731,9 @@ function briseContre(portes,cible){let palier=0,perte=0,etat='',ignore=false,dou
   if(n>palier){palier=n;etat=e}
   if(ouvert('ignore'))ignore=true;if(ouvert('double'))double=true;
   if(ouvert('perte'))perte=Math.max(perte,Math.max(1,Math.trunc(Number(t.params&&t.params.perte))||1))});
- return {palier,etat,ignore,perte,double}}
+ // v1.308 : Corps de Feu — Brèche ; la DEF d'une cible qui porte Feu ne compte pas.
+ let nom='';if(!ignore&&hasState(cible,'Feu')){const cf=(portes||[]).find(t=>t&&t.code&&t.code.cle==='corpsfeudef');if(cf){ignore=true;nom=cf.talent&&cf.talent.name||'Corps de Feu';if(!etat)etat='Feu'}}
+ return nom?{palier,etat,ignore,perte,double,nom}:{palier,etat,ignore,perte,double}}
 function briseLaGarde(portes,cible){return briseContre(portes,cible).ignore}
 /* ---------- Les points d'activation ----------
    Ce qu'un combattant peut dépenser dans son tour : une Action, un Mouvement et un Objet
