@@ -5825,13 +5825,13 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const sx=Math.sign(q.x-p
 /* v0.833 — Frappe Furieuse : son dé Mortel dans sa bulle ; au journal, le logo du talent qui frappe et sa bulle au survol ; plus de ligne de Rage. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes("function logoDuCoup(a){")&&page.includes("talentDuCoup=ctxT&&ctxT.talent||null;")&&page.includes("function bulleTalentJournal(im,id){")
-  &&page.includes("if(infligeEtat(a,'Rage')===true)floatNumber(a,'+ Rage','gain');")&&page.includes("return {...d,black:(Number(d.black)||0)+1}"),'Frappe Furieuse au journal');}
+  &&page.includes("adversairesAuContact(a).filter(([o])=>alive(o)).length:0;gagneRage(a,1+autour);")&&page.includes("return {...d,black:(Number(d.black)||0)+1}"),'Frappe Furieuse au journal');}
 /* v0.832 — Les bonus en cartouches courts, le prix centré dessous. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-bonus .detail-am-nom{flex-direction:column;"),'bonus courts');
 /* v0.831 — Destructeur : Tourbillon, amélioration de Double attaque ; Mortelle, amélioration de Frappe Furieuse (+1 dé Mortel). */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
  assert.ok(C.TALENTS_CODES.doubleattaquetourbillon.pour==='doubleattaque'&&C.TALENTS_CODES.frappefurieusemortelle.pour==='frappefurieuse'
-  &&page.includes("porteEffet(talentsCodes(a),'doubleattaquetourbillon')")&&page.includes("attack({...(mortelle?{desEnPlus:[0,0,0,0,0,1,0]}:{}),apres:"),'Tourbillon et Mortelle');}
+  &&page.includes("porteEffet(talentsCodes(a),'doubleattaquetourbillon')")&&page.includes("attack({...(mortelle?{desEnPlus:[0,0,0,0,0,1,0]}:{}),...(saignee?"),'Tourbillon et Mortelle');}
 /* v0.830 — Un prix hors de portée de l'XP disponible, en rouge doux. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("(acquis?' paye':prix>dispoT?' trop-cher':'')")&&fs.readFileSync('editor.css','utf8').includes('.detail-prix.trop-cher{'),'prix trop cher en rouge');
 /* v0.829 — Le prix d'un talent, d'une amélioration ou d'un bonus pris reste affiché, en vert. */

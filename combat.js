@@ -1613,6 +1613,31 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  frappefurieusemortelle:{cle:'frappefurieusemortelle',nom:'Frappe Furieuse — Mortelle',court:'Mortelle',type:'ame',
   aide:'Amélioration de Frappe Furieuse : son attaque lance un dé Mortel de dégâts en plus.',
   params:[],phrase(){return 'Vous infligez <b>1 dé Mortel</b> de dégâts supplémentaire.'}},
+ /* v1.322 — Les améliorations de Frappe Furieuse : 1 Rage de plus par adversaire au contact ; Saignée. Rage Infinie double tous les gains
+    de Rage. Double attaque partagée : les alliés au contact du porteur ont sa Double attaque. Cri de Guerre : une Action bonus, une fois
+    par combat ; un adversaire au contact repoussé subit les dégâts d'opportunité du porteur — tous, avec l'amélioration ; l'autre donne
+    aux alliés au contact la moitié de sa Rage. */
+ frappefurieusecontact:{cle:'frappefurieusecontact',nom:'Frappe Furieuse — Mêlée',court:'Rage par adversaire au contact',type:'ame',
+  aide:'Amélioration de Frappe Furieuse : le porteur gagne aussi 1 Rage par adversaire à son contact.',params:[],
+  phrase(){return 'Vous gagnez <b>+1 Rage</b> par <b>adversaire au contact</b>.'}},
+ frappefurieusesaignee:{cle:'frappefurieusesaignee',nom:'Frappe Furieuse — Saignée',court:'Saignée',type:'ame',
+  aide:'Amélioration de Frappe Furieuse : son attaque inflige Saignée.',params:[],
+  phrase(){return 'Vous infligez <b>Saignée</b>.'}},
+ ragedouble:{cle:'ragedouble',nom:'Rage Infinie',court:'gains doublés',type:'ame',
+  aide:'Amélioration de Rage : tous les gains de Rage du porteur sont doublés.',params:[],
+  phrase(){return 'Tous vos gains de <b>Rage</b> sont <b>doublés</b>.'}},
+ doubleattaqueallies:{cle:'doubleattaqueallies',nom:'Double attaque — Alliés',court:'alliés au contact',type:'ame',
+  aide:'Amélioration de Double attaque : les alliés au contact du porteur ont sa Double attaque.',params:[],
+  phrase(){return 'Vos <b>alliés au contact</b> possèdent la <b>Double Attaque</b>.'}},
+ crideguerre:{cle:'crideguerre',nom:'Cri de Guerre',type:'abon',bouton:'Cri de Guerre',
+  aide:'Action bonus, une fois par combat : un adversaire au contact est repoussé et subit les dégâts d’opportunité du porteur.',params:[],
+  phrase(){return 'Un adversaire <b>au contact</b> est <b>repoussé</b>, il subit vos <b>dégâts d’Opportunité</b>. Une fois par combat.'}},
+ criguerretous:{cle:'criguerretous',nom:'Cri de Guerre — Tous',court:'tous au contact',type:'ame',
+  aide:'Amélioration de Cri de Guerre : tous les adversaires au contact sont repoussés.',params:[],
+  phrase(){return '<b>Tous les adversaires au contact</b> sont repoussés.'}},
+ criguerrerage:{cle:'criguerrerage',nom:'Cri de Guerre — Rage',court:'Rage partagée',type:'ame',
+  aide:'Amélioration de Cri de Guerre : les alliés au contact gagnent la moitié de la Rage du porteur.',params:[],
+  phrase(){return 'Les <b>alliés au contact</b> gagnent la <b>moitié de votre Rage</b>.'}},
  frappefurieuse:{cle:'frappefurieuse',nom:'Frappe Furieuse',type:'act',bouton:'Frappe Furieuse',attaque:true,
   aide:'Action : le porteur effectue une attaque, et gagne 1 Rage.',
   params:[],phrase(){return 'Vous effectuez <b>une attaque</b>. Vous gagnez <b>1 Rage</b>.'}},
@@ -2498,7 +2523,7 @@ Object.assign(TALENTS_CODES,{
    s'écrit « Talent — court », d'un seul modèle pour toutes ; l'ancien nom reste connu, pour retrouver
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
-{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',corpsfeuattaque:'corpsfeu',corpsfeudef:'corpsfeu',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
+{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',frappefurieusecontact:'frappefurieuse',frappefurieusesaignee:'frappefurieuse',ragedouble:'rage',doubleattaqueallies:'doubleattaque',criguerretous:'crideguerre',criguerrerage:'crideguerre',corpsfeuattaque:'corpsfeu',corpsfeudef:'corpsfeu',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',boutoirsol:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',inspirationbonus:'inspiration',inspirationreussite:'inspiration',inspirationrage:'inspiration',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',
