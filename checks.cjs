@@ -3734,7 +3734,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const C26=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.deepEqual([C26.TALENTS_CODES.pointsaction.type,C26.TALENTS_CODES.pointsmouvement.phrase({x:2})],['pass','Le porteur dispose de <b>+2 points de Mouvement</b> à chaque tour.']);
  assert.ok(page.includes("+c.filter(t=>t.code.cle===(quoi==='action'?'pointsaction':quoi==='mouvement'?'pointsmouvement':'')).reduce(")
-  &&ed.includes("[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['metres','m de mouvement'],['armure','Armure au début du combat'],['etat','Rage au début du combat','Rage'],...skillNames.map((n,k)=>['comp',n,k])]"),'points de talent');}
+  &&ed.includes("[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['metres','m de mouvement'],['armure','Armure au début du combat'],['etat','Rage au début du combat','Rage'],['etatadv','Feu infligé à un adversaire au début du combat','Feu'],...skillNames.map((n,k)=>['comp',n,k])]"),'points de talent');}
 /* v0.699 — Le carré de blocage et le carré impraticable : seul le contour, de l'épaisseur d'une ligne. */
 {const mp=fs.readFileSync('maps.js','utf8');const C25=require('./combat.js');
  const f=new Function('TRAIT_EPAISSEUR','rectPolygon',mp.match(/function cadreFormes\(r,ratio\)\{[^\n]*\n[^\n]*\n/)[0]+'return cadreFormes')(C25.TRAIT_EPAISSEUR,C25.rectPolygon);
@@ -5575,7 +5575,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes(" if(rm.right+ec+w<=rp.r
 /* v1.154 — Le tableau des couleurs en quatre groupes ; chaque état sa couleur ; « Infliger un état » à la couleur de l'état. */
 {const ed=fs.readFileSync('editor.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8');
  assert.ok(ed.includes("function GROUPES_GEMMES_BONUS(){")&&ed.includes("['Bonus',['metres','armure'].map(k=>[k,nom(k)])],['États infligés',ETATS_JEU.map(e=>['etat:'+e,e])]]}")
-  &&ed.includes("c==='etat'?'etat:'+(ETATS_JEU.includes(p.etat)?p.etat:'Rage'):c};")&&gm.includes("remplitGemmesBonus(g,()=>renderGemmes())")&&ed.includes("if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){")
+  &&ed.includes("c==='etat'?'etat:'+(ETATS_JEU.includes(p.etat)?p.etat:'Rage'):c==='etatadv'?'etat:'+etatAdvBonus(p):c};")&&gm.includes("remplitGemmesBonus(g,()=>renderGemmes())")&&ed.includes("if(Array.isArray(c.semisForge)&&!c.semisForge.includes('etat-couleur')){")
   &&gm.includes("{cle:'etat-elementaire',nom:'Infliger un état',phase:'combat',couleur:'etat',auto:true,")&&gm.includes("if(r.couleur==='etat')return typeof varieteBonus==='function'?varieteBonus({carac:'etat',etat:opts&&opts.etat}):'rubis';"),'v1.154');}
 /* v1.153 — Les pastilles de l'éditeur en place sont pâles. */
 {const css=fs.readFileSync('editor.css','utf8');assert.ok(css.includes(".sphere-pastilles .die-pick{background:color-mix(in srgb,var(--teinte) 22%,var(--panel-2))"),'v1.153');}
@@ -5624,7 +5624,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function natureBonus(p){
  &&!ed.includes("function basculeSphere("),'v1.142');}
 /* v1.137 — Bonus DEF, mètres, Armure et état au début du combat ; quadrillage du sphérier ; bonus de compétence plus petits. */
 {const C=require('./combat.js'),pt=[{code:{cle:'bonus'},params:{carac:'armure',valeur:5}},{code:{cle:'bonus'},params:{carac:'etat',valeur:2,etat:'Rage'}},{code:{cle:'bonus'},params:{carac:'metres',valeur:3}}];
- assert.deepEqual(C.bonusDebutCombat(pt),{armure:5,etats:{Rage:2}});assert.equal(C.metresBonus(pt),3);
+ assert.deepEqual(C.bonusDebutCombat(pt),{armure:5,etats:{Rage:2},etatsAdv:{}});assert.equal(C.metresBonus(pt),3);
  assert.equal(C.libelleBonus({carac:'etat',valeur:2,etat:'Rage'}),'+2 Rage au début du combat');assert.equal(C.libelleBonus({carac:'metres',valeur:3}),'+3 m de mouvement');
  const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function surGrille(v){return Math.round((Number(v)||0)/40)*40}")&&fs.readFileSync('index.html','utf8').includes("actors.forEach(carapaceDepart);actors.forEach(bonusDepart)"),'v1.137');}
 /* v1.136 — Sphérier : Suppr supprime le bonus choisi ; Maj + clic lie ou délie ; double-clic ouvre l'éditeur. */
