@@ -10020,7 +10020,7 @@ new MutationObserver(()=>{if(arbresDialog.open)coutsAuCoin()}).observe(arbresDia
 
 /* v1.256 — Les aventuriers n'ont plus de niveau, mais ces talents le lisent encore (valeur provisoire : le niveau que donnerait
    leur XP). Chez le MJ seulement, une petite alerte sur chacun, au catalogue et dans l'arbre, en attendant leur réécriture. */
-const EFFETS_NIVEAU=['murelem','morsure','maitrisetellurique','orbestatiquerampant','ragedepart'];
+const EFFETS_NIVEAU=['murelem','morsure','orbestatiquerampant','ragedepart'];
 function suitLeNiveau(t){if(!t)return false;const p=(typeof paramsTalent==='function'&&paramsTalent(t))||t.params||{};
  return EFFETS_NIVEAU.includes((talentCode(t)||{}).cle)||p.base==='niveau'||p.forme==='niveau'}
 function alerteNiveau(){const s=document.createElement('span');s.className='alerte-niveau';s.textContent='⚠';s.title='Suit encore le niveau : à réécrire';s.setAttribute('aria-label',s.title);return s}
