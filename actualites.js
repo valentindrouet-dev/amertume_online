@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.314","d":"2026-11-02","t":"Aperçu de classe, équipement de départ, Rancune"},
 {"v":"1.313","d":"2026-11-02","t":"Ressuscité lisible"},
 {"v":"1.312","d":"2026-11-02","t":"Classes et espèces ouvertes à la création, espèces sur deux colonnes"},
 {"v":"1.311","d":"2026-11-02","t":"Peau de Cristal sans doublon, Bouclier de Feu avant coup seulement"},

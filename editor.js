@@ -2623,7 +2623,7 @@ function gagesEl(a,champ='gages'){const l=Array.isArray(a&&a[champ])?a[champ]:[]
  l.forEach(g=>{const c=document.createElement('div');c.className='detail-amelioration detail-bonus bonus-rond-panneau acquise detail-gage';c.style.setProperty('--tint',champ==='rancunes'?'210,80,10':'201,154,60');
   const s=document.createElement('span');s.className='rond-bonus';const src=typeof imageApparence==='function'?imageApparence(g):'';
   if(src){const im=document.createElement('img');im.src=src;im.alt='';im.draggable=false;s.append(im)}else{const t=document.createElement('b');t.textContent=String(g&&g.nom||'?').trim().charAt(0).toUpperCase()||'?';s.append(t)}
-  if(g&&g.n>0){const n=document.createElement('b');n.className='detail-gage-n';n.textContent=String(g.n);s.append(n)}c.append(s);
+  if(g&&g.n>0){const n=document.createElement('b');n.className='detail-gage-n';n.textContent=(champ==='rancunes'?'+':'')+g.n;s.append(n)}c.append(s);
   surveille(c,()=>{const b=document.createElement('div');b.className='talent-detail large bulle-teintee';b.style.setProperty('--teinte',champ==='rancunes'?'#d2500a':'#c99a3c');const p=document.createElement('p');p.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=String(g&&g.nom||'?');p.append(n);b.append(p);ouvrirBulle(c,b,'bulle-talent')});
   d.append(c)});return d}
 function reposer(a,type='long'){
@@ -5032,27 +5032,49 @@ function lotsManquent(c){return groupesCreation(c).some(g=>!g.lots[(c.lots||{})[
 /* Les réglages d'une classe ou d'une espèce, depuis l'onglet Talents : un clic sur son nom. */
 const reglagesDialog=dialog('reglages-famille','Réglages','<div id="reglages-corps"></div><div class="form-actions"><button type="button" id="reglages-annuler">Annuler</button><button type="button" class="primary" id="reglages-ok">Enregistrer</button></div>');
 $('reglages-annuler').onclick=()=>reglagesDialog.close();
-function editeurDepart(boite,w){boite.replaceChildren();
- const items=(catalog.items||[]).filter(o=>o&&!o.forge).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
- const liste=l=>{const d=document.createElement('div');d.className='depart-pieces';
-  l.forEach((x,k)=>{const o=objetDepart(x[0]),p=document.createElement('span');p.className='depart-piece';
-   if(o){const q=gearCarre(o,1,0);q.classList.remove('dispo');const m=q.querySelector('.marque-porte');if(m)m.remove();q.removeAttribute('role');q.tabIndex=-1;
-    surveille(q,()=>{const g=gearDetail(o,null,false);g.hidden=false;g.classList.add('large');ouvrirBulle(q,g,'bulle-gear')});p.append(q)}
-   else{const s=document.createElement('small');s.className='creation-manque';s.textContent=x[0];p.append(s)}
-   const n=document.createElement('input');n.type='number';n.min='1';n.max='999';n.value=String(x[1]);n.setAttribute('aria-label','Nombre');n.onchange=()=>{x[1]=Math.max(1,Math.min(999,Math.trunc(Number(n.value))||1));n.value=String(x[1])};
-   const r=document.createElement('button');r.type='button';r.className='ico danger';r.textContent='✕';r.setAttribute('aria-label','Retirer');r.onclick=()=>{l.splice(k,1);editeurDepart(boite,w)};
-   p.append(n,r);d.append(p)});
-  const a=document.createElement('select');a.setAttribute('aria-label','Ajouter');a.add(new Option('+',''));items.forEach(o=>a.add(new Option(o.name,o.id)));
-  a.onchange=()=>{if(!a.value)return;const deja=l.find(x=>x[0]===a.value);if(deja)deja[1]++;else l.push([a.value,1]);editeurDepart(boite,w)};d.append(a);return d};
- const h=document.createElement('h4');h.className='creation-kit-titre';h.textContent='D’office';boite.append(h,liste(w.fixes));
- w.groupes.forEach((g,gi)=>{const t=document.createElement('div');t.className='depart-groupe';
-  const nom=document.createElement('input');nom.type='text';nom.maxLength=40;nom.value=g.nom;nom.setAttribute('aria-label','Groupe');nom.oninput=()=>{g.nom=nom.value};
-  const rg=document.createElement('button');rg.type='button';rg.className='ico danger';rg.textContent='✕';rg.setAttribute('aria-label','Retirer le groupe');rg.onclick=()=>{w.groupes.splice(gi,1);editeurDepart(boite,w)};
-  const tete=document.createElement('div');tete.className='depart-groupe-tete';tete.append(nom,rg);t.append(tete);
-  g.lots.forEach((l,li)=>{const c=document.createElement('div');c.className='depart-lot';c.append(liste(l));
-   const rl=document.createElement('button');rl.type='button';rl.className='ico danger';rl.textContent='✕';rl.setAttribute('aria-label','Retirer le lot');rl.onclick=()=>{g.lots.splice(li,1);editeurDepart(boite,w)};c.append(rl);t.append(c)});
-  const al=document.createElement('button');al.type='button';al.textContent='+ Lot';al.onclick=()=>{g.lots.push([]);editeurDepart(boite,w)};t.append(al);boite.append(t)});
- const ag=document.createElement('button');ag.type='button';ag.textContent='+ Groupe';ag.onclick=()=>{w.groupes.push({nom:'',lots:[[]]});editeurDepart(boite,w)};boite.append(ag)}
+/* v1.314 — L'équipement de départ, comme l'inventaire d'un adversaire : en haut, D'office puis chaque groupe et ses lots, en petits
+   carrés — le nombre dessous, la croix pour en retirer un ; un clic sur une zone la désigne (bordure à l'accent). Dessous, la
+   pioche : les familles à allumer, un filtre, l'Armurerie en petits carrés ; un clic ajoute une pièce à la zone désignée. La pioche
+   ne se redessine pas : elle garde sa place. */
+let catsDepart=new Set(['armes','armures']),filtreDepart='';
+function editeurDepart(boite,w){boite.replaceChildren();boite.classList.add('inv-adv','depart-v2');
+ let cible=w.fixes;const haut=document.createElement('div');haut.className='depart-haut';
+ const bouton=(txt,titre,clic,cls)=>{const b=document.createElement('button');b.type='button';b.textContent=txt;if(cls)b.className=cls;if(titre){b.title=titre;b.setAttribute('aria-label',titre)}b.onclick=e=>{e.stopPropagation();clic()};return b};
+ const zone=(l,titre,retirer)=>{const z=document.createElement('div');z.className='depart-zone'+(l===cible?' on':'');
+  const t=document.createElement('div');t.className='depart-zone-titre';const n=document.createElement('span');n.textContent=titre;t.append(n);
+  if(retirer)t.append(bouton('✕','Retirer '+titre.toLowerCase(),retirer,'ico danger'));z.append(t);
+  z.onclick=e=>{if(e.target.closest('input,button'))return;cible=l;dessine()};
+  l.forEach((x,k)=>{const o=objetDepart(x[0]),c=document.createElement('div');c.className='inv-adv-carte';
+   if(o){const q=carreInventaire(o,x[1]);q.append(bouton('✕','Retirer un exemplaire de '+o.name,()=>{fermerBulle();x[1]--;if(x[1]<=0)l.splice(k,1);dessine()},'retirer-sac'));c.append(q)}
+   else{const m=document.createElement('small');m.className='creation-manque';m.textContent=x[0];c.append(m,bouton('✕','Retirer',()=>{l.splice(k,1);dessine()},'ico danger'))}
+   const lb=document.createElement('label');lb.className='inv-butin';const nb=document.createElement('input');nb.type='number';nb.min='1';nb.max='999';nb.value=String(x[1]);nb.setAttribute('aria-label','Nombre');
+   nb.onchange=()=>{x[1]=Math.max(1,Math.min(999,Math.trunc(Number(nb.value))||1));dessine()};lb.append('×',nb);c.append(lb);z.append(c)});
+  return z};
+ const dessine=()=>{haut.replaceChildren();
+  const tous=[w.fixes,...w.groupes.flatMap(g=>g.lots)];if(!tous.includes(cible))cible=w.fixes;
+  haut.append(zone(w.fixes,'D’office'));
+  w.groupes.forEach((g,gi)=>{const t=document.createElement('div');t.className='depart-groupe';
+   const nom=document.createElement('input');nom.type='text';nom.maxLength=40;nom.value=g.nom;nom.placeholder='Groupe';nom.setAttribute('aria-label','Groupe');nom.oninput=()=>{g.nom=nom.value};
+   const tete=document.createElement('div');tete.className='depart-groupe-tete';tete.append(nom,bouton('✕','Retirer le groupe',()=>{w.groupes.splice(gi,1);dessine()},'ico danger'));t.append(tete);
+   const lots=document.createElement('div');lots.className='depart-lots';
+   g.lots.forEach((l,li)=>lots.append(zone(l,'Lot '+(li+1),()=>{g.lots.splice(li,1);dessine()})));
+   lots.append(bouton('+ Lot','Ajouter un lot',()=>{const l=[];g.lots.push(l);cible=l;dessine()},'depart-ajout'));t.append(lots);haut.append(t)});
+  haut.append(bouton('+ Groupe','Ajouter un groupe de lots au choix',()=>{const l=[];w.groupes.push({nom:'',lots:[l]});cible=l;dessine()},'depart-ajout'))};
+ const barre=document.createElement('div');barre.className='inv-cats';
+ const filtre=document.createElement('input');filtre.type='search';filtre.className='inv-filtre';filtre.placeholder='Filtrer';filtre.value=filtreDepart;filtre.setAttribute('aria-label','Filtrer les pièces');
+ const grille=document.createElement('div');grille.className='inv-grille';
+ const remplit=()=>{grille.replaceChildren();const q=filtreDepart.trim().toLowerCase(),tests=CATS_INV_ADV.filter(([k])=>catsDepart.has(k)).map(([,,t])=>t);
+  const ordre=o=>{const i=CATS_INV_ADV.findIndex(([,,t])=>t(o));return i<0?9:i};
+  const liste=(catalog.items||[]).filter(o=>o&&!o.forge&&!estReste(o)&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q))).sort((x,y)=>ordre(x)-ordre(y)||String(x.name).localeCompare(String(y.name),'fr'));
+  if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent=tests.length?'Aucune pièce ici.':'Allume une famille ci-dessus.';grille.append(v);return}
+  liste.forEach(o=>{const c=carreInventaire(o,0);c.classList.add('inv-pioche');c.title='Ajouter '+o.name;c.setAttribute('aria-label',c.title);c.tabIndex=0;
+   const ajoute=()=>{const deja=cible.find(x=>objetDepart(x[0])===o);if(deja)deja[1]=Math.min(999,deja[1]+1);else cible.push([o.id,1]);dessine()};
+   c.onclick=ajoute;c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ajoute()}};grille.append(c)})};
+ CATS_INV_ADV.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';const on=()=>catsDepart.has(k);
+  const pose=()=>{b.className='inv-cat'+(on()?' on':'');b.setAttribute('aria-pressed',String(on()))};b.textContent=nom;pose();
+  b.onclick=()=>{if(on())catsDepart.delete(k);else catsDepart.add(k);pose();remplit()};barre.append(b)});
+ filtre.oninput=()=>{filtreDepart=filtre.value;remplit()};barre.append(filtre);
+ boite.append(haut,barre,grille);dessine();remplit()}
 function ouvreReglages(titre,grille,genre,cle,enregistre){if(view!=='mj')return;reglagesDialog.querySelector('.dialog-head h2').textContent=titre;
  const corps=$('reglages-corps');corps.replaceChildren();const g=document.createElement('div');g.className='edit-grid';g.innerHTML=grille;corps.append(g);
  const w=structuredClone(departDe(genre,cle));const h=document.createElement('h2');h.className='sous-titre';h.textContent='Équipement de départ';const b=document.createElement('div');b.className='depart-editeur';corps.append(h,b);editeurDepart(b,w);
@@ -5093,6 +5115,11 @@ const TALENTS_APERCU=6;
 /* v0.825 : dans l'ordre de l'arbre — le talent initial, puis ceux de sa ligne à sa gauche, puis à sa droite, du plus proche au plus
    loin ; puis chaque ligne suivante, de gauche à droite. Le premier arbre d'abord, les autres ensuite. */
 function talentsApercuClasse(classe){if(!classe||typeof colonnesArbre!=='function')return [];
+ /* v1.314 : en paliers, l'aperçu du créateur ne montre que les cinq premiers talents de l'arbre — l'initial, les deux gros ronds et les
+    deux moyens du premier palier —, à la taille de leurs ronds dans l'arbre. */
+ if(typeof ARBRE_V3!=='undefined'&&ARBRE_V3){for(const c of colonnesArbre(classe)){const caches=talentsCaches(c.liste),L=c.liste.filter(t=>t&&!estVide(t)&&!estBonus(t)&&t.type!=='ame'&&!caches.has(t.id)),ini=L.find(t=>t.flottant===true);if(!ini)continue;
+   const an=ligne=>L.filter(t=>t!==ini&&!t.centreGroupe&&groupeArbre(t,c.liste)===GROUPES_ARBRE[0]&&ligneArbreDe(t)===ligne).sort((u,v)=>ordreArbre(u)-ordreArbre(v)).slice(0,2);
+   return [ini,...an('gros'),...an('moyen')]}}
  const cols=colonnesArbre(classe).map(c=>{const caches=talentsCaches(c.liste);return c.liste.filter(t=>!estBonus(t)&&t.type!=='ame'&&!caches.has(t.id)&&!estVide(t)&&posDe(t))}).filter(l=>l.length);
  const out=[];cols.forEach(l=>{const dep=departsDe(l),racine=l.find(t=>t.flottant===true)||l.filter(t=>dep.has(t.id)).sort((x,y)=>posDe(x).y-posDe(y).y)[0]||l[0];
   const r=posDe(racine),cle=t=>{const p=posDe(t);if(t===racine)return [p.y,0,0];if(p.y===r.y)return [p.y,p.x<r.x?1:2,Math.abs(p.x-r.x)];return [p.y,3,p.x]};
@@ -5235,7 +5262,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    // Sous ses bonus, les premiers talents de ses arbres, en ronds : de quoi deviner son jeu. Leur bulle au survol.
    const apercu=talentsApercuClasse(cl.name);
    if(apercu.length){const vu=x=>talentPourElement(x,elementDe({hero:true,role:cl.name})),r=document.createElement('div');r.className='creation-talents';
-    apercu.forEach(t=>{const tv=logoHerite(vu(t),vu),q=talentRond(tv);q.setAttribute('aria-label',nomEnClair(tv.name));surveille(q,()=>bulleTalentSur(q,t,{vu,points:false}));r.append(q)});
+    apercu.forEach(t=>{const tv=logoHerite(vu(t),vu),q=talentRond(tv);q.classList.add('apercu-'+(t.flottant===true?'centre':typeof ligneArbreDe==='function'&&ligneArbreDe(t)==='moyen'?'moyen':'gros'));q.setAttribute('aria-label',nomEnClair(tv.name));surveille(q,()=>bulleTalentSur(q,t,{vu,points:false}));r.append(q)});
     f.append(r)}
    corps.append(f)}}
  else if(k==='caracs'){const n=restantCaracs(c),g=document.createElement('div');g.className='creation-points';

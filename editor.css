@@ -4797,3 +4797,21 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .creation-classe.fermee.on{opacity:.8}
 /* v1.313 : l'icône du Ressuscité, os pâle sur parchemin, prend un fin contour sombre pour se lire. */
 img.espece-ico[src$="ressuscite.webp"]{filter:drop-shadow(0 0 .6px rgb(60 45 20 / .9)) drop-shadow(0 0 .6px rgb(60 45 20 / .9))}
+/* v1.314 : l'équipement de départ d'une classe ou d'une espèce, comme l'inventaire d'un adversaire. */
+.depart-v2 .depart-haut{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.depart-v2 .depart-zone{display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start;padding:8px 10px 10px;border:1px dashed var(--line);border-radius:10px;min-height:52px;cursor:pointer}
+.depart-v2 .depart-zone.on{border:2px solid var(--accent);padding:7px 9px 9px;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.depart-v2 .depart-zone-titre{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;font:700 11px/1.2 system-ui;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.depart-v2 .depart-zone-titre .ico{padding:0 4px;font-size:11px}
+.depart-v2 .depart-groupe{display:flex;flex-direction:column;gap:8px;padding:8px;border:1px solid var(--line);border-radius:12px}
+.depart-v2 .depart-groupe-tete{display:flex;align-items:center;gap:8px}
+.depart-v2 .depart-groupe-tete input{flex:1;min-width:0}
+.depart-v2 .depart-lots{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;align-items:stretch}
+.depart-v2 .depart-ajout{justify-self:start;align-self:center}
+/* v1.314 : dans le créateur, les ronds de l'aperçu d'une classe gardent les proportions de l'arbre — l'initial, les gros, les moyens. */
+#creation-aventurier .creation-talents{align-items:center}
+#creation-aventurier .creation-talents .talent-carre.apercu-centre{width:64px;height:64px}
+#creation-aventurier .creation-talents .talent-carre.apercu-gros{width:54px;height:54px}
+#creation-aventurier .creation-talents .talent-carre.apercu-moyen{width:40px;height:40px}
+/* v1.314 : Rancune — sous le talent, le token de chaque adversaire qui lui vaut un bonus, son « +x » en bas à droite comme un bonus. */
+.arbres-v2 .arbres-detail .detail-gages .detail-gage .rond-bonus>.detail-gage-n{background:none;padding:0;min-width:0;height:auto;right:-6px;bottom:-6px;color:#fff;font:900 15px/1 system-ui;letter-spacing:-.5px;-webkit-text-stroke:3px #1d1a16;paint-order:stroke fill}
