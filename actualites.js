@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.301","d":"2026-11-02","t":"Toutes les Marques d'améliorations"},
 {"v":"1.300","d":"2026-11-02","t":"Sources des sphères complètes"},
 {"v":"1.299","d":"2026-11-02","t":"Sources des sphères"},
 {"v":"1.298","d":"2026-11-01","t":"Coût de l'arbre des Bonus"},

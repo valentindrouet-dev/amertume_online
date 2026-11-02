@@ -6927,7 +6927,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    // Dans l'ordre du panneau de droite : les améliorations de haut en bas, les bonus de gauche à droite.
    const ORDRE=['so','s','se','o','e','no','n','ne'],rangP=x=>{const k=lisChemin(x);return [k.rang,ORDRE.indexOf(k.dir)]};
    const P=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x)).sort((x,y)=>rangP(x)[0]-rangP(y)[0]||rangP(x)[1]-rangP(y)[1]);
-   const ams=P.filter(x=>!estBonus(x)).slice(0,{centre:4,gros:4,moyen:3}[cls]),bons=BONUS_SATELLITES?P.filter(estBonus).slice(0,{centre:4,gros:3,moyen:2}[cls]):[];
+   // v1.301 : une Marque par amélioration, toutes, plus de plafond à 4 (ou 3).
+   const ams=P.filter(x=>!estBonus(x)).slice(0,12),bons=BONUS_SATELLITES?P.filter(estBonus).slice(0,{centre:4,gros:3,moyen:2}[cls]):[];
    if(!ams.length&&!bons.length)return;
    /* Le rond déborde de sa bordure (3 px) ; un jour de 12 px le sépare de ses satellites, hors du double cercle d'or du
       talent choisi. Les segments et les billes sont modelés : fond dégradé, liseré sombre, reflet clair ; vides, ils gardent
