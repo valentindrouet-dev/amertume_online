@@ -3176,6 +3176,8 @@ function calculTalent(expr,a){const m=String(expr).match(/^(?:(\d+(?:[.,]\d+)?)\
  const lib=n+' × '+nomClair;form.textContent=Number.isFinite(val)?lib+' ('+val+')':lib;res.textContent=Number.isFinite(val)?String(Math.round(n*val)):lib;
  s.append(res,form);return s}
 function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceChildren();
+ // v1.327 : {ascendance}, l'état de l'Ascendance choisie par l'aventurier Drakéide ; sans aventurier, le mot en gras.
+ {const e=a&&typeof ETATS_ASCENDANCE!=='undefined'?ETATS_ASCENDANCE[a.ascendance]||'':'';if(e)texte=texte.replace(/\{ascendance\}/gi,e)}
  // Les dés et les variables d'abord ; entre eux, le texte se colore comme avant.
  /* v0.857 : un état entre accolades ou crochets, {Foudre} ou [Foudre], devient son icône ; {plasma}, un dé de Plasma. */
  // v0.968 : un calcul, {3×Niveau} ou {Endu×2} : son résultat ; Maj tenue, le calcul lui-même.
@@ -3187,6 +3189,7 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
   if(d[1]!==undefined&&cleAccolade(k)==='soin'){const ic=logoBonus({carac:'soin'});if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('soin-ico','soin-texte');el.append(ic);fin=rd.lastIndex;continue}}
   // v1.097 : {armure}, l'icône des PV d'Armure.
   if(d[1]!==undefined&&cleAccolade(k)==='armure'){const ic=iconeArmure();if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('armure-texte');el.append(ic);fin=rd.lastIndex;continue}
+  if(d[1]!==undefined&&cleAccolade(k)==='ascendance'){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);const m=document.createElement('b');m.className='mot-cle mot-variable sans-valeur';m.textContent='ascendance';el.append(m);fin=rd.lastIndex;continue}
   // v1.094 : {dégât}, au singulier, l'icône des dégâts ; {dégâts} reste la valeur.
   if(d[1]!==undefined&&cleAccolade(k)==='degat'){const ic=iconeDegats();if(ic){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);ic.classList.add('dmg-texte');el.append(ic);fin=rd.lastIndex;continue}}
   // v1.325 : {vie} en minuscules, la valeur de Vie ; {Vie} ou [Vie], l'icône de l'état.

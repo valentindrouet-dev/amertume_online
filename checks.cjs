@@ -6472,3 +6472,5 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("et=c<0&&!(d[1]!==undefin
 /* v1.326 — Modifier en masse : Objets, Indices, Notes de MJ, Pièges et Coffres de la carte ouverte, en tableau. */
 {const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes("b.id='map-masse';b.textContent='Modifier en masse'")&&['objets:','indices:','notes:','pieges:','coffres:'].every(k=>mp.includes(' '+k+'{nom:'))
  &&mp.includes(".filter(([l,v])=>masseCle({...t.lit(l.o),...v})!==l.avant)"),'v1.326');}
+/* v1.327 — {ascendance} dit l'état de l'Ascendance choisie par l'aventurier Drakéide. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("ETATS_ASCENDANCE[a.ascendance]||'':'';if(e)texte=texte.replace(/\\{ascendance\\}/gi,e)}"),'v1.327');
