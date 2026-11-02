@@ -777,6 +777,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v1.123 : les paliers passent à 1, 5, 10, 20, 40 — ceux du 15 vont au 20, ceux du 20 au 40.
  // v1.294 : la classe Mécaniste vient de l'Extension Nimble (posé une fois : le MJ peut le changer dans les Réglages).
  if(!c.semisForge.includes('mecaniste-nimble')){(c.classes||[]).forEach(k=>{if(k&&/^m[ée]caniste$/i.test(String(k.name||'').trim()))k.extension='nimble'});c.semisForge.push('mecaniste-nimble')}
+ // v1.305 : Déluge Gratuit ne retire plus seulement le coût : Déluge devient une Action bonus.
+ if(!c.semisForge.includes('deluge-action-bonus')){(c.talents||[]).forEach(t=>{if(t&&t.effet==='delugegratuit')t.effects='Déluge devient une Action Bonus.'});c.semisForge.push('deluge-action-bonus')}
  // v1.291 : la Marque, un Trésor de l'Armurerie ; reçue, elle vaut 100 XP. Posée une fois : le MJ peut la retirer.
  if(!c.semisForge.includes('tresor-marque')){if(!c.items.some(o=>o&&o.id==='tresor-marque'))c.items.push({id:'tresor-marque',name:'Marque',category:'treasure',price:0,qty:1,logo:'',rarete:'rare',magasin:false,effects:'Reçue, elle vaut '+XP_PAR_MARQUE+' XP : une Marque de plus.'});c.semisForge.push('tresor-marque')}
  if(!c.semisForge.includes('paliers-40')){const M={15:20,20:40};(c.talents||[]).forEach(t=>{if(t&&M[Number(t.groupe)])t.groupe=M[Number(t.groupe)]});

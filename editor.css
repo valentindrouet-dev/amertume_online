@@ -4769,3 +4769,5 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .bulle-sources-sph .sources-sph li{display:flex;align-items:center;gap:6px;font-size:13px}
 .bulle-sources-sph .sources-sph li img,.bulle-sources-sph .sources-sph li svg{width:20px;height:20px;object-fit:contain;flex:none}
 .bulle .talent-detail.bulle-sources-sph{background:var(--panel);border-color:var(--line-strong);min-width:260px}
+/* v1.305 : au MJ, le coût total du talent à cheval sur le bas de son grand rond, sans agrandir le bloc. */
+.arbres-v2 .arbres-detail .detail-gauche>.detail-total{position:relative;z-index:1;margin-top:-30px}
