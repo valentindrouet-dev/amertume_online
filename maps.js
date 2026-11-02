@@ -4325,3 +4325,88 @@ addEventListener('keydown',e=>{if(e.key!=='Tab'||e.altKey||e.ctrlKey||e.metaKey|
 {const sp=showPage;showPage=function(...x){cacheInterfaceTable(false);return sp.apply(this,x)}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)cacheInterfaceTable(false)});
 addEventListener('resize',()=>{if(!cartePleine())cacheInterfaceTable(false)});
+/* v1.326 — Modifier en masse, dans l'éditeur de la carte ouverte : Objets, Indices, Notes de MJ, Pièges ou Coffres en tableau, une
+   ligne par élément. La ligne du haut donne une même valeur à toutes les lignes cochées ; « Supprimer » retire les lignes cochées.
+   Seules les lignes changées sont réécrites, comme le ferait leur fiche : le reste de chaque élément ne bouge pas. */
+const MASSE_COMPS=()=>skillNames.map((n,k)=>[String(k),n]);
+const masseBorne=(v,a,b)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||0));
+const MASSE_TYPES={
+ objets:{nom:'Objets',liste:m=>(m.objets||[]).filter(o=>o&&!o.indice&&o.groupe!==true&&o.ressource!==true),
+  cols:()=>[['nom','Nom','text',60],['taille','Taille','sel',[['small','Petit'],['medium','Moyen'],['large','Grand']]],['visible','Visible','check'],
+   ['comp','Découverte','sel',MASSE_COMPS()],['reussites','Réussites','num',[1,9]],['pierre','Dans la pierre','check'],['tresor','Trésor','text',200],['desc','Description','area',600]],
+  lit:o=>({nom:o.nom||'',taille:o.taille||'medium',visible:!!o.visible,comp:String((o.test||{}).comp??0),reussites:(o.test||{}).reussites||1,pierre:o.pierre===true,tresor:o.tresor||'',desc:o.desc||''}),
+  ecrit:(o,v)=>{o.nom=v.nom.trim().slice(0,60)||'Objet';o.taille=['small','medium','large'].includes(v.taille)?v.taille:'medium';o.visible=v.visible;
+   o.test={comp:masseBorne(v.comp,0,7),reussites:masseBorne(v.reussites,1,9)};if(v.pierre)o.pierre=true;else delete o.pierre;o.tresor=v.tresor.trim().slice(0,200);o.desc=v.desc.trim().slice(0,600)},
+  retire:(m,o)=>{const k=(m.objets||[]).indexOf(o);if(k>=0)m.objets.splice(k,1)}},
+ indices:{nom:'Indices',liste:m=>(m.objets||[]).filter(o=>o&&o.indice),
+  cols:()=>[['nom','Nom','text',60],['visible','Visible','check'],['comp','Découverte','sel',MASSE_COMPS()],['reussites','Réussites','num',[1,9]],
+   ['desc','Description','area',600],['journal','Journal','area',400],['secret','Secret','area',600]],
+  lit:o=>({nom:o.nom||'',visible:!!o.visible,comp:String((o.test||{}).comp??0),reussites:(o.test||{}).reussites||1,desc:o.desc||'',journal:o.journal||'',secret:o.secret||''}),
+  ecrit:(o,v)=>{o.nom=v.nom.trim().slice(0,60)||'Indice';o.visible=v.visible;o.test={comp:masseBorne(v.comp,0,7),reussites:masseBorne(v.reussites,1,9)};
+   o.desc=v.desc.trim().slice(0,600);o.journal=v.journal.trim().slice(0,400);o.secret=v.secret.trim().slice(0,600)},
+  retire:(m,o)=>{const k=(m.objets||[]).indexOf(o);if(k>=0)m.objets.splice(k,1)}},
+ notes:{nom:'Notes de MJ',liste:m=>notesDe(m.id).slice(),
+  cols:()=>[['titre','Titre','text',120],['texte','Note','area',4000]],
+  lit:n=>({titre:n.titre||'',texte:n.texte||''}),
+  ecrit:(n,v)=>{n.titre=v.titre.trim().slice(0,120);n.texte=v.texte.slice(0,4000)},
+  retire:(m,n)=>{const l=notesDe(m.id),k=l.indexOf(n);if(k>=0)l.splice(k,1)}},
+ pieges:{nom:'Pièges',liste:m=>(m.pieges||[]).slice(),
+  cols:()=>[['nom','Nom','text',60],['cache','Caché','check'],['detcomp','Détection','sel',DETECTION_PIEGE.map(k=>[String(k),skillNames[k]])],['detn','Réussites','num',[1,9]],
+   ['contact','Au contact','check'],['actif','Toujours actif','check'],['reamorcable','Réamorçable','check'],['degats','Dégâts','text',6],['desc','Description','area',600]],
+  lit:p=>({nom:p.nom||'',cache:!!p.cache,detcomp:String(p.detection?p.detection.comp:3),detn:p.detection?p.detection.reussites:1,contact:p.contact!==false,actif:!!p.actif,
+   reamorcable:!!p.reamorcable,degats:formuleDegats(p),desc:p.desc||''}),
+  ecrit:(p,v)=>{p.nom=v.nom.trim().slice(0,60)||'Piège';if(v.cache)p.cache=true;else delete p.cache;p.detection={comp:Number(v.detcomp)||0,reussites:masseBorne(v.detn,1,9)};
+   p.contact=v.contact;if(v.actif){p.actif=true;if(!p.enjambement)p.enjambement={comp:0,reussites:1}}else delete p.actif;if(v.reamorcable)p.reamorcable=true;else delete p.reamorcable;
+   {const d=lisFormuleDegats(v.degats);if(d){p.degats=d.degats;if(d.degatsDes)p.degatsDes=d.degatsDes;else delete p.degatsDes}}p.desc=v.desc.trim().slice(0,600)},
+  retire:(m,p)=>{const k=(m.pieges||[]).indexOf(p);if(k>=0)m.pieges.splice(k,1)}},
+ coffres:{nom:'Coffres',liste:m=>(m.coffres||[]).slice(),
+  cols:()=>[['nom','Nom','text',60],['cache','Caché','check'],['perception','Perception','num',[1,9]],['verrou','Verrou','num',[0,9]],['piege','Piège','num',[0,9]],
+   ['degats','Dégâts','text',6],['groupe','Coffre de groupe','check'],['desc','Description','area',600]],
+  lit:c=>({nom:c.nom||'',cache:!!c.cache,perception:c.perception||1,verrou:Math.max(0,Math.trunc(Number(c.verrou))||0),piege:Math.max(0,Math.trunc(Number(c.piege))||0),
+   degats:formuleDegats(c),groupe:c.groupe===true,desc:c.desc||''}),
+  ecrit:(c,v)=>{c.nom=v.nom.trim().slice(0,60)||'Coffre';c.desc=v.desc.trim().slice(0,600);if(v.groupe)c.groupe=true;else delete c.groupe;
+   if(v.cache){c.cache=true;c.perception=masseBorne(v.perception,1,9)}else{delete c.cache;delete c.pierre}
+   c.verrou=masseBorne(v.verrou,0,9);if(!c.verrou){delete c.cleId;delete c.code}
+   c.piege=masseBorne(v.piege,0,9);if(!c.piege){c.degats=0;delete c.degatsDes;c.etats=[]}else{const d=lisFormuleDegats(v.degats);if(d){c.degats=d.degats;if(d.degatsDes)c.degatsDes=d.degatsDes;else delete c.degatsDes}}},
+  retire:(m,c)=>{const k=(m.coffres||[]).indexOf(c);if(k>=0)m.coffres.splice(k,1)}}};
+let masseType='objets',masseLignes=[];
+const masseDialog=dialog('masse-editor','Modifier en masse','<form id="masse-form"><div class="vit-onglets" id="masse-types" role="tablist"></div><div class="masse-tableau" id="masse-tableau"></div>'
+ +'<div class="form-actions"><button type="button" class="danger" id="masse-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+function masseChamp(c,v,nom){const [k,lib,type,o]=c;let el;
+ if(type==='sel'){el=document.createElement('select');if(v===null)el.append(new Option('—',''));o.forEach(([a,t])=>el.append(new Option(t,a,false,String(a)===String(v))));if(v===null)el.value=''}
+ else if(type==='area'){el=document.createElement('textarea');el.rows=1;el.maxLength=o;el.value=v??''}
+ else{el=document.createElement('input');if(type==='check'){el.type='checkbox';el.checked=!!v}
+  else if(type==='num'){el.type='number';el.min=o[0];el.max=o[1];el.value=v??''}else{el.type='text';el.maxLength=o;el.value=v??''}}
+ el.dataset.col=k;el.setAttribute('aria-label',nom?lib+' — '+nom:lib);return el}
+const masseValeur=el=>el.type==='checkbox'?el.checked:el.value;
+const masseCle=v=>JSON.stringify(Object.fromEntries(Object.entries(v).map(([k,x])=>[k,typeof x==='boolean'?x:String(x)])));
+function masseRendu(){const m=mapDraft,t=MASSE_TYPES[masseType];if(!m||!t)return;
+ const ong=$('masse-types');ong.replaceChildren();
+ Object.entries(MASSE_TYPES).forEach(([k,x])=>{const b=document.createElement('button');b.type='button';b.className='vit-onglet'+(k===masseType?' actif':'');b.setAttribute('role','tab');
+  b.setAttribute('aria-selected',String(k===masseType));b.textContent=x.nom;b.onclick=()=>{masseApplique([]);masseType=k;masseRendu()};ong.append(b)});
+ const cols=t.cols(),tab=document.createElement('table');tab.className='masse-table';
+ const tete=tab.createTHead(),r1=tete.insertRow(),r2=tete.insertRow();r2.className='masse-tous';
+ r1.insertCell().outerHTML='<th></th>';cols.forEach(c=>{const th=document.createElement('th');th.textContent=c[1];r1.append(th)});
+ const tout=document.createElement('input');tout.type='checkbox';tout.setAttribute('aria-label','Tout cocher');r2.insertCell().append(tout);
+ masseLignes=t.liste(m).map(o=>({o,avant:masseCle(t.lit(o))}));
+ const corps=tab.createTBody();
+ masseLignes.forEach(l=>{const tr=corps.insertRow(),v=t.lit(l.o),coche=document.createElement('input');coche.type='checkbox';coche.className='masse-coche';coche.setAttribute('aria-label','Cocher '+(v.nom||v.titre||''));
+  tr.insertCell().append(coche);cols.forEach(c=>tr.insertCell().append(masseChamp(c,v[c[0]],v.nom||v.titre||'')));l.tr=tr});
+ cols.forEach(c=>{const el=masseChamp(c,c[2]==='check'?false:null,'');r2.insertCell().append(el);
+  el.addEventListener('change',()=>{if(c[2]!=='check'&&el.value==='')return;corps.querySelectorAll('tr').forEach(tr=>{if(!tr.querySelector('.masse-coche').checked)return;
+   const x=tr.querySelector('[data-col="'+c[0]+'"]');if(x.type==='checkbox')x.checked=el.checked;else x.value=el.value})})});
+ tout.onchange=()=>corps.querySelectorAll('.masse-coche').forEach(x=>{x.checked=tout.checked});
+ $('masse-tableau').replaceChildren(tab);$('masse-suppr').disabled=!masseLignes.length}
+// Les lignes changées, réécrites ; puis, s'il y en a, les éléments à retirer. Une seule étape d'annulation.
+function masseApplique(retirer){const m=mapDraft,t=MASSE_TYPES[masseType];if(!m||!t)return false;
+ const changes=masseLignes.filter(l=>l.tr&&l.tr.isConnected).map(l=>{const v={};l.tr.querySelectorAll('[data-col]').forEach(x=>{v[x.dataset.col]=masseValeur(x)});return [l,v]})
+  .filter(([l,v])=>masseCle({...t.lit(l.o),...v})!==l.avant);
+ if(!changes.length&&!retirer.length)return false;
+ if(masseType!=='notes')pushUndo();
+ changes.forEach(([l,v])=>t.ecrit(l.o,{...t.lit(l.o),...v}));retirer.forEach(o=>t.retire(m,o));
+ if(masseType==='notes')sauveNotesMJ();mapSel=null;renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render();return true}
+$('masse-form').onsubmit=e=>{e.preventDefault();masseApplique([]);masseDialog.close()};
+$('masse-suppr').onclick=()=>{const l=masseLignes.filter(x=>x.tr&&x.tr.querySelector('.masse-coche').checked);if(!l.length)return;
+ if(!confirm('Supprimer '+(l.length>1?'ces '+l.length+' éléments':'cet élément')+' ?'))return;masseApplique(l.map(x=>x.o));masseRendu()};
+function ouvrirMasse(){if(!mapDraft||view!=='mj')return;masseRendu();masseDialog.showModal()}
+{const r=document.querySelector('#map-tools .outils-famille[data-famille="placement"]');if(r){const b=document.createElement('button');b.type='button';b.id='map-masse';b.textContent='Modifier en masse';b.onclick=ouvrirMasse;r.append(b)}}

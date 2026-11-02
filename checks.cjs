@@ -6469,3 +6469,6 @@ console.log('2137 vérifications passées : dimensions PNG/JPEG/WebP, catalogue,
 assert.ok(fs.existsSync('img/planches/DESTRUCTEUR 2.webp')&&fs.readFileSync('planches.js','utf8').includes("['destructeur','Destructeur']]"),'v1.324');
 /* v1.325 — {vie} en minuscules dit la Vie du combattant ; {Vie} et [Vie] gardent l'icône de l'état. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("et=c<0&&!(d[1]!==undefined&&k===k.toLowerCase()&&variableTalent(k))?etatAccolade(k):null"),'v1.325');
+/* v1.326 — Modifier en masse : Objets, Indices, Notes de MJ, Pièges et Coffres de la carte ouverte, en tableau. */
+{const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes("b.id='map-masse';b.textContent='Modifier en masse'")&&['objets:','indices:','notes:','pieges:','coffres:'].every(k=>mp.includes(' '+k+'{nom:'))
+ &&mp.includes(".filter(([l,v])=>masseCle({...t.lit(l.o),...v})!==l.avant)"),'v1.326');}

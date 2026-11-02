@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.326","d":"2026-11-02","t":"Modifier en masse sur les cartes"},
 {"v":"1.325","d":"2026-11-02","t":"{vie} dans les infobulles"},
 {"v":"1.324","d":"2026-11-02","t":"Planche DESTRUCTEUR 2"},
 {"v":"1.323","d":"2026-11-02","t":"Limites des talents, bulle du palier 20"},
