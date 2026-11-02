@@ -18,7 +18,8 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
  const faces0={};all.forEach(([v])=>faces0[v]=(faces0[v]||0)+1);
  const vifs=all.filter(([v,c])=>!(c===1&&faces0[v]>1));
  // Dominateur : contre un adversaire au sol, le double 1 n'est pas un échec.
- if(!sansEchec&&vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false,poison:0};
+ // v1.332 : les 1 du dé violet, comme ceux du Mortel, ne comptent pas pour l'échec.
+ if(!sansEchec&&vifs.filter(([v,c])=>v===1&&c!==5&&c!==7).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false,poison:0};
  const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
  // « sansCritique » : un orbe ne fait pas de critique, sauf amélioration (Orbes critiques).
  const critical=!sansCritique&&(faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2)));
@@ -1253,6 +1254,20 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Réaction : après qu’un adversaire au contact inflige des dégâts au porteur, celui-ci effectue une Attaque gratuite contre lui.',
   params:[],phrase(){return 'Après qu’un <b>adversaire au contact</b> vous inflige des <b>dégâts</b>, vous effectuez une <b>Attaque gratuite</b> contre ce dernier.'}},
  /* Traction : une réaction, gratuite. Blessé par une attaque à distance, le porteur rejoint le tireur. */
+ /* v1.332 — Repli : une réaction. Après les dégâts d'une attaque au contact, le porteur gagne 1 PM Bonus. Améliorations : contre les
+    attaques à distance aussi ; un allié au contact de l'adversaire l'attaque gratuitement ; 1 dé violet de dégâts à l'adversaire. */
+ repli:{cle:'repli',nom:'Repli',type:'reac',bouton:'↶ Repli',gratuit:true,
+  aide:'Réaction : après avoir subi les dégâts d’une attaque au contact, le porteur gagne 1 PM.',
+  params:[],phrase(){return 'Après avoir subi les dégâts d’une <b>attaque au contact</b>, le porteur gagne <b>1 PM</b>.'}},
+ repliadistance:{cle:'repliadistance',nom:'Repli — à distance',court:'à distance',type:'ame',
+  aide:'Amélioration de Repli : il s’ouvre aussi après les dégâts d’une attaque à distance.',
+  params:[],phrase(){return 'Le porteur effectue <b>Repli</b> contre les <b>attaques à distance</b> également.'}},
+ repliallie:{cle:'repliallie',nom:'Repli — allié',court:'allié',type:'ame',
+  aide:'Amélioration de Repli : un allié au contact de l’adversaire l’attaque aussitôt, gratuitement.',
+  params:[],phrase(){return 'Un <b>allié au contact</b> de l’adversaire effectue une <b>attaque gratuite</b> contre lui.'}},
+ repliviolet:{cle:'repliviolet',nom:'Repli — dé violet',court:'dé violet',type:'ame',
+  aide:'Amélioration de Repli : le porteur inflige 1 dé violet de dégâts à l’adversaire.',
+  params:[],phrase(){return 'Le porteur inflige <b>1 dé violet</b> de dégâts à l’adversaire.'}},
  traction:{cle:'traction',nom:'Traction',type:'reac',bouton:'⇢ Traction',gratuit:true,
   aide:'Réaction : après avoir subi les dégâts d’une attaque à distance, le porteur effectue un Mouvement gratuit jusqu’au contact du tireur.',
   params:[],phrase(){return 'Après avoir subi les dégâts d’une <b>attaque à distance</b>, le porteur effectue <b>un Mouvement gratuit</b> jusqu’au contact de l’adversaire.'}},
@@ -1450,6 +1465,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  lancerdaguesdeux:{cle:'lancerdaguesdeux',nom:'Lancer de Dagues — Deux lames',court:'Deux lames',type:'ame',
   aide:'Amélioration de Lancer de Dagues : deux dagues, sur deux adversaires différents.',
   params:[],phrase(){return 'Le porteur lance <b>2 Dagues</b> sur <b>2 adversaires différents</b>.'}},
+ // v1.332 : les Dagues de Lancer infligent 1 dé violet à la place de leurs dés.
+ lancerdaguesviolet:{cle:'lancerdaguesviolet',nom:'Lancer de Dagues — dé violet',court:'dé violet',type:'ame',
+  aide:'Amélioration de Lancer de Dagues : les Dagues de Lancer infligent 1 dé violet à la place de leurs dés.',
+  params:[],phrase(){return 'Vos <b>Dagues de Lancer</b> infligent à la place <b>1 dé violet</b> de dégâts.'}},
  lancerdaguesdegats:{cle:'lancerdaguesdegats',nom:'Lancer de Dagues — Lancer appuyé',court:'Lancer appuyé',type:'ame',
   aide:'Amélioration de Lancer de Dagues : le bonus de dégâts du porteur s’ajoute au lancer.',
   params:[],phrase(){return 'Le porteur ajoute <b>ses dégâts</b> au lancer de dagues.'}},
@@ -1501,10 +1520,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Insaisissable — Coupure d'Adieu : quitter la zone de contact d'un adversaire lui inflige Coupure, une fois par tour ; à volonté au
     palier 2. Ombre fuyante : finir son tour au contact d'aucun adversaire donne Invisible ; Invisible et Onde au palier 2. */
  insaisisadieu:{cle:'insaisisadieu',nom:'Insaisissable — Coupure d’Adieu',court:'Coupure d’Adieu',type:'ame',
-  aide:'Amélioration d’Insaisissable : le porteur inflige Coupure à l’adversaire dont il quitte la zone de contact, une fois par tour ; à volonté au palier 2.',
-  params:[],volets:[{cle:'volonte',nom:'À volonté',palier:2}],
-  phrase(p,palier,v){const k=(v||{volonte:2}).volonte,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
-   return 'Le porteur inflige <b>Coupure</b> en sortant de la zone de contact d’un adversaire, '+(deux?'<b>à volonté</b>':'<b>une fois par tour</b>')+'.'}},
+  aide:'Amélioration d’Insaisissable : le porteur inflige Coupure à l’adversaire dont il quitte le contact, s’il était à son contact au début de son mouvement (ou s’il en est repoussé) ; une fois par tour et par adversaire.',
+  params:[],phrase(){return 'Le porteur inflige <b>Coupure</b> en quittant le contact d’un adversaire, s’il a <b>commencé son mouvement</b> à son contact (ou s’il en est <b>repoussé</b>).'}},
  insaisisombre:{cle:'insaisisombre',nom:'Insaisissable — Ombre fuyante',court:'Ombre fuyante',type:'ame',
   aide:'Amélioration d’Insaisissable : le porteur qui termine son tour au contact d’aucun adversaire gagne Invisible ; Invisible et Onde au palier 2.',
   params:[],volets:[{cle:'onde',nom:'Onde en plus',palier:2}],
@@ -2523,7 +2540,7 @@ Object.assign(TALENTS_CODES,{
    s'écrit « Talent — court », d'un seul modèle pour toutes ; l'ancien nom reste connu, pour retrouver
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
-{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',frappefurieusecontact:'frappefurieuse',frappefurieusesaignee:'frappefurieuse',ragedouble:'rage',doubleattaqueallies:'doubleattaque',criguerretous:'crideguerre',criguerrerage:'crideguerre',corpsfeuattaque:'corpsfeu',corpsfeudef:'corpsfeu',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
+{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',repliadistance:'repli',repliallie:'repli',repliviolet:'repli',lancerdaguesviolet:'lancerdagues',frappefurieusecontact:'frappefurieuse',frappefurieusesaignee:'frappefurieuse',ragedouble:'rage',doubleattaqueallies:'doubleattaque',criguerretous:'crideguerre',criguerrerage:'crideguerre',corpsfeuattaque:'corpsfeu',corpsfeudef:'corpsfeu',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',boutoirsol:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',inspirationbonus:'inspiration',inspirationreussite:'inspiration',inspirationrage:'inspiration',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',

@@ -4005,7 +4005,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanch
 /* v0.659 — Insaisissable : Coupure d'Adieu, Ombre fuyante. */
 {const C5=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C5.TALENTS_CODES.insaisisadieu.pour==='insaisissable'&&C5.TALENTS_CODES.insaisisombre.pour==='insaisissable','les améliorations');
- assert.match(C5.phraseTalent('insaisisadieu',{},2),/à volonté/);assert.match(C5.phraseTalent('insaisisombre',{},2),/Invisible et Onde/);
+ assert.match(C5.phraseTalent('insaisisadieu',{},2),/commencé son mouvement/);assert.match(C5.phraseTalent('insaisisombre',{},2),/Invisible et Onde/);
  assert.ok(idx.includes("actors.forEach(o=>regenerer(o,'fin'));actors.forEach(ombreFuyante);")&&idx.includes(" coupureAdieu(a,avant,c);if(!poison&&!degats)return;"),'câblées');}
 /* v0.658 — Coupure : Empoisonnée, Profonde, Fatale. */
 {const C4=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
@@ -4415,7 +4415,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    un mur de feu tout du long. Rapide est désactivé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(vif.includes("'orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',"),'le reste du mouvement voyage en ligne');
- assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.vengeance;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.coupureFatale;delete a.adieu;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
+ assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.repli;delete a.vengeance;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.coupureFatale;delete a.adieu;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
  assert.ok(page.includes("   if(drag.regle&&!appliqueRegleMouvement(a,drag.regle))jusquALaBorne(a,drag.regle,g,(x,y)=>moveActor(a,x,y,view==='mj',enMain,true))}")
   &&page.includes("fleche.setAttribute('d','M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'));"),'la main va jusqu’à la limite, la flèche suit le chemin');
  assert.equal(C.TALENTS_CODES.rapide.retire,true,'Rapide retiré de la bibliothèque');
@@ -6483,3 +6483,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._act
 /* v1.331 — Mur d'élément au Mysticisme ; Poison renforcé sur Attaque Empoisonnée ; le détail des Marques de chaque palier au survol. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("...(nf?{etatsEnPlus:{etats:Array(nf).fill('Poison'),touches:[]}}:{})")&&ed.includes("const EFFETS_NIVEAU=['orbestatiquerampant','ragedepart'];")
  &&ed.includes("e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0)")&&ed.includes("' — pas dans l’arbre affiché'"),'v1.331');}
+/* v1.332 — Ombrelame : Coupure d'Adieu sans palier, au départ du mouvement ; Repli et ses améliorations ; Lancer de Dagues au dé violet ; le dé violet hors de l'échec. */
+{const ix=fs.readFileSync('index.html','utf8'),C6=require('./combat.js');assert.ok(['repli','repliadistance','repliallie','repliviolet','lancerdaguesviolet'].every(k=>C6.TALENTS_CODES[k])&&C6.TALENTS_CODES.repliviolet.pour==='repli'
+ &&ix.includes("function repli(a,p,talent){")&&ix.includes("(pousse||(d&&d.has(e.id)))")&&ix.includes("porteEffet(c,'lancerdaguesviolet')?DICE_KEYS.map(k=>k==='purple'?1:0)"),'v1.332 talents');
+ assert.equal(C6.resolveAttack({dice:[[1,0],[1,7],[4,0]],def:0,dmg:0}).failed,false,'v1.332 : un 1 violet ne fait pas échouer');assert.equal(C6.resolveAttack({dice:[[1,0],[1,0]],def:0,dmg:0}).failed,true,'v1.332 : deux 1 blancs échouent');}

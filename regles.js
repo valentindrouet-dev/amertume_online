@@ -62,7 +62,7 @@ Object.assign(REGLES_DES,{
  4:'Ne frappe jamais : il sert aux <b>soins</b> (Vie, potions, repos…).',
  5:'Passe <b>toujours</b> la DEF, même sous Solidité. Ses 1 ne comptent pas pour l’échec.',
  6:'Sa valeur est multipliée par le numéro du tour, <b>×3 au plus</b>.',
- 7:'Passe la DEF si sa face la dépasse, et inflige alors <b>Poison</b> de la valeur de sa face à la cible, en plus de ses dégâts.',
+ 7:'Passe la DEF si sa face la dépasse, et inflige alors <b>Poison</b> de la valeur de sa face à la cible, en plus de ses dégâts. Ses 1 ne comptent pas pour l’échec.',
  8:'Lancé à chaque attaque d’un porteur de Faille : <b>tous les dés tombés sur sa face</b> sortent du compte. Il ne blesse jamais.'});
 // Les états qui se cumulent se disent avec « n », le nombre de crans ; ceux que le survol ne décrit pas ont leur phrase.
 Object.assign(REGLES_ETATS,{
@@ -97,7 +97,7 @@ REGLES_SECTIONS.push(
  ()=>rgSection('attaque','Résoudre une attaque',RG.rouge,'⚔','On lance la réserve de l’arme, puis on lit les dés dans cet ordre.',
   rgEl('div','rg-grille',
    rgCarte(RG.pass,'1. Les dés Légers doublés',rgEl('p','','Un dé Léger qui a la face d’un autre dé s’en va.')),
-   rgCarte(RG.rouge,'2. Échec',rgEl('p','',rgHtml('<b>Deux 1</b> ou plus (hors dés Mortels) : <b>échec</b>, rien ne porte.')),rgCalcul(rgDe(0,1),rgDe(2,1),'→','Échec')),
+   rgCarte(RG.rouge,'2. Échec',rgEl('p','',rgHtml('<b>Deux 1</b> ou plus (hors dés Mortels et violets) : <b>échec</b>, rien ne porte.')),rgCalcul(rgDe(0,1),rgDe(2,1),'→','Échec')),
    rgCarte(RG.mait,'3. Critique',rgEl('p','',rgHtml('<b>Deux 6</b> ou plus : <b>critique</b>. On ajoute un dé de la première couleur de la réserve, et encore un tant qu’il fait 6.')),rgCalcul(rgDe(2,6),rgDe(0,6),'+',rgDe(2),'→','Critique')),
    rgCarte(RG.crit,'4. Faille',rgEl('p','','Si l’attaquant porte Faille, le dé rose écarte tous les dés de sa face.')),
    rgCarte(RG.pass,'5. DEF',rgEl('p','',rgHtml('Un dé ne compte que si sa face <b>dépasse la DEF</b> (0 à '+rgN(typeof DEF_MAX!=='undefined'&&DEF_MAX,6)+'). Le Lourd et le Mortel passent toujours, sauf sous <b>Solidité</b> (le Lourd ; le Mortel aussi, améliorée). À DEF 6, seuls eux passent.'))),
@@ -147,6 +147,9 @@ REGLES_SECTIONS.push(
    '<b>Rage Infinie</b> (amélioration de Rage) : tous les gains de Rage sont doublés. <b>Double Attaque — Alliés</b> : les alliés au contact du porteur ont sa Double Attaque.',
    '<b>Mur d’élément</b> (Mystique) : chaque segment mesure au plus la valeur de <b>Mysticisme</b> du porteur, en mètres.',
    '<b>Lame empoisonnée — Poison renforcé</b>, sur <b>Attaque Empoisonnée</b> : Poison 2 (3 au palier 2) en plus du Poison des dés violets, sur un coup qui porte.',
+   '<b>Coupure d’Adieu</b> (amélioration d’Insaisissable) : Coupure à l’adversaire dont le porteur quitte le contact, seulement s’il a commencé son mouvement à son contact (ou s’il en est repoussé) ; une fois par tour et par adversaire.',
+   '<b>Repli</b> (Ombrelame, Réaction) : après les dégâts d’une attaque au contact, 1 PM. Améliorations : contre les attaques à distance aussi ; un allié au contact de l’adversaire l’attaque gratuitement ; 1 dé violet de dégâts à l’adversaire.',
+   '<b>Lancer de Dagues</b> (Ombrelame, Action bonus) : une Dague de Lancer de l’inventaire sur un adversaire à distance, comme une attaque à distance (opportunité au contact). Amélioration : 1 dé violet à la place des dés de la dague.',
    '<b>Cri de Guerre</b> (Destructeur, Action bonus, une fois par combat) : un adversaire au contact est repoussé et subit les dégâts d’opportunité du porteur. Améliorations : tous les adversaires au contact ; les alliés au contact gagnent la moitié de sa Rage (arrondie à l’inférieur).',
    '<b>Corps de Feu</b> (Mystique, Passif) : jamais Feu ; les adversaires qui arrivent au contact subissent FEU. Améliorations : ceux qui attaquent au contact subissent FEU ; la DEF des adversaires avec Feu est ignorée.',
    '<b>Attisement</b> (Mystique, Action bonus) : un adversaire visible avec Feu subit FEU 1. Améliorations : FEU 1d6 à la place ; il subit ensuite aussitôt les dégâts de son Feu.',
