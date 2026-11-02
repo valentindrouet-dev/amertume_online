@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.324","d":"2026-11-02","t":"Planche DESTRUCTEUR 2"},
 {"v":"1.323","d":"2026-11-02","t":"Limites des talents, bulle du palier 20"},
 {"v":"1.322","d":"2026-11-02","t":"Destructeur : Frappe Furieuse, Rage Infinie, Double Attaque, Cri de Guerre"},
 {"v":"1.321","d":"2026-11-02","t":"Déclencheur Saphir : subir une attaque"},

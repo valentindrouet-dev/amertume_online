@@ -3679,7 +3679,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.711 — Cinq planches Artisanat et leur catégorie ; dans la grille des logos d'un objet, une planche par groupe replié,
    son nom et sa première icône en tête. */
 {const pl=fs.readFileSync('planches.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']];")
+ assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie'],['destructeur','Destructeur']];")
   &&pl.includes("CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f).split(/\\s+-\\s+/)[0]))")&&pl.includes("groupe(nomPlanche(f),l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),true,true)")
   &&ed.includes("...iconesPlanches('divers'),...iconesPlanches('artisanat'),"),'planches Artisanat et grille repliée');}
 /* v0.710 — Trois points de compétence ; une arme de contact en main renvoie les munitions au sac ; l'équipement de départ
@@ -3948,7 +3948,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(ajouteDes(desAttaque(a,at.dice),ap.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
 /* v0.675 — La planche GARDIEN et sa catégorie. */
-assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']]"),'la planche GARDIEN');
+assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie'],['destructeur','Destructeur']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
 {const C10=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  [['boutoirtous','boutoir'],['boutoirimpact','boutoir'],['coupbouclierplus','coupbouclier'],['coupboucliernoir','coupbouclier']].forEach(([k,p])=>assert.equal(C10.TALENTS_CODES[k].pour,p,k));
@@ -4063,7 +4063,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(carto.includes("function hitboxSous(p){")&&carto.includes("if(hb&&(!dessous||dessous.kind==='start'||dessous.kind==='matiere'||(dessous.kind==='lumiere'&&!surCoeur)))dessous=hb}")
   &&carto.includes("mapTool='select';mapSel={kind:'declencheur',i,k};")&&fs.readFileSync('editor.css','utf8').includes('.hitbox.selected{z-index:3}'),'la hitbox se reprend');
  assert.ok(/function pickNow\(i\)\{[\s\S]*?renderEnjamber\(\);\n return true\}/.test(idx),'les ronds Enjamber suivent le token choisi');
- assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
+ assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie'],['destructeur','Destructeur']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
 /* v0.646 — Sorti du fond d'un piège par un test réussi, l'aventurier regagne la place d'où le piège l'avait happé, ou à défaut le
    premier point libre hors du piège. */
 {const carto=fs.readFileSync('maps.js','utf8');
@@ -5358,7 +5358,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("[...ESPECES].sort((x,y)=
 /* v0.892 — Les talents d'espèce dans la même grille que les autres groupes. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-rangee.espece-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));'),'v0.892');
 /* v0.891 — La planche d'icônes des espèces, et sa catégorie. */
-assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie']];"),'v0.891');
+assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces'],['etats','États'],['herboristerie','Herboristerie'],['destructeur','Destructeur']];"),'v0.891');
 /* v0.890 — L'arbre d'espèce : un bouton au nom de l'espèce, ses talents en deux rangées, leur description au panneau. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;")&&ed.includes("ge.className='arbres-cols arbres-cols-espece';")&&ed.includes("const tous=tEsp.length?tEsp:colonnesArbre(classe)"),'v0.890');}
@@ -6465,3 +6465,5 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
 console.log('2137 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v1.324 — La planche DESTRUCTEUR 2 et la catégorie Destructeur. */
+assert.ok(fs.existsSync('img/planches/DESTRUCTEUR 2.webp')&&fs.readFileSync('planches.js','utf8').includes("['destructeur','Destructeur']]"),'v1.324');
