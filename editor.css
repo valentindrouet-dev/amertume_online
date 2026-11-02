@@ -4784,3 +4784,14 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 /* v1.310 : la bulle d'un talent s'élargit — son texte et ses améliorations ne passent plus à la ligne tous les trois mots. */
 .bulle .talent-detail:has(>.talent-tete){min-width:min(360px,92vw)}
 .bulle .talent-detail.large:has(>.talent-tete){min-width:min(400px,92vw)}
+/* v1.312 : l'onglet Talents — deux espèces par ligne, aux ronds plus petits ; une case, à côté du nom d'une classe ou d'une espèce,
+   l'ouvre ou la ferme à la création d'aventurier. Dans le créateur, une classe ou une espèce fermée est grisée. */
+.talents-cadre.cadre-especes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;row-gap:8px;align-items:start}
+.talents-cadre.cadre-especes>.talent-rangee.espece-rangee{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 4px;margin-top:0}
+.talents-cadre.cadre-especes .talent-rangee .cat-pill.gear-carre.talent-carre{max-width:46px}
+.talents-cadre.cadre-especes .talent-rangee .cat-carte .nom-carte{font-size:9px;max-width:56px}
+.case-creation{display:inline-flex;align-items:center;margin-left:auto;cursor:pointer}
+.case-creation input{margin:0;width:13px;height:13px;cursor:pointer}
+.cat-col>h3 .case-creation{margin-left:8px}
+.creation-classe.fermee{filter:grayscale(1);opacity:.55}
+.creation-classe.fermee.on{opacity:.8}

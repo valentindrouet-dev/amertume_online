@@ -4210,7 +4210,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    h.classList.add('cliquable');h.title='Ouvrir l’arbre de talents de '+famille;
    h.onclick=()=>openArbresClasse(famille)}
   // v0.898 : le nom d'une classe ouvre ses réglages ; son rouage, son arbre.
-  if(view==='mj'&&classeDe(catalog.classes,famille)){h.classList.add('cliquable');h.removeAttribute('title');h.onclick=e=>{if(e.target.closest('button,select'))return;openReglagesClasse(famille)}}
+  if(view==='mj'&&classeDe(catalog.classes,famille)){h.classList.add('cliquable');h.removeAttribute('title');h.onclick=e=>{if(e.target.closest('button,select,input,label'))return;openReglagesClasse(famille)};h.append(caseCreation('classes',famille,nomFamille(famille)))}
   /* Une classe élémentaire (le Mystique) a Feu, Gel et Foudre dans sa barre : ses talents se
      montrent sous l'élément choisi, noms, logos et états remplis — le même aperçu que son arbre. */
   const elem=classeElementaire(famille)?(ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]):null;
@@ -4225,11 +4225,11 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   const cadre=document.createElement('div');cadre.className='talents-cadre';if(encre)cadre.style.setProperty('--classe',encre);
   if(view==='mj'&&aUnArbre(famille)){cadre.classList.add('cliquable');cadre.onclick=e=>{if(!e.target.closest('.cat-carte,button'))openArbresClasse(famille)}}
   /* v0.886 : le groupe Espèces, une ligne droite par espèce — un petit séparateur et son nom, puis ses talents, par type. */
-  if(famille===FAMILLE_ESPECES){const rang=t=>ORDRE_TYPES_TALENTS.indexOf(talentType(t)[0]);
+  if(famille===FAMILLE_ESPECES){const rang=t=>ORDRE_TYPES_TALENTS.indexOf(talentType(t)[0]);cadre.classList.add('cadre-especes');
    [...ESPECES.map(e=>[e.id,e.nom]),['','Sans espèce']].forEach(([id,nomE])=>{const lot=ordre.filter(([t])=>(especeDe(t.espece)?t.espece:'')===id).sort((x,y)=>rang(x[0])-rang(y[0]));if(!lot.length)return;
     const r=document.createElement('div');r.className='talent-rangee espece-rangee';r.setAttribute('aria-label',nomE);
     const sep=document.createElement('span');sep.className='espece-separateur';sep.textContent=nomE;r.append(sep);
-    if(view==='mj'&&id){sep.classList.add('cliquable');sep.onclick=()=>openReglagesEspece(id)}
+    if(view==='mj'&&id){sep.classList.add('cliquable');sep.onclick=e=>{if(e.target.closest('input,label'))return;openReglagesEspece(id)};sep.append(caseCreation('especes',id,nomE))}
     lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
   /* v1.129 : le groupe Métiers, comme les Espèces — un séparateur par métier, puis ses talents, par type. Chez le MJ, le nom d'un
      métier ouvre son arbre ; un métier sans talent garde sa ligne, pour qu'on l'ouvre. */
@@ -5115,7 +5115,15 @@ const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
 const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,'')+bonusEspece({hero:true,espece:c.espece}).pv)};
 // Une étape n'ouvre la suivante que remplie : un nom, une espèce, une classe, tous les points dépensés.
-const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecAscendance(creation)&&!creation.ascendance?'Choisis ton Ascendance.':k==='espece'&&especeAvecHeritage(creation)&&!creation.heritage?'Choisis ton Héritage.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation[champSavoir(creation)])?(champSavoir(creation)==='competent'?'Choisis ta compétence.':'Choisis la compétence de ta vie antérieure.'):k==='classe'&&!creation.role?'Choisis une classe.'
+/* v1.312 — Les classes et les espèces que le MJ n'a pas encore ouvertes à la création (catalog.creationFermee) : grisées dans le
+   créateur, on lit leur fiche, mais on ne peut pas les prendre. Une case, sur l'onglet Talents, à côté de leur nom. */
+function fermeeCreation(genre,cle){const f=catalog.creationFermee;return !!f&&Array.isArray(f[genre])&&f[genre].includes(cle)}
+function caseCreation(genre,cle,nom){const l=document.createElement('label');l.className='case-creation';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!fermeeCreation(genre,cle);
+ l.title=nom+' : '+(cb.checked?'ouverte':'fermée')+' à la création d’aventurier';cb.setAttribute('aria-label',nom+' ouverte à la création d’aventurier');
+ l.onclick=e=>e.stopPropagation();cb.onchange=()=>{const f={classes:[],especes:[],...(catalog.creationFermee||{})},s=new Set(f[genre]||[]);if(cb.checked)s.delete(cle);else s.add(cle);f[genre]=[...s];
+  if(!f.classes.length&&!f.especes.length)delete catalog.creationFermee;else catalog.creationFermee=f;renderTalents();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+ l.append(cb);return l}
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&fermeeCreation('especes',creation.espece)?'Cette espèce n’est pas encore ouverte.':k==='classe'&&creation.role&&fermeeCreation('classes',creation.role)?'Cette classe n’est pas encore ouverte.':k==='espece'&&especeAvecAscendance(creation)&&!creation.ascendance?'Choisis ton Ascendance.':k==='espece'&&especeAvecHeritage(creation)&&!creation.heritage?'Choisis ton Héritage.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation[champSavoir(creation)])?(champSavoir(creation)==='competent'?'Choisis ta compétence.':'Choisis la compétence de ta vie antérieure.'):k==='classe'&&!creation.role?'Choisis une classe.'
  :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.'
  :k==='equipement'&&lotsManquent(creation)?'Choisis ton équipement.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
@@ -5175,7 +5183,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
  else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes creation-especes';
   /* v0.893 : les espèces sans Extension d'abord, puis par Extension, dans l'ordre des Extensions ; dans chaque groupe, par nom. */
   const rangExt=e=>{const k=extensionEspece(e);return k?1+EXTENSIONS.findIndex(([c])=>c===k):0};
-  [...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr')).forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
+  [...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr')).forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'')+(fermeeCreation('especes',e.id)?' fermee':'');b.style.setProperty('--teinte',e.teinte);
    const n=document.createElement('b');n.className='creation-espece-nom';n.textContent=e.nom;if(COULEURS_ICONES_ESPECES[e.id])n.style.color=COULEURS_ICONES_ESPECES[e.id];{const ic=iconeEspece(e);if(ic)n.prepend(ic)}b.append(n);
    {const px=pastilleExtension(extensionEspece(e));if(px)b.append(px)}
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
@@ -5213,7 +5221,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
     tals.forEach(x=>{const q=talentRond(x);q.setAttribute('aria-label',nomEnClair(x.name));surveille(q,()=>bulleTalentSur(q,x,{points:false}));r.append(q)});f.append(r)}
    corps.append(f)}}
  else if(k==='classe'){const g=document.createElement('div');g.className='creation-classes';
-  (catalog.classes||[]).forEach(cl=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.role===cl.name?' on':'');b.style.setProperty('--teinte',cl.tint||'#8a7a5a');
+  (catalog.classes||[]).forEach(cl=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.role===cl.name?' on':'')+(fermeeCreation('classes',cl.name)?' fermee':'');b.style.setProperty('--teinte',cl.tint||'#8a7a5a');
    const n=document.createElement('b');n.textContent=cl.name;const p=document.createElement('small');p.textContent='+'+(Number(cl.pv)||0)+' PV';b.append(n,p);
    {const px=pastilleExtension(extensionClasse(cl));if(px)b.append(px)}
    b.onclick=()=>{c.role=cl.name;renderCreation()};g.append(b)});corps.append(g);

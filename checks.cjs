@@ -5335,7 +5335,7 @@ assert.ok(fs.existsSync('img/points/pa.webp')&&fs.existsSync('img/points/pm.webp
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(ed.includes("const kitCreation=c=>[...fixesCreation(c),...groupesCreation(c).flatMap(g=>g.lots[(c.lots||{})[g.cle]]||[]),...OBJETS_DEPART]")
   &&ed.includes("function departDefautClasse(){return {fixes:[],groupes:[{nom:'Armes',lots:structuredClone(ARMES_DEPART)},{nom:'Armure',lots:structuredClone(ARMURES_DEPART)}]}}")
-  &&ed.includes("if(view==='mj'&&classeDe(catalog.classes,famille)){h.classList.add('cliquable');")&&ed.includes("sep.onclick=()=>openReglagesEspece(id)")
+  &&ed.includes("if(view==='mj'&&classeDe(catalog.classes,famille)){h.classList.add('cliquable');")&&ed.includes("sep.onclick=e=>{if(e.target.closest('input,label'))return;openReglagesEspece(id)}")
   &&ed.includes('if(typeof appliqueReglages===\'function\')appliqueReglages(c)')&&ed.includes('function blocMesure(m,{rerender,armesSeules=false,apres})')
   &&ed.includes("s.append(...blocMesure(mesureForge,{rerender:renderForge,")&&ed.includes("if(soi!==true)piecesUniques(a,soi);")&&ed.includes("fromMonster(catalog.monsters[template],true)")
   &&css.includes('.depart-lot{'),'v0.898');}
