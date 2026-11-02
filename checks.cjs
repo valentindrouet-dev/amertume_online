@@ -4877,7 +4877,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("const GLYPHES_TALENT={abon:'✚',act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
   &&src.includes('<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span>')&&src.includes("nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';")
   &&feuille.includes("button.btn-talent.t-mvt{--fond:#cf9152}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#8a6440}"),'le type Mouvement et le coût à l’éditeur');
- assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame','abon'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
+ assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame','abon'];")&&page.includes("function dejaJoue(a,talent,code){if(!enCombat()||!a||!talent||(code&&code.cle==='orbes'))return false;")
   &&page.includes("const bloque=deja||manquePA||manquePM;")&&page.includes("if(dit===null){if(!ctx.pris&&!placementEnCours&&!fermeFormesMur)marqueTalent(a,talent,code);return}")
   &&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;")&&page.includes("if(ctx)payeTalent(ctx);else if(rangeeTalent(talent)==='attaques'")
   &&page.includes("const ctx=talentEnCours;\n viserCible('✦ Clique sur la carte pour poser '+m.name,(vise,q)=>{if(ctx)payeTalent(ctx);")

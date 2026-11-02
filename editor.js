@@ -4484,7 +4484,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
    ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])
   +'<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span><input name="coutAction" type="number" min="0" max="9" step="1" value=""></label>'
-  +'<label id="limite-champ"'+(t.type==='abon'?'':' hidden')+'><span>Limite</span><select name="limite">'+LIMITES_TALENT.map(([k,n])=>'<option value="'+k+'"'+(k===(limiteTalent({type:'abon',limite:t.limite}))?' selected':'')+'>'+esc(n.replace(/\.$/,''))+'</option>').join('')+'</select></label>'+'</div>'
+  +'<label id="limite-champ"'+(TYPES_LIMITES.includes(t.type||'act')?'':' hidden')+'><span>Limite</span><select name="limite">'+LIMITES_TALENT.map(([k,n])=>'<option value="'+k+'"'+(k===(limiteTalent({type:t.type||'act',limite:t.limite})||'aucune')?' selected':'')+'>'+esc(n.replace(/\.$/,''))+'</option>').join('')+'</select></label>'+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   +'<div id="famille-espece"'+(famille===FAMILLE_ESPECES?'':' hidden')+'><label>Espèce<select name="espece">'+ESPECES.map(e=>'<option value="'+e.id+'"'+(t.espece===e.id?' selected':'')+'>'+esc(e.nom)+'</option>').join('')+'</select></label></div>'
   /* Un talent élémentaire choisit un logo par élément : ils remplacent le logo unique, et
@@ -4572,7 +4572,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   const regle=ty=>{const v=ty==='mvt'?t.coutPM:ty==='act'||ty==='abon'?t.coutPA:undefined;return ty===t.type&&Number.isInteger(v)?v:null};
   const majCout=()=>{const ty=f.type.value,d=coutParDefaut({type:ty,effet:f.effet?f.effet.value:t.effet});champ.hidden=!d;if(!d)return;
    nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';if(!touche){const r=regle(ty);f.coutAction.value=String(r!==null?r:ty==='mvt'?d.pm:d.pa)}};
-  f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout();$('limite-champ').hidden=f.type.value!=='abon'});
+  f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout();$('limite-champ').hidden=!TYPES_LIMITES.includes(f.type.value);
+   // v1.323 : un type neuf prend sa limite par défaut, tant qu'on n'en a pas choisi une autre pour lui.
+   if(f.limite)f.limite.value=f.type.value===t.type?(limiteTalent(t)||'aucune'):limiteParDefaut(f.type.value)});
   if(f.effet)f.effet.addEventListener('change',()=>{if(!touche)majCout()});majCout()}
  const fam=$('talent-form').elements.famille;
  // La catégorie d'icônes qui porte le nom de la classe passe en tête des menus de logos.
@@ -4626,7 +4628,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // D'une classe à l'autre, il quitte sa case et ses lignes ; l'arbre de la nouvelle lui en donne une.
  else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';delete t.pos;delete t.liens}
  t.type=f.type.value;t.level=num(f.level.value,1,20);
- if(t.type==='abon'&&f.limite)t.limite=limiteTalent({type:'abon',limite:f.limite.value});else delete t.limite;
+ if(TYPES_LIMITES.includes(t.type)&&f.limite&&LIMITES_TALENT.some(([k])=>k===f.limite.value)&&f.limite.value!==limiteParDefaut(t.type))t.limite=f.limite.value;else delete t.limite;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
  /* Élémentaire : un logo par élément ; le premier donné sert aussi de logo unique, là où
@@ -7190,7 +7192,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       if(mj)el.onclick=()=>{if(lienDepuis){lienDepuis=null}ajouterDansArbre({famille:c.famille,voie:c.voie,pos:posDe(t),groupe:g,ordreArbre:ordreArbre(t),type:ligne==='moyen'?'pass':'act',remplace:t.id})}}
      if(mj){surDepot(el,g,ligne,t);if(enLibre)glisseLibre(el,t,ligne,g)}pose(el,sh(lieu(x,t,p)),ligne,x)};
     ['gros','moyen'].forEach(ligne=>x.G[ligne].forEach((v,k)=>{const t=x.P[ligne][k],p=sh(autour(x.c0,v,ligne,x.G));
-     if(t)rond(ligne,t,autour(x.c0,v,ligne,x.G));else if(x.masque)pose(repere(ligne==='moyen'?'pass':'act'),p,ligne,x);else if(mj)pose(place(ligne,g,ligne,k),p,ligne,x)}));
+     // v1.323 : chez un aventurier, une place vide d'un palier visible garde sa bulle « ? », comme dans un palier masqué.
+     if(t)rond(ligne,t,autour(x.c0,v,ligne,x.G));else if(x.masque||!mj)pose(repere(ligne==='moyen'?'pass':'act'),p,ligne,x);else if(mj)pose(place(ligne,g,ligne,k),p,ligne,x)}));
     x.hors.forEach(([ligne,t],k)=>rond(ligne,t,dehors(x,i,k)))});
    const sec=document.createElement('section');sec.className='arbre-groupe arbre-groupe-paliers';sec.append(roue);plan.append(sec);
    col.append(plan);return col}
