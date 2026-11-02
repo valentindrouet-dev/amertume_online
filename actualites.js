@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.328","d":"2026-11-02","t":"Sommes dans les calculs des talents"},
 {"v":"1.327","d":"2026-11-02","t":"{ascendance} dans les infobulles"},
 {"v":"1.326","d":"2026-11-02","t":"Modifier en masse sur les cartes"},
 {"v":"1.325","d":"2026-11-02","t":"{vie} dans les infobulles"},

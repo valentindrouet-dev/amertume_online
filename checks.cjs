@@ -6474,3 +6474,5 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("et=c<0&&!(d[1]!==undefin
  &&mp.includes(".filter(([l,v])=>masseCle({...t.lit(l.o),...v})!==l.avant)"),'v1.326');}
 /* v1.327 — {ascendance} dit l'état de l'Ascendance choisie par l'aventurier Drakéide. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("ETATS_ASCENDANCE[a.ascendance]||'':'';if(e)texte=texte.replace(/\\{ascendance\\}/gi,e)}"),'v1.327');
+/* v1.328 — Les calculs des textes de talent font aussi les sommes : {10+mouvement}, {Endu+2} ; {mouvement}, le mouvement de l'aventurier. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("(\\d+(?:[.,]\\d+)?)\\s*([x×X*+])\\s*(\\p{L}+)")&&ed.includes("res.textContent=Number.isFinite(val)?String(Math.round(plus?n+val:n*val)):lib;")&&ed.includes(" mouvement:{stat:'pm',val:a=>"),'v1.328');}

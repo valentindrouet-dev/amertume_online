@@ -3159,6 +3159,8 @@ const VARIABLES_TALENT={
  vie:{stat:'vie',val:a=>vieAffichee(a)},
  pv:{stat:'pv',val:a=>Math.trunc(Number(a.max))||0},
  degats:{stat:'dmg',val:a=>degatsDe(a)},
+ // v1.328 : le mouvement de l'aventurier, en mètres, tel que sa fiche le compte (Gel et équipement compris).
+ mouvement:{stat:'pm',val:a=>Math.max(0,Math.round(Number(distanceMouvement(a,typeof items==='function'?items():undefined))||0))},
  def:{stat:'def',val:a=>defOf(a)},
  niveau:{stat:'xp',val:a=>Math.trunc(Number(a.level))||1},
  pa:{val:a=>pointsMax(a,'action')},
@@ -3168,12 +3170,14 @@ function motVariable(k,v,a){const b=document.createElement('b');b.className='mot
  const c=v.stat&&typeof STAT_TINTS!=='undefined'&&STAT_TINTS[v.stat]?'rgb('+STAT_TINTS[v.stat]+')':v.teinte||'';if(c)b.style.color=c;
  let n=null;if(a)try{n=v.val(a)}catch(e){n=null}
  b.textContent=Number.isFinite(n)?String(n):k;return b}
-function calculTalent(expr,a){const m=String(expr).match(/^(?:(\d+(?:[.,]\d+)?)\s*[x×X*]\s*(\p{L}+)|(\p{L}+)\s*[x×X*]\s*(\d+(?:[.,]\d+)?))$/u);if(!m)return null;
+// v1.328 : {10+mouvement} ou {Endu+2}, une somme, comme un produit.
+function calculTalent(expr,a){const m=String(expr).match(/^(?:(\d+(?:[.,]\d+)?)\s*([x×X*+])\s*(\p{L}+)|(\p{L}+)\s*([x×X*+])\s*(\d+(?:[.,]\d+)?))$/u);if(!m)return null;
+ const plus=(m[2]||m[5])==='+';m.splice(2,1);m.splice(4,1);
  const n=Number(String(m[1]||m[4]).replace(',','.')),nom=m[2]||m[3],v=variableTalent(nom);if(!v||!Number.isFinite(n))return null;
  let val=null;if(a)try{val=v.val(a)}catch(e){val=null}
  const s=document.createElement('span');s.className='calcul-talent';const nomClair=nom[0].toUpperCase()+nom.slice(1);
  const res=document.createElement('b');res.className='mot-cle calcul-resultat';const form=document.createElement('span');form.className='calcul-formule';
- const lib=n+' × '+nomClair;form.textContent=Number.isFinite(val)?lib+' ('+val+')':lib;res.textContent=Number.isFinite(val)?String(Math.round(n*val)):lib;
+ const lib=(m[1]?n+(plus?' + ':' × ')+nomClair:nomClair+(plus?' + ':' × ')+n);form.textContent=Number.isFinite(val)?lib+' ('+val+')':lib;res.textContent=Number.isFinite(val)?String(Math.round(plus?n+val:n*val)):lib;
  s.append(res,form);return s}
 function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceChildren();
  // v1.327 : {ascendance}, l'état de l'Ascendance choisie par l'aventurier Drakéide ; sans aventurier, le mot en gras.
@@ -3181,7 +3185,7 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
  // Les dés et les variables d'abord ; entre eux, le texte se colore comme avant.
  /* v0.857 : un état entre accolades ou crochets, {Foudre} ou [Foudre], devient son icône ; {plasma}, un dé de Plasma. */
  // v0.968 : un calcul, {3×Niveau} ou {Endu×2} : son résultat ; Maj tenue, le calcul lui-même.
- const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12}(?: \\p{L}{1,12}){0,2})\\]|\\{(\\d+(?:[.,]\\d+)?\\s*[x×X*]\\s*\\p{L}{2,12}|\\p{L}{2,12}\\s*[x×X*]\\s*\\d+(?:[.,]\\d+)?)\\}','gu');let fin=0,d;
+ const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12}(?: \\p{L}{1,12}){0,2})\\]|\\{(\\d+(?:[.,]\\d+)?\\s*[x×X*+]\\s*\\p{L}{2,12}|\\p{L}{2,12}\\s*[x×X*+]\\s*\\d+(?:[.,]\\d+)?)\\}','gu');let fin=0,d;
  while((d=rd.exec(texte))){
   if(d[3]!==undefined){const cl=calculTalent(d[3],a);if(!cl)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(cl);fin=rd.lastIndex;continue}
   const k=d[1]!==undefined?d[1]:d[2];
