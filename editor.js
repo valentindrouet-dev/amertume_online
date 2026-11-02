@@ -1271,7 +1271,7 @@ const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-for
    d'un autre appareil parfois : il est relu, chiffres et noms bornés, avant d'être montré. */
 function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return null;const n=v=>Math.max(0,Math.min(1e6,Math.trunc(Number(v))||0));
  return {tours:n(o.tours),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
-  inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),tir:n(x.tir),etats:n(x.etats),objets:n(x.objets),donne:n(x.donne),bloc:n(x.bloc),
+  inf:n(x.inf),infEtat:Math.min(n(x.inf),n(x.infEtat)),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),tir:n(x.tir),etats:n(x.etats),objets:n(x.objets),donne:n(x.donne),bloc:n(x.bloc),
   sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0)),
   // v1.299 : la source de chaque sphère gagnée — « déclencheur|sphère » —, pour la bulle du MJ.
   sphSrc:Object.fromEntries(Object.entries(x.sphSrc&&typeof x.sphSrc==='object'?x.sphSrc:{}).slice(0,80).filter(([k])=>/^[a-z0-9-]{1,40}\|(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0))})),
@@ -1295,10 +1295,13 @@ const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['s
  ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','Mise à Mort'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus'],
  ['bloc','🛡','Le Rempart','dégâts bloqués par la DEF'],['tir','🏹','Meilleur tireur','dégâts à distance'],['etats','☠','Maître des états','états infligés'],['soin','💚','Le Survivant','PV récupérés'],
  ['objets','🧪','L’ingénieux','objets utilisés'],['intouch','✦','L’intouchable','dégâts subis',true]];
-const COLONNES_STATS=[['inf','Infligés'],['sub','Subis'],['soin','Soignés'],['dist','Distance'],['coups','Coups'],['crit','Critiques'],['abat','Mise à Mort']];
+/* v1.316 : les dégâts infligés se lisent en deux colonnes — ceux des coups, ceux des états (« infEtat ») ; le total « inf », coups et
+   états ensemble, reste ce que comptent les titres et les scores. */
+const COLONNES_STATS=[['infD','Infligés'],['infEtat','Dégâts d’états'],['sub','Subis'],['soin','Soignés'],['dist','Distance'],['coups','Coups'],['crit','Critiques'],['abat','Mise à Mort']];
 function portraitStats(x){const a=actors.find(o=>o&&o.id===x.id),el=document.createElement('span');el.className='stats-portrait '+x.camp;
  if(a&&a.image){const im=document.createElement('img');im.src=a.image;im.alt='';el.append(im)}else el.textContent=(x.nom||'?').trim().charAt(0).toUpperCase();return el}
 function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps=$('stats-combat-corps');corps.replaceChildren();
+ b.liste.forEach(x=>{x.infD=Math.max(0,x.inf-x.infEtat)});
  const somme=(l,k)=>l.reduce((s,x)=>s+x[k],0),troupe=b.liste.filter(x=>x.camp==='troupe'),adv=b.liste.filter(x=>x.camp!=='troupe');
  const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
  const score=(cls,valeur,libelle,degats)=>{const d=el('div','stats-score '+cls),v=el('b','',String(valeur));
@@ -1320,7 +1323,7 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
    const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');jeton.setAttribute('aria-label',p.top.nom);
    surveille(jeton,()=>{const d=el('div','talent-detail large'),n=el('p','talent-bulle-nom');n.append(el('b','',p.top.nom));d.append(n);ouvrirBulle(jeton,d,'bulle-talent')});
    c.append(jeton,t);rang.get(p.dore).append(c)});corps.append(g)}
- const maxInf=Math.max(1,...b.liste.map(x=>x.inf)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
+ const maxInf=Math.max(1,...b.liste.map(x=>x.infD)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
  [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
   ['',...COLONNES_STATS.map(c=>c[1]),...(k==='troupe'?['Sphères']:[])].forEach(x=>th.append(el('th','',x)));
@@ -1330,8 +1333,8 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
    const n=Object.values(compte).reduce((s,v)=>s+(Number(v)||0),0),t=document.createElement('b');t.className='stats-sph-total';t.textContent='= '+n;g.append(t)}else{d.textContent='0';d.classList.add('zero')}};
   const tb=t.createTBody();[...l].sort((x,y)=>y.inf-x.inf||y.sub-x.sub).forEach(x=>{const r=tb.insertRow(),n=r.insertCell(),nom=el('span','stats-nom');
    nom.append(portraitStats(x),el('span','',x.nom));n.append(nom);
-   COLONNES_STATS.forEach(([c])=>{const d=r.insertCell();d.className='stats-n '+c+(x[c]?'':' zero');d.textContent=valeur(c,x[c]);
-    if(c==='inf'&&x.inf){const barre=el('i','stats-barre');barre.style.width=Math.round(x.inf/maxInf*100)+'%';d.append(barre)}});
+   COLONNES_STATS.forEach(([c])=>{const d=r.insertCell();d.className='stats-n '+c+(c==='infD'?' inf':'')+(x[c]?'':' zero');d.textContent=valeur(c,x[c]);
+    if(c==='infD'&&x.infD){const barre=el('i','stats-barre');barre.style.width=Math.round(x.infD/maxInf*100)+'%';d.append(barre)}});
    if(k==='troupe'){const d=r.insertCell();sph(d,x.sph||{});sourcesSph(d,[x])}});
   const tf=t.createTFoot().insertRow();tf.insertCell().textContent='Total';COLONNES_STATS.forEach(([c])=>{const d=tf.insertCell();d.className='stats-n';d.textContent=valeur(c,somme(l,c))});
   if(k==='troupe'){const tot={};l.forEach(x=>Object.entries(x.sph||{}).forEach(([g,v])=>{tot[g]=(tot[g]||0)+v}));const d=tf.insertCell();sph(d,tot);sourcesSph(d,l)}
@@ -9658,7 +9661,7 @@ addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='inventaire'
 /* v1.190 — L'onglet Statistiques : ce que l'aventurier a fait depuis sa création, groupé, une tuile par chiffre. */
 let orSansGain=false;
 function noteTrouve(a,o,n=1){if(a&&o)ajouteVie(a,'rar_'+rareteDe(o),Math.max(0,Math.trunc(n)||0))}
-const STATS_VIE=[['Combat',[['combats','Combats'],['inf','Dégâts infligés'],['pic','Coup le plus fort'],['coups','Coups portés'],['crit','Critiques'],['abat','Mises à Mort'],['tir','Dégâts à distance'],['etats','États infligés'],['bloc','Dégâts bloqués par la DEF'],['titres','Titres']]],
+const STATS_VIE=[['Combat',[['combats','Combats'],['infD','Dégâts infligés'],['infEtat','Dégâts d’états'],['pic','Coup le plus fort'],['coups','Coups portés'],['crit','Critiques'],['abat','Mises à Mort'],['tir','Dégâts à distance'],['etats','États infligés'],['bloc','Dégâts bloqués par la DEF'],['titres','Titres']]],
  ['Survie',[['sub','Dégâts subis'],['soin','PV récupérés'],['donne','PV soignés aux autres'],['chutes','Comas'],['morts','Morts'],['repos','Repos courts'],['objets','Objets utilisés']]],
  ['Exploration',[['dist','Distance parcourue'],['tests','Tests'],['reussis','Tests réussis']]],
  // v1.289 : l'or et les sphères dépensés, et les sphères gagnées couleur par couleur.
@@ -9666,7 +9669,7 @@ const STATS_VIE=[['Combat',[['combats','Combats'],['inf','Dégâts infligés'],[
   ...[['citrine','Citrines gagnées'],['emeraude','Émeraudes gagnées'],['saphir','Saphirs gagnés'],['rubis','Rubis gagnés'],['diamant','Diamants gagnés']].map(([c,l])=>['gemmes_'+c,l]),
   ['xp','XP'],['marques','Marques gagnées']]]];
 function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsVie:{},n=k=>Math.max(0,Math.floor(Number(s[k])||0));
- const val=k=>k==='xp'?Math.max(0,Math.trunc(Number(a.xp))||0):k==='marques'?marquesGagnees(a):n(k);
+ const val=k=>k==='xp'?Math.max(0,Math.trunc(Number(a.xp))||0):k==='marques'?marquesGagnees(a):k==='infD'?Math.max(0,n('inf')-n('infEtat')):n(k);
  const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
  // v1.205 : une ligne par chiffre — son nom à gauche, sa valeur à droite — en deux colonnes, comme les autres onglets.
  const tuile=(v,libelle,cls)=>{const t=el('div','vie-ligne'+(cls?' '+cls:'')+(v&&v!=='0'&&v!=='0 m'?'':' zero'));t.append(el('span','',libelle),el('b','',v));return t};
