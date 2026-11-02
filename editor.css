@@ -4781,3 +4781,6 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .choix-intervention .choix-nombre-val{min-width:1.4em;text-align:center;font-size:18px}
 .choix-intervention .choix-nombre img{width:22px;height:22px;object-fit:contain}
 .floater.floater-bille .pt{width:1em;height:1em;margin:0;vertical-align:middle}
+/* v1.310 : la bulle d'un talent s'élargit — son texte et ses améliorations ne passent plus à la ligne tous les trois mots. */
+.bulle .talent-detail:has(>.talent-tete){min-width:min(360px,92vw)}
+.bulle .talent-detail.large:has(>.talent-tete){min-width:min(400px,92vw)}

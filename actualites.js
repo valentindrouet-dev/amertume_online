@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.310","d":"2026-11-02","t":"Déluge Zone avec ses états, bulles de talent plus larges"},
 {"v":"1.309","d":"2026-11-02","t":"Bouclier de Feu avant les dégâts"},
 {"v":"1.308","d":"2026-11-02","t":"Corps de Feu"},
 {"v":"1.307","d":"2026-11-02","t":"PA et PM Bonus, titre de bonus dans son cadre"},
