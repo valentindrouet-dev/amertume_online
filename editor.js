@@ -6673,7 +6673,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     /* v1.331 : au survol d'une ligne, ce qu'elle compte, talent par talent (lui à tous ses paliers et ses améliorations) ; après le
        dessin de l'arbre, ceux qui n'y ont pas de rond sont signalés. */
     const racines=new Map();liste.forEach(t=>{const g=groupeElement(t,liste),r=lisChemin(t)?departChemin(t)||t:t;let c=0;for(let k=1;k<=paliersDe(t);k++)c+=Number(coutPalier(t,k))||0;
-     if(!racines.has(g))racines.set(g,new Map());const m=racines.get(g),x=m.get(r.id)||{id:r.id,nom:estBonus(r)?libelleBonus(paramsTalent(r)):nomEnClair(r.name||''),c:0};x.c+=c;m.set(r.id,x)});
+     if(!racines.has(g))racines.set(g,new Map());const m=racines.get(g),x=m.get(r.id)||{id:r.id,nom:estBonus(r)?libelleBonus(paramsTalent(r)):nomEnClair(r.name||'')||'(sans nom'+(nomEffet(r.effet)?' — '+nomEffet(r.effet):'')+(r.voie?', voie '+r.voie:'')+')',c:0};x.c+=c;m.set(r.id,x)});
     GROUPES_ARBRE.forEach(g=>{const e=document.createElement('span');e.textContent='Palier '+(MARQUES_PALIER[g]||0)+' : '+texteMarques(parG.get(g)||0);e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0);l.append(e)});
     arbresTotal.append(l)}
    else if(seuils.length>1){const l=document.createElement('span');l.className='arbres-tranches';
@@ -10096,4 +10096,8 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
  pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4));return r}}
 {const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);try{if(view==='mj'&&typeof arbresTotal!=='undefined'&&arbresTotal)arbresTotal.querySelectorAll('.arbres-tranches>span').forEach(e=>{const l=e._racines;if(!l||!l.length)return;
  const vu=id=>!!arbresDialog.querySelector('.arbre-noeud[data-id="'+CSS.escape(id)+'"]:not(.remplissage)');
- e.title=l.sort((u,v)=>Number(vu(v.id))-Number(vu(u.id))||v.c-u.c).map(x=>x.nom+' : '+texteMarques(x.c)+(vu(x.id)?'':' — pas dans l’arbre affiché')).join('\n')})}catch(err){}return r}}
+ // v1.333 : seul ce qui a son rond dans l'arbre s'achète, et compte ; le reste est dit à part, non compté.
+ const somme=l.filter(x=>vu(x.id)).reduce((n,x)=>n+x.c,0),hors=l.filter(x=>!vu(x.id));e._compte=somme;e.textContent=e.textContent.replace(/:.*$/,': '+texteMarques(somme));
+ e.title=l.sort((u,v)=>Number(vu(v.id))-Number(vu(u.id))||v.c-u.c).map(x=>x.nom+' : '+texteMarques(x.c)+(vu(x.id)?'':' — pas dans l’arbre, non compté')).join('\n')});
+ const sp=[...arbresTotal.querySelectorAll('.arbres-tranches>span')];if(sp.length&&sp.every(e=>Number.isFinite(e._compte)||!(e._racines&&e._racines.length))){const t=[...arbresTotal.children].find(x=>x.tagName==='SPAN'&&/^Total /.test(x.textContent));
+  if(t)t.textContent='Total '+texteMarques(sp.reduce((n,e)=>n+(Number.isFinite(e._compte)?e._compte:0),0))}}catch(err){}return r}}

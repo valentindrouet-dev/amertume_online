@@ -6482,8 +6482,10 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._act
 {const ix=fs.readFileSync('index.html','utf8');assert.ok((ix.match(/ote=pointeurVisee\(a,juge\)/g)||[]).length>=4&&ix.includes("function gabaritSouffle(a){")&&ix.includes(" ote=gabaritSouffle(a);"),'v1.330');}
 /* v1.331 — Mur d'élément au Mysticisme ; Poison renforcé sur Attaque Empoisonnée ; le détail des Marques de chaque palier au survol. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("...(nf?{etatsEnPlus:{etats:Array(nf).fill('Poison'),touches:[]}}:{})")&&ed.includes("const EFFETS_NIVEAU=['orbestatiquerampant','ragedepart'];")
- &&ed.includes("e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0)")&&ed.includes("' — pas dans l’arbre affiché'"),'v1.331');}
+ &&ed.includes("e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0)")&&ed.includes("' — pas dans l’arbre, non compté'"),'v1.331');}
 /* v1.332 — Ombrelame : Coupure d'Adieu sans palier, au départ du mouvement ; Repli et ses améliorations ; Lancer de Dagues au dé violet ; le dé violet hors de l'échec. */
 {const ix=fs.readFileSync('index.html','utf8'),C6=require('./combat.js');assert.ok(['repli','repliadistance','repliallie','repliviolet','lancerdaguesviolet'].every(k=>C6.TALENTS_CODES[k])&&C6.TALENTS_CODES.repliviolet.pour==='repli'
  &&ix.includes("function repli(a,p,talent){")&&ix.includes("(pousse||(d&&d.has(e.id)))")&&ix.includes("porteEffet(c,'lancerdaguesviolet')?DICE_KEYS.map(k=>k==='purple'?1:0)"),'v1.332 talents');
  assert.equal(C6.resolveAttack({dice:[[1,0],[1,7],[4,0]],def:0,dmg:0}).failed,false,'v1.332 : un 1 violet ne fait pas échouer');assert.equal(C6.resolveAttack({dice:[[1,0],[1,0]],def:0,dmg:0}).failed,true,'v1.332 : deux 1 blancs échouent');}
+/* v1.333 — Le compte des Marques par palier ne garde que ce qui a son rond dans l'arbre ; un élément sans nom se dit par sa mécanique. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("const somme=l.filter(x=>vu(x.id)).reduce((n,x)=>n+x.c,0)")&&fs.readFileSync('editor.js','utf8').includes("'(sans nom'+(nomEffet(r.effet)?' — '+nomEffet(r.effet):'')"),'v1.333');
