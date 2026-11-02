@@ -42,11 +42,12 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
  // Hors des champs comptés : le résultat se compare toujours tel quel.
  return Object.defineProperties({dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit,poison},{mystique:{value:mystique,enumerable:false},detail:{value:detail,enumerable:false}});
 }
-/* La DEF va de 0 à 6 : à 6, plus aucune face ne la passe, seuls le Lourd et le Mortel. */
+/* La DEF va de 0 à 6. v1.339 : un 6 passe toujours, même contre DEF 6 ; sous 6, la face doit dépasser la DEF (le Lourd et le
+   Mortel passent toujours, hors Solidité). */
 const DEF_MAX=6;
 function defPlafonnee(def){return Math.max(0,Math.min(DEF_MAX,Math.trunc(Number(def))||0))}
 // v1.105 : « solidite » vaut true (le Lourd est écarté) ou 'noir' (le Lourd et le Mortel le sont).
-function passeDef([v,c],def,solidite=false){return (c===5&&solidite!=='noir')||(c===2&&!solidite)||v>defPlafonnee(def)}
+function passeDef([v,c],def,solidite=false){return (c===5&&solidite!=='noir')||(c===2&&!solidite)||v>=6||v>defPlafonnee(def)}
 /* Portée : le rayon de contact vaut 3 tailles de token en diamètre. Les positions
    sont en pourcentage de la carte, converties en pixels avec sa taille affichée. */
 function mapPoint(a,size){return [a.x/100*size.width,a.y/100*size.height]}

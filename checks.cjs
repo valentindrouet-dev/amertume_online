@@ -2242,9 +2242,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(r({dice:[[4,3],[4,3]],def:3,dmg:0,roll:j}).damage,16);                // Doubles mystiques ×2 : ils passent 3.
  assert.equal(r({dice:[[3,6]],def:2,dmg:0,round:3,roll:j}).damage,9);               // Phase ×3 au tour 3, sur sa face naturelle.
  assert.equal(r({dice:[[3,6]],def:3,dmg:0,round:3,roll:j}).damage,0);               // Face 3 contre DEF 3 : écartée.
- assert.equal(r({dice:[[6,0]],def:9,dmg:0,roll:()=>1}).damage,0);                   // DEF 9 lue 6 : le 6 ne passe pas.
+ assert.equal(r({dice:[[6,0]],def:9,dmg:0,roll:()=>1}).damage,6);                   // v1.339 : DEF 9 lue 6 ; un 6 passe toujours.
+ assert.equal(r({dice:[[5,0]],def:6,dmg:0,roll:()=>1}).damage,0);                   // Un 5 contre DEF 6 : écarté.
  assert.equal(C.DEF_MAX,6);assert.equal(C.defPlafonnee(9),6);assert.equal(C.defPlafonnee(-2),0);assert.equal(C.defPlafonnee('x'),0);
- assert.equal(C.passeDef([6,0],6),false);assert.equal(C.passeDef([6,2],6),true);assert.equal(C.passeDef([6,2],6,true),false);assert.equal(C.passeDef([2,5],6,true),true);
+ assert.equal(C.passeDef([6,0],6),true);assert.equal(C.passeDef([6,2],6),true);assert.equal(C.passeDef([6,2],6,true),true);assert.equal(C.passeDef([5,2],6,true),false);assert.equal(C.passeDef([2,5],6,true),true);
  assert.equal(C.readStat('def','12',2),6);assert.equal(C.cleanMonster({name:'X',def:9}).def,6);
  assert.equal(r({dice:[[3,1],[3,1]],def:2,dmg:5,roll:j}).damage,0);                 // Plus un dé : ni bonus, ni DEF.
  const s=C.TALENTS_CODES.solidite;
@@ -6503,3 +6504,5 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const [x,y]=poserHorsDe
  &&fs.readFileSync('editor.css','utf8').includes(".arbres-detail .detail-amelioration p:not(.detail-am-nom){white-space:pre-line}"),'v1.337');}
 /* v1.338 — Le sous-type d'un talent de Mécaniste (Gadget, Invention), éditable et lu sous son nom. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const SOUS_TYPES_TALENT=[['gadget','Gadget'],['invention','Invention']];")&&ed.includes("const parts=[talentType(t)[2]];if(sousTypeTalent(t))parts.push(sousTypeTalent(t));")&&ed.includes('<label id="soustype-champ"'),'v1.338');}
+/* v1.339 — Un 6 passe toujours la DEF, même 6. */
+assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').passeDef([5,0],5)&&fs.readFileSync('regles.js','utf8').includes("Un <b>6</b> passe <b>toujours</b>"),'v1.339');
