@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.311","d":"2026-11-02","t":"Peau de Cristal sans doublon, Bouclier de Feu avant coup seulement"},
 {"v":"1.310","d":"2026-11-02","t":"Déluge Zone avec ses états, bulles de talent plus larges"},
 {"v":"1.309","d":"2026-11-02","t":"Bouclier de Feu avant les dégâts"},
 {"v":"1.308","d":"2026-11-02","t":"Corps de Feu"},

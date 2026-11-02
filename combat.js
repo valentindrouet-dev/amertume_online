@@ -1963,8 +1963,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* v1.302 — Bouclier de Feu : une réaction, avant qu'un adversaire ne frappe le porteur. Un orbe consommé — ou un de moins au
     tour suivant, s'il n'en reste plus — et ses dés bleus retranchent les dégâts du coup ; l'attaquant au contact subit Feu 1. */
  bouclierfeu:{cle:'bouclierfeu',nom:'Bouclier de Feu',type:'reac',bouton:'Bouclier de Feu',
-  aide:'Réaction, une fois par tour : quand un adversaire inflige des dégâts au porteur (attaque, talent, réaction… sauf ceux d’un état), il consomme 1 orbe et réduit ces dégâts des dés bleus de cet orbe ; l’adversaire au contact subit Feu 1.',params:[],
-  phrase(){return 'Avant qu’un adversaire ne vous inflige des <b>dégâts</b> (sauf ceux d’un état), vous consommez <b>1 Orbe</b> (s’il ne vous en reste plus, vous commencerez le tour suivant avec <b>−1 Orbe</b>) et vous réduisez les dégâts subis d’autant (les <b>dés bleus</b> d’un orbe). Si l’adversaire est au contact, il subit <b>FEU 1</b>.'}},
+  aide:'Réaction, une fois par tour : avant que l’Attaque ou l’orbe d’un adversaire ne blesse le porteur, il consomme 1 orbe et réduit ces dégâts des dés bleus de cet orbe ; l’adversaire au contact subit Feu 1.',params:[],
+  phrase(){return 'Avant qu’un adversaire ne vous inflige les dégâts d’une <b>Attaque</b> ou d’un <b>orbe</b>, vous consommez <b>1 Orbe</b> (s’il ne vous en reste plus, vous commencerez le tour suivant avec <b>−1 Orbe</b>) et vous réduisez les dégâts subis d’autant (les <b>dés bleus</b> d’un orbe). Si l’adversaire est au contact, il subit <b>FEU 1</b>.'}},
  bouclierfeunombre:{cle:'bouclierfeunombre',nom:'Bouclier de Feu — Nombre',court:'nombre d’orbes au choix',type:'ame',aide:'Amélioration de Bouclier de Feu : le porteur choisit combien d’orbes il dépense.',params:[],
   phrase(){return 'Vous choisissez le <b>nombre d’Orbes</b> dépensés.'}},
  bouclierfeudegats:{cle:'bouclierfeudegats',nom:'Bouclier de Feu — Riposte',court:'dégâts des orbes',type:'ame',aide:'Amélioration de Bouclier de Feu : l’attaquant subit aussi les dégâts des orbes dépensés.',params:[],
