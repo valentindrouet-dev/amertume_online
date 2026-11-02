@@ -6604,7 +6604,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(total){const req=niveauxRequis(classe),niv=t=>{const d=lisChemin(t)?departChemin(t):t;return d&&req.get(d.id)||1};
    const seuils=[...new Set([1,...[...req.values()]])].sort((x,y)=>x-y),parTranche=new Map();
    liste.forEach(t=>{const n=niv(t),s=seuils.filter(x=>x<=n).pop();let c=0;for(let k=1;k<=paliersDe(t);k++)c+=coutPalier(t,k);parTranche.set(s,(parTranche.get(s)||0)+c)});
-   if(seuils.length>1){const l=document.createElement('span');l.className='arbres-tranches';
+   /* v1.304 : en paliers de Marques, ce que chaque palier permet de dépenser — ses talents, leurs paliers et leurs améliorations —,
+      sous le seuil qui l'ouvre : 0, 20, 40, 60, 100. */
+   if(ARBRE_V3){const parG=new Map();liste.forEach(t=>{const g=groupeElement(t,liste);let c=0;for(let k=1;k<=paliersDe(t);k++)c+=coutPalier(t,k);parG.set(g,(parG.get(g)||0)+c)});
+    const l=document.createElement('span');l.className='arbres-tranches';
+    GROUPES_ARBRE.forEach(g=>{const e=document.createElement('span');e.textContent='Palier '+(MARQUES_PALIER[g]||0)+' : '+texteMarques(parG.get(g)||0);l.append(e)});
+    arbresTotal.append(l)}
+   else if(seuils.length>1){const l=document.createElement('span');l.className='arbres-tranches';
     seuils.forEach((s,i)=>{const fin=seuils[i+1],e=document.createElement('span');
      e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '+texteMarques(parTranche.get(s)||0);l.append(e)});
     arbresTotal.append(l)}}
@@ -7304,6 +7310,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      ajoute un, ✕ l'ôte, et les cartes se glissent pour changer leur ordre. Ils n'ont plus de petit rond dans l'arbre. */
   const ORDRE_PETITS=['so','s','se','o','e','no','n','ne'],rangP=x=>{const c=lisChemin(x);return [c.rang,ORDRE_PETITS.indexOf(c.dir)]};
   const tousP=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x)).sort((x,y)=>rangP(x)[0]-rangP(y)[0]||rangP(x)[1]-rangP(y)[1]);
+  /* v1.304 : au MJ seul, sur le plan de la classe, sous le prix du talent : ce qu'il coûte en tout — lui à tous ses paliers, et chacune
+     de ses améliorations à tous les siens. */
+  if(!a&&mj&&!arbresVueJoueur&&t.flottant!==true){const tout=x=>{let n=0;for(let k=1;k<=Math.max(1,paliersDe(x));k++)n+=Number(coutPalier(x,k))||0;return n};
+   const total=[t,...tousP].reduce((n,x)=>n+tout(x),0),pile=rond.parentElement&&rond.parentElement.classList.contains('detail-gauche')?rond.parentElement:null;
+   if(pile){const e=document.createElement('span');e.className='detail-prix detail-total cout-marque';remplitMarques(e,total);[...e.childNodes].forEach(x=>{if(x.nodeType===3)x.remove()});
+    const b=document.createElement('b');b.textContent=String(total);e.append(b);e.title='Total : '+texteMarques(total);e.setAttribute('aria-label',e.title);pile.append(e)}}
   const liste=(colonneDe(talentFamily(t),t.voie||'')||{}).liste||[],dispo=a?xpDisponible(a,catalog.talents):0;
   // Le chemin libre suivant pour un nouveau : une direction encore vide, sinon le rang d'après.
   const cheminLibre=()=>{const d=ORDRE_PETITS.find(k=>!petitsDe(t,k).length);return d?{de:t.id,dir:d,rang:1}:{de:t.id,dir:'so',rang:petitsDe(t,'so').length+1}};
