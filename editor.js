@@ -6670,7 +6670,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       sous le seuil qui l'ouvre : 0, 20, 40, 60, 100. */
    if(ARBRE_V3){const parG=new Map();liste.forEach(t=>{const g=groupeElement(t,liste);let c=0;for(let k=1;k<=paliersDe(t);k++)c+=coutPalier(t,k);parG.set(g,(parG.get(g)||0)+c)});
     const l=document.createElement('span');l.className='arbres-tranches';
-    GROUPES_ARBRE.forEach(g=>{const e=document.createElement('span');e.textContent='Palier '+(MARQUES_PALIER[g]||0)+' : '+texteMarques(parG.get(g)||0);l.append(e)});
+    /* v1.331 : au survol d'une ligne, ce qu'elle compte, talent par talent (lui à tous ses paliers et ses améliorations) ; après le
+       dessin de l'arbre, ceux qui n'y ont pas de rond sont signalés. */
+    const racines=new Map();liste.forEach(t=>{const g=groupeElement(t,liste),r=lisChemin(t)?departChemin(t)||t:t;let c=0;for(let k=1;k<=paliersDe(t);k++)c+=Number(coutPalier(t,k))||0;
+     if(!racines.has(g))racines.set(g,new Map());const m=racines.get(g),x=m.get(r.id)||{id:r.id,nom:estBonus(r)?libelleBonus(paramsTalent(r)):nomEnClair(r.name||''),c:0};x.c+=c;m.set(r.id,x)});
+    GROUPES_ARBRE.forEach(g=>{const e=document.createElement('span');e.textContent='Palier '+(MARQUES_PALIER[g]||0)+' : '+texteMarques(parG.get(g)||0);e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0);l.append(e)});
     arbresTotal.append(l)}
    else if(seuils.length>1){const l=document.createElement('span');l.className='arbres-tranches';
     seuils.forEach((s,i)=>{const fin=seuils[i+1],e=document.createElement('span');
@@ -10031,7 +10035,7 @@ new MutationObserver(()=>{if(arbresDialog.open)coutsAuCoin()}).observe(arbresDia
 
 /* v1.256 — Les aventuriers n'ont plus de niveau, mais ces talents le lisent encore (valeur provisoire : le niveau que donnerait
    leur XP). Chez le MJ seulement, une petite alerte sur chacun, au catalogue et dans l'arbre, en attendant leur réécriture. */
-const EFFETS_NIVEAU=['murelem','orbestatiquerampant','ragedepart'];
+const EFFETS_NIVEAU=['orbestatiquerampant','ragedepart'];
 function suitLeNiveau(t){if(!t)return false;const p=(typeof paramsTalent==='function'&&paramsTalent(t))||t.params||{};
  return EFFETS_NIVEAU.includes((talentCode(t)||{}).cle)||p.base==='niveau'||p.forme==='niveau'}
 function alerteNiveau(){const s=document.createElement('span');s.className='alerte-niveau';s.textContent='⚠';s.title='Suit encore le niveau : à réécrire';s.setAttribute('aria-label',s.title);return s}
@@ -10090,3 +10094,6 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
  const w=document.createElement('div');w.className='corps spheres-detail cout-arbre-detail';w.append(pl);aside.after(w);
  const base=(echelleRichesses&&echelleRichesses.w)||INV_LARGEUR,k=Math.min(echelleRichesses?echelleRichesses.k:9,Math.max(1,aside.offsetWidth)/base);
  pl.style.width=base+'px';pl.style.boxSizing='border-box';w.style.zoom=String(Math.max(.3,k).toFixed(4));return r}}
+{const ra=renderArbres;renderArbres=function(...x){const r=ra(...x);try{if(view==='mj'&&typeof arbresTotal!=='undefined'&&arbresTotal)arbresTotal.querySelectorAll('.arbres-tranches>span').forEach(e=>{const l=e._racines;if(!l||!l.length)return;
+ const vu=id=>!!arbresDialog.querySelector('.arbre-noeud[data-id="'+CSS.escape(id)+'"]:not(.remplissage)');
+ e.title=l.sort((u,v)=>Number(vu(v.id))-Number(vu(u.id))||v.c-u.c).map(x=>x.nom+' : '+texteMarques(x.c)+(vu(x.id)?'':' — pas dans l’arbre affiché')).join('\n')})}catch(err){}return r}}

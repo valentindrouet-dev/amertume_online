@@ -145,6 +145,8 @@ REGLES_SECTIONS.push(
    '<b>Déluge</b> (Mystique) : tous les orbes restants en un seul jet. Améliorations : + bonus de Dégâts ; les mêmes dégâts à tous les adversaires au contact de la cible ; Déluge devient une Action bonus.',
    '<b>Frappe Furieuse</b> (Destructeur) : une Attaque, puis 1 Rage. Améliorations : +1 Rage par adversaire au contact ; Saignée.',
    '<b>Rage Infinie</b> (amélioration de Rage) : tous les gains de Rage sont doublés. <b>Double Attaque — Alliés</b> : les alliés au contact du porteur ont sa Double Attaque.',
+   '<b>Mur d’élément</b> (Mystique) : chaque segment mesure au plus la valeur de <b>Mysticisme</b> du porteur, en mètres.',
+   '<b>Lame empoisonnée — Poison renforcé</b>, sur <b>Attaque Empoisonnée</b> : Poison 2 (3 au palier 2) en plus du Poison des dés violets, sur un coup qui porte.',
    '<b>Cri de Guerre</b> (Destructeur, Action bonus, une fois par combat) : un adversaire au contact est repoussé et subit les dégâts d’opportunité du porteur. Améliorations : tous les adversaires au contact ; les alliés au contact gagnent la moitié de sa Rage (arrondie à l’inférieur).',
    '<b>Corps de Feu</b> (Mystique, Passif) : jamais Feu ; les adversaires qui arrivent au contact subissent FEU. Améliorations : ceux qui attaquent au contact subissent FEU ; la DEF des adversaires avec Feu est ignorée.',
    '<b>Attisement</b> (Mystique, Action bonus) : un adversaire visible avec Feu subit FEU 1. Améliorations : FEU 1d6 à la place ; il subit ensuite aussitôt les dégâts de son Feu.',

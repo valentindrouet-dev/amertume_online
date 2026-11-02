@@ -1366,7 +1366,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Action : le porteur effectue une attaque, qui inflige Poison à la cible.',
   params:[],phrase(){return 'Le porteur effectue <b>une attaque</b>, qui inflige <b>Poison</b> à la cible.'}},
  lamepoisonplus:{cle:'lamepoisonplus',nom:'Lame empoisonnée — Poison renforcé',court:'Poison renforcé',type:'ame',
-  aide:'Amélioration de Lame empoisonnée : elle inflige Poison 2, puis Poison 3 au palier 2.',
+  aide:'Amélioration de Lame empoisonnée ou d’Attaque Empoisonnée : elle inflige Poison 2, puis Poison 3 au palier 2 ; sur Attaque Empoisonnée, en plus du Poison des dés violets.',
   params:[{cle:'n1',nom:'Poison au palier 1',type:'nombre',defaut:2,min:1,max:9},{cle:'n2',nom:'Poison au palier 2',type:'nombre',defaut:3,min:1,max:9}],
   volets:[{cle:'fort',nom:'Valeur du palier 2',palier:2}],
   phrase(p,palier,v){const n=(k,d)=>Math.max(1,Math.min(9,Math.trunc(Number(p&&p[k]))||d)),k=(v||{fort:2}).fort,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
@@ -2088,7 +2088,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
     l'état suit l'élément du Mystique. Deux améliorations : les dégâts de l'état, doublés au palier 2 ;
     un mur à deux segments pour 3 orbes, puis une zone à quatre coins pour 4 orbes au palier 2. */
  murelem:{cle:'murelem',nom:'Mur d’élément',type:'act',
-  aide:'Action : le porteur dépense 2 orbes et pose sur la carte les deux extrémités d’un mur de l’état réglé ; tout adversaire qui le traverse ou le touche subit cet état 2.',
+  aide:'Action : le porteur dépense 2 orbes et pose sur la carte les deux extrémités d’un mur de l’état réglé, chaque segment long au plus de sa valeur de Mysticisme en mètres ; tout adversaire qui le traverse ou le touche subit cet état 2.',
   params:[{cle:'etat',nom:'État du mur',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){const e=(p&&p.etat)||'Feu';return 'Le porteur dépense <b>2 orbes</b> pour dresser un <b>mur de '+e+'</b> entre deux points de la carte : tout adversaire qui le traverse ou le touche subit <b>'+e+' 2</b>.'}},
  murdegats:{cle:'murdegats',nom:'Mur d’élément — dégâts',court:'dégâts',type:'ame',

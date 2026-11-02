@@ -4899,9 +4899,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    avec sa distance, rouge au-delà, et un clic trop loin ne pose rien. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes("function viserCible(annonce,fn,refus,annule){renonceGeste();")&&page.includes("placementEnCours={poser,echap,annule};"),'un autre geste fait renoncer à la pose');
- assert.ok(page.includes("max=a.hero?Math.max(1,Math.trunc(Number(a.level))||1):Infinity;")&&page.includes("if(pts.length&&segmentsGuide(murEnCours,p).some(([u,w])=>distanceM(u,w)>max)){suivant();return}")
+ assert.ok(page.includes("max=a.hero?Math.max(1,valeurCompetence(a,skillNames.indexOf('Mysticisme'))):Infinity;")&&page.includes("if(pts.length&&segmentsGuide(murEnCours,p).some(([u,w])=>distanceM(u,w)>max)){suivant();return}")
   &&page.includes("if(m.zone&&m.pts.length===m.total-1)l.push([q,m.pts[0]]);")&&page.includes("const d=distanceM(u,w),trop=d>m.max,")
-  &&page.includes("#aim .mur-guide.trop-long{stroke:#e0483c;")&&page.includes("carte.removeEventListener('pointermove',suit)"),'la longueur au niveau, le trait qui suit la souris');}
+  &&page.includes("#aim .mur-guide.trop-long{stroke:#e0483c;")&&page.includes("carte.removeEventListener('pointermove',suit)"),'la longueur au Mysticisme, le trait qui suit la souris');}
 /* v0.572 — Mur d'élément, une action du Mystique : 2 orbes, deux clics sur la carte, un trait de l'élément visible de toute la
    table ; tout adversaire qui le traverse ou le touche subit l'état 2. Améliorations : les dégâts de l'état, doublés au palier 2 ;
    3 orbes pour deux segments, puis 4 pour une zone à quatre coins. Les murs tombent à la fin du combat. */
@@ -6480,3 +6480,6 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("ETATS_ASCENDANCE[a.ascen
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._acteur&&especeDe(especeFiche._acteur.espece);if(e){const ic=iconeEspece(e)"),'v1.329');
 /* v1.330 — Vol Draconique et Ascension montrent le point d'arrivée comme Bond Féroce ; le Souffle Drakéide, son gabarit en cône. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok((ix.match(/ote=pointeurVisee\(a,juge\)/g)||[]).length>=4&&ix.includes("function gabaritSouffle(a){")&&ix.includes(" ote=gabaritSouffle(a);"),'v1.330');}
+/* v1.331 — Mur d'élément au Mysticisme ; Poison renforcé sur Attaque Empoisonnée ; le détail des Marques de chaque palier au survol. */
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("...(nf?{etatsEnPlus:{etats:Array(nf).fill('Poison'),touches:[]}}:{})")&&ed.includes("const EFFETS_NIVEAU=['orbestatiquerampant','ragedepart'];")
+ &&ed.includes("e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0)")&&ed.includes("' — pas dans l’arbre affiché'"),'v1.331');}
