@@ -25,6 +25,8 @@ const DECLENCHEURS_GEMMES=[
  {cle:'subir-25',nom:'Subir 25 % de ses PV max d’une attaque adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Seul le plus haut palier atteint par le coup compte.'},
  {cle:'subir-50',nom:'Subir 50 % de ses PV max d’une attaque adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Seul le plus haut palier atteint par le coup compte.'},
  {cle:'subir-75',nom:'Subir 75 % de ses PV max d’une attaque adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Seul le plus haut palier atteint par le coup compte.'},
+ // v1.321 : subir les dégâts d'une attaque adverse, quels qu'ils soient — 6+.
+ {cle:'subir-attaque',nom:'Subir les dégâts d’une attaque',phase:'combat',couleur:'saphir',seuil:6,auto:true,note:'Une attaque adverse qui ôte des PV à l’aventurier ; pas un orbe, ni un état.'},
  {cle:'subir-critique',nom:'Subir un critique adverse',phase:'combat',couleur:'emeraude',auto:true,note:'Un critique d’attaque ou d’orbe adverse sur l’aventurier.'},
  {cle:'degager-sans-do',nom:'Se dégager du contact sans Dégâts d’Opportunité',phase:'combat',couleur:'emeraude',auto:true,note:'Quitter un adversaire au contact sans rien perdre.'},
  {cle:'toucher-distance',nom:'Toucher une cible à distance (une fois par tour)',phase:'combat',couleur:'citrine',auto:true,parTour:true,note:'Une attaque à distance qui passe la DEF, une fois par tour.'},
@@ -95,6 +97,7 @@ const TEXTES_JOUEURS_GEMMES={
  'fin-tour-intouchable':"Vous finissez votre tour sans adversaire au contact et sans avoir perdu un seul PV.",
  'distance-ratee':"Un tir ou un sort adverse vous visait : il vous manque.",
  'encaisser-debout':"Vous prenez un coup qui vous blesse, et vous restez debout.",
+ 'subir-attaque':"Une attaque adverse vous ôte des PV.",
  'subir-25':"Un seul coup adverse vous ôte un quart de vos PV max.",
  'subir-50':"Un seul coup adverse vous ôte la moitié de vos PV max.",
  'subir-75':"Un seul coup adverse vous ôte les trois quarts de vos PV max.",
@@ -267,6 +270,7 @@ function gemmesApresCoup(a,b,r,hpAvant,lost){if(!a||!b||!r||typeof enCombat!=='f
   if(touche&&r.orbe)deGemme(a,'sort-touche',opp)}
  if(b.hero&&hostiles(a,b)){if(!r.failed&&!r.hit&&!r.orbe)deGemme(b,'def-tient');if(lost>0&&b.hp>0)deGemme(b,'encaisser-debout');
   // v1.155 : la part des PV max qu'emporte le coup — seul le plus haut palier atteint ; et le critique adverse subi.
+  if(lost>0&&!r.orbe)deGemme(b,'subir-attaque');
   if(lost>0){const f=lost/Math.max(1,Number(b.max)||1),p=f>=.75?'subir-75':f>=.5?'subir-50':f>=.25?'subir-25':null;if(p)deGemme(b,p)}
   if(crit)deGemme(b,'subir-critique')}}
 /* v1.155 — Tuer deux adversaires ou plus d'un même geste : les morts d'un même tour de boucle (une attaque, un talent, ses

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.321","d":"2026-11-02","t":"Déclencheur Saphir : subir une attaque"},
 {"v":"1.320","d":"2026-11-02","t":"Adrénaline : Endurance en Armure"},
 {"v":"1.319","d":"2026-11-02","t":"Morsure Vampirique sans niveau"},
 {"v":"1.318","d":"2026-11-02","t":"Peau de Cristal sans niveau, alerte du Tellure corrigée"},
