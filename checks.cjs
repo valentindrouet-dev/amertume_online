@@ -4949,7 +4949,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(C.phraseTalent('corpselem',{etat:'Feu'},2).includes('même à distance')&&C.phraseTalent('corpselem',{etat:'Feu'},1).includes('au contact'));
  assert.equal(C.effetParNom('Ignore les dégâts'),'ignoredegats');assert.equal(C.effetParNom('Ignore les dégâts — soin ×2'),'soinetatdouble');
  assert.ok(page.includes("function corpsElementaire(a,b,auContact){if(!a||!b||a===b||!hostiles(a,b))return '';")&&page.includes("let brule=corpsElementaire(a,b,rangeOf(a)!=='distance');")
-  &&page.includes("const poserOrbe=()=>{const corpsO=corpsElementaire(a,b,false);")&&page.includes("apres+=corpsElementaire(a,b,true);")
+  &&page.includes("const corpsO=corpsElementaire(a,b,false);")&&page.includes("apres+=corpsElementaire(a,b,true);")
   &&page.includes("(a.hp===0?' 💀':'')+corpsElementaire(e,a,true))})}")&&!page.includes("corpsE.params.quand"),'Corps élémentaire à chaque attaque');
  assert.ok(page.includes("porteEffet(c,'soinetat')||ignores.some(x=>voletOuvert(x,'soin'))?1:0;")
   &&page.includes("codes.some(x=>x.code.cle==='eruptiondegats'&&voletOuvert(x,'double'))"),'les paliers en jeu');
