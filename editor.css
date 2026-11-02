@@ -4776,3 +4776,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 /* v1.307 : un titre de bonus long passe à la ligne, mot après mot, dans son cadre. */
 .arbres-detail h3.detail-nom-bonus.titre-long .bonus-libelle{display:inline}
 .arbres-detail h3.detail-nom-bonus.titre-long .bonus-libelle .bonus-ico{display:inline-grid;vertical-align:-.12em;margin:0 .15em}
+/* v1.309 : Bouclier de Feu — le nombre d'orbes se règle d'un compteur, − n +, avant Activer ; le PM Bonus gagné flotte en bille seule. */
+.choix-intervention .choix-nombre{display:inline-flex;align-items:center;gap:6px}
+.choix-intervention .choix-nombre-val{min-width:1.4em;text-align:center;font-size:18px}
+.choix-intervention .choix-nombre img{width:22px;height:22px;object-fit:contain}
+.floater.floater-bille .pt{width:1em;height:1em;margin:0;vertical-align:middle}

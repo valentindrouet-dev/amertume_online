@@ -4021,7 +4021,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanch
 {const C2=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C2.TALENTS_CODES.impulsiontour.pour==='impulsion'&&C2.TALENTS_CODES.impulsionallie.pour==='impulsion','Impulsion');
  assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action'),2);assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action',true),1);
- assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);orpailleur(de,vers);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(pa?'action':'mvt');el.append(pt);el.style.color=pa?'#3f8fe0':'#cf9152'"),'Impulsion câblée');}
+ assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);orpailleur(de,vers);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(pa?'action':'mvt');if(!m[1]){el.textContent='';el.classList.add('floater-bille')}el.append(pt);el.style.color=pa?'#3f8fe0':'#cf9152'"),'Impulsion câblée');}
 /* v0.654 — Les états posés par un coup montent au-dessus de la cible, après ses dégâts. */
 assert.ok(fs.readFileSync('index.html','utf8').includes(" posesDits.forEach(e=>floatNumber(b,'✦ '+e,'perte'));"),'les états du coup montent');
 /* v0.653 — Lame empoisonnée, Poison au contact : l'adversaire le plus proche, puis tous ceux de la zone de contact au palier 2. */
@@ -5010,7 +5010,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(C.phraseTalent('ricochetplus',{fois:2},1).includes('2 fois</b> supplémentaires')&&C.phraseTalent('ricochetcritique',{},2,{double:2}).includes('deux orbes')&&!C.phraseTalent('ricochetcritique',{},1,{double:2}).includes('deux orbes'),'les phrases');
  assert.ok(page.includes("const duree=volOrbe(opts.depuis||a,b,des.couleur,teinte);")
   &&page.includes("if(!r.hit)ricocher(a,p,talent,opts,b,1);return}")&&page.includes("if(cc)ricocher(a,p,talent,opts,b,voletOuvert(cc,'double')?2:1)")
-  &&page.includes("const poser=()=>{poserOrbe();if(!opts.ricochet)opportuniteAuTir(a,contacts,'sort')};"),'le moteur');}
+  &&page.includes("const poser0=()=>{poserOrbe();if(!opts.ricochet)opportuniteAuTir(a,contacts,'sort')};"),'le moteur');}
 /* v0.555 — Orbes mystiques, dés en plus : chaque orbe lance x dés Mystiques supplémentaires, x réglé à chaque palier ;
    ils s'ajoutent aux siens, ou à côté d'eux s'ils sont d'une autre couleur. La clé reste « orbes2des ». */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
