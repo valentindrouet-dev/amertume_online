@@ -1270,8 +1270,11 @@ function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return 
 const statsDialog=dialog('stats-combat','Stats de Combat','<div id="stats-combat-corps"></div>');
 /* v1.299 — Au MJ seul (les joueurs apprennent en jouant) : au survol des sphères d'un aventurier, ou du total, d'où chacune vient —
    le déclencheur, la récompense du boss ou un titre —, une ligne par source, sa sphère et son nombre. */
-function sourcesSph(cell,l){if(view!=='mj')return;const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};const src={};l.forEach(x=>Object.entries(x.sphSrc||{}).forEach(([k,v])=>{src[k]=(src[k]||0)+v}));if(!Object.keys(src).length)return;
- const nomSrc=c=>c==='boss'?'Boss vaincu':c.startsWith('titre-')?((DISTINCTIONS.find(d=>d[0]===c.slice(6))||[])[2]||'Titre'):((typeof DECLENCHEURS_GEMMES!=='undefined'&&DECLENCHEURS_GEMMES.find(d=>d.cle===c)||{}).nom||c);
+function sourcesSph(cell,l){if(view!=='mj')return;const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};const src={};l.forEach(x=>{Object.entries(x.sphSrc||{}).forEach(([k,v])=>{src[k]=(src[k]||0)+v});
+  // v1.300 : ce que la colonne compte sans source notée (gagné sur un appareil pas encore à jour) apparaît à part : le total tombe juste.
+  Object.entries(x.sph||{}).forEach(([g,v])=>{const vu=Object.entries(x.sphSrc||{}).filter(([k])=>k.endsWith('|'+g)).reduce((n,[,w])=>n+w,0);if(v>vu)src['inconnue|'+g]=(src['inconnue|'+g]||0)+v-vu})});
+ if(!Object.keys(src).length)return;
+ const nomSrc=c=>c==='inconnue'?'Source non notée':c==='boss'?'Boss vaincu':c.startsWith('titre-')?((DISTINCTIONS.find(d=>d[0]===c.slice(6))||[])[2]||'Titre'):((typeof DECLENCHEURS_GEMMES!=='undefined'&&DECLENCHEURS_GEMMES.find(d=>d.cle===c)||{}).nom||c);
  cell.classList.add('stats-sph-sources');
  surveille(cell,()=>{const d=el('div','talent-detail large bulle-sources-sph'),t=el('p','talent-bulle-nom');t.append(el('b','','Sources des sphères'));d.append(t);const ul=el('ul','sources-sph');
   Object.entries(src).sort((x,y)=>y[1]-x[1]).forEach(([k,v])=>{const [c,g]=k.split('|'),[ta,co]=g.split('-'),li=el('li');if(typeof iconeDeGemme==='function')li.append(iconeDeGemme(ta,co,false));li.append(el('b','',String(v)),' ',nomSrc(c));ul.append(li)});
