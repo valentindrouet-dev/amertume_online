@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.303","d":"2026-11-02","t":"Bouclier de Feu contre toute source adverse"},
 {"v":"1.302","d":"2026-11-02","t":"Mystique : Déluge, Attisement, Bouclier de Feu"},
 {"v":"1.301","d":"2026-11-02","t":"Toutes les Marques d'améliorations"},
 {"v":"1.300","d":"2026-11-02","t":"Sources des sphères complètes"},
