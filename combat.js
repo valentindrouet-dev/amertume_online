@@ -1935,6 +1935,31 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(){return 'Un <b>critique</b> de vos orbes vous <b>rend tous vos orbes</b>.'}},
  delugegratuit:{cle:'delugegratuit',nom:'Déluge gratuit',court:'gratuit',type:'ame',aide:'Amélioration de Déluge : il ne coûte plus l’Action.',params:[],
   phrase(){return '<b>Déluge</b> ne coûte plus l’<b>Action</b>.'}},
+ /* v1.302 — Déluge : ses améliorations ajoutent le bonus de Dégâts, ou portent ses dégâts à tous les adversaires au contact de la cible. */
+ delugedegats:{cle:'delugedegats',nom:'Déluge — Dégâts',court:'bonus de Dégâts',type:'ame',aide:'Amélioration de Déluge : le porteur ajoute son bonus de Dégâts au jet.',params:[],
+  phrase(){return 'Vous ajoutez votre <b>bonus de Dégâts</b>.'}},
+ delugezone:{cle:'delugezone',nom:'Déluge — Zone',court:'au contact de la cible',type:'ame',aide:'Amélioration de Déluge : ses dégâts frappent aussi tous les adversaires au contact de la cible.',params:[],
+  phrase(){return '<b>Déluge</b> inflige ses dégâts à <b>tous les adversaires au contact</b> de la cible.'}},
+ /* v1.302 — Attisement : une Action bonus ; un adversaire visible qui porte Feu en subit un cran de plus, 1d6 avec l'amélioration ;
+    l'autre le fait brûler aussitôt. */
+ attisement:{cle:'attisement',nom:'Attisement',type:'abon',bouton:'Attisement',
+  aide:'Action bonus : un adversaire visible qui porte Feu subit Feu 1.',params:[],
+  phrase(){return 'Un adversaire visible avec <b>Feu</b> subit <b>FEU 1</b>.'}},
+ attisementdes:{cle:'attisementdes',nom:'Attisement — 1d6',court:'FEU 1d6',type:'ame',aide:'Amélioration d’Attisement : l’adversaire subit Feu 1d6 au lieu de Feu 1.',params:[],
+  phrase(){return 'Il subit à la place <b>FEU 1d6</b>.'}},
+ attisementbrule:{cle:'attisementbrule',nom:'Attisement — Brûlure',court:'brûle aussitôt',type:'ame',aide:'Amélioration d’Attisement : l’adversaire subit ensuite aussitôt les dégâts de son Feu.',params:[],
+  phrase(){return 'Il subit ensuite immédiatement les <b>dégâts de son FEU</b>.'}},
+ /* v1.302 — Bouclier de Feu : une réaction, avant qu'un adversaire ne frappe le porteur. Un orbe consommé — ou un de moins au
+    tour suivant, s'il n'en reste plus — et ses dés bleus retranchent les dégâts du coup ; l'attaquant au contact subit Feu 1. */
+ bouclierfeu:{cle:'bouclierfeu',nom:'Bouclier de Feu',type:'reac',bouton:'Bouclier de Feu',
+  aide:'Réaction, une fois par tour : avant qu’un adversaire ne frappe le porteur, il consomme 1 orbe et réduit les dégâts de l’Attaque des dés bleus de cet orbe ; l’attaquant au contact subit Feu 1.',params:[],
+  phrase(){return 'Avant qu’un adversaire ne vous inflige les dégâts d’une <b>Attaque</b>, vous consommez <b>1 Orbe</b> (s’il ne vous en reste plus, vous commencerez le tour suivant avec <b>−1 Orbe</b>) et vous réduisez les dégâts subis d’autant (les <b>dés bleus</b> d’un orbe). Si l’adversaire est au contact, il subit <b>FEU 1</b>.'}},
+ bouclierfeunombre:{cle:'bouclierfeunombre',nom:'Bouclier de Feu — Nombre',court:'nombre d’orbes au choix',type:'ame',aide:'Amélioration de Bouclier de Feu : le porteur choisit combien d’orbes il dépense.',params:[],
+  phrase(){return 'Vous choisissez le <b>nombre d’Orbes</b> dépensés.'}},
+ bouclierfeudegats:{cle:'bouclierfeudegats',nom:'Bouclier de Feu — Riposte',court:'dégâts des orbes',type:'ame',aide:'Amélioration de Bouclier de Feu : l’attaquant subit aussi les dégâts des orbes dépensés.',params:[],
+  phrase(){return 'L’adversaire subit également les <b>dégâts des Orbes</b> dépensés.'}},
+ bouclierfeupm:{cle:'bouclierfeupm',nom:'Bouclier de Feu — Élan',court:'1 PM au prochain tour',type:'ame',aide:'Amélioration de Bouclier de Feu : le porteur gagne 1 PM pour le prochain tour.',params:[],
+  phrase(){return 'Vous gagnez ensuite <b>1 PM</b> pour le prochain tour.'}},
  implosionmouvement:{cle:'implosionmouvement',nom:'Implosion de mouvement',court:'point de Mouvement',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi 1 point de Mouvement.',params:[],
   phrase(){return 'Après un <b>critique</b>, le porteur gagne aussi <b>1 point de Mouvement</b>.'}},
  implosionorbe:{cle:'implosionorbe',nom:'Implosion d’orbe',court:'orbe rendu',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi un orbe pour le tour.',params:[],
@@ -2462,7 +2487,7 @@ Object.assign(TALENTS_CODES,{
    s'écrit « Talent — court », d'un seul modèle pour toutes ; l'ancien nom reste connu, pour retrouver
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
-{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
+{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',delugedegats:'deluge',delugezone:'deluge',attisementdes:'attisement',attisementbrule:'attisement',bouclierfeunombre:'bouclierfeu',bouclierfeudegats:'bouclierfeu',bouclierfeupm:'bouclierfeu',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',boutoirsol:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',provocgarde:'provocation',soliditegarde:'solidite',mainsecourablesoin:'mainsecourable',inspirationbonus:'inspiration',inspirationreussite:'inspiration',inspirationrage:'inspiration',mainsecourablerepousse:'mainsecourable',carapacedouble:'carapace',carapacegarde:'carapace',soliditenoir:'solidite',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage',

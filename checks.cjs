@@ -3812,7 +3812,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  const o3=C18.objetForge({id:'h',base:'ep',affixes:['r','d','e']},[ep],A);assert.deepEqual(o3.forgeEffets,{reaction:9,domination:{'Au sol':3},epines:{Poison:2}});
  assert.deepEqual(C18.affixesDe(o3,A).map(x=>[x.id,x.valeur,x.variable]),[['r',9,false],['d',3,false],['e',2,false]]);
  assert.ok(page.includes("if(partis&&toucheTombe)apresTouche(a);")&&page.includes("if(!r.failed&&r.hit)toucheTombe=true;")&&page.includes("bonus+=dominationContre(a,b);")
-  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent));")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
+  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent));")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent)+(opts.deluge?bonusDeluge(a):0);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
   &&ed.includes("if(!c.semisForge.includes('affixes-combat')){")&&ed.includes("sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])"),'affixes de combat câblés');}
 /* v0.689 — La ligne d'un affixe de classe : losange, talent à sa couleur, classe en gras, « Vos Orbes infligent Poison 1. » */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
