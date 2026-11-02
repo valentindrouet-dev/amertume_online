@@ -6478,3 +6478,5 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("ETATS_ASCENDANCE[a.ascen
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("(\\d+(?:[.,]\\d+)?)\\s*([x×X*+])\\s*(\\p{L}+)")&&ed.includes("res.textContent=Number.isFinite(val)?String(Math.round(plus?n+val:n*val)):lib;")&&ed.includes(" mouvement:{stat:'pm',val:a=>"),'v1.328');}
 /* v1.329 — Le cadre d'espèce de l'arbre porte l'icône et le nom de l'espèce de l'aventurier. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._acteur&&especeDe(especeFiche._acteur.espece);if(e){const ic=iconeEspece(e)"),'v1.329');
+/* v1.330 — Vol Draconique et Ascension montrent le point d'arrivée comme Bond Féroce ; le Souffle Drakéide, son gabarit en cône. */
+{const ix=fs.readFileSync('index.html','utf8');assert.ok((ix.match(/ote=pointeurVisee\(a,juge\)/g)||[]).length>=4&&ix.includes("function gabaritSouffle(a){")&&ix.includes(" ote=gabaritSouffle(a);"),'v1.330');}

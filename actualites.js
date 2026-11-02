@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.330","d":"2026-11-02","t":"Visées du Vol, de l'Ascension et du Souffle"},
 {"v":"1.329","d":"2026-11-02","t":"Nom de l'espèce dans son cadre"},
 {"v":"1.328","d":"2026-11-02","t":"Sommes dans les calculs des talents"},
 {"v":"1.327","d":"2026-11-02","t":"{ascendance} dans les infobulles"},
