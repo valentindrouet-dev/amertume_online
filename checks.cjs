@@ -6467,3 +6467,5 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
 console.log('2137 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
 /* v1.324 — La planche DESTRUCTEUR 2 et la catégorie Destructeur. */
 assert.ok(fs.existsSync('img/planches/DESTRUCTEUR 2.webp')&&fs.readFileSync('planches.js','utf8').includes("['destructeur','Destructeur']]"),'v1.324');
+/* v1.325 — {vie} en minuscules dit la Vie du combattant ; {Vie} et [Vie] gardent l'icône de l'état. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("et=c<0&&!(d[1]!==undefined&&k===k.toLowerCase()&&variableTalent(k))?etatAccolade(k):null"),'v1.325');
