@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.317","d":"2026-11-02","t":"Talents d'espèce sans niveau"},
 {"v":"1.316","d":"2026-11-02","t":"Dégâts d'états à part, icônes de l'aperçu de classe"},
 {"v":"1.315","d":"2026-11-02","t":"Dégâts d'états comptés à leur auteur"},
 {"v":"1.314","d":"2026-11-02","t":"Aperçu de classe, équipement de départ, Rancune"},
