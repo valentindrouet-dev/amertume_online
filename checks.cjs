@@ -4046,7 +4046,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
    cran. La catégorie d'icônes de la classe d'un talent passe en tête de ses menus de logos. */
 {const C=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8');
  assert.ok(!C.TALENTS_CODES.lamevent.params.some(p=>p.cle==='cibles')&&C.TALENTS_CODES.lameventcibles.pour==='lamevent','Ombrelame : les adversaires frappés en amélioration');
- [['coursechoix','coursemortelle'],['courseombrelame','coursemortelle'],['bondissementlibre','bondissement'],['bondissementfrappe','bondissement'],['decoupedegats','decoupe'],['decoupeplus','decoupe'],['lamepoisonplus','lameempoisonnee'],['lamepoisoncontact','lameempoisonnee']]
+ [['coursechoix','coursemortelle'],['courseombrelame','coursemortelle'],['bondissementlibre','bondissement'],['bondissementfrappe','bondissement'],['decoupedegats','decoupe'],['decoupeplus','decoupe'],['lamepoisonplus','attaqueempoisonnee'],['lamepoisoncontact','attaqueempoisonnee']]
   .forEach(([k,p])=>assert.equal(C.TALENTS_CODES[k].pour,p,k+' améliore '+p));
  assert.ok(C.TALENTS_CODES.coursemortelle.attaque&&C.TALENTS_CODES.lameempoisonnee.attaque&&C.TALENTS_CODES.bondissement.type==='reac'&&C.TALENTS_CODES.decoupe.type==='pass','les quatre talents');
  assert.match(C.phraseTalent('lamepoisonplus',{},2),/Poison 3/);assert.match(C.phraseTalent('lamepoisonplus',{},1),/Poison 2/);assert.match(C.phraseTalent('decoupeplus',{},2),/\+3/);
@@ -6481,7 +6481,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._act
 /* v1.330 — Vol Draconique et Ascension montrent le point d'arrivée comme Bond Féroce ; le Souffle Drakéide, son gabarit en cône. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok((ix.match(/ote=pointeurVisee\(a,juge\)/g)||[]).length>=4&&ix.includes("function gabaritSouffle(a){")&&ix.includes(" ote=gabaritSouffle(a);"),'v1.330');}
 /* v1.331 — Mur d'élément au Mysticisme ; Poison renforcé sur Attaque Empoisonnée ; le détail des Marques de chaque palier au survol. */
-{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("...(nf?{etatsEnPlus:{etats:Array(nf).fill('Poison'),touches:[]}}:{})")&&ed.includes("const EFFETS_NIVEAU=['orbestatiquerampant','ragedepart'];")
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("const coup={etats:Array(nf).fill('Poison'),touches:[],mortel:porteEffet(c,'lamepoisonmortel')};")&&ed.includes("const EFFETS_NIVEAU=['orbestatiquerampant','ragedepart'];")
  &&ed.includes("e._racines=[...(racines.get(g)||new Map()).values()].filter(x=>x.c>0)")&&ed.includes("' — pas dans l’arbre, non compté'"),'v1.331');}
 /* v1.332 — Ombrelame : Coupure d'Adieu sans palier, au départ du mouvement ; Repli et ses améliorations ; Lancer de Dagues au dé violet ; le dé violet hors de l'échec. */
 {const ix=fs.readFileSync('index.html','utf8'),C6=require('./combat.js');assert.ok(['repli','repliadistance','repliallie','repliviolet','lancerdaguesviolet'].every(k=>C6.TALENTS_CODES[k])&&C6.TALENTS_CODES.repliviolet.pour==='repli'
@@ -6489,3 +6489,6 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._act
  assert.equal(C6.resolveAttack({dice:[[1,0],[1,7],[4,0]],def:0,dmg:0}).failed,false,'v1.332 : un 1 violet ne fait pas échouer');assert.equal(C6.resolveAttack({dice:[[1,0],[1,0]],def:0,dmg:0}).failed,true,'v1.332 : deux 1 blancs échouent');}
 /* v1.333 — Le compte des Marques par palier ne garde que ce qui a son rond dans l'arbre ; un élément sans nom se dit par sa mécanique. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const somme=l.filter(x=>vu(x.id)).reduce((n,x)=>n+x.c,0)")&&fs.readFileSync('editor.js','utf8').includes("'(sans nom'+(nomEffet(r.effet)?' — '+nomEffet(r.effet):'')"),'v1.333');
+/* v1.334 — Lame Empoisonnée : Attaque Empoisonnée et Lame empoisonnée fusionnées, au contact seulement ; Poison Mortel. */
+{const C7=require('./combat.js'),ix=fs.readFileSync('index.html','utf8');assert.ok(C7.TALENTS_CODES.attaqueempoisonnee.nom==='Lame Empoisonnée'&&C7.TALENTS_CODES.lameempoisonnee.retire&&C7.TALENTS_CODES.lamepoisonmortel.pour==='attaqueempoisonnee'
+ &&ix.includes(" lameempoisonnee:{fn:attaqueEmpoisonnee,")&&ix.includes("etatsCoup.mortel===true&&compteEtat(b,'Poison')>=3")&&ix.includes("function refusLameEmpoisonnee(a){"),'v1.334');}
