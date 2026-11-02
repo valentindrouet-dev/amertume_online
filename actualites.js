@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.340","d":"2026-11-02","t":"Mécaniste : Régénération, Clé à Molette bonus, icône du Pistolet"},
 {"v":"1.339","d":"2026-11-02","t":"Un 6 passe toujours la DEF"},
 {"v":"1.338","d":"2026-11-02","t":"Sous-type des talents de Mécaniste"},
 {"v":"1.337","d":"2026-11-02","t":"Mécaniste : Pistolet à Rivet, Diagnostic, Armure Prototype"},

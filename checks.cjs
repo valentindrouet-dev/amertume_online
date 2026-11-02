@@ -6506,3 +6506,6 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const [x,y]=poserHorsDe
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const SOUS_TYPES_TALENT=[['gadget','Gadget'],['invention','Invention']];")&&ed.includes("const parts=[talentType(t)[2]];if(sousTypeTalent(t))parts.push(sousTypeTalent(t));")&&ed.includes('<label id="soustype-champ"'),'v1.338');}
 /* v1.339 — Un 6 passe toujours la DEF, même 6. */
 assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').passeDef([5,0],5)&&fs.readFileSync('regles.js','utf8').includes("Un <b>6</b> passe <b>toujours</b>"),'v1.339');
+/* v1.340 — Cellule — Régénération ; Clé à Molette en Action bonus ; planche MECANISTE 2 ; recharge du Pistolet sur dégâts infligés. */
+{const C9=require('./combat.js'),ix=fs.readFileSync('index.html','utf8');assert.ok(C9.TALENTS_CODES.celluleregen.pour==='cellule'&&C9.TALENTS_CODES.clemolettebonus.pour==='clemolette'&&fs.existsSync('img/planches/MECANISTE 2.webp')
+ &&ix.includes("(code.cle==='clemolette'&&porteEffet(tenus,'clemolettebonus'))")&&ix.includes("vise.hp<pvAvant&&rendPlasma(a,1)")&&fs.readFileSync('editor.js','utf8').includes("c.semisForge.includes('planche-mecaniste2')"),'v1.340');}
