@@ -6476,3 +6476,5 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("et=c<0&&!(d[1]!==undefin
 assert.ok(fs.readFileSync('editor.js','utf8').includes("ETATS_ASCENDANCE[a.ascendance]||'':'';if(e)texte=texte.replace(/\\{ascendance\\}/gi,e)}"),'v1.327');
 /* v1.328 — Les calculs des textes de talent font aussi les sommes : {10+mouvement}, {Endu+2} ; {mouvement}, le mouvement de l'aventurier. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("(\\d+(?:[.,]\\d+)?)\\s*([x×X*+])\\s*(\\p{L}+)")&&ed.includes("res.textContent=Number.isFinite(val)?String(Math.round(plus?n+val:n*val)):lib;")&&ed.includes(" mouvement:{stat:'pm',val:a=>"),'v1.328');}
+/* v1.329 — Le cadre d'espèce de l'arbre porte l'icône et le nom de l'espèce de l'aventurier. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("const e=especeFiche._acteur&&especeDe(especeFiche._acteur.espece);if(e){const ic=iconeEspece(e)"),'v1.329');

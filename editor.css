@@ -4831,3 +4831,5 @@ img.espece-ico[src$="ressuscite.webp"]{filter:drop-shadow(0 0 .6px rgb(60 45 20 
 .masse-table input[type=number]{min-width:56px}
 .masse-table td:has(textarea){min-width:200px}.masse-table textarea{resize:vertical;min-height:30px}
 .masse-table td:first-child{width:24px}
+/* v1.329 — Le cadre d'espèce de l'arbre : l'icône de l'espèce devant son nom. */
+#arbres .especes-titre>.espece-ico{width:34px;height:34px;margin:-6px -4px -6px 0}
