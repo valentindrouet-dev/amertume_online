@@ -6497,3 +6497,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const [x,y]=poserHorsDe
 /* v1.336 — Lancer de Dagues : la portée forcée d'un coup ne survit pas à ce coup ; la dague ne part que si le lancer part. Dés de tête sur deux lignes au-delà de 4. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("porteeForcee=lanceAuContact?{id:a.id,range:'contact'}:null;")&&ix.includes("apres:({partis}={})=>{if(partis)lancees.forEach(o=>retirerInventaire(a,o));")
  &&ed.includes("if(n>4){des.classList.add('deux-lignes');"),'v1.336');}
+/* v1.337 — Mécaniste : Pistolet à Rivet, Diagnostic, Armure Prototype et leurs améliorations ; retours à la ligne des cartes d'amélioration. */
+{const C8=require('./combat.js'),ix=fs.readFileSync('index.html','utf8');assert.ok(['pistoletrivet','pistoletfoudre','pistoletrecharge','diagnostic','diagnosticdeux','diagnosticfoudre','armureprototype','armureprotodegats','armureprotosoin'].every(k=>C8.TALENTS_CODES[k])
+ &&C8.TALENTS_CODES.armureprotosoin.pour==='armureprototype'&&ix.includes("function ditAnalyse(o){")&&ix.includes(" const dit=ditAnalyse(o);")&&ix.includes("function pistoletRivet(a,p,talent){")
+ &&fs.readFileSync('editor.css','utf8').includes(".arbres-detail .detail-amelioration p:not(.detail-am-nom){white-space:pre-line}"),'v1.337');}
