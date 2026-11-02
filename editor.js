@@ -9044,6 +9044,8 @@ function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle
  // v1.103 : plus d'états à droite, seulement les dés d'un coup.
  const etats=[];
  if(des||etats.length){const v=document.createElement('div');v.className='talent-valeur';if(des)v.append(des);
+  // v1.336 : plus de 4 dés, ils passent sur deux lignes équilibrées, pour ne pas mordre sur le nom.
+  {const pips=des&&des.querySelector('.pips'),n=pips?pips.children.length:0;if(n>4){des.classList.add('deux-lignes');pips.style.setProperty('--par-ligne',String(Math.ceil(n/2)))}}
   etats.forEach(e=>{const im=typeof imageEtat==='function'?imageEtat(e):null,s=document.createElement('span');s.className='talent-etat';s.title=e;
    if(im&&im.tagName==='IMG'){im.alt='';s.append(im)}else{s.textContent=e;s.style.color=TEINTE_ETAT_MOT[e]||''}v.append(s)});
   tete.append(v)}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.336","d":"2026-11-02","t":"Lancer de Dagues, dés sur deux lignes"},
 {"v":"1.335","d":"2026-11-02","t":"Finir son mouvement sur un corps à terre"},
 {"v":"1.334","d":"2026-11-02","t":"Lame Empoisonnée fusionnée, Poison Mortel"},
 {"v":"1.333","d":"2026-11-02","t":"Marques : seulement ce qui est dans l'arbre"},

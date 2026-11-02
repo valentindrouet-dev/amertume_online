@@ -6494,3 +6494,6 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const somme=l.filter(x=>
  &&ix.includes(" lameempoisonnee:{fn:attaqueEmpoisonnee,")&&ix.includes("etatsCoup.mortel===true&&compteEtat(b,'Poison')>=3")&&ix.includes("function refusLameEmpoisonnee(a){"),'v1.334');}
 /* v1.335 — Un corps à terre se laisse couvrir : au lâcher, seuls les socles debout écartent. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("const [x,y]=poserHorsDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false,false),polys,r);"),'v1.335');
+/* v1.336 — Lancer de Dagues : la portée forcée d'un coup ne survit pas à ce coup ; la dague ne part que si le lancer part. Dés de tête sur deux lignes au-delà de 4. */
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("porteeForcee=lanceAuContact?{id:a.id,range:'contact'}:null;")&&ix.includes("apres:({partis}={})=>{if(partis)lancees.forEach(o=>retirerInventaire(a,o));")
+ &&ed.includes("if(n>4){des.classList.add('deux-lignes');"),'v1.336');}

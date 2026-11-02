@@ -4836,3 +4836,5 @@ img.espece-ico[src$="ressuscite.webp"]{filter:drop-shadow(0 0 .6px rgb(60 45 20 
 /* v1.330 — Le gabarit du Souffle Drakéide : le voile et les tirets de la zone d'un objet lancé. */
 #zone-souffle{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;overflow:visible}
 #zone-souffle path{fill:#c2692a;fill-opacity:.18;stroke:#c2692a;stroke-width:2px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+/* v1.336 — Plus de 4 dés en tête d'une bulle de talent : deux lignes équilibrées (la première prend le dé de plus). */
+.talent-detail .talent-valeur .bulle-des.deux-lignes .pips{flex-wrap:wrap;width:calc(var(--par-ligne) * 20px + (var(--par-ligne) - 1) * 3px);row-gap:3px}
