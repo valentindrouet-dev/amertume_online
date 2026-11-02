@@ -6492,3 +6492,5 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("const somme=l.filter(x=>
 /* v1.334 — Lame Empoisonnée : Attaque Empoisonnée et Lame empoisonnée fusionnées, au contact seulement ; Poison Mortel. */
 {const C7=require('./combat.js'),ix=fs.readFileSync('index.html','utf8');assert.ok(C7.TALENTS_CODES.attaqueempoisonnee.nom==='Lame Empoisonnée'&&C7.TALENTS_CODES.lameempoisonnee.retire&&C7.TALENTS_CODES.lamepoisonmortel.pour==='attaqueempoisonnee'
  &&ix.includes(" lameempoisonnee:{fn:attaqueEmpoisonnee,")&&ix.includes("etatsCoup.mortel===true&&compteEtat(b,'Poison')>=3")&&ix.includes("function refusLameEmpoisonnee(a){"),'v1.334');}
+/* v1.335 — Un corps à terre se laisse couvrir : au lâcher, seuls les socles debout écartent. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("const [x,y]=poserHorsDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false,false),polys,r);"),'v1.335');

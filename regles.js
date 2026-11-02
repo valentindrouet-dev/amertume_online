@@ -133,6 +133,7 @@ REGLES_SECTIONS.push(
   rgListe(['Le combat vaut pour <b>toute la table</b> : dès qu’un adversaire révélé est debout, il commence pour tous ; hors combat, une attaque ou un talent offensif contre lui le déclenche d’abord. Il finit pour tous quand le dernier tombe.',
    'Une <b>Action bonus</b> ou une <b>Réaction</b> se joue <b>une fois par tour</b> ; une <b>Action</b> ou un <b>Mouvement</b>, sans limite. Le MJ peut régler une autre limite à chacun : aucune, une fois par tour, par combat, entre deux repos courts ou longs — elle s’écrit dans sa bulle (sauf les Orbes).','Les <b>actions bonus</b> (talents d’Action gratuits) ont leur rond turquoise.',
    '<b>Mouvement</b> : fractionnable dans le tour. <b>Terrain difficile</b> : chaque mètre en coûte deux. <b>Impraticable</b> : bloque comme un mur.',
+   'Un <b>corps à terre</b> (mort ou dans le coma), allié ou adversaire, ne barre rien : on peut finir son mouvement sur son token.',
    '<b>Ajustement</b> : mouvement épuisé, on bouge encore sans sortir de la zone de contact où l’on s’est arrêté.',
    '<b>PA et PM Bonus</b> (gagnés par un talent) : ils se dépensent après les points du tour et ne disparaissent pas à la fin du tour, seulement une fois dépensés ; un nouveau combat les efface. Un halo vert les signale dans la colonne des combattants.',
    '<b>Tour suivant</b> : le Feu brûle, la Foudre perd un cran, Surpris tombe, les points et les talents joués reviennent.',
