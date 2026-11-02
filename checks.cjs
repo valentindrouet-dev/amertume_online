@@ -6501,3 +6501,5 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const [x,y]=poserHorsDe
 {const C8=require('./combat.js'),ix=fs.readFileSync('index.html','utf8');assert.ok(['pistoletrivet','pistoletfoudre','pistoletrecharge','diagnostic','diagnosticdeux','diagnosticfoudre','armureprototype','armureprotodegats','armureprotosoin'].every(k=>C8.TALENTS_CODES[k])
  &&C8.TALENTS_CODES.armureprotosoin.pour==='armureprototype'&&ix.includes("function ditAnalyse(o){")&&ix.includes(" const dit=ditAnalyse(o);")&&ix.includes("function pistoletRivet(a,p,talent){")
  &&fs.readFileSync('editor.css','utf8').includes(".arbres-detail .detail-amelioration p:not(.detail-am-nom){white-space:pre-line}"),'v1.337');}
+/* v1.338 — Le sous-type d'un talent de Mécaniste (Gadget, Invention), éditable et lu sous son nom. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const SOUS_TYPES_TALENT=[['gadget','Gadget'],['invention','Invention']];")&&ed.includes("const parts=[talentType(t)[2]];if(sousTypeTalent(t))parts.push(sousTypeTalent(t));")&&ed.includes('<label id="soustype-champ"'),'v1.338');}

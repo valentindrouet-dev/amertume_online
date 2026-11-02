@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.338","d":"2026-11-02","t":"Sous-type des talents de Mécaniste"},
 {"v":"1.337","d":"2026-11-02","t":"Mécaniste : Pistolet à Rivet, Diagnostic, Armure Prototype"},
 {"v":"1.336","d":"2026-11-02","t":"Lancer de Dagues, dés sur deux lignes"},
 {"v":"1.335","d":"2026-11-02","t":"Finir son mouvement sur un corps à terre"},

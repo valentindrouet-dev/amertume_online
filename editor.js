@@ -4492,6 +4492,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
    ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])
   +'<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span><input name="coutAction" type="number" min="0" max="9" step="1" value=""></label>'
+  +'<label id="soustype-champ"'+(classeAvecSousTypes(talentFamily(t))?'':' hidden')+'><span>Sous-type</span><select name="sousType"><option value="">— aucun —</option>'+SOUS_TYPES_TALENT.map(([k,n])=>'<option value="'+k+'"'+(k===t.sousType?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'
   +'<label id="limite-champ"'+(TYPES_LIMITES.includes(t.type||'act')?'':' hidden')+'><span>Limite</span><select name="limite">'+LIMITES_TALENT.map(([k,n])=>'<option value="'+k+'"'+(k===(limiteTalent({type:t.type||'act',limite:t.limite})||'aucune')?' selected':'')+'>'+esc(n.replace(/\.$/,''))+'</option>').join('')+'</select></label>'+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   +'<div id="famille-espece"'+(famille===FAMILLE_ESPECES?'':' hidden')+'><label>Espèce<select name="espece">'+ESPECES.map(e=>'<option value="'+e.id+'"'+(t.espece===e.id?' selected':'')+'>'+esc(e.nom)+'</option>').join('')+'</select></label></div>'
@@ -4587,7 +4588,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  const fam=$('talent-form').elements.famille;
  // La catégorie d'icônes qui porte le nom de la classe passe en tête des menus de logos.
  const tetes=()=>$('talent-form').querySelectorAll('select[name="logo"],select[name="b_logo"]').forEach(s=>iconesClasseEnTete(s,fam.value));tetes();
- fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;$('famille-espece').hidden=fam.value!==FAMILLE_ESPECES;tetes();
+ fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;if($('soustype-champ'))$('soustype-champ').hidden=!classeAvecSousTypes(fam.value);$('famille-espece').hidden=fam.value!==FAMILLE_ESPECES;tetes();
   if(autre){const champ=$('talent-form').elements.familleLibre;champ.value='';champ.focus()}};
  const menu=$('talent-form').elements.effet;
  menu.onchange=()=>{lisBrouillonTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
@@ -4637,6 +4638,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';delete t.pos;delete t.liens}
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  if(TYPES_LIMITES.includes(t.type)&&f.limite&&LIMITES_TALENT.some(([k])=>k===f.limite.value)&&f.limite.value!==limiteParDefaut(t.type))t.limite=f.limite.value;else delete t.limite;
+ // v1.338 : le sous-type, pour un talent de Mécaniste seulement.
+ if(f.sousType&&classeAvecSousTypes(t.famille)&&SOUS_TYPES_TALENT.some(([k])=>k===f.sousType.value))t.sousType=f.sousType.value;else delete t.sousType;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
  /* Élémentaire : un logo par élément ; le premier donné sert aussi de logo unique, là où
@@ -9025,6 +9028,10 @@ function metierRecette(r){const o=r&&(catalog.items||[]).find(x=>x&&x.id===r.rec
    garde la teinte de sa nature. Un bonus de caractéristique n'est pas un talent : sa bulle ne change pas. */
 function etatsDuTalent(t){const p=paramsTalent(t)||{},connus=typeof ETATS_JEU!=='undefined'?ETATS_JEU:[];
  return [...new Set(Object.values(p).flatMap(v=>Array.isArray(v)?v:[v]).filter(v=>typeof v==='string'&&connus.includes(v)))]}
+/* v1.338 — Le sous-type d'un talent de Mécaniste : Gadget ou Invention, sous son nom, après sa nature (« Action · Invention »). */
+const SOUS_TYPES_TALENT=[['gadget','Gadget'],['invention','Invention']];
+const sousTypeTalent=t=>{const x=SOUS_TYPES_TALENT.find(([k])=>k===(t&&t.sousType));return x?x[1]:''};
+const classeAvecSousTypes=f=>typeof cleClasse==='function'&&cleClasse(f||'')===cleClasse('Mécaniste');
 function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle-nom');if(!nomP)return;
  const a=o.a||null,vu0=o.vu||(x=>x),tv=talentPourAventurier(vu0(t),a),pn=o.palier||(a?palierDe(a,t):0)||1;
  const tete=document.createElement('div');tete.className='talent-tete';
@@ -9033,7 +9040,7 @@ function enteteTalent(d,t,o={}){const nomP=d.querySelector(':scope>.talent-bulle
  if(im)ico.append(im);else ico.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:GLYPHES_TALENT[t.type]||'✦'}));
  const titres=document.createElement('div');titres.className='talent-titres';
  // Le nom d'abord, puis sa nature et ce qui le déclenche, en italique ; une limite déjà prise reste en rouge.
- const sous=document.createElement('p');sous.className='talent-sous';const parts=[talentType(t)[2]];
+ const sous=document.createElement('p');sous.className='talent-sous';const parts=[talentType(t)[2]];if(sousTypeTalent(t))parts.push(sousTypeTalent(t));
  if(typeof talentDebut==='function'&&talentDebut(t))parts.push('Début de combat');
  if(typeof talentDebutTour==='function'&&talentDebutTour(t,a))parts.push('Début de tour');
  d.querySelectorAll(':scope>.talent-limite').forEach(l=>{parts.push(l.classList.contains('epuisee')?l:l.textContent);l.remove()});
