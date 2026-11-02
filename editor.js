@@ -1475,7 +1475,7 @@ function choixMenu(ancre,options,poser){if(view!=='mj'||!ancre||!ancre.parentNod
 // v1.253 : l'icône d'une espèce, img/especes/<id>.webp ; une espèce sans icône n'en montre pas.
 // v1.257 : la couleur de chaque icône d'espèce, celle de son nom à la création.
 const COULEURS_ICONES_ESPECES={allsteiner:'#a85521',charognard:'#333231',dhampire:'#871332',drakeide:'#d5391c',elfe:'#64823a',fielsang:'#ab1513',gnome:'#0199a7',goliath:'#49637b',
- hephosien:'#288dd9',humain:'#ae591e',lupin:'#496680',nain:'#c76f0d',orc:'#5d742d',ressuscite:'#f0deb4',tellure:'#02a1bf',tieffelin:'#761f96'};
+ hephosien:'#288dd9',humain:'#ae591e',lupin:'#496680',nain:'#c76f0d',orc:'#5d742d',ressuscite:'#8a6f3e',tellure:'#02a1bf',tieffelin:'#761f96'};
 function iconeEspece(e){if(!e||!e.id)return null;const i=document.createElement('img');i.className='espece-ico';i.alt='';i.src='img/especes/'+e.id+'.webp';i.onerror=()=>i.remove();return i}
 function sousTitre(texte,titre,fn,glyphe='+'){const h=document.createElement('h4');h.className='hero-sous';
  h.append(texte);

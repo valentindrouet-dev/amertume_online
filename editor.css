@@ -4795,3 +4795,5 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .cat-col>h3 .case-creation{margin-left:8px}
 .creation-classe.fermee{filter:grayscale(1);opacity:.55}
 .creation-classe.fermee.on{opacity:.8}
+/* v1.313 : l'icône du Ressuscité, os pâle sur parchemin, prend un fin contour sombre pour se lire. */
+img.espece-ico[src$="ressuscite.webp"]{filter:drop-shadow(0 0 .6px rgb(60 45 20 / .9)) drop-shadow(0 0 .6px rgb(60 45 20 / .9))}
