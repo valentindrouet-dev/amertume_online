@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.348","d":"2026-11-03","t":"Enlacer : Nécrose et Entravé pour tous"},
 {"v":"1.347","d":"2026-11-03","t":"Bulle du Bestiaire au dessin des aventuriers"},
 {"v":"1.346","d":"2026-11-03","t":"Talent d'adversaire Réplique"},
 {"v":"1.345","d":"2026-11-03","t":"Coffre de groupe au dessin des bâtiments"},

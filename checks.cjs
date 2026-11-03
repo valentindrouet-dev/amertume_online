@@ -6527,3 +6527,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  &&mp.includes("const av=b.activeAttack;b.activeAttack=0;")&&rg.includes('<b>Réplique</b> (talent d’adversaire)'),'v1.346');}
 /* v1.347 — Bulle du Bestiaire : chiffres au dessin des aventuriers (icônes), Marques sur la même ligne. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("[['pv',0],['dmg',2],['xp',3]].forEach(([c,k])=>iconeStat(tuilesM[k],c));chiffres.append(...tuilesM);")&&css.includes('.stat-row.en-icones>.marque-gain{margin:0}'),'v1.347');}
+/* v1.348 — Enlacer : sur un critique, tous les adversaires du porteur au combat subissent ses Dégâts en Nécrose et sont Entravés. */
+{const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes(" if(r.critical&&porteTalent(a,'enlacer'))enlace(a);")&&ix.includes("const l=actors.filter(o=>o&&o!==a&&alive(o)&&!o.horsCarte&&hostiles(a,o));")&&ix.includes("if(n&&!insensibleA(o,'Nécrose'))appliqueNecrose(o,n);"),'v1.348');}
