@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.344","d":"2026-11-03","t":"Alignement d'un PNJ posé sur la carte"},
 {"v":"1.343","d":"2026-11-03","t":"Sauvegarde globale complète, import sûr"},
 {"v":"1.342","d":"2026-11-03","t":"Tirs de talent à distance, enfin"},
 {"v":"1.341","d":"2026-11-03","t":"Dagues et Pistolet : des tirs comme les autres"},

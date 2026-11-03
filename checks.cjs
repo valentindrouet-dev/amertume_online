@@ -6516,3 +6516,6 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  &&ix.includes(" const r0=reachTo(a,b,rang,porteeCoup&&a&&porteeCoup.id===a.id&&!(porteeForcee&&porteeForcee.id===a.id)?porteeCoup.range:undefined);"),'v1.342');}
 /* v1.343 — La sauvegarde globale emporte tous les réglages de l'appareil ; l'import exige un appareil MJ, sans quoi il ne s'enregistrerait pas. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("'amertume-zooms','amertume-tailles','amertume-fenetres','amertume-colonnes'")&&ed.includes("'amertume-theme','amertume-vue','amertume-page','amertume-table'")&&ed.includes("if(typeof mjIci==='function'&&!mjIci())throw Error('connecte-toi d’abord en MJ"),'v1.343');}
+/* v1.344 — Un PNJ posé sur une carte a son alignement à lui, choisi dans l'éditeur ; la table le prend à l'ouverture. */
+{const mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(mp.includes("if(a.pnj&&f.alignement)a.alignementJeu=f.alignement;")&&mp.includes("$('foe-alignement').onchange=")&&mp.includes("' pnj al-'+alignementPose(f)")
+ &&cb.includes("...(f&&['allie','neutre','adverse'].includes(f.alignement)?{alignement:f.alignement}:{})"),'v1.344');}

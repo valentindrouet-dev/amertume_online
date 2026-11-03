@@ -1710,6 +1710,8 @@ function ouvreCarte(m,reprendre){const id=m.id;
   const a=fromMonster(t);a.x=f.x;a.y=f.y;
   // Le lien vers sa pose : l'éditeur retrouve ainsi l'adversaire en jeu.
   a.pose=f.id;
+  // L'alignement choisi pour ce PNJ-là dans l'éditeur l'emporte sur celui de son modèle.
+  if(a.pnj&&f.alignement)a.alignementJeu=f.alignement;
   // Ce que la carte lui a donné, à lui seul.
   {const bourse=normaliseBourse(f.bourse);if((Array.isArray(f.inventaire)&&f.inventaire.length)||bourse.length){a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)}}
   normalizeActor(a);
@@ -1832,6 +1834,7 @@ mapsPage.innerHTML=
   +'<label id="door-crochet-label" hidden>Réussites de Ruse pour la crocheter <input type="number" id="door-crochet" min="1" max="9"></label>'
   +'<label id="foe-cache-label" hidden><input type="checkbox" id="foe-cache"> Caché — le MJ le révèle d’un clic en jeu</label>'
   +'<button id="foe-objets" hidden>✎ Objets portés</button>'
+  +'<label id="foe-alignement-label" hidden>Alignement <select id="foe-alignement"></select></label>'
   +'<label id="foe-quete-label" hidden>Quête débloquée au contact <select id="foe-quete"></select></label>'
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
@@ -2287,7 +2290,8 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('door-crochet-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)$('door-crochet').value=difficultePorte(porte);
  $('foe-cache-label').hidden=$('foe-objets').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
  // Un PNJ peut débloquer une quête cachée : l'aventurier qui le rejoint au contact la découvre.
- {const pnj=!!adv&&!!(modeleActuel(adv.tpl)||adv.tpl||{}).pnj;$('foe-quete-label').hidden=!pnj;
+ {const pnj=!!adv&&!!(modeleActuel(adv.tpl)||adv.tpl||{}).pnj;$('foe-quete-label').hidden=$('foe-alignement-label').hidden=!pnj;
+  if(pnj){const s=$('foe-alignement');s.replaceChildren(...ALIGNEMENTS.map(([k,nom])=>new Option(nom,k)));s.value=alignementPose(adv)}
   if(pnj){const s=$('foe-quete');s.replaceChildren(new Option('— aucune —',''),...((typeof domaine!=='undefined'&&domaine.quetes)||[]).map(q=>new Option(q.titre,q.id)));s.value=adv.quete||''}}
  const verrou=masse?!!masse.verrou:!!(cible&&cible.locked);
  $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel||mapSel.kind==='coupure'||mapSel.kind==='lien';
@@ -2373,7 +2377,7 @@ function objetEl(i,o){const el=document.createElement('div');
  return el}
 function foeEl(i,f){const el=document.createElement('div');
  const modele=modeleActuel(f.tpl)||f.tpl||{};
- el.className='shape foe'+(modele.pnj?' pnj al-'+alignementDe(modele):'')+(f.locked?' locked':'')+(f.cache?' cache':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
+ el.className='shape foe'+(modele.pnj?' pnj al-'+alignementPose(f):'')+(f.locked?' locked':'')+(f.cache?' cache':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie, socle compris : un petit reste petit, un énorme énorme.
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*socleFacteur(f.tpl));
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
@@ -2993,6 +2997,14 @@ function adversaireDeLaTable(m,f){if(!m||!f||m.id!==currentMapId)return null;
   ||actors.find(a=>a&&!a.hero&&!a.pose&&f.tpl&&a.template===f.tpl.id&&Math.abs(a.x-f.x)<.5&&Math.abs(a.y-f.y)<.5)||null}
 $('foe-quete').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
  pushUndo();if($('foe-quete').value)f.quete=$('foe-quete').value;else delete f.quete;saveMaps()};
+/* L'alignement de ce PNJ-là, sur cette carte : allié, neutre ou adverse, sans toucher au Bestiaire. Celui du
+   modèle ne s'écrit pas sur la pose ; la carte ouverte sur la table, le PNJ posé là le prend tout de suite. */
+function alignementPose(f){const t=modeleActuel(f&&f.tpl)||(f&&f.tpl)||{};return ['allie','neutre','adverse'].includes(f&&f.alignement)?f.alignement:alignementDe({pnj:true,alignement:t.alignement})}
+$('foe-alignement').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
+ pushUndo();const t=modeleActuel(f.tpl)||f.tpl||{},v=$('foe-alignement').value;
+ if(v===alignementDe({pnj:true,alignement:t.alignement}))delete f.alignement;else f.alignement=v;
+ const a=adversaireDeLaTable(mapDraft,f);if(a&&a.pnj){a.alignementJeu=alignementPose(f);if(typeof basculeAdverse==='function')basculeAdverse(a);render();scheduleSave()}
+ renderCanvas();saveMaps()};
 $('foe-cache').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
  pushUndo();if($('foe-cache').checked)f.cache=true;else delete f.cache;
  // La carte est ouverte sur la table : l'adversaire posé là suit la case tout de suite, sans rouvrir la carte.

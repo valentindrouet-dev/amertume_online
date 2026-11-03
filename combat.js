@@ -561,7 +561,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),...(m&&Array.isArray(m.impraticable)&&m.impraticable.length?{impraticable:cleanMatiere(m.impraticable).map(p=>({anneaux:p.anneaux}))}:{}),...(m&&Array.isArray(m.dangers)&&m.dangers.length?{dangers:m.dangers.slice(0,24).map(cleanDanger).filter(Boolean)}:{}),...(m&&Array.isArray(m.difficile)&&m.difficile.length?{difficile:cleanMatiere(m.difficile).map(p=>({anneaux:p.anneaux}))}:{}),lumieres:(Array.isArray(m&&m.lumieres)?m.lumieres:[]).slice(0,100).map(cleanLumiere),doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
-   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),...(f&&typeof f.quete==='string'&&f.quete?{quete:texte(f.quete,60)}:{}),locked:!!(f&&f.locked),tpl:modelePose(f&&f.tpl)})),
+   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),...(f&&typeof f.quete==='string'&&f.quete?{quete:texte(f.quete,60)}:{}),...(f&&['allie','neutre','adverse'].includes(f.alignement)?{alignement:f.alignement}:{}),locked:!!(f&&f.locked),tpl:modelePose(f&&f.tpl)})),
   coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
   pieges:(Array.isArray(m&&m.pieges)?m.pieges:[]).slice(0,100).map(cleanPiege).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
