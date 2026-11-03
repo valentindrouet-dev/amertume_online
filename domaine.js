@@ -1082,11 +1082,17 @@ function prendRecette(a,o){const res=reserveVue(),delta={};
 // Sous une carte de magasin : payer avec l'or du coffre, quand il suffit.
 function boutonCoffre(prix,faire){const b=document.createElement('button');b.type='button';b.className='dom-coffre-payer';b.textContent='Payer avec le coffre';
  const ok=coffreVue().or>=prix;b.disabled=!ok;b.title=ok?'':'Il manque '+(prix-coffreVue().or)+' or dans le coffre de groupe.';b.onclick=e=>{e.preventDefault();e.stopPropagation();if(ok)faire()};return b}
-const coffreGroupeDialog=dialog('coffre-groupe','Coffre de Groupe','<div class="cg-cadre"><section class="cg-coffre"><div class="cg-onglets" id="cg-onglets"></div><div class="cg-or" id="cg-or-coffre"></div><div class="dom-articles cg-grille" id="cg-coffre"></div></section>'
- +'<section class="cg-sac"><h3 class="cg-qui" id="cg-qui"></h3><div class="cg-or" id="cg-or-sac"></div><div class="dom-articles cg-grille" id="cg-sac"></div></section></div>');
+/* v1.345 — Au dessin de la vitrine des bâtiments : le titre et son logo, des onglets en Killam, deux panneaux, des cases.
+   À gauche, les onglets du coffre ; à droite, celui de l'aventurier, son jeton et son nom. */
+const coffreGroupeDialog=dialog('coffre-groupe','Coffre de Groupe','<div class="cg-cadre"><section class="cg-coffre"><div class="cg-onglets vit-onglets" id="cg-onglets"></div><div class="cg-panneau"><div class="cg-or" id="cg-or-coffre"></div><div class="dom-articles cg-grille" id="cg-coffre"></div></div></section>'
+ +'<section class="cg-sac"><div class="cg-onglets vit-onglets"><h3 class="cg-qui vit-onglet actif" id="cg-qui"></h3></div><div class="cg-panneau"><div class="cg-or" id="cg-or-sac"></div><div class="dom-articles cg-grille" id="cg-sac"></div></div></section></div>');
+{const h=coffreGroupeDialog.querySelector('h2');h.classList.add('vit-titre','cg-titre');
+ const ic=document.createElementNS('http://www.w3.org/2000/svg','svg');ic.setAttribute('viewBox','0 0 24 24');ic.setAttribute('aria-hidden','true');
+ ic.innerHTML='<path d="M3.5 11h17v8.5h-17zM3.5 11V9a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v2M10.5 11v3h3v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>';
+ const s=document.createElement('span');s.textContent=h.textContent;h.replaceChildren(ic,s)}
 let coffreGroupeDe=null,coffreGroupeOnglet=0,coffreGroupeAchat=false,coffreGroupeMinuterie=null;
 function ouvrirCoffreGroupe(a,c){if(!a||!agitPour(a))return;coffreGroupeDe=a.id;coffreGroupeOnglet=0;coffreGroupeAchat=false;
- coffreGroupeDialog.querySelector('h2').textContent=c&&c.nom||'Coffre de Groupe';syncForges();dessineCoffreGroupe();if(!coffreGroupeDialog.open)coffreGroupeDialog.showModal();
+ coffreGroupeDialog.querySelector('h2 span').textContent=c&&c.nom||'Coffre de Groupe';syncForges();dessineCoffreGroupe();if(!coffreGroupeDialog.open)coffreGroupeDialog.showModal();
  clearInterval(coffreGroupeMinuterie);coffreGroupeMinuterie=setInterval(()=>{if(!coffreGroupeDialog.open){clearInterval(coffreGroupeMinuterie);return}dessineCoffreGroupe()},1500)}
 function apresCoffre(){syncForges();dessineCoffreGroupe();render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function deposerAuCoffre(a,o,tous){const c=coffreVue(),tab=coffreGroupeOnglet,t=c.tabs[tab]||[];if(!agitPour(a)||!(a.inventaire||[]).includes(o.id))return;
@@ -1115,9 +1121,9 @@ function dessineCoffreGroupe(){const a=actors.find(x=>x&&x.id===coffreGroupeDe);
  const c=coffreVue();if(coffreGroupeOnglet>=c.onglets)coffreGroupeOnglet=0;const tab=coffreGroupeOnglet,t=c.tabs[tab]||[];
  // Les onglets : ceux qu'on a, puis le suivant, à acheter.
  const og=$('cg-onglets');og.replaceChildren();
- for(let i=0;i<c.onglets;i++){const b=document.createElement('button');b.type='button';b.className='cg-onglet'+(i===tab?' on':'');b.textContent=String(i+1);
+ for(let i=0;i<c.onglets;i++){const b=document.createElement('button');b.type='button';b.className='cg-onglet vit-onglet'+(i===tab?' on actif':'');b.textContent=String(i+1);
   b.title=placesOnglet(c.tabs[i])+' / '+COFFRE_PLACES;b.onclick=()=>{coffreGroupeOnglet=i;coffreGroupeAchat=false;dessineCoffreGroupe()};og.append(b)}
- if(c.onglets<COFFRE_ONGLETS_MAX){const prix=PRIX_ONGLETS[c.onglets],b=document.createElement('button');b.type='button';b.className='cg-onglet cg-achat'+(coffreGroupeAchat?' on':'');
+ if(c.onglets<COFFRE_ONGLETS_MAX){const prix=PRIX_ONGLETS[c.onglets],b=document.createElement('button');b.type='button';b.className='cg-onglet vit-onglet cg-achat'+(coffreGroupeAchat?' on':'');
   b.textContent='🔒 '+prix.toLocaleString('fr-FR')+' or';b.onclick=()=>{coffreGroupeAchat=!coffreGroupeAchat;dessineCoffreGroupe()};og.append(b);
   if(coffreGroupeAchat){const l=document.createElement('div');l.className='cg-payer';
    const p1=document.createElement('button');p1.type='button';p1.textContent='Payer';p1.disabled=orDe(a)<prix;p1.onclick=()=>acheterOnglet(a,false);
@@ -1126,7 +1132,7 @@ function dessineCoffreGroupe(){const a=actors.find(x=>x&&x.id===coffreGroupeDe);
  $('cg-or-coffre').replaceChildren(ligneOrCoffre(c.or,'Retirer',c.or,v=>orAuCoffre(a,v,-1)));
  const gc=$('cg-coffre');gc.replaceChildren();const comptes=new Map();t.forEach(id=>comptes.set(id,(comptes.get(id)||0)+1));
  comptes.forEach((n,id)=>{const o=objetDe(id);if(o)gc.append(carreCoffre(o,n,'Reprendre '+o.name,tous=>prendreAuCoffre(a,id,tous)))});
- $('cg-qui').textContent=a.name;
+ $('cg-qui').replaceChildren(jetonRond(a.image,a.name,'mini'),document.createTextNode(a.name));
  $('cg-or-sac').replaceChildren(ligneOrCoffre(orDe(a),'Déposer',orDe(a),v=>orAuCoffre(a,v,1)));
  const gs=$('cg-sac');gs.replaceChildren();const sac=new Map();(a.inventaire||[]).forEach(id=>sac.set(id,(sac.get(id)||0)+1));
  sac.forEach((n,id)=>{const o=objetDe(id);if(o)gs.append(carreCoffre(o,n,'Ranger '+o.name,tous=>deposerAuCoffre(a,o,tous)))})}

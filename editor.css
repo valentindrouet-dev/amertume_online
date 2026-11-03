@@ -3528,19 +3528,26 @@ button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #
 .drops-plante{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin:10px 0}
 .drops-plante label{font-size:12px}
 /* v1.009 : le Coffre de Groupe — le coffre à gauche, l'aventurier à droite. */
-#coffre-groupe{width:min(1100px,96vw)}
-.cg-cadre{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
-.cg-cadre>section{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
-.cg-onglets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
-.cg-onglet{min-width:34px;padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font:700 13px system-ui;cursor:pointer}
-.cg-onglet.on{border-color:var(--accent);background:var(--accent);color:#fff}
-.cg-achat{font-weight:600}
+#coffre-groupe{width:min(1120px,96vw)}
+/* v1.345 — Au dessin de la vitrine des bâtiments : titre à logo, onglets en Killam, panneaux, cases. */
+#coffre-groupe h2.cg-titre{display:flex;align-items:center;gap:10px;font:700 24px 'Killam',Georgia,serif;color:var(--ink)}#coffre-groupe h2.cg-titre svg{flex:none;width:26px;height:26px;color:var(--green)}
+.cg-cadre{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;padding-top:12px;border-top:1px solid var(--line)}
+.cg-cadre>section{min-width:0;display:flex;flex-direction:column;gap:10px}
+.cg-onglets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;min-height:44px}
+.cg-onglets .vit-onglet{flex:0 1 auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:42px;min-width:64px;margin:0;padding:0 16px}
+.cg-onglets .cg-achat{border-style:dashed;border-color:var(--line-strong);color:var(--muted)}.cg-onglets .cg-achat.on{border-style:solid;color:var(--ink);background:var(--hover)}
 .cg-payer{display:flex;gap:6px;flex-basis:100%}
-.cg-places{margin-left:auto;font:600 12px system-ui;color:var(--muted)}
-.cg-qui{margin:0 0 10px;font:700 18px 'Killam',Georgia,serif}
-.cg-ligne-or{display:flex;align-items:center;gap:8px;margin:0 0 10px}
-#coffre-groupe .cg-ligne-or input{flex:0 0 90px;width:90px}
-.cg-grille{min-height:80px;max-height:52vh;overflow:auto}
+.cg-places{margin-left:auto;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 12px system-ui;color:var(--muted)}
+h3.cg-qui{display:flex;align-items:center;gap:8px;flex:0 1 auto;cursor:default}h3.cg-qui:hover{background:var(--green)}h3.cg-qui .jeton-rond{border-color:#fff}
+.cg-panneau{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.cg-ligne-or{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:0 0 12px;border-bottom:1px solid var(--line)}
+.cg-ligne-or .richesse-or{font:700 22px 'Killam',Georgia,serif;margin-right:4px}
+#coffre-groupe .cg-ligne-or input{flex:0 0 90px;width:90px;margin:0}#coffre-groupe .cg-ligne-or button{margin:0}
+.cg-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin:0;min-height:96px;max-height:52vh;overflow:auto;padding:2px}
+.cg-grille .dom-article{width:auto;justify-content:flex-start;padding:10px 6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);cursor:pointer;transition:transform .1s}
+.cg-grille .dom-article:hover{transform:translateY(-2px);box-shadow:0 3px 8px #0003}
+.cg-grille .dom-article .nom-carte{max-width:none;font:600 13px/1.15 'Killam',Georgia,serif}
+.cg-grille .dom-article .cat-pill.gear-carre.a-cliquer:hover{transform:none;box-shadow:none}
 .cg-grille .cat-pill.gear-carre.a-cliquer{cursor:pointer}
 .dom-coffre-payer{margin-top:4px;padding:2px 8px;font:600 11px system-ui}
 @media(max-width:800px){.cg-cadre{grid-template-columns:1fr}}

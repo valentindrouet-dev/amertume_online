@@ -6519,3 +6519,6 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.344 — Un PNJ posé sur une carte a son alignement à lui, choisi dans l'éditeur ; la table le prend à l'ouverture. */
 {const mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(mp.includes("if(a.pnj&&f.alignement)a.alignementJeu=f.alignement;")&&mp.includes("$('foe-alignement').onchange=")&&mp.includes("' pnj al-'+alignementPose(f)")
  &&cb.includes("...(f&&['allie','neutre','adverse'].includes(f.alignement)?{alignement:f.alignement}:{})"),'v1.344');}
+/* v1.345 — Le coffre de groupe au dessin de la vitrine des bâtiments : titre à logo, onglets Killam, panneaux, cases. */
+{const dm=fs.readFileSync('domaine.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(dm.includes("h.classList.add('vit-titre','cg-titre')")&&dm.includes("b.className='cg-onglet vit-onglet'+(i===tab?' on actif':'')")&&dm.includes('<h3 class="cg-qui vit-onglet actif" id="cg-qui"></h3>')
+ &&css.includes('.cg-panneau{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}'),'v1.345');}
