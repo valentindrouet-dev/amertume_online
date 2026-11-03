@@ -4758,6 +4758,8 @@ li>span.puce-ico.marque-glyphe{width:auto;height:auto;vertical-align:baseline}
 .stat-row>.marque-gain{align-self:center;margin:0 18px 0 4px}
 .stat-row>.marque-gain>.marque-ico{width:38px;height:38px}
 .stat-row>.marque-gain>b{font-size:20px;-webkit-text-stroke:4px #1d1a16}
+/* v1.347 — Dans une rangée d'icônes (bulle du Bestiaire), les Marques à la taille des autres chiffres. */
+.stat-row.en-icones>.marque-gain{margin:0}.stat-row.en-icones>.marque-gain>.marque-ico{width:44px;height:44px}.stat-row.en-icones>.marque-gain>b{left:auto;right:-4px;top:auto;bottom:-2px;font-size:22px}
 #carte-titre .xp-carte .marque-gain>.marque-ico{width:22px;height:22px}
 #carte-titre .xp-carte .marque-gain>b{font-size:13px;-webkit-text-stroke:2.6px #1d1a16}
 /* v1.291 — Le Trésor « Marque » : l'icône de la Marque, son gain écrit en bas à droite. */

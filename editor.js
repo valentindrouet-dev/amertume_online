@@ -3646,8 +3646,10 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  ligne(m.name,'best-bulle-nom');
  // Il porte tout ce qu'il possède, même un modèle enregistré avant ce choix.
  const eq=equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]});
- const defPortee=equippedDef(eq,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
- [['pv','PV',sait('pv')?m.pv||0:'?'],['def','DEF',sait('def')?defPlafonnee(defPortee===null?m.def:defPortee):'?',true],['dmg','Dég.',sait('dmg')?'+'+(m.damage||0):'?'],['xp','XP',sait('xp')?m.xp||0:'?']].forEach(x=>chiffres.append(statTile(...x)));
+ const defPortee=equippedDef(eq,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row en-icones';
+ // v1.347 : au dessin des aventuriers — chaque chiffre posé sur son icône, la DEF sur son écu, les Marques sur la même ligne.
+ const tuilesM=[['pv','PV',sait('pv')?m.pv||0:'?'],['def','DEF',sait('def')?defPlafonnee(defPortee===null?m.def:defPortee):'?',true],['dmg','Dég.',sait('dmg')?'+ '+(m.damage||0):'?'],['xp','XP',sait('xp')?m.xp||0:'?']].map(x=>statTile(...x));
+ [['pv',0],['dmg',2],['xp',3]].forEach(([c,k])=>iconeStat(tuilesM[k],c));chiffres.append(...tuilesM);
  // v1.290 : à côté de son XP, les Marques qu'il rapporte.
  if(sait('xp'))chiffres.append(marqueGain(Number(m.xp)||0));
  d.append(chiffres);

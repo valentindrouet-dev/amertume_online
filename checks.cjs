@@ -6525,3 +6525,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.346 — Réplique (adversaire) : après une Esquive réussie, sa première attaque, gratuite, contre l'attaquant ; pas de chaîne. */
 {const mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),rg=fs.readFileSync('regles.js','utf8');assert.ok(cb.includes("replique:{cle:'replique',nom:'Réplique',type:'reac',monstre:true")&&mp.includes("if(derniereEsquive===b&&!enReplique&&a&&b&&porteTalent(b,'replique')&&hostiles(b,a))setTimeout(()=>replique(b,a),300);")
  &&mp.includes("const av=b.activeAttack;b.activeAttack=0;")&&rg.includes('<b>Réplique</b> (talent d’adversaire)'),'v1.346');}
+/* v1.347 — Bulle du Bestiaire : chiffres au dessin des aventuriers (icônes), Marques sur la même ligne. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("[['pv',0],['dmg',2],['xp',3]].forEach(([c,k])=>iconeStat(tuilesM[k],c));chiffres.append(...tuilesM);")&&css.includes('.stat-row.en-icones>.marque-gain{margin:0}'),'v1.347');}
