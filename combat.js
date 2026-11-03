@@ -363,6 +363,8 @@ function cleanRect(r,porte){if(!r)return null;
  if(porte){o.open=false;if(r.keyLocked)o.keyLocked=true;if(r.secret)o.secret=true;
   // La clé qui l'ouvre, une pièce de l'armurerie de la catégorie Clés.
   if(r.cleId)o.cleId=texte(r.cleId,60);
+  // v1.350 : la clé s'use à l'ouverture, si le MJ l'a voulu.
+  if(r.cleId&&r.cleConsommee===true)o.cleConsommee=true;
   // Les réussites de Perception qu'il faut pour trouver un passage secret.
   if(r.secret&&Number(r.perception)>1)o.perception=Math.min(9,Math.trunc(Number(r.perception)));
   // v0.899 : un passage secret dans la pierre (Vision des profondeurs du Nain).

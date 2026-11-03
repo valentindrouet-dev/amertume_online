@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.350","d":"2026-11-03","t":"Portes : clés consommées et déverrouillage MJ"},
 {"v":"1.349","d":"2026-11-03","t":"Gantelets-Tonnerre avec le bonus de dégâts"},
 {"v":"1.348","d":"2026-11-03","t":"Enlacer : Nécrose et Entravé pour tous"},
 {"v":"1.347","d":"2026-11-03","t":"Bulle du Bestiaire au dessin des aventuriers"},

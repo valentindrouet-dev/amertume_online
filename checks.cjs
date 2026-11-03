@@ -6531,3 +6531,6 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes(" if(r.critical&&porteTalent(a,'enlacer'))enlace(a);")&&ix.includes("const l=actors.filter(o=>o&&o!==a&&alive(o)&&!o.horsCarte&&hostiles(a,o));")&&ix.includes("if(n&&!insensibleA(o,'Nécrose'))appliqueNecrose(o,n);"),'v1.348');}
 /* v1.349 — Gantelets-Tonnerre : l'Attaque prend le bonus de dégâts du porteur ; la case de l'éditeur d'Invention peut l'ôter. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("dice:{blue:1},etat:'Foudre',pluriel:true}};")&&ix.includes("delete m.sansBonusDegats;if(r&&r.bonusPorteur===false)m.sansBonusDegats=true;")&&ed.includes("a.bonusPorteur=!!(ff.inventionBonus&&ff.inventionBonus.checked);"),'v1.349');}
+/* v1.350 — Portes : la clé déverrouille (consommée si la porte le veut) ; le cadenas, chez le MJ, déverrouille et ouvre. */
+{const mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(mp.includes("$('door-cle-use').onchange=")&&mp.includes("if(parCle&&doorLockedFor(d,false)){d.crochetee=true;")&&mp.includes("b.onclick=e=>{e.stopPropagation();if(!mj)return;d.crochetee=true;d.open=true;")
+ &&cb.includes("if(r.cleId&&r.cleConsommee===true)o.cleConsommee=true;"),'v1.350');}

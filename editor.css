@@ -3651,6 +3651,7 @@ h3.cg-qui{display:flex;align-items:center;gap:8px;flex:0 1 auto;cursor:default}h
 /* v1.022 — Ouvrir un coffre, Inspecter, Récolter : la couleur du rond des portes. Une porte verrouillée : son cadenas. */
 #objet-boutons button.btn-action.rond.bouton-interaction{--fond:#cf9152;color:#fff}
 #porte-boutons button.btn-action.rond.bouton-interaction.verrouillee{cursor:default}
+#porte-boutons button.btn-action.rond.bouton-interaction.verrouillee.can-open{cursor:pointer}
 /* v1.023 — L'éditeur de cartes sur deux colonnes : la sélection à gauche, la carte élargie. Le Domaine garde ses trois colonnes. */
 @media(min-width:1151px){body.page-maps #maps-page{grid-template-columns:260px minmax(0,1fr)}body.page-maps #maps-page.mode-domaine{grid-template-columns:230px minmax(0,1fr) 270px}}
 .maps-side .maps-selection{position:static}#maps-page.mode-domaine .maps-selection,#maps-page.mode-domaine .maps-selection+.divider{display:none}

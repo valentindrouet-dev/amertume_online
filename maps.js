@@ -1592,8 +1592,11 @@ function renderPortes(){manoeuvresPorte.clear();const portes=$('map-doors'),fene
    if(qui){if(porteManoeuvree(qui)){log(nomNum(qui)+' a déjà manœuvré une porte ce tour.',{local:true});
      if(typeof floatNumber==='function')floatNumber(qui,'Déjà fait ce tour','nul',true);return}
     qui.talentsJoues=[...(Array.isArray(qui.talentsJoues)?qui.talentsJoues:[]),'__porte']}
+   /* v1.350 : la clé déverrouille la porte pour de bon, jusqu'à ce que la carte soit rouverte ; consommée, elle quitte l'inventaire. */
+   if(parCle&&doorLockedFor(d,false)){d.crochetee=true;const h=heroActif(),o=d.cleConsommee===true?(catalog.items||[]).find(x=>x&&x.id===d.cleId):null;
+    if(o&&h&&typeof retirerInventaire==='function'){retirerInventaire(h,o);if(typeof renderHeroes==='function')renderHeroes()}}
    d.open=!d.open;
-   render();scheduleSave()};
+   render();saveMaps();scheduleSave()};
   manoeuvresPorte.set(d,el.onclick);
   // v0.996 : les portes aussi se peignent sous le brouillard, comme les fenêtres.
   (fenetres||portes).append(el)});portesBoutonsCle='';if($('map-view'))renderBoutonsPortes()}
@@ -1624,8 +1627,10 @@ function renderBoutonsPortes(){let calque=$('porte-boutons');if(!calque){calque=
  /* v1.022 : une porte ou une fenêtre verrouillée, à portée, porte un cadenas à la place du rond : sa bulle le dit, il n'agit pas. */
  verrouilleesAPortee(m,a).forEach(d=>{const b=document.createElement('button');b.type='button';b.className='btn-action rond btn-porte bouton-interaction verrouillee';
   b.style.left=(d.x+d.w/2)+'%';b.style.top=(d.y+d.h/2)+'%';b.style.setProperty('--echelle',echelleInteraction());b.innerHTML=ICONE_CADENAS;
-  const nom=d.fenetre?'Fenêtre verrouillée':'Porte verrouillée';b.setAttribute('aria-label',nom);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
-  b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=e=>e.stopPropagation();calque.append(b)})}
+  const mj=view==='mj',nom=mj?(d.fenetre?'Déverrouiller la fenêtre':'Déverrouiller la porte'):d.fenetre?'Fenêtre verrouillée':'Porte verrouillée';b.setAttribute('aria-label',nom);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));
+  if(mj)b.classList.add('can-open');
+  // v1.350 : chez le MJ, le cadenas déverrouille et ouvre, jusqu'à ce que la carte soit rouverte.
+  b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=e=>{e.stopPropagation();if(!mj)return;d.crochetee=true;d.open=true;render();saveMaps();scheduleSave()};calque.append(b)})}
 const ICONE_CADENAS='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.5" fill="currentColor"/></svg>';
 // À portée de l'aventurier dont on montre les boutons : chez le MJ, le sélectionné — doorInReach, chez lui, dit toujours oui.
 function porteAtteinte(a,d){if(view!=='mj')return doorInReach(d);const size=mapSize(),m=currentMap();return !!(a&&a.hero&&alive(a)&&size.width&&polyInReach(a,doorPolygon(d,m&&m.ratio),size,tokenPx()))}
@@ -1837,6 +1842,7 @@ mapsPage.innerHTML=
   +'<label id="foe-alignement-label" hidden>Alignement <select id="foe-alignement"></select></label>'
   +'<label id="foe-quete-label" hidden>Quête débloquée au contact <select id="foe-quete"></select></label>'
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
+  +'<label id="door-cle-use-label" hidden><input type="checkbox" id="door-cle-use"> Clé consommée</label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
   +'<button id="piege-edit" hidden>✎ Modifier le piège</button><button id="piege-double" hidden>⧉ Dupliquer le piège</button>'
  +'<button id="objet-edit" hidden>✎ Modifier l’objet</button><button id="lumiere-edit" hidden>✎ Modifier la lumière</button><button id="lumiere-double" hidden>⧉ Dupliquer la lumière</button><button id="notemj-edit" hidden>✎ Modifier la note</button><button id="shape-double" hidden>⧉ Dupliquer</button>'
@@ -2282,6 +2288,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  const piege=mapSel&&mapSel.kind==='piege'?cible:null;$('piege-edit').hidden=$('piege-double').hidden=!piege;
  const piegeDuDecl=mapSel&&mapSel.kind==='declencheur'?(m.pieges||[])[mapSel.i]:null;
  $('door-cle-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)remplitCles($('door-cle'),porte.cleId||'');
+ $('door-cle-use-label').hidden=!(porte&&porte.keyLocked&&porte.cleId);if(porte)$('door-cle-use').checked=porte.cleConsommee===true;
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte||!!porte.fenetre;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('door-fenetre-label').hidden=!(porte&&porte.fenetre);if(porte&&porte.fenetre)$('door-fenetre').value=etatFenetre(porte);
@@ -3020,7 +3027,9 @@ $('coffre-double').onclick=()=>{const c=mapSel&&mapSel.kind==='coffre'&&shapeAt(
 const clesArmurerie=()=>(catalog.items||[]).filter(o=>o&&o.category==='cle').sort((x,y)=>String(x.name).localeCompare(String(y.name),'fr'));
 function remplitCles(menu,valeur){menu.replaceChildren(new Option('— aucune —',''),...clesArmurerie().map(o=>new Option(o.name,o.id)));menu.value=valeur&&clesArmurerie().some(o=>o.id===valeur)?valeur:''}
 $('door-cle').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
- pushUndo();if($('door-cle').value)d.cleId=$('door-cle').value;else delete d.cleId;saveMaps();if(mapDraft.id===currentMapId)render()};
+ pushUndo();if($('door-cle').value)d.cleId=$('door-cle').value;else{delete d.cleId;delete d.cleConsommee}renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
+$('door-cle-use').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
+ pushUndo();if($('door-cle-use').checked)d.cleConsommee=true;else delete d.cleConsommee;saveMaps();if(mapDraft.id===currentMapId)render()};
 /* ---------- La fiche d'un coffre ----------
    Son nom et la description que la troupe lit au survol ; caché ou non, et les réussites de Perception
    qui le révèlent ; son verrou et son piège, en réussites de Ruse ou de Technique (0 : sans) ; ce que
