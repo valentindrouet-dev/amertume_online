@@ -5735,7 +5735,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("if(avaitBulle)requestAni
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("cleClasse(a.role)===cleClasse('Mécaniste')))return 0;")&&page.includes("b.classList.toggle('charge-plasma',n>0);"),'v0.864 : Cellule du Mécaniste et bouton chargé');}
 /* v0.863 — Dés de l'Invention sur son bouton, Foudre portée par l'objet, bulle rose, barre dans l'ordre de l'arbre. */
 {const page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(page.includes("function desInvention(a,modele){")&&page.includes("dice:{blue:1},etat:'Foudre',sansBonusDegats:true")&&ed.includes("const parArbre=l=>")&&ed.includes("if(o.invention)d.classList.add('gear-invention');"),'v0.863 : Invention juste, barre dans l’ordre de l’arbre');}
+ assert.ok(page.includes("function desInvention(a,modele){")&&page.includes("dice:{blue:1},etat:'Foudre',pluriel:true")&&ed.includes("const parArbre=l=>")&&ed.includes("if(o.invention)d.classList.add('gear-invention');"),'v0.863 : Invention juste, barre dans l’ordre de l’arbre');}
 /* v0.862 — Inventions : disparues hors combat, attaque à elles seules, objet fabriqué réglé dans l'éditeur d'objets. */
 {const cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(cb.includes("if(inventions.length)sorties.push({...attaque(inventions,")&&page.includes("findIndex(at=>at.invention===true)")&&page.includes("effaceOrbesStatiques(true);actors.forEach(finInventions);"),'v0.862 : attaque propre, fin des inventions');
@@ -6529,3 +6529,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("[['pv',0],['dmg',2],['xp',3]].forEach(([c,k])=>iconeStat(tuilesM[k],c));chiffres.append(...tuilesM);")&&css.includes('.stat-row.en-icones>.marque-gain{margin:0}'),'v1.347');}
 /* v1.348 — Enlacer : sur un critique, tous les adversaires du porteur au combat subissent ses Dégâts en Nécrose et sont Entravés. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes(" if(r.critical&&porteTalent(a,'enlacer'))enlace(a);")&&ix.includes("const l=actors.filter(o=>o&&o!==a&&alive(o)&&!o.horsCarte&&hostiles(a,o));")&&ix.includes("if(n&&!insensibleA(o,'Nécrose'))appliqueNecrose(o,n);"),'v1.348');}
+/* v1.349 — Gantelets-Tonnerre : l'Attaque prend le bonus de dégâts du porteur ; la case de l'éditeur d'Invention peut l'ôter. */
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(ix.includes("dice:{blue:1},etat:'Foudre',pluriel:true}};")&&ix.includes("delete m.sansBonusDegats;if(r&&r.bonusPorteur===false)m.sansBonusDegats=true;")&&ed.includes("a.bonusPorteur=!!(ff.inventionBonus&&ff.inventionBonus.checked);"),'v1.349');}

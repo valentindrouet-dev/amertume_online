@@ -8616,17 +8616,18 @@ function openItem(i=null,apres=null,defauts=null){itemIndex=i;itemApres=apres;
    ni l'Armurerie, ni les butins ne le voient. */
 let itemModeleInvention=null;
 itemDialog.addEventListener('close',()=>{itemModeleInvention=null});
-function modeleInventionActuel(m){const base=typeof INVENTIONS_MODELES!=='undefined'?INVENTIONS_MODELES[m]:null,r=(catalog.inventionsModeles||{})[m];return base?{...structuredClone(base),...(r?structuredClone(r):{})}:null}
+function modeleInventionActuel(m){const base=typeof INVENTIONS_MODELES!=='undefined'?INVENTIONS_MODELES[m]:null,r=(catalog.inventionsModeles||{})[m];if(!base)return null;
+ const o={...structuredClone(base),...(r?structuredClone(r):{})};delete o.sansBonusDegats;if(r&&r.bonusPorteur===false)o.sansBonusDegats=true;delete o.bonusPorteur;return o}
 function openModeleInvention(m){const o=modeleInventionActuel(m);if(!o)return;openItem(null,null,{...o,price:0,qty:1});itemModeleInvention=m;$('delete-item').hidden=true;
  const ch=document.createElement('label');ch.className='field-check';ch.id='invention-bonus';ch.innerHTML='<input type="checkbox" name="inventionBonus"'+(o.sansBonusDegats===true?'':' checked')+'>Ajoute le bonus de dégâts du porteur';
  const f=$('item-fields');if(f)f.prepend(ch)}
 function normaliseModelesInventions(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
  Object.entries(o).slice(0,20).forEach(([k,v])=>{if(!/^[a-z]{2,30}$/.test(k)||!v||typeof v!=='object')return;
   out[k]={name:String(v.name||'').slice(0,60)||'Invention',category:'weapon',hands:Number(v.hands)===1?1:2,ranged:v.ranged===true,dice:v.dice&&typeof v.dice==='object'?v.dice:{},
-   ...(typeof v.etat==='string'?{etat:v.etat.slice(0,30)}:{}),bonus:normaliseBonusEquip(v.bonus),...(v.sansBonusDegats===true?{sansBonusDegats:true}:{}),
+   ...(typeof v.etat==='string'?{etat:v.etat.slice(0,30)}:{}),bonus:normaliseBonusEquip(v.bonus),...(typeof v.bonusPorteur==='boolean'?{bonusPorteur:v.bonusPorteur}:{}),
    ...(typeof v.logo==='string'&&v.logo?{logo:v.logo.slice(0,200)}:{}),...(typeof v.notes==='string'&&v.notes?{notes:v.notes.slice(0,400)}:{})}});return out}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
- if(itemModeleInvention){const m=itemModeleInvention,ff=$('item-form').elements,a=itemDepuisForm({...itemDraft});a.sansBonusDegats=!(ff.inventionBonus&&ff.inventionBonus.checked);
+ if(itemModeleInvention){const m=itemModeleInvention,ff=$('item-form').elements,a=itemDepuisForm({...itemDraft});a.bonusPorteur=!!(ff.inventionBonus&&ff.inventionBonus.checked);delete a.sansBonusDegats;
   catalog.inventionsModeles={...normaliseModelesInventions(catalog.inventionsModeles),...normaliseModelesInventions({[m]:a})};itemDialog.close();render();scheduleSave();return}
  const a=itemDepuisForm({...(itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex])),...itemDraft});
  if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalogPages();scheduleSave();const rappel=itemApres;itemApres=null;if(rappel)rappel(a)};

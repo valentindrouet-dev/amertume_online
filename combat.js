@@ -1226,8 +1226,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
     compris, et la cible subit Foudre ; Incident : le porteur subit Foudre et les Gantelets sont hors service. Clé à Molette : une
     Attaque au contact qui recharge 1 Plasma ; tous, ou une Invention réparée, avec ses améliorations. */
  gantelets:{cle:'gantelets',nom:'Gantelets-Tonnerre',type:'act',bouton:'Gantelets-Tonnerre',attaque:true,invention:'gantelets',
-  aide:'Action, Invention : le porteur fabrique et équipe des Gantelets-Tonnerre (1 dé Bleu, sans bonus de dégâts), puis effectue une Attaque au contact, plus la somme des dés de Plasma ; la cible subit Foudre. Incident : le porteur subit Foudre et les Gantelets sont hors service pour le combat.',
-  params:[],phrase(){return 'Vous fabriquez et équipez des <b>Gantelets-Tonnerre</b> (dégâts 1 dé Bleu, pas de bonus de dégâts). Vous effectuez <b>1 Attaque</b> au contact, plus la somme des dés de Plasma ; la cible subit <b>Foudre</b>. <b>Incident</b> : vous subissez aussi Foudre et l’Invention est hors service pour le reste du combat.'}},
+  aide:'Action, Invention : le porteur fabrique et équipe des Gantelets-Tonnerre (1 dé Bleu, plus le bonus de dégâts), puis effectue une Attaque au contact, plus la somme des dés de Plasma ; la cible subit Foudre. Incident : le porteur subit Foudre et les Gantelets sont hors service pour le combat.',
+  params:[],phrase(){return 'Vous fabriquez et équipez des <b>Gantelets-Tonnerre</b> (dégâts 1 dé Bleu, plus le bonus de dégâts). Vous effectuez <b>1 Attaque</b> au contact, plus la somme des dés de Plasma ; la cible subit <b>Foudre</b>. <b>Incident</b> : vous subissez aussi Foudre et l’Invention est hors service pour le reste du combat.'}},
  /* v0.861 — Améliorations des Gantelets-Tonnerre : un dé Bleu de plus, plus d'Incident, deux Gantelets, un dans chaque main. */
  ganteletsbleu:{cle:'ganteletsbleu',nom:'Gantelets-Tonnerre — Dé Bleu',court:'Dé Bleu',type:'ame',
   aide:'Amélioration de Gantelets-Tonnerre : +1 dé Bleu aux dégâts.',params:[],phrase(){return '<b>+1 dé Bleu</b> aux dégâts.'}},
