@@ -3803,7 +3803,18 @@ const jetPerce=b=>!!jetPerceSur&&jetPerceSur.b===b&&Date.now()-jetPerceSur.t<100
 {const f=logAttaque;logAttaque=function(a,b,logo,corps,...x){if(esquiveDite&&b===esquiveDite.b&&/^Échec/.test(String(corps))){corps='Esquive !';esquiveDite=null}return f(a,b,logo,corps,...x)}}
 {const f=debrouillardDispo;debrouillardDispo=function(...x){return derniereEsquive?null:f(...x)}}
 {const f=frappe;frappe=function(a,b,...x){const avant=new Map(actors.map(o=>[o,o.revanche]));derniereEsquive=null;const r=f(a,b,...x);
- if(derniereEsquive===b)actors.forEach(o=>{if(o.revanche!==avant.get(o)){if(avant.get(o))o.revanche=avant.get(o);else delete o.revanche}});return r}}
+ if(derniereEsquive===b)actors.forEach(o=>{if(o.revanche!==avant.get(o)){if(avant.get(o))o.revanche=avant.get(o);else delete o.revanche}});
+ // v1.346 : Réplique — l'esquive réussie, le porteur frappe son attaquant de la première attaque de sa liste.
+ if(derniereEsquive===b&&!enReplique&&a&&b&&porteTalent(b,'replique')&&hostiles(b,a))setTimeout(()=>replique(b,a),300);return r}}
+/* Réplique : la première attaque de la liste du porteur (son Attaque, ou sa première Attaque spéciale), gratuite, contre qui vient
+   de le manquer ; hors de portée, rien ne part. Une Réplique n'en déclenche pas d'autre. */
+let enReplique=false;
+function replique(b,a){if(!enCombat()||!alive(b)||!alive(a)||b.horsCarte||a.horsCarte)return;
+ const av=b.activeAttack;b.activeAttack=0;
+ try{const j=actors.indexOf(a),r0=j<0?null:reachTo(b,a,j);if(!r0||!r0.ok)return;
+  log(phraseJournal(talentDe(b,'replique'),'replique','replique',{lanceur:nomNum(b),cible:nomNum(a)}),{ton:'talent'});
+  enReplique=true;coupGratuit(b,a)}
+ finally{enReplique=false;if(av===undefined)delete b.activeAttack;else b.activeAttack=av;render();scheduleSave()}}
 // Ce qui ne passe pas par un jet — un état qui brûle, un terrain, un talent : l'Intangible n'en perd rien non plus.
 {const f=encaisse;encaisse=function(a,n,de,...x){const src=de===undefined?auteurCoup:de;
  if(Math.trunc(n)>0&&estIntangible(a)&&!jetPerce(a)&&!percePour(a,src,false)){if(typeof floatNumber==='function')floatNumber(a,'0','nul');return {perdu:0,blinde:false}}
@@ -3853,6 +3864,7 @@ Object.assign(JOURNAL_TALENTS,{
  appel:[['reveille','Appel','{lanceur} réveille {n} {nom}.']],
  dispersion:[['disperse','Dispersion','{lanceur} se disperse : Gel sur {cibles}.']],
  serment:[['prend','Serment','{lanceur} prend le coup à la place de {cible}.']],
+ replique:[['replique','Réplique','{lanceur} réplique contre {cible}.']],
  statue:[['eveil','Éveil','{lanceur} s’éveille.']]});
 const mjAppareil=()=>typeof view!=='undefined'&&view==='mj';
 const herosSurCarte=()=>actors.filter(h=>h&&h.hero&&surCarteAdv(h));

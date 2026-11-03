@@ -6522,3 +6522,6 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.345 — Le coffre de groupe au dessin de la vitrine des bâtiments : titre à logo, onglets Killam, panneaux, cases. */
 {const dm=fs.readFileSync('domaine.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(dm.includes("h.classList.add('vit-titre','cg-titre')")&&dm.includes("b.className='cg-onglet vit-onglet'+(i===tab?' on actif':'')")&&dm.includes('<h3 class="cg-qui vit-onglet actif" id="cg-qui"></h3>')
  &&css.includes('.cg-panneau{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}'),'v1.345');}
+/* v1.346 — Réplique (adversaire) : après une Esquive réussie, sa première attaque, gratuite, contre l'attaquant ; pas de chaîne. */
+{const mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),rg=fs.readFileSync('regles.js','utf8');assert.ok(cb.includes("replique:{cle:'replique',nom:'Réplique',type:'reac',monstre:true")&&mp.includes("if(derniereEsquive===b&&!enReplique&&a&&b&&porteTalent(b,'replique')&&hostiles(b,a))setTimeout(()=>replique(b,a),300);")
+ &&mp.includes("const av=b.activeAttack;b.activeAttack=0;")&&rg.includes('<b>Réplique</b> (talent d’adversaire)'),'v1.346');}
