@@ -8821,7 +8821,11 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
    illisible n'empêche pas l'export : le journal dit ce qui manque au fichier. */
 const ANNEXES_SAUVEGARDE=[];
 // Les réglages de l'appareil. Ni l'onglet ouvert, ni la table en ligne, ni les marques de fenêtre : ils ne servent qu'ici.
-const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables','amertume-couts-sphere','amertume-notes-mj-table'];
+const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables','amertume-couts-sphere','amertume-notes-mj-table',
+ /* v1.343 : tout ce que l'appareil retient d'autre, pour reprendre ailleurs comme ici — zoom par carte, tailles, places et colonnes
+    des panneaux, fiches et lieux repliés, carte éditée, tri des aventuriers, plis de la forge, thème, vue, onglet ouvert, table en ligne. */
+ 'amertume-zooms','amertume-tailles','amertume-fenetres','amertume-colonnes','amertume-heros-replies','amertume-lieux-replies','amertume-carte-editee',
+ 'amertume-tri-heros','amertume-forge-plis','amertume-theme','amertume-vue','amertume-page','amertume-table','amertume-indice-perf'];
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},
@@ -8839,6 +8843,8 @@ async function exporterTout(){const s=sauvegardeGlobale(),manques=[];
 function importerTout(fichier){const erreur=$('import-erreur');erreur.textContent='';
  fichier.text().then(async texte=>{let s;try{s=JSON.parse(texte)}catch(e){throw Error('ce fichier n’est pas du JSON lisible.')}
   const souci=verifieSauvegarde(s);if(souci)throw Error(souci);
+  // v1.343 : sur un appareil qui n'est pas encore celui du MJ, la partie importée ne s'enregistrerait pas : on se connecte d'abord.
+  if(typeof mjIci==='function'&&!mjIci())throw Error('connecte-toi d’abord en MJ (Partager → Connexion MJ) : sur cet appareil, la partie importée ne serait pas enregistrée.');
   if(!confirm('Remplacer la partie de ce navigateur par « '+fichier.name+' » ?\n'+resumeSauvegarde(s)+'.\nLa partie actuelle sera perdue si elle n’a pas été exportée.'))return;
   appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();saveNow();
   const manques=[];for(const x of ANNEXES_SAUVEGARDE){try{await x.pose(s)}catch(e){manques.push(x.nom)}}
