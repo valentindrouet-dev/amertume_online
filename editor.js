@@ -8115,7 +8115,8 @@ function supprimerAventurier(a){if(view!=='mj'||!a||!a.hero)return 'Suppression 
  const mot=prompt('Supprimer définitivement '+a.name+' et toute sa fiche ?\nTape SUPPRIMER pour confirmer.');
  if(mot===null)return null;if(mot.trim()!=='SUPPRIMER')return 'Rien n’est supprimé : il fallait taper SUPPRIMER.';
  const i=actors.indexOf(a);if(i<0)return null;sortDeLaListe([i]);marked.clear();render();scheduleSave();return null}
-function removeActors(liste,demande){
+/* v1.374 : « sansGain » — la touche Suppr retire sans donner ni XP ni butin ; seul le crâne (retirerVaincus) les donne. */
+function removeActors(liste,demande,sansGain){
  if(view!=='mj')return 'Retrait impossible.';
  const tous=[...new Set(liste)].filter(i=>actors[i]);
  // Retiré en plein combat, il garde sa place au bilan.
@@ -8130,7 +8131,7 @@ function removeActors(liste,demande){
   if(!confirm(quoi))return null}
  const partants=rangs.map(i=>actors[i]);sortDeLaListe(rangs);
  marked.clear();
- xpDesRetires(partants);butinDesRetires(partants);
+ if(!sansGain){xpDesRetires(partants);butinDesRetires(partants);}
  render();scheduleSave();donjonTermine(partants);return null}
 /* Le dernier adversaire de la carte retiré : la victoire s'annonce, chez le MJ et à la table. */
 function donjonTermine(partants){if(!currentMapId||!partants.some(f=>f&&campDe(f)==='adverse'&&!f.orbeStatique))return;
