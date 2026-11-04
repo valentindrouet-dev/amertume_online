@@ -4850,3 +4850,11 @@ img.espece-ico[src$="ressuscite.webp"]{filter:drop-shadow(0 0 .6px rgb(60 45 20 
 .talent-detail .talent-valeur .bulle-des.deux-lignes .pips{flex-wrap:wrap;width:calc(var(--par-ligne) * 20px + (var(--par-ligne) - 1) * 3px);row-gap:3px}
 /* v1.337 — Les cartes d'amélioration de l'arbre gardent les retours à la ligne de leur texte. */
 .arbres-detail .detail-amelioration p:not(.detail-am-nom){white-space:pre-line}
+/* v1.356 — Les sphères dans la fiche d'un aventurier : un champ par sphère, son icône devant. */
+table.gemmes.spheres-fiche{max-width:520px;margin:4px 0 6px}
+table.gemmes.spheres-fiche td{padding:2px}
+table.gemmes.spheres-fiche .sphere-champ{display:flex;align-items:center;gap:6px;margin:0}
+table.gemmes.spheres-fiche .sphere-champ img,table.gemmes.spheres-fiche th img{width:24px;height:24px;object-fit:contain;flex:none}
+table.gemmes.spheres-fiche input{width:100%;min-width:0;margin:0;padding:4px 6px}
+table.gemmes.spheres-fiche tbody th{font-size:13px}table.gemmes.spheres-fiche thead th{font-size:12px}
+table.gemmes.spheres-fiche thead td,table.gemmes.spheres-fiche tbody th{width:118px}

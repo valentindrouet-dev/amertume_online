@@ -6543,3 +6543,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ix=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(ix.includes("const n=d6();rollOnBoard([{dice:[[n,0]]}],a,null);invoqueAupres(a,m,n,a);")&&ix.includes("||code.cle==='semis';")&&cb.includes("semis:{cle:'semis',nom:'Semis',type:'abon',monstre:true,gratuit:true"),'v1.354');}
 /* v1.355 — Chambre forte : un adversaire en scène qui reçoit une pièce s'en équipe aussitôt. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("a.inventaire=[...(a.inventaire||[]),rec.id];if(a.hero)syncEquipped(a);else{equipeAdversaire(a);a.pool=poolOf(a)}}"),'v1.355');}
+/* v1.356 — Fiche d'aventurier : un champ par sphère, lu à l'enregistrement. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function grilleSpheresFiche(compte){")&&ed.includes("b.querySelectorAll('input[data-gemme]').forEach(i=>{const n=lisCompte(i.value);if(n)r[i.dataset.gemme]=n;else delete r[i.dataset.gemme]});a.richesses=r}return a}}")&&ed.includes('<h2 class="sous-titre">Sphères</h2><div id="spheres-edit"></div>'),'v1.356');}
