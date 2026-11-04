@@ -2471,7 +2471,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;finCombatDepuis=0;return}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()&&!sortiDuCombat(a)?'Pas de repos en plein combat.'")
-  &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
+  &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(99,(Math.trunc(Number(a.reposCourts))||0)+1);")
   &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}'),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
@@ -3216,7 +3216,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.match(/function leveEtats\(a,finCombat,garder\)\{[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/function reposMax\(a\)[^\n]*/)[0]+'\n'+page.match(/function reposRestants\(a\)[^\n]*/)[0],ctxR);
  const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
- assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
+ assert.equal(ctxR.reposMax({vie:3,level:1}),3,'v1.372 : un repos court par point de VIE');assert.equal(ctxR.reposMax({vieMax:2}),2);assert.equal(ctxR.reposRestants({vie:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({vie:3,reposCourts:1}),2);
  assert.ok(page.includes("if(a.vie<=0&&!etreinte){poseCibles(a,[]);log(nomNum(a)+' n’a plus de VIE : il est mort.',{ton:'degats'})}")
   &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.fouilles=")&&!carto.includes('a.reposCourts=0'),'0 VIE : hors de la carte jusqu’au repos long ; une carte rechargée ne rend pas les repos courts');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
@@ -6274,7 +6274,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
 /* v0.498 — Un repos court par niveau, le nombre restant sous le bouton (« 2 », pas « 2/2 ») ; un seul entre deux
    combats, que la fin du combat rouvre. La planche des caractéristiques principales se découpe en cinq. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),calc=fs.readFileSync('planches-calcul.js','utf8');
- assert.ok(page.includes("function reposMax(a){return Math.max(1,Math.trunc(Number(a&&a.level))||1)}")&&page.includes("a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);a.reposPris=true;")
+ assert.ok(page.includes("function reposMax(a){const v=Number(a&&a.vie);")&&page.includes("a.reposCourts=Math.min(99,(Math.trunc(Number(a.reposCourts))||0)+1);a.reposPris=true;")
   &&page.includes("(enCombat()&&!sortiDuCombat(a))||reposRestants(a)<=0||a.reposPris===true||!alive(a)")&&page.includes("String(reposRestants(a)))}")
   &&page.includes(":reposRestants(a)<=0?'Plus de repos court : ils reviennent au repos long.'"),'le repos court : la réserve au niveau, un par combat');
  assert.ok(src.includes("a.reposCourts=0;a.reposPris=false;reposer(a,'long');")&&!carto.includes('a.reposCourts=0'),'le repos long rend tout ; une carte rechargée, rien (v0.961)');
@@ -6586,3 +6586,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
   &&mp.includes("if(v&&v.outerHTML===t.outerHTML)v.onclick=t.onclick;else if(v)v.replaceWith(t);else vue.append(t)});")&&!pg.includes("document.querySelectorAll('#map-view .token:not(.lumiere)')"),'v1.370');}
 /* v1.371 — Prendre, donner, examiner, ouvrir : plus de transaction sur la table (elle échouait sans un mot) ; jugé sur le dernier état reçu. */
 {const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes("const libre=!recu||marque(recu)!==null;")&&mp.includes("if(!libre&&!(typeof estMJ==='function'&&estMJ())){render();scheduleSave();return}"),'v1.371');}
+/* v1.372 — Autant de repos courts que la VIE, entre deux repos longs ; le compte ne revient qu'au repos long. */
+{const pg=fs.readFileSync('index.html','utf8'),rg=fs.readFileSync('regles.js','utf8');assert.ok(pg.includes("function reposMax(a){const v=Number(a&&a.vie);return Math.max(0,Math.trunc(Number.isFinite(v)?v:Number(a&&a.vieMax)||0))}")&&rg.includes('Autant que sa <b>VIE</b> entre deux repos longs'),'v1.372');}
