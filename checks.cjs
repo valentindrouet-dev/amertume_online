@@ -6534,3 +6534,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.350 — Portes : la clé déverrouille (consommée si la porte le veut) ; le cadenas, chez le MJ, déverrouille et ouvre. */
 {const mp=fs.readFileSync('maps.js','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(mp.includes("$('door-cle-use').onchange=")&&mp.includes("if(parCle&&doorLockedFor(d,false)){d.crochetee=true;")&&mp.includes("b.onclick=e=>{e.stopPropagation();if(!mj)return;d.crochetee=true;d.open=true;")
  &&cb.includes("if(r.cleId&&r.cleConsommee===true)o.cleConsommee=true;"),'v1.350');}
+/* v1.351 — Racine de vie : à la fin de chaque tour, le porteur et ses alliés reçoivent Onde et 2 dés verts de soin ; plus de plancher à 1 PV. */
+{const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("actors.filter(o=>surCarteAdv(o)&&porteTalent(o,'racinedevie')).forEach(o=>{const l=actors.filter(x=>surCarteAdv(x)&&campDe(x)===campDe(o));")&&ix.includes("function plancherPV(b,n){return n}"),'v1.351');}
