@@ -190,6 +190,13 @@ function etatVivant(){const out={actors:{}};
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
 const pareil=(a,b)=>JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);
+/* v1.370 — Le tableau du sol : d'abord des cases à leur rang (portes, objets, coffres, lumières fixes), puis des entrées en objets
+   (dangers, seuils, pièges, lumières posées). solFondu pose sur « recu » ce qu'« ici » a changé depuis « ref » : case par case
+   pour les rangs, en bloc pour la suite. Rend null si les rangs ne se répondent pas (une autre carte). */
+const solCoupe=t=>{const l=Array.isArray(t)?t:[];let i=l.findIndex(v=>v!==null&&typeof v==='object');if(i<0)i=l.length;return [l.slice(0,i),l.slice(i)]};
+function solFondu(recu,ref,ici){const [R,Rs]=solCoupe(recu),[B,Bs]=solCoupe(ref),[L,Ls]=solCoupe(ici);
+ if(R.length!==L.length||B.length!==L.length)return null;
+ return [...R.map((v,i)=>pareil(L[i],B[i])?v:L[i]),...(pareil(Ls,Bs)?Rs:Ls)]}
 /* La différence, en chemins de champs. Un acteur disparu s'efface, un acteur neuf part
    entier — c'est ainsi qu'un adversaire posé en pleine partie arrive chez les joueurs
    sans republier tout le contenu. */
@@ -428,6 +435,12 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.
   if(!estMJ())for(let i=actors.length-1;i>=0;i--)if(!vus.has(actors[i].id))actors.splice(i,1);
   const m=typeof currentMap==='function'?currentMap():null;
+  /* v1.370 — Le sol changé ici et pas encore parti (un objet révélé, pris, un indice, une porte) : un document qui arrive entre-temps
+     ne l'efface plus. On garde ce qui diffère de la référence du dernier envoi, posé sur ce que le document apporte ; la
+     référence garde l'ancienne valeur, et le changement part au prochain envoi. Avant, il fallait recliquer deux ou trois fois. */
+  let solGarde=null;
+  if(m&&Array.isArray(d.doors)&&!carteNeuve&&dernierPousse&&Array.isArray(dernierPousse.doors)&&dernierPousse.mapId&&dernierPousse.mapId===d.mapId&&d.mapId===currentMapId){
+   const ici=etatVivant().doors,f=solFondu(d.doors,dernierPousse.doors,ici);if(f&&!pareil(f,d.doors)){solGarde=dernierPousse.doors;d={...d,doors:f}}}
   if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{const v=d.doors[i];if(typeof v==='boolean'){p.open=v;delete p.decouvert;delete p.crochetee}else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}
     else if(Number.isInteger(v)&&v>=4&&v<=7){p.open=!!(v&1);if(v&2)p.decouvert=true;else delete p.decouvert;p.crochetee=true}});
    {const dg=d.doors.filter(v=>v&&typeof v==='object'&&typeof v.dg==='string').map(v=>v.dg.slice(0,80));if(dg.length)m.dangersDetruits=dg;else delete m.dangersDetruits}
@@ -475,6 +488,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
   gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});
+  // v1.370 : le sol gardé ici n'est pas tenu pour envoyé — il part au prochain envoi, avec ce que le document a apporté.
+  if(solGarde)base.doors=solGarde;
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
   if(change){render();rafraichitFiches()}
   // v1.010 : un coup ou une demande venus d'un joueur hors combat : le combat commence chez tous.

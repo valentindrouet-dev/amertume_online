@@ -2440,7 +2440,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
    les jauges de PV ont leur couche, au-dessus de tous les socles. */
 {assert.ok(page.includes("function couchePV(){let c=$('pv-layer');if(!c){c=document.createElement('div');c.id='pv-layer';$('map-view').append(c)}return c}")
-  &&page.includes(" t._pv=jauge;couchePV().append(jauge);")&&page.includes("document.querySelectorAll('.token').forEach(t=>t.remove());couchePV().replaceChildren();")
+  &&page.includes(" t._pv=jauge;couchePV().append(jauge);")&&page.includes("document.querySelectorAll('.token:not(.objet)').forEach(t=>t.remove());couchePV().replaceChildren();")
   &&page.includes("el.style.top=actors[k].y+'%';suitLaJauge(el)}});")&&page.includes("el.style.top=b.y+'%';suitLaJauge(el)}")
   &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
  /* v0.335 — Sans point de Mouvement, le socle est verrouillé : il ne bouge pas, le dit, et
@@ -4550,7 +4550,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    deux icônes. Un objet posé au sol montre sa bulle au survol, dès qu'il est dans la zone de contact d'un aventurier. */
 {const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8');
  assert.ok(!/querySelectorAll\('#map-view \.token'\)/.test(page)&&!/querySelectorAll\('\.token'\)\[/.test(page)
-  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere)');")&&page.includes("render();refocusToken(a);"),'les socles par leur rang, sans les lumières');
+  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere):not(.objet)');")&&page.includes("render();refocusToken(a);"),'les socles par leur rang, sans les lumières');
  assert.ok(page.includes("(bulle&&typeof glyphe==='string'&&typeof logoArmeEquipee==='function'?logoArmeEquipee(a):null)"),'chaque rond garde son icône');
  assert.ok(carto.includes("  if(l.pose&&piece&&typeof surveille==='function')surveille(t,()=>{if(!actors.some(a=>a&&a.hero&&alive(a)&&!a.horsCarte&&lumiereAPortee(a,l)))return;"),'la bulle de l’objet au sol, au contact');}
 /* v0.597 — Le remplissage d'obscurité gagne la pierre : chaque case de mur ou de porte va à l'espace libre le plus proche,
@@ -6579,3 +6579,8 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const mp=fs.readFileSync('maps.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),rg=fs.readFileSync('regles.js','utf8');
  assert.ok(mp.includes('<input type="checkbox" id="map-sans-brisures">Pas de Brisures</label>')&&cb.includes("...(m&&m.sansBrisures===true?{sansBrisures:true}:{}),")
   &&gm.includes("if(carteSansBrisures()&&!(opts&&opts.manuel))return null;")&&gm.includes("R.boss.n>0&&!(typeof carteSansBrisures==='function'&&carteSansBrisures())")&&rg.includes('<b>Pas de Brisures</b>'),'v1.369');}
+/* v1.370 — Le sol changé ici et pas encore parti n'est plus effacé par un document reçu ; les objets de la carte restent les mêmes
+   éléments d'un rendu à l'autre (un clic n'est plus perdu), et les socles se comptent sans eux. */
+{const lv=fs.readFileSync('live.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),pg=fs.readFileSync('index.html','utf8');
+ assert.ok(lv.includes("const ici=etatVivant().doors,f=solFondu(d.doors,dernierPousse.doors,ici);if(f&&!pareil(f,d.doors)){solGarde=dernierPousse.doors;d={...d,doors:f}}")&&lv.includes("if(solGarde)base.doors=solGarde;")
+  &&mp.includes("if(v&&v.outerHTML===t.outerHTML)v.onclick=t.onclick;else if(v)v.replaceWith(t);else vue.append(t)});")&&!pg.includes("document.querySelectorAll('#map-view .token:not(.lumiere)')"),'v1.370');}

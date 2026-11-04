@@ -714,8 +714,15 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
    cache pas : c'est la description qui dit s'il est dans un recoin. */
 /* En combat, les objets s'effacent de la carte, pour tous : ils reviennent en exploration. Ils ne
    coupent jamais la vue. */
+/* v1.370 — Les objets de la carte ne se rebâtissent plus à chaque rendu : celui qui n'a pas changé reste le même élément. Un rendu
+   tombé entre l'appui et le relâchement — un document de la table arrive plusieurs fois par seconde quand la troupe bouge —
+   détruisait l'objet sous le doigt, et le clic se perdait. L'identité de la donnée compte aussi : une carte republiée rebâtit. */
+const identitesObjets=new WeakMap();let identiteObjetN=0;
+const identiteObjet=o=>{if(!identitesObjets.has(o))identitesObjets.set(o,++identiteObjetN);return String(identitesObjets.get(o))};
 function renderObjets(){const vue=$('map-view'),m=currentMap();
- vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m||enCombat())return;
+ const anciens=new Map();vue.querySelectorAll('.token.objet').forEach(t=>{if(anciens.has(t.dataset.objet))t.remove();else anciens.set(t.dataset.objet,t)});
+ const restes=()=>anciens.forEach(t=>t.remove());
+ if(!m||enCombat()){restes();return}
  (m.objets||[]).forEach((o,i)=>{if(o.pris||(!objetVu(o)&&view!=='mj'))return;
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
   // v1.033 : son centre même — un bord de socle qui frôle la vue, derrière un mur, ne suffit plus.
@@ -754,7 +761,9 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
    if(o.indice){examinerIndice(a,o);return}
    if(o.ressource===true){recolterRessource(a,o);return}
    recupererObjet(a,o)};
-  vue.append(t)})}
+  t.dataset.sig=identiteObjet(o);const v=anciens.get(t.dataset.objet);anciens.delete(t.dataset.objet);
+  if(v&&v.outerHTML===t.outerHTML)v.onclick=t.onclick;else if(v)v.replaceWith(t);else vue.append(t)});
+ restes()}
 /* v0.998 — Examiner un Indice découvert, au contact : le test réglé par le MJ (sa compétence, ses réussites), ou l'objet
    qu'il faut porter. Réussi, son secret s'écrit au journal et se lit ensuite dans sa bulle. */
 /* v1.039 — Le test d'un Indice ne se tente qu'une fois, pour toute la troupe : la table partagée le réserve (40 : tenté, 41 : percé),
