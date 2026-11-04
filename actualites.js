@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.365","d":"2026-11-04","t":"Plus d'ancienne carte au rechargement d'un joueur"},
 {"v":"1.364","d":"2026-11-04","t":"Talents rendus librement, nom du joueur en haut"},
 {"v":"1.363","d":"2026-11-04","t":"Joueur d'un aventurier choisi sur sa vignette"},
 {"v":"1.362","d":"2026-11-04","t":"La carte ouverte par le MJ part chez les joueurs"},

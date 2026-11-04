@@ -4872,3 +4872,5 @@ table.gemmes.spheres-fiche thead td,table.gemmes.spheres-fiche tbody th{width:11
 .hero-vignette select.vignette-joueur{display:block;width:100%;max-width:180px;margin:6px 0 0;padding:3px 6px;font:600 12px system-ui}
 /* v1.364 — Le nom du joueur connecté, en haut à droite, devant ses options en ligne. */
 #nom-joueur{align-self:center;margin-right:10px;font:700 16px 'Killam',Georgia,serif;color:var(--ink);white-space:nowrap}
+/* v1.365 — Tant que la table n'a pas envoyé son premier état, la carte elle-même ne se montre pas, voile posé ou non. */
+body.table-attendue #map-view{visibility:hidden}

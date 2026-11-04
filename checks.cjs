@@ -6564,3 +6564,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("{const qui=fiche.querySelector('select.hero-joueur');if(qui){qui.classList.add('vignette-joueur');"),'v1.363');}
 /* v1.364 — Un joueur rend librement ses talents, hors combat (seuls les bonus attendent un repos court) ; son nom en haut à droite. */
 {const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("n.textContent=joueur&&connecte?pseudoJoueur():''")&&fs.readFileSync('regles.js','utf8').includes('un bonus ne se rend qu’après un repos court'),'v1.364');}
+/* v1.365 — Le voile de la table se pose dès la première ligne de la page chez un joueur. */
+{const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("Chargement de la partie enregistrée…</div><script>/* v1.365")&&fs.readFileSync('editor.css','utf8').includes('body.table-attendue #map-view{visibility:hidden}'),'v1.365');}
