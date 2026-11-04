@@ -13,7 +13,13 @@
     for(const p of m.matiere){if(!p||!Array.isArray(p.anneaux)||p.anneaux.length>200)throw Error('Matière de carte invalide.');
      for(const an of p.anneaux){if(!Array.isArray(an)||an.length<3||an.length>4000)throw Error('Anneau de matière invalide.');
       for(const q of an)if(!Array.isArray(q)||q.length!==2||!q.every(v=>Number.isFinite(v)&&v>=-1&&v<=101))throw Error('Anneau de matière invalide.')}}}}}
- for(const a of s.actors){if(typeof a.name!=='string'||typeof a.hero!=='boolean'||!Array.isArray(a.pool)||a.pool.length!==7||!a.pool.every(v=>Number.isInteger(v)&&v>=0&&v<=12)||!Array.isArray(a.skills)||a.skills.length!==8||!a.skills.every(v=>Number.isFinite(v)&&v>=0&&v<=30)||(a.states!==undefined&&(!Array.isArray(a.states)||a.states.length>40||!a.states.every(e=>typeof e==='string'&&e.length<=40))))throw Error('Fiche publiée invalide.');for(const k of ['hp','max','def','dmg','x','y'])if(!Number.isFinite(a[k])||a[k]<0)throw Error('Caractéristique invalide.');if(a.max<1||a.hp>a.max)throw Error('PV invalides.')}
+ for(const a of s.actors){const qui=typeof a.name==='string'?' : '+a.name.slice(0,40):'';
+  // v1.360 : le message nomme la fiche et ce qui ne va pas.
+  if(typeof a.name!=='string'||typeof a.hero!=='boolean')throw Error('Fiche publiée invalide'+qui+' (nom ou camp).');
+  // v1.360 : 8 dés depuis le dé violet (v1.006) ; 7 sur une fiche plus ancienne.
+  if(!Array.isArray(a.pool)||(a.pool.length!==7&&a.pool.length!==8)||!a.pool.every(v=>Number.isInteger(v)&&v>=0&&v<=12))throw Error('Fiche publiée invalide'+qui+' (dés).');
+  if(!Array.isArray(a.skills)||a.skills.length!==8||!a.skills.every(v=>Number.isFinite(v)&&v>=0&&v<=30))throw Error('Fiche publiée invalide'+qui+' (compétences).');
+  if(a.states!==undefined&&(!Array.isArray(a.states)||a.states.length>40||!a.states.every(e=>typeof e==='string'&&e.length<=40)))throw Error('Fiche publiée invalide'+qui+' (états).');for(const k of ['hp','max','def','dmg','x','y'])if(!Number.isFinite(a[k])||a[k]<0)throw Error('Caractéristique invalide.');if(a.max<1||a.hp>a.max)throw Error('PV invalides.')}
  return s;
  }
  /* Les grandes images voyagent à part, sous l'empreinte de leur contenu (shared.js) : la

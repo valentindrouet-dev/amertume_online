@@ -21,7 +21,17 @@ function texteStable(value){const v={...value,round:1,mode:'exploration',locked:
   maps:(value.maps||[]).map(m=>{const c={...m};delete c.fog;delete c.seen;c.doors=(m.doors||[]).map(d=>{const p={...d};delete p.open;delete p.decouvert;delete p.crochetee;return p});
    c.coffres=(m.coffres||[]).map(x=>{const p={...x};['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete p[k]);return p});return c})};
  return JSON.stringify(v)}
-function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),actors:actors.map(a=>({...structuredClone(a),target:null,checks:[false,false,false]}))}}
+function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),actors:actors.map(a=>ficheBornee({...structuredClone(a),target:null,checks:[false,false,false]}))}}
+/* v1.360 — La fiche publiée reste dans les bornes que la publication exige (shared-data.js, validate) : un compte de 0 à 12 par couleur de dé, 8 compétences
+   de 0 à 30, au plus 40 états de 40 lettres, des PV et des chiffres positifs. Un dé de trop — une arme forgée, un effet du moment —
+   suspendait toute la publication ; la copie publiée est bornée, la partie locale n'est pas touchée. */
+function ficheBornee(a){const ent=(v,lo,hi)=>{const n=Math.trunc(Number(v));return Number.isFinite(n)?Math.max(lo,Math.min(hi,n)):lo};
+ if(typeof a.name!=='string')a.name=String(a.name??'');a.hero=a.hero===true;
+ a.pool=Array.from({length:typeof DICE_KEYS!=='undefined'?DICE_KEYS.length:8},(_,i)=>ent(Array.isArray(a.pool)?a.pool[i]:0,0,12));
+ a.skills=Array.from({length:8},(_,i)=>{const n=Number(Array.isArray(a.skills)?a.skills[i]:0);return Number.isFinite(n)?Math.max(0,Math.min(30,n)):0});
+ if(a.states!==undefined)a.states=(Array.isArray(a.states)?a.states:[]).filter(e=>typeof e==='string'&&e.length<=40).slice(0,40);
+ ['def','dmg','x','y'].forEach(k=>{const n=Number(a[k]);a[k]=Number.isFinite(n)&&n>=0?n:0});
+ const max=Number(a.max),hp=Number(a.hp);a.max=Number.isFinite(max)&&max>=1?max:1;a.hp=Number.isFinite(hp)&&hp>=0?Math.min(hp,a.max):0;return a}
 /* ---------- Les grandes images, publiées à part ----------
    Une carte, un calque du domaine, un grand portrait pèsent des mégaoctets : ensemble, ils
    faisaient passer la publication au-delà de 16 Mo, et chaque republication les renvoyait tous.

@@ -6552,3 +6552,7 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  &&ix.includes("if(a&&estMannequin(a)&&!(opts&&opts.sansAction))opts={...(opts||{}),sansAction:true};")&&gm.includes("if(typeof coupSurMannequin==='function'&&coupSurMannequin()&&!(opts&&opts.manuel))return null;"),'v1.358');}
 /* v1.359 — Goliath : Poigne à 1 dé rouge ; Forme de Géant jusqu'à la fin du tour. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c==='red'?1:0),sansArme:true,")&&ix.includes("{const ts=tourSuivant;tourSuivant=function(...x){actors.forEach(o=>{if(o&&o.formeGeant)finFormeGeant(o)});return ts(...x)}}"),'v1.359');}
+/* v1.360 — Publication : 8 dés par fiche (le dé violet) acceptés ; la copie publiée bornée ; le message nomme la fiche en cause. */
+{const sd=require('./shared-data.js'),sh=fs.readFileSync('shared.js','utf8');const f=n=>({schema:1,catalog:{items:[],monsters:[]},actors:[{name:'A',hero:true,pool:Array(n).fill(0),skills:Array(8).fill(0),hp:1,max:1,def:0,dmg:0,x:1,y:1}]});
+ assert.doesNotThrow(()=>sd.validate(f(8)));assert.doesNotThrow(()=>sd.validate(f(7)));assert.throws(()=>sd.validate(f(9)),/Fiche publiée invalide : A \(dés\)/);
+ assert.ok(sh.includes("actors:actors.map(a=>ficheBornee({...structuredClone(a),target:null,checks:[false,false,false]}))}}"),'v1.360');}
