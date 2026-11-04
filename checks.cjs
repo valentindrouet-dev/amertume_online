@@ -6558,3 +6558,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  assert.ok(sh.includes("actors:actors.map(a=>ficheBornee({...structuredClone(a),target:null,checks:[false,false,false]}))}}"),'v1.360');}
 /* v1.361 — La scène publiée ne s'applique jamais d'elle-même sur l'appareil du MJ ; avant de l'appliquer, la partie locale est gardée et peut revenir. */
 {const sh=fs.readFileSync('shared.js','utf8');assert.ok(sh.includes("(auth.currentUser.isAnonymous||(adminConnu&&!admin&&!appareilMJ))")&&sh.includes("function applyRemote(){if(!remote)return;gardeAvantRemote();")&&sh.includes('<button id="shared-avant" hidden>'),'v1.361');}
+/* v1.362 — La carte ouverte par le MJ est publiée aussitôt : les joueurs reçoivent exactement la sienne. */
+{const sh=fs.readFileSync('shared.js','utf8');assert.ok(sh.includes("async function publishShared(explicit=false,force=false){")&&sh.includes("if(current!==baseRevision&&!force)throw")&&sh.includes("{const oc=ouvreCarte;ouvreCarte=function(...x){const r=oc(...x);if(admin)setTimeout(()=>{status('Envoi de la carte aux joueurs…');publishShared(true,true)},400);return r}}"),'v1.362');}

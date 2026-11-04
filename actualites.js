@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.362","d":"2026-11-04","t":"La carte ouverte par le MJ part chez les joueurs"},
 {"v":"1.361","d":"2026-11-04","t":"Partage : protège la partie du MJ"},
 {"v":"1.360","d":"2026-11-04","t":"Publication : Fiche publiée invalide corrigée"},
 {"v":"1.359","d":"2026-11-04","t":"Goliath : Poigne 1 dé rouge, Forme de Géant jusqu'à la fin du tour"},
