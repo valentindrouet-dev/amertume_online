@@ -897,6 +897,8 @@ document.addEventListener('amertume-firebase-prete',async()=>{
    siège est son aventurier), ni le partage. Ses onglets sont ceux que le MJ ouvre aux joueurs.
    Ce qui est caché ici l'est après chaque rendu, pour que rien ne le rouvre. */
 function verrouillerInvite(){const inv=spectateur();
+ // v1.366 : l'en-tête d'un joueur en ligne se fige, les onglets au centre (editor.css).
+ document.body.classList.toggle('joueur-en-ligne',inv);
  const cache=(el,oui)=>{if(el)el.hidden=oui};
  cache($('view'),inv);cache(document.querySelector('label[for="view"]'),inv);
  if(inv){cache($('owner'),true);cache($('owner-label'),true)}

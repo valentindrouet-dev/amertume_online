@@ -4874,3 +4874,17 @@ table.gemmes.spheres-fiche thead td,table.gemmes.spheres-fiche tbody th{width:11
 #nom-joueur{align-self:center;margin-right:10px;font:700 16px 'Killam',Georgia,serif;color:var(--ink);white-space:nowrap}
 /* v1.365 — Tant que la table n'a pas envoyé son premier état, la carte elle-même ne se montre pas, voile posé ou non. */
 body.table-attendue #map-view{visibility:hidden}
+/* v1.366 — Chez un joueur en ligne, l'en-tête en trois colonnes fixes : la marque à gauche, les onglets toujours au centre, les options
+   à droite. Ce qui paraît ou s'efface à droite (son nom, ses options) ne fait plus sauter les onglets. */
+@media(min-width:901px){
+ body.joueur-en-ligne>header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}
+ body.joueur-en-ligne>header>.brand{grid-column:1;justify-self:start}
+ body.joueur-en-ligne>header>nav.tabs{grid-column:2;justify-self:center}
+ body.joueur-en-ligne>header>.view-controls{grid-column:3;justify-self:end;flex-wrap:nowrap;min-width:0}}
+/* v1.366 — Chez un joueur : sous chaque aventurier, le nom de son joueur ; le sien, en vert, et sa vignette cerclée de vert. */
+.hero-vignette .vignette-proprio{display:inline-block;margin-top:6px;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 11px system-ui;letter-spacing:.4px;color:var(--muted)}
+.hero-vignette .vignette-proprio.a-moi{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--panel));color:var(--green)}
+.hero-vignette.a-moi{box-shadow:0 0 0 2px var(--green)}
+#hero-grid .hero-vignette small.vignette-proprio{display:inline-block;align-self:flex-start;width:auto;max-width:100%;margin:6px 0 0;padding:1px 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 11px/1.5 system-ui;letter-spacing:.4px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hero-grid .hero-vignette small.vignette-proprio.a-moi{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--panel));color:var(--green)}
+#hero-grid .hero-vignette.a-moi{outline:2px solid var(--green);outline-offset:-2px}

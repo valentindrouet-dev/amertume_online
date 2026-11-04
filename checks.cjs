@@ -6566,3 +6566,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("n.textContent=joueur&&connecte?pseudoJoueur():''")&&fs.readFileSync('regles.js','utf8').includes('un bonus ne se rend qu’après un repos court'),'v1.364');}
 /* v1.365 — Le voile de la table se pose dès la première ligne de la page chez un joueur. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("Chargement de la partie enregistrée…</div><script>/* v1.365")&&fs.readFileSync('editor.css','utf8').includes('body.table-attendue #map-view{visibility:hidden}'),'v1.365');}
+/* v1.366 — En-tête d'un joueur figé (onglets au centre) ; sur chaque vignette, à qui est l'aventurier. */
+{const ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(lv.includes("document.body.classList.toggle('joueur-en-ligne',inv);")&&css.includes('body.joueur-en-ligne>header>nav.tabs{grid-column:2;justify-self:center}')&&ed.includes("p.className='vignette-proprio'+(moi?' a-moi':'');"),'v1.366');}
