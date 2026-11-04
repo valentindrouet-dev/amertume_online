@@ -155,8 +155,14 @@ function lumiereAPortee(a,l){const size=mapSize();if(!a||!size.width)return fals
 /* Ce qui se prend au sol se réserve d'abord sur la table (reserveSurTable) : la prise n'a lieu qu'une fois, même si deux
    tables la tentent au même instant. Les rangs dans le tableau des portes sont ceux qu'etatVivant écrit. */
 function rangsSol(m){const n=(m.doors||[]).length,n2=n+(m.objets||[]).length,n3=n2+(m.coffres||[]).length;return {n,n2,n3}}
-function prisSurTable(marque,fait){if(!marque||typeof reserveSurTable!=='function'||typeof enLigne==='undefined'||!enLigne)return fait();
- reserveSurTable(marque).then(ok=>{if(ok)fait();else{render();scheduleSave()}})}
+/* v1.371 — Plus de transaction pour prendre : la table est un seul document, réécrit plusieurs fois par seconde quand la troupe
+   bouge, et la transaction y échouait sans un mot — le bouton ne faisait rien. On juge sur le dernier état reçu de la table :
+   déjà pris là-bas, un joueur ne le reprend pas ; le MJ, lui, décide toujours. Le changement part avec l'envoi ordinaire. */
+function prisSurTable(marque,fait){if(!marque||typeof enLigne==='undefined'||!enLigne)return fait();
+ const recu=typeof dernierDoc!=='undefined'&&dernierDoc&&Array.isArray(dernierDoc.doors)?dernierDoc.doors.slice():null;
+ const libre=!recu||marque(recu)!==null;
+ if(!libre&&!(typeof estMJ==='function'&&estMJ())){render();scheduleSave();return}
+ fait()}
 function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
  const pieces=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);if(!pieces.length)return;
  const m=currentMap();if(!m)return;

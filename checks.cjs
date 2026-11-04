@@ -6584,3 +6584,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const lv=fs.readFileSync('live.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),pg=fs.readFileSync('index.html','utf8');
  assert.ok(lv.includes("const ici=etatVivant().doors,f=solFondu(d.doors,dernierPousse.doors,ici);if(f&&!pareil(f,d.doors)){solGarde=dernierPousse.doors;d={...d,doors:f}}")&&lv.includes("if(solGarde)base.doors=solGarde;")
   &&mp.includes("if(v&&v.outerHTML===t.outerHTML)v.onclick=t.onclick;else if(v)v.replaceWith(t);else vue.append(t)});")&&!pg.includes("document.querySelectorAll('#map-view .token:not(.lumiere)')"),'v1.370');}
+/* v1.371 — Prendre, donner, examiner, ouvrir : plus de transaction sur la table (elle échouait sans un mot) ; jugé sur le dernier état reçu. */
+{const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes("const libre=!recu||marque(recu)!==null;")&&mp.includes("if(!libre&&!(typeof estMJ==='function'&&estMJ())){render();scheduleSave();return}"),'v1.371');}
