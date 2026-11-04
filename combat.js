@@ -1827,6 +1827,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[],phrase(p){return 'Une fois par tour, prend un coup à la place d’un <b>spectre</b> allié.'}},
  replique:{cle:'replique',nom:'Réplique',type:'reac',monstre:true,aide:'Réaction : après avoir réussi une Esquive, effectue son Attaque ou Attaque spéciale (la première de la liste) contre l’adversaire qui vient de l’attaquer.',
   params:[],phrase(p){return 'Après une <b>Esquive</b> réussie, frappe celui qui l’attaquait de sa <b>première attaque</b>.'}},
+ mannequin:{cle:'mannequin',nom:'Mannequin',type:'pass',monstre:true,aide:'Passif : mannequin d’entraînement — neutre ; l’attaquer ne déclenche pas de combat et ne fait gagner aucune sphère ; ses attaques ne coûtent pas de PA.',
+  params:[],phrase(p){return 'Vous êtes un mannequin d’entraînement : <b>neutre</b>, vous attaquer ne déclenche pas de combat ni ne fait gagner de <b>Brisures</b> ; vous attaquez sans dépenser de <b>PA</b>.'}},
  seuilgardien:{cle:'seuilgardien',nom:'Seuil',type:'reac',monstre:true,aide:'Réaction, une fois par tour : un aventurier qui entre dans sa zone de contact subit ses Dégâts d’opportunité.',
   params:[],phrase(p){return 'Qui entre à son contact subit une <b>attaque d’opportunité</b>.'}},
  statue:{cle:'statue',nom:'Statue',type:'pass',monstre:true,aide:'Passif : caché, il ne s’éveille que si un aventurier passe en vue d’elle avec une lumière, ou en courant (plus de 9 m d’un seul déplacement).',
@@ -3040,7 +3042,8 @@ function rangType(a){return a&&!a.hero&&RANG_TYPE[a.type]!==undefined?RANG_TYPE[
 const ALIGNEMENTS=[['allie','Allié'],['neutre','Neutre'],['adverse','Adverse']];
 /* Sur la table, le MJ peut changer l'alignement d'un PNJ le temps d'une rencontre (« alignementJeu ») : il
    l'emporte sur celui du modèle, que le Bestiaire garde intact. */
-function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj)return 'adverse';const al=a.alignementJeu||a.alignement;return ['allie','neutre','adverse'].includes(al)?al:'neutre'}
+// v1.358 : un Mannequin (talent d'adversaire) est neutre, sauf si le MJ l'a changé sur la table.
+function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj){if(typeof root.estMannequin==='function'&&root.estMannequin(a)){const j=a.alignementJeu;return ['allie','neutre','adverse'].includes(j)?j:'neutre'}return 'adverse'}const al=a.alignementJeu||a.alignement;return ['allie','neutre','adverse'].includes(al)?al:'neutre'}
 // Un Orbe statique est du camp de qui l'a posé.
 function campDe(a){if(!a)return '';if(a.hero)return 'troupe';if(a.orbeStatique)return a.orbeStatique.camp==='troupe'?'troupe':'adverse';const al=alignementDe(a);return al==='allie'?'troupe':al}
 function duCoteTroupe(a){return campDe(a)==='troupe'}

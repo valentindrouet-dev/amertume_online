@@ -610,3 +610,6 @@ function titresDuCombat(){const R=reglesGemmes(),b=typeof bilanDuCombat==='funct
  finCombatEnCours=finit;let r;try{r=bm(neuf,...x)}finally{finCombatEnCours=false}
  if(neuf==='combat')actors.forEach(a=>{if(a&&a.hero)noteContactTour(a,true)});return r}}
 {const bd=bilanDuCombat;bilanDuCombat=function(...x){const b=bd(...x);if(b&&titresDerniers&&titresDerniers.combat===numeroCombat&&Object.keys(titresDerniers.titres).length)b.titres={...titresDerniers.titres};return b}}
+
+/* v1.358 — Mannequin : un coup qui vise un mannequin d'entraînement ne fait gagner aucune sphère (le dé du MJ, si). */
+{const g=deGemme;deGemme=function(a,cle,opts,...x){if(typeof coupSurMannequin==='function'&&coupSurMannequin()&&!(opts&&opts.manuel))return null;return g(a,cle,opts,...x)}}
