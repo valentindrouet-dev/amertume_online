@@ -2592,12 +2592,14 @@ Object.assign(TALENTS_CODES,{
    des réglages, une phrase que le moteur écrit lui-même — et trois manières d'en user.
    Ce qu'il en advient à l'écran vit dans la table de jeu. */
 const USAGES_OBJET=[['libre','À volonté'],['conso','Consommable — l’objet est défaussé'],
- ['court','Une fois entre deux repos courts'],['jour','Une fois par jour'],['horscombat','Hors combat seulement — à volonté'],['horsconso','Hors combat seulement — consommable']];
+ ['court','Une fois entre deux repos courts'],['jour','Une fois par jour'],['horscombat','Hors combat seulement — à volonté'],['horsconso','Hors combat seulement — consommable'],
+ // v1.353 : une fois par combat — la charge revient au combat suivant.
+ ['combat','Une fois par combat']];
 // Ce qui part de l'inventaire à l'emploi ; ce qui ne s'emploie qu'hors combat.
 const usageConsomme=u=>u==='conso'||u==='horsconso';
 const usageHorsCombat=u=>u==='horscombat'||u==='horsconso';
 // Les usages qui se comptent : une charge prise, et il faut un repos pour la rendre.
-const USAGES_LIMITES=['court','jour'];
+const USAGES_LIMITES=['court','jour','combat'];
 const usageLimite=u=>USAGES_LIMITES.includes(u);
 const NOM_USAGE=u=>(USAGES_OBJET.find(([k])=>k===u)||USAGES_OBJET[0])[1];
 const OBJETS_CODES={
@@ -3377,7 +3379,9 @@ const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de com
  // v0.900 : la Nécrose, la Radiance et l'Armure.
  ['necrose','Nécrose : les dégâts de l’arme nécrosent'],['necrotique','Nécrotique : dégâts de Nécrose en plus'],['radiance','Radiance : soin radiant à chaque attaque'],['armure','Armure à chaque attaque'],
  // v1.076 : Anti-famille — contre les adversaires d'une famille (ou sous-famille), +x, +xd6, des dés de couleur, ou un état.
- ['anti','Anti-famille : dégâts ou état contre une famille d’adversaires']];
+ ['anti','Anti-famille : dégâts ou état contre une famille d’adversaires'],
+ // v1.353 : Soin à activer — x dés verts, une fois par combat, d'un clic sur la pièce.
+ ['soinActif','Soin à activer : dés verts, une fois par combat']];
 const MODES_ANTI=[['n','+x dégâts'],['d6','+xd6 dégâts'],['de','+x dés de dégâts'],['etat','Un état (x crans s’il est cumulable)']];
 /* Les valeurs d'un affixe : fixes, ou tirées selon la rareté de la pièce, d'Inhabituel à Légendaire. */
 const ECHELLE_DEFAUT=[[1,3],[4,7],[8,15],[16,30]];
@@ -3435,6 +3439,7 @@ function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.v
   if(x.antiMode==='de')return '+'+v+' dé'+(x.variable||x.valeur>1?'s':'')+' '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'')+' contre '+fam;
   if(x.antiMode==='etat')return 'inflige '+x.etat+(cumulable(x.etat)?' '+v:'')+' aux '+fam.slice(4);
   return '+'+v+' dégâts contre '+fam}
+ if(x.effet==='soinActif')return 'une fois par combat : soin '+v+' dé'+(x.variable||x.valeur>1?'s':'')+' vert'+(x.variable||x.valeur>1?'s':'')+', à activer';
  if(x.effet==='domination')return '+'+v+' dégâts contre les cibles avec '+x.etat;
  if(x.effet==='reaction')return 'vos talents de Réaction infligent +'+v+' dégâts';
  if(x.effet==='epines')return 'inflige '+v+' dégâts à l’adversaire qui arrive au contact';
@@ -3446,7 +3451,7 @@ function groupeAffixe(x){return x.groupe||(x.effet==='anti'?'anti:'+x.cible:x.ef
 function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleAffixe(base),fams=[fam,typeArmeDe(base),base.category==='armor'?'armure':''].filter(Boolean);if(!fam||(x.familles.length&&!x.familles.some(f=>fams.includes(f))))return false;
  if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de'||x.effet==='necrose'||x.effet==='necrotique'||x.effet==='anti')&&base.category!=='weapon')return false;
  // Un état conféré devient l'effet de la pièce : seulement sur une base qui n'en a pas.
- if(x.effet==='confere'&&objetCode(base))return false;
+ if((x.effet==='confere'||x.effet==='soinActif')&&objetCode(base))return false;
  // Jamais deux fois le même bonus : ni la caractéristique, ni la compétence que la base donne déjà.
  const deBase=normaliseBonusEquip(base.bonus);if(x.effet==='carac'&&deBase.some(b=>b.carac===x.carac))return false;
  if(x.effet==='comp'&&x.comp!=='*'&&deBase.some(b=>b.carac==='comp'&&String(b.comp)===String(x.comp)))return false;
@@ -3515,7 +3520,7 @@ function valeurAffixe(x,g){if(!x||!g)return 0;x=normaliseAffixe(x);const b=g.bon
  if(x.effet==='carac')return x.valeur*(b[x.carac]||0);if(x.effet==='comp')return x.valeur*(b.comp||0);if(x.effet==='de')return x.valeur*(d[x.de]||0);
  if(x.effet==='etat')return g.etat||0;if(x.effet==='mouvement')return x.valeur*(g.mouvement||0);
  if(x.effet==='confere')return g.effets&&g.effets.etat||0;if(x.effet==='orbesEtat'||x.effet==='epinesEtat')return x.valeur*(g.etat||0);
- if(x.effet==='vampire')return x.valeur*(b.pv||0)*2;if(x.effet==='xpVaincu'||x.effet==='fouille')return x.valeur*(b.comp||0);if(x.effet==='orKill')return x.valeur*35;if(x.effet==='acceleration')return x.valeur*(g.mouvement||0);
+ if(x.effet==='vampire')return x.valeur*(b.pv||0)*2;if(x.effet==='soinActif')return Math.round(x.valeur*3.5*(b.pv||0));if(x.effet==='xpVaincu'||x.effet==='fouille')return x.valeur*(b.comp||0);if(x.effet==='orKill')return x.valeur*35;if(x.effet==='acceleration')return x.valeur*(g.mouvement||0);
  if(x.effet==='domination'||x.effet==='reaction'||x.effet==='epines')return Math.round(x.valeur*(b.dmg||0)/2);
  if(x.effet==='anti')return x.antiMode==='etat'?Math.round((g.etat||0)*Math.max(1,x.valeur)/2):x.antiMode==='de'?Math.round(x.valeur*(d[x.de]||0)/2):Math.round(x.valeur*(x.antiMode==='d6'?3.5:1)*(b.dmg||0)/2);
  if(x.effet==='necrose')return g.etat||0;const k=x.enDes?3.5:1;if(x.effet==='necrotique')return Math.round(x.valeur*k*(b.dmg||0));if(x.effet==='radiance'||x.effet==='armure')return Math.round(x.valeur*k*(b.pv||0)*2);
@@ -3569,6 +3574,8 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
   else if(x.effet==='lumiere')o.lumiere=Math.min(40,Math.max(Number(o.lumiere)||0,x.valeur));
   // Un état conféré : la pièce devient active, et un clic sur elle, portée, donne l'état à son porteur.
   else if(x.effet==='confere'){o.effet='etat';o.params={etat:x.etat};o.mode='actif';o.usage=x.usage;o.consumable=false}
+  // v1.353 : un Soin à activer — la pièce devient active : un clic, portée, soigne son porteur de x dés verts, une fois par combat.
+  else if(x.effet==='soinActif'&&!o.effet){o.effet='soin';o.params={quantite:x.valeur,forme:'des',radiant:'non'};o.mode='actif';o.usage='combat';o.consumable=false}
   // Un affixe de classe : ce que les orbes du porteur infligent en plus. Sans orbes, rien.
   else if(x.effet==='orbesEtat')o.orbesEtats=[...(o.orbesEtats||[]),[x.etat,x.valeur]];
   // Ce que le moteur lit à chaque coup, chaque contact : soin, mouvement, dégâts des Réactions ; dégâts contre un état, épines.

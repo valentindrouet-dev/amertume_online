@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.353","d":"2026-11-04","t":"Affixe Soin à activer, une fois par combat"},
 {"v":"1.352","d":"2026-11-04","t":"Racine de vie : zone de contact"},
 {"v":"1.351","d":"2026-11-04","t":"Racine de vie : Onde et soin pour les alliés"},
 {"v":"1.350","d":"2026-11-03","t":"Portes : clés consommées et déverrouillage MJ"},

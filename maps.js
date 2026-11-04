@@ -3518,7 +3518,7 @@ $('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target
    (« repulsif » : la carte). Le reste agit sur l'instant : relever un aventurier tombé, une couleur de dés choisie, une purge,
    un objet lancé, une recette apprise, les passages secrets de la pièce. */
 const CODES_POTION=['boirelancer','vision','mouvement','resurrection','fluxdes','purge','repulsif','enduit','lancer','lumiere','grimoire','revelesecrets','perceintangible','veille','soinpurge'];
-function finPotion(a,o,dit){const u=usageObjet(o);if(usageLimite(u))a.usages={...(a.usages||{}),[o.id]:u};if(usageConsomme(u))retirerInventaire(a,o);
+function finPotion(a,o,dit){const u=usageObjet(o);if(usageLimite(u))a.usages={...(a.usages||{}),[o.id]:typeof marqueUsage==='function'?marqueUsage(u):u};if(usageConsomme(u))retirerInventaire(a,o);
  log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 const menuAuCentre=(titre,entrees)=>menuCarte(titre,entrees,innerWidth/2-90,innerHeight/2-60);

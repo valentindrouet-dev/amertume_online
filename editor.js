@@ -1050,13 +1050,13 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
      que son nom : c'est l'effet qu'on choisit. Un usage compté s'écrit dessous : 1 / jour,
      0 / jour une fois pris ; 1 / repos entre deux repos courts. */
   const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
-  const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
+  const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':usage==='combat'?'combat':'repos'):'';
   const horsCombat=usageHorsCombat(usage)&&enCombatPour(a),plein=soinInutile(a,o);
   out.push({objet:o,texte,compte,
    teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,
    peut:dispo&&!horsCombat&&!plein,limite:usageLimite(usage),epuise:!dispo,
    titre:horsCombat?o.name+' ne s’emploie qu’hors combat.':plein?nomNum(a)+' a déjà tous ses PV.':dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
-    :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
+    :o.name+(usage==='combat'?' a déjà servi pendant ce combat.':' a déjà servi aujourd’hui : il faut une nuit de repos.'),
    acteur:a,agir:()=>utiliserObjet(a,o)})});
  return out}
 /* Au-dessus de la piste, les dés de dégâts et le bonus du combattant pris : ceux de l'attaque
@@ -2513,13 +2513,14 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
 /* Les affixes que rien d'autre ne montre, chacun sa ligne : le losange des bonus d'objet, puis ce qu'il fait, ses valeurs et
    ses états en gras, les états à leur couleur. */
 const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat','xpVaincu','fouille','orKill','necrose','necrotique','radiance','armure'];
-EFFETS_EN_LIGNE.push('anti');
+EFFETS_EN_LIGNE.push('anti','soinActif');
 function ligneAffixe(x){const p=document.createElement('p');p.className='gear-affixe de-classe';const v=x.valeur;
  const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');p.append(los);
  const b=(txt,coul)=>{const e=document.createElement('b');e.textContent=txt;if(coul)e.style.color=coul;return e},et=t=>b(t,TEINTE_ETAT_MOT[x.etat]);
  const usage=((USAGES_AFFIXE.find(([k])=>k===x.usage)||USAGES_AFFIXE[0])[1]).toLowerCase();
  const parts={mouvement:[b('+'+v+' m'),' de mouvement.'],confere:['Confère ',et(x.etat),', '+usage+'.'],
-  vampire:['Vous soigne de ',b(v+' PV'),' en cas d’attaque réussie.'],acceleration:[b('+'+v+' m'),' de mouvement en réserve par attaque réussie, jusqu’à la fin du combat.'],
+  vampire:['Vous soigne de ',b(v+' PV'),' en cas d’attaque réussie.'],
+  soinActif:[b('1 fois par combat'),' : Soin ',b(String(v)),' ',deDansTexte(Math.max(0,DICE_KEYS.indexOf('green'))),' (à activer).'],acceleration:[b('+'+v+' m'),' de mouvement en réserve par attaque réussie, jusqu’à la fin du combat.'],
   domination:[b('+'+v+' dégâts'),' contre les cibles avec ',et(x.etat),'.'],reaction:['Vos talents de ',b('Réaction',TEINTES_TALENTS.reac),' infligent ',b('+'+v+' dégâts'),'.'],
   epines:['Inflige ',b(v+' dégâts'),' à l’adversaire qui arrive à votre contact.'],epinesEtat:['Inflige ',et(x.etat+' '+v),' à l’adversaire qui arrive à votre contact.'],
   xpVaincu:[b('+'+v+' XP'),' par adversaire vaincu.'],fouille:[b('+'+v+' réussite'+(v>1?'s':'')),' à vos tests de fouille.'],orKill:[b('+'+v+'d6'),' pièces d’or quand vous tuez un adversaire.'],
@@ -2595,7 +2596,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
    la carte disent l'objet, sa cible et ce qu'il fait ; un consommable quitte l'inventaire. */
 /* Une fois par jour : la charge est retenue sur le porteur, objet par objet, et revient
    avec le repos — le retour au tour 1 d'une rencontre, ou l'Onde qui remet un camp d'aplomb. */
-function usageEpuise(a,o){return !!(a&&o&&a.usages&&a.usages[o.id])}
+// v1.353 : une charge « une fois par combat » porte le numéro du combat où elle a servi ; au combat suivant, elle est revenue.
+const marqueUsage=u=>u==='combat'?'combat:'+(typeof numeroCombat!=='undefined'?numeroCombat:0):u;
+function usageEpuise(a,o){const v=a&&o&&a.usages?a.usages[o.id]:null;if(typeof v==='string'&&v.startsWith('combat:'))return v===marqueUsage('combat');return !!v}
 function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}
 /* Rendre sa charge à un objet : le MJ le fait d'un clic sur le chrono, quel que soit le
    repos dont elle dépendait. */
@@ -2603,7 +2606,7 @@ function rendreUsage(a,o){if(view!=='mj'||!a||!o||!usageEpuise(a,o))return false
  const u={...(a.usages||{})};delete u[o.id];a.usages=u;return true}
 // L'envers : le MJ marque la charge employée sans que l'objet agisse.
 function prendreUsage(a,o){if(view!=='mj'||!a||!o||!usageLimite(usageObjet(o))||usageEpuise(a,o))return false;
- a.usages={...(a.usages||{}),[o.id]:usageObjet(o)};return true}
+ a.usages={...(a.usages||{}),[o.id]:marqueUsage(usageObjet(o))};return true}
 /* Un repos rend les charges : le court ne rend que les siennes, le long rend tout. C'est
    par là que passera le repos court quand il arrivera. */
 /* Le repos long, pour toute la troupe, depuis l'onglet Aventuriers : chacun retrouve toutes ses
@@ -2668,7 +2671,7 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
   else dit='insensible '+(des?'aux dés ':'à ')+nom+(neuf?'':' — déjà');
   if(neuf&&!des&&hasState(a,valeur)){setState(a,valeur,false);dit+=', et '+valeur+' se dissipe'}}
  // La charge du jour est prise, le consommable quitte l'inventaire.
- if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}
+ if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:marqueUsage(usage)}}
  if(usageConsomme(usage))retirerInventaire(a,o);
  // v0.930 : le Sérum instable de l'Allsteiner donne aussi 2 crans de Corruption.
  if(o.id==='objet-serum-instable'){ajouteEtat(a,'Corruption',2);dit+=(dit?', ':'')+'Corruption +2'}
@@ -4917,10 +4920,10 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +'<span data-effet="etat orbesEtat domination epinesEtat anti" data-anti="etat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
   +'<span data-effet="confere">'+sel('État conféré','etatConfere',v.effet==='confere'?v.etat:'Blindage',ETATS_POSITIFS.map(e=>[e,e]))+sel('Usage','usage',v.usage,USAGES_AFFIXE)+'</span>'
   +'<span data-effet="necrotique radiance armure">'+sel('Forme','forme',v.enDes?'des':'pv',[['pv','Points'],['des','d6']])+'</span>'
-  +'<span data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat xpVaincu fouille orKill necrotique radiance armure anti">'+sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])
+  +'<span data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat xpVaincu fouille orKill necrotique radiance armure anti soinActif">'+sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])
    +'<span data-mode="fixe">'+field('Valeur fixe','valeur',v.valeur,'number','min="1" max="99"')+'</span></span>'
    // Selon la rareté : de tant à tant, pour chaque rareté, sur toute la largeur ; la pièce tire sa valeur dans l'échelle de la sienne.
-   +'<span class="affixe-echelle-ligne" data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat xpVaincu fouille orKill necrotique radiance armure anti"><span data-mode="echelle" class="affixe-echelle">'+['Inhabituel','Rare','Épique','Légendaire'].map((r,i)=>'<label class="echelle-rang r-'+['inhabituel','rare','mystique','epique'][i]+'"><span>'+r+'</span><span class="echelle-paire"><input type="number" name="e'+i+'a" min="1" max="99" value="'+v.echelle[i][0]+'"> à <input type="number" name="e'+i+'b" min="1" max="99" value="'+v.echelle[i][1]+'"></span></label>').join('')+'</span></span>'
+   +'<span class="affixe-echelle-ligne" data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat xpVaincu fouille orKill necrotique radiance armure anti soinActif"><span data-mode="echelle" class="affixe-echelle">'+['Inhabituel','Rare','Épique','Légendaire'].map((r,i)=>'<label class="echelle-rang r-'+['inhabituel','rare','mystique','epique'][i]+'"><span>'+r+'</span><span class="echelle-paire"><input type="number" name="e'+i+'a" min="1" max="99" value="'+v.echelle[i][0]+'"> à <input type="number" name="e'+i+'b" min="1" max="99" value="'+v.echelle[i][1]+'"></span></label>').join('')+'</span></span>'
   +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix','','text','readonly tabindex="-1"')
   +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
   +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+cases+'</div>';

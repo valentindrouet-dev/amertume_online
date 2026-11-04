@@ -1813,8 +1813,8 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
  assert.equal(Object.keys(codes).sort().join(),'armure,boirelancer,enduit,etat,fluxdes,grimoire,invulnerabilite,lancer,lumiere,mouvement,perceintangible,protegeronces,purge,repulsif,resurrection,revelesecrets,soin,soinpurge,veille,vision');
- assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso']));
- assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
+ assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso','combat']));
+ assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour','combat']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
  assert.equal(C.NOM_USAGE('court'),'Une fois entre deux repos courts');
  assert.equal(C.NOM_USAGE('jour'),'Une fois par jour');assert.equal(C.NOM_USAGE('bidon'),'À volonté');
@@ -1851,7 +1851,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)")&&src.includes('function dessineReglagesObjet()')
  &&src.includes("a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};")&&!src.includes(">Consommable</label>')")
  &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}")
- &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}")
+ &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:marqueUsage(usage)}}")
  &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
@@ -1991,7 +1991,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
    l'Attaque reste le premier bouton ; le logo des Orbes suit l'amélioration tenue. */
 assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x.title)return;")&&src.includes("if(!x.getAttribute('aria-label'))x.setAttribute('aria-label',x.title);x.removeAttribute('title')});")
  &&src.includes("const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;")
- &&src.includes("const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';")
+ &&src.includes("const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':usage==='combat'?'combat':'repos'):'';")
  &&src.includes("boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;revient();")
  &&!src.includes("' 1/1'")&&!feuille.includes('.attaque-carte')
  &&src.includes("// Les talents à leur suite : ceux d'action, puis les réactions.")&&!src.includes("boite.querySelector('.btn-talent');")
@@ -6536,3 +6536,6 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  &&cb.includes("if(r.cleId&&r.cleConsommee===true)o.cleConsommee=true;"),'v1.350');}
 /* v1.351 — Racine de vie : à la fin de chaque tour, le porteur et ses alliés reçoivent Onde et 2 dés verts de soin ; plus de plancher à 1 PV. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("actors.filter(o=>surCarteAdv(o)&&porteTalent(o,'racinedevie')).forEach(o=>{const l=actors.filter(x=>surCarteAdv(x)&&campDe(x)===campDe(o)&&(x===o||allieAuContact(o,x)));")&&ix.includes("function plancherPV(b,n){return n}"),'v1.351');}
+/* v1.353 — Affixe Soin à activer : x dés verts, une fois par combat ; usage d'objet « Une fois par combat ». */
+{const cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(cb.includes("['soinActif','Soin à activer : dés verts, une fois par combat']")&&cb.includes("else if(x.effet==='soinActif'&&!o.effet){o.effet='soin';o.params={quantite:x.valeur,forme:'des',radiant:'non'};o.mode='actif';o.usage='combat';")
+ &&cb.includes("const USAGES_LIMITES=['court','jour','combat'];")&&ed.includes("const marqueUsage=u=>u==='combat'?'combat:'+(typeof numeroCombat!=='undefined'?numeroCombat:0):u;"),'v1.353');}
