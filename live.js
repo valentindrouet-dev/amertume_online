@@ -777,6 +777,8 @@ function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='unde
  ['live-sieges','live-titre-sieges'].forEach(id=>{const e=$(id);if(e)e.hidden=!ouvert||joueur});
  const b=$('open-live');if(b){b.classList.toggle('has-news',ouvert);
   b.textContent=joueur?'Options en ligne':ouvert?'Table · '+tableId:'Table en ligne'}
+ // v1.364 : en haut à droite de chaque page, le nom du joueur connecté.
+ {let n=$('nom-joueur');if(b&&!n){n=document.createElement('span');n.id='nom-joueur';b.before(n)}if(n){n.hidden=!(joueur&&connecte);n.textContent=joueur&&connecte?pseudoJoueur():''}}
  {const t=document.querySelector('#live-panel .dialog-head h2');if(t)t.textContent=joueur?'Options en ligne':'Table en ligne'}
  const c=$('live-compte');if(c)c.hidden=joueur;if(c)c.textContent=ouvert
   ?Object.keys(sieges).filter(u=>u!==monUid).length+' joueur(s) assis · table '+tableId:'';

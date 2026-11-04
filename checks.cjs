@@ -5459,7 +5459,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#arbres.v2 .arbres-tete
  &&ed.includes("pl.className='place p-bourse';")&&ed.includes("const LIGNES_SAC=fenetre?CATEGORIES_SAC:")&&ed.includes("c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,blocInv);return c}")
  &&css.includes(".corps-sac.inv-fenetre{position:relative;flex:1;display:grid;grid-template-columns:minmax(0,1fr) var(--detail-w,440px)"),'v1.185');}
 /* v1.184 — Les Marques : une par 100 XP ; elles paient les talents ; un talent se rend hors combat, après un repos court. */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function peutRendreTalent(a){return view==='mj'||(!!a&&!aventurierEnCombat(a)&&a.reposPris===true)}")&&ed.includes("if(acquis&&!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}")
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function peutRendreTalent(a,t){if(view==='mj')return true;if(!a||aventurierEnCombat(a))return false;return t&&typeof estBonus==='function'&&estBonus(t)?a.reposPris===true:true}")&&ed.includes("if(acquis&&!peutRendreTalent(a,t)){note(noteRendre(t));return}")
  &&ed.includes("c.semisForge.includes('marques')")&&ed.includes("function remplitMarques(el,n){")&&ed.includes("ligne('Coût (Marques)',")&&fs.readFileSync('combat.js','utf8').includes("const XP_PAR_MARQUE=100;"),'v1.184');}
 /* v1.183 — Treize déclencheurs de plus, les titres de fin de combat qui valent une Brisure, la Tour Mystique ; le détail d'un coup. */
 {const C=require('./combat.js');const r=C.resolveAttack({dice:[[5,0],[6,0],[4,2],[3,3]],def:3,dmg:2,roll:()=>1});
@@ -6562,3 +6562,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const sh=fs.readFileSync('shared.js','utf8');assert.ok(sh.includes("async function publishShared(explicit=false,force=false){")&&sh.includes("if(current!==baseRevision&&!force)throw")&&sh.includes("{const oc=ouvreCarte;ouvreCarte=function(...x){const r=oc(...x);if(admin)setTimeout(()=>{status('Envoi de la carte aux joueurs…');publishShared(true,true)},400);return r}}"),'v1.362');}
 /* v1.363 — Le menu du joueur d'un aventurier, sur sa vignette aussi. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("{const qui=fiche.querySelector('select.hero-joueur');if(qui){qui.classList.add('vignette-joueur');"),'v1.363');}
+/* v1.364 — Un joueur rend librement ses talents, hors combat (seuls les bonus attendent un repos court) ; son nom en haut à droite. */
+{const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("n.textContent=joueur&&connecte?pseudoJoueur():''")&&fs.readFileSync('regles.js','utf8').includes('un bonus ne se rend qu’après un repos court'),'v1.364');}

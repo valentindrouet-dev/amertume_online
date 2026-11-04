@@ -1268,7 +1268,10 @@ function iconeMarque(cls){const id=idIconeMarque(),c=cls||'marque-ico';if(id&&ty
  const s=document.createElement('span');s.className=c+' marque-glyphe';s.textContent='✦';return s}
 function remplitMarques(el,n){el.replaceChildren(iconeMarque('marque-ico'),String(n));el.title=texteMarques(n);el.setAttribute('aria-label',texteMarques(n));return el}
 const NOTE_REPOS_MARQUES='Un talent se rend hors combat, après un repos court : ses Marques reviennent alors.';
-function peutRendreTalent(a){return view==='mj'||(!!a&&!aventurierEnCombat(a)&&a.reposPris===true)}
+/* v1.364 : seuls les bonus attendent un repos court pour se rendre ; un talent se rend librement, hors combat. */
+const NOTE_HORS_COMBAT='Un talent se rend hors combat.';
+function peutRendreTalent(a,t){if(view==='mj')return true;if(!a||aventurierEnCombat(a))return false;return t&&typeof estBonus==='function'&&estBonus(t)?a.reposPris===true:true}
+const noteRendre=t=>t&&typeof estBonus==='function'&&estBonus(t)?NOTE_REPOS_MARQUES:NOTE_HORS_COMBAT;
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div class="form-actions" id="actor-haut" hidden><button type="button" id="actor-conversion" class="conversion-bouton">🎲</button><button type="submit" class="primary">Enregistrer la fiche</button></div><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
 /* ---------- Stats de Combat ----------
    La fenêtre qu'ouvre le lien de fin de combat, au journal : en tête, les tours et les dégâts de chaque camp face à
@@ -6303,7 +6306,7 @@ arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;
  if(arbresEspece){const z=arbresDialog.querySelector('.arbres-v2-arbre');if(z&&z.scrollWidth>z.clientWidth+1)arbresDialog.style.width=Math.round(Math.min(innerWidth*.96,arbresDialog.getBoundingClientRect().width+z.scrollWidth-z.clientWidth+2))+'px'}};
 const talentsDEspece=a=>a&&a.hero&&especeDe(a.espece)?(catalog.talents||[]).filter(t=>t&&talentFamily(t)===FAMILLE_ESPECES&&t.espece===a.espece&&!estBonus(t)&&!estVide(t)):[];
 arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
- if(!peutRendreTalent(a)){noteArbres(NOTE_REPOS_MARQUES);return}
+ if(!peutRendreTalent(a)){noteArbres(NOTE_HORS_COMBAT);return}
  const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
  if(typeof demander==='function'&&!await demander('Réinitialiser tout l’arbre de talents de '+a.name+' ? Ses talents et améliorations lui sont rendus, et leurs Marques lui reviennent. Ses bonus infusés restent.','Réinitialiser'))return;
  // v1.142 : les bonus infusés du sphérier restent : leurs gemmes sont consommées, ils ne se rendent pas.
@@ -6881,7 +6884,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(V2&&t.id===arbreDetailId)el.classList.add('choisi')
   const agir=()=>{if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
-   if(acquis&&!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}
+   if(acquis&&!peutRendreTalent(a,t)){note(noteRendre(t));return}
    if(acquis&&!libre&&fermeraitPalier(a,col.liste,t)){note(NOTE_PALIER);return}
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};el.agir=agir;
@@ -6913,10 +6916,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if((estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // À paliers, le clic monte d'un palier tant que l'XP le paie ; au dernier, il rend l'amélioration.
    if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;if(coutPalier(t,n)>xpDisponible(a,catalog.talents))return;poserPalier(t,n)}
-   else if(acquis){if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}if(!libre&&fermeraitPalier(a,col.liste,t)){note(NOTE_PALIER);return}oublier(t,libre?null:col.liste)}else if(!verrou)a.talents=[...a.talents,t.id];else return;
+   else if(acquis){if(!peutRendreTalent(a,t)){note(noteRendre(t));return}if(!libre&&fermeraitPalier(a,col.liste,t)){note(NOTE_PALIER);return}oublier(t,libre?null:col.liste)}else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
   // Le clic droit redescend d'un palier ; au premier, il rend l'amélioration.
-  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;e.preventDefault();if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}
+  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;e.preventDefault();if(!peutRendreTalent(a,t)){note(noteRendre(t));return}
    const k=palierDe(a,t);if(k>1)poserPalier(t,k-1);else oublier(t,libre?null:col.liste);note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
   return el};
@@ -7430,7 +7433,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}}
      // Le dernier palier tenu se rend d'un clic, ou du clic droit.
-     if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){const rendre=()=>{if(!peutRendreTalent(a)){note(NOTE_REPOS_MARQUES);return}if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
+     if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){const rendre=()=>{if(!peutRendreTalent(a,x)){note(noteRendre(x));return}if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
       c.classList.add('rendable');c.tabIndex=0;c.setAttribute('role','button');c.onclick=rendre;c.oncontextmenu=e=>{e.preventDefault();rendre()};
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rendre()}}}
      if(!a&&mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(x),renderArbres);
