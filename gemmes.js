@@ -343,7 +343,7 @@ let larcinGemme=null;
  if(presents.length&&!presents.some(a=>a.comaVie||a.hp<=0||hasState(a,'Coma')))presents.forEach(a=>deGemme(a,'groupe-sans-coma',{phase:'combat'}));
  // v1.295 : la récompense du boss exige un boss vaincu dans ce combat-ci, et un boss adverse bel et bien à terre sur la carte.
  const bossATerre=actors.some(o=>o&&o.type==='boss'&&!o.hero&&!o.horsCarte&&(Number(o.hp)||0)<=0);
- if(bossVaincuCombat===n&&bossATerre&&R.boss.n>0){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
+ if(bossVaincuCombat===n&&bossATerre&&R.boss.n>0&&!(typeof carteSansBrisures==='function'&&carteSansBrisures())){presents.forEach(a=>{const s=suiviGemmes(a),c=COULEURS_GEMMES.reduce((m,k)=>(s.decl[k]||0)>(s.decl[m]||0)?k:m,COULEURS_GEMMES[0]);if(!(s.decl[c]>0))return;
   const cg=cleGemme(R.boss.taille,c,false);a.richesses={...(a.richesses||{})};a.richesses[cg]=(Math.trunc(Number(a.richesses[cg]))||0)+R.boss.n;flotteGemme(a,R.boss.taille,c,R.boss.n);if(typeof ajouteVie==='function'){ajouteVie(a,'gemmes',R.boss.n);ajouteVie(a,'gemmes_'+c,R.boss.n)}s.gagnes[cg]=(s.gagnes[cg]||0)+R.boss.n;s.src['boss|'+cg]=(s.src['boss|'+cg]||0)+R.boss.n});bossVaincuCombat=0}
  bossVaincuCombat=0;
  const r=bm(neuf,...x);if(typeof scheduleSave==='function')scheduleSave();return r}}
@@ -613,3 +613,9 @@ function titresDuCombat(){const R=reglesGemmes(),b=typeof bilanDuCombat==='funct
 
 /* v1.358 — Mannequin : un coup qui vise un mannequin d'entraînement ne fait gagner aucune sphère (le dé du MJ, si). */
 {const g=deGemme;deGemme=function(a,cle,opts,...x){if(typeof coupSurMannequin==='function'&&coupSurMannequin()&&!(opts&&opts.manuel))return null;return g(a,cle,opts,...x)}}
+
+/* v1.369 — Une carte cochée « Pas de Brisures » : aucune gemme n'y se gagne — ni les dés des déclencheurs (combat, tests, fin de combat…),
+   ni les titres de fin de combat, ni la récompense du boss. Le MJ peut toujours en donner à la main. */
+function carteSansBrisures(){const m=typeof currentMap==='function'?currentMap():null;return !!m&&m.sansBrisures===true}
+{const g=deGemme;deGemme=function(a,cle,opts,...x){if(carteSansBrisures()&&!(opts&&opts.manuel))return null;return g(a,cle,opts,...x)}}
+{const t=titresDuCombat;titresDuCombat=function(...x){if(carteSansBrisures())return {};return t(...x)}}

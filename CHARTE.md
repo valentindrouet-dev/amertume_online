@@ -385,3 +385,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Fragment d'Âme** (`.joueur-connecte .fragment-ame`, liste des joueurs connectés, chez le MJ) : petit bouton `system-ui` 600 11 px, encre violette `#7a5cb8`, liseré `#c4b4e0`, avant « Exclure ». Après le nom, « · n » : les aventuriers que ce joueur peut encore créer.
 
 **Talents libres** (`.vignette-talents-libres`, vignette d'aventurier, chez le MJ) : case à cocher et son mot, `system-ui` 600 12 px, encre `--muted`, sous le choix du joueur.
+
+**Pas de Brisures** (`.map-sans-brisures`, barre de l'éditeur de cartes) : case à cocher `field-check`, comme « PvP », juste après elle.

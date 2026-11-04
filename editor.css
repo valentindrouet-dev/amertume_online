@@ -4894,3 +4894,4 @@ body.table-attendue #map-view{visibility:hidden}
 #hero-grid .hero-vignette small.vignette-proprio{display:inline-block;align-self:flex-start;width:auto;max-width:100%;margin:6px 0 0;padding:1px 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 11px/1.5 system-ui;letter-spacing:.4px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #hero-grid .hero-vignette small.vignette-proprio.a-moi{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--panel));color:var(--green)}
 #hero-grid .hero-vignette.a-moi{outline:2px solid var(--green);outline-offset:-2px}
+.maps-bar .field-check.map-sans-brisures,.maps-bar .field-check.map-jcj{white-space:nowrap}.maps-bar .map-sans-brisures input{width:auto;margin:0 6px 0 0}

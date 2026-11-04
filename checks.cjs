@@ -6575,3 +6575,7 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  assert.ok(lv.includes("f.className='fragment-ame';")&&lv.includes("out.fogReset.fa={...catalog.fragmentsAme};")&&ed.includes("return permisSansFragment()+Math.max(0,Math.trunc(f))")
   &&lv.includes("if(a&&a.hero===true&&a.talentsLibres===true)return false;")&&lv.includes("CHAMPS_VIVANTS.push('talentsLibres');CHAMPS_ACTEUR_MJ.push('talentsLibres');")
   &&ed.includes("l.className='vignette-talents-libres'")&&rg.includes('Fragment d’Âme')&&rg.includes('<b>Talents libres</b>'),'v1.368');}
+/* v1.369 — Une carte « Pas de Brisures » : aucun dé de gemme, aucun titre à Brisure. */
+{const mp=fs.readFileSync('maps.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8'),cb=fs.readFileSync('combat.js','utf8'),rg=fs.readFileSync('regles.js','utf8');
+ assert.ok(mp.includes('<input type="checkbox" id="map-sans-brisures">Pas de Brisures</label>')&&cb.includes("...(m&&m.sansBrisures===true?{sansBrisures:true}:{}),")
+  &&gm.includes("if(carteSansBrisures()&&!(opts&&opts.manuel))return null;")&&gm.includes("R.boss.n>0&&!(typeof carteSansBrisures==='function'&&carteSansBrisures())")&&rg.includes('<b>Pas de Brisures</b>'),'v1.369');}
