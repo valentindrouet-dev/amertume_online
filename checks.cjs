@@ -6550,3 +6550,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.358 — Mannequin : neutre, ne lance pas le combat, aucune sphère sur un coup qui le vise, attaques sans PA. */
 {const cb=fs.readFileSync('combat.js','utf8'),ix=fs.readFileSync('index.html','utf8'),gm=fs.readFileSync('gemmes.js','utf8');assert.ok(cb.includes("mannequin:{cle:'mannequin',nom:'Mannequin',type:'pass',monstre:true")&&cb.includes("if(!a.pnj){if(typeof root.estMannequin==='function'&&root.estMannequin(a))")
  &&ix.includes("if(a&&estMannequin(a)&&!(opts&&opts.sansAction))opts={...(opts||{}),sansAction:true};")&&gm.includes("if(typeof coupSurMannequin==='function'&&coupSurMannequin()&&!(opts&&opts.manuel))return null;"),'v1.358');}
+/* v1.359 — Goliath : Poigne à 1 dé rouge ; Forme de Géant jusqu'à la fin du tour. */
+{const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("attack({vises:[j],desSeuls:DICE_KEYS.map(c=>c==='red'?1:0),sansArme:true,")&&ix.includes("{const ts=tourSuivant;tourSuivant=function(...x){actors.forEach(o=>{if(o&&o.formeGeant)finFormeGeant(o)});return ts(...x)}}"),'v1.359');}

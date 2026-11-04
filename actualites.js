@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.359","d":"2026-11-04","t":"Goliath : Poigne 1 dé rouge, Forme de Géant jusqu'à la fin du tour"},
 {"v":"1.358","d":"2026-11-04","t":"Talent d'adversaire Mannequin"},
 {"v":"1.357","d":"2026-11-04","t":"Fiche de la Table : talents sur deux rangées, objets agrandis"},
 {"v":"1.356","d":"2026-11-04","t":"Sphères éditables dans la fiche d'aventurier"},
