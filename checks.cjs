@@ -1796,14 +1796,14 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes("rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
  // Le chevron des vignettes de talent d'une fiche ne dépliait que l'ancien dépliant.
- &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});')
+ &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);(deux?(estGrand(t)?grands:moyens):MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});')
  &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
  &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
  &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&(!!el.offsetParent||(el instanceof SVGElement&&el.getClientRects().length>0))}")&&src.includes('const dessous=r.top-b.height-12<marge;')
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
  &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});")
- &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("surveille(pill,montre);(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});")
+ &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("surveille(pill,montre);(deux?(estGrand(t)?grands:moyens):MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});")
  &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id;")
  &&src.includes("if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});")
  &&!src.includes('talentsOuverts')
@@ -3746,7 +3746,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.698 — Les talents de la fiche en quatre rangées : Attaque, Actions et Réactions en grand ; Maîtrises et Passifs en moyen ;
    améliorations en petit ; la ligne, puis les bonus. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(ed.includes("const MOYENS=['mait','pass','crit'];")&&ed.includes("(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});")&&ed.includes("if(bonusR.childElementCount)out.append(bonusR)}")
+ assert.ok(ed.includes("const MOYENS=['mait','pass','crit'];")&&ed.includes("MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});")&&ed.includes("if(bonusR.childElementCount)out.append(bonusR)}")
   &&css.includes('.hero-card .talent-grille .rang-moyens .cat-pill.gear-carre.talent-carre{max-width:44px}')&&css.includes('.hero-card .talent-grille .talent-ameliorations.rang-bonus{border-top:1px dashed #cfae5e;padding-top:8px}'),'quatre rangées de talents');}
 /* v0.697 — Jamais deux fois le même bonus sur une pièce : ni deux caractéristiques identiques, ni deux compétences identiques,
    ni ce que la base donne déjà. */
@@ -6545,3 +6545,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("a.inventaire=[...(a.inventaire||[]),rec.id];if(a.hero)syncEquipped(a);else{equipeAdversaire(a);a.pool=poolOf(a)}}"),'v1.355');}
 /* v1.356 — Fiche d'aventurier : un champ par sphère, lu à l'enregistrement. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("function grilleSpheresFiche(compte){")&&ed.includes("b.querySelectorAll('input[data-gemme]').forEach(i=>{const n=lisCompte(i.value);if(n)r[i.dataset.gemme]=n;else delete r[i.dataset.gemme]});a.richesses=r}return a}}")&&ed.includes('<h2 class="sous-titre">Sphères</h2><div id="spheres-edit"></div>'),'v1.356');}
+/* v1.357 — Fiche de la Table : talents sur deux rangées (grands : Actions, bonus, Mouvements, Réactions, début de combat ; petits : le reste) ; objets 40 % plus grands. */
+{const ed=fs.readFileSync('editor.js','utf8'),ix=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ix.includes("talentPills(a,false,true)")&&ed.includes("const deux=!!deuxRangs&&!cases,GRANDS=['act','abon','mvt','reac']")&&css.includes('#gear .cat-pill.gear-carre,#gear .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:39px;min-width:39px;height:39px;min-height:39px}'),'v1.357');}

@@ -4858,3 +4858,13 @@ table.gemmes.spheres-fiche .sphere-champ img,table.gemmes.spheres-fiche th img{w
 table.gemmes.spheres-fiche input{width:100%;min-width:0;margin:0;padding:4px 6px}
 table.gemmes.spheres-fiche tbody th{font-size:13px}table.gemmes.spheres-fiche thead th{font-size:12px}
 table.gemmes.spheres-fiche thead td,table.gemmes.spheres-fiche tbody th{width:118px}
+/* v1.357 — Fiche de la Table : les talents sur deux rangées, comme la fiche Carac — en grand les Actions, Actions bonus, Mouvements,
+   Réactions et débuts de combat ; en petit, dessous, les autres. Et les objets de la fiche, 40 % plus grands. */
+#sheet-talents .talent-grille.deux-rangs{display:flex;flex-direction:column;gap:10px}
+#sheet-talents .talent-grille.deux-rangs>.talent-rang{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:8px 6px;width:100%;box-sizing:border-box}
+#sheet-talents .talent-grille.deux-rangs>.rang-grands .cat-carte.talent-carte{width:58px;min-width:0;align-items:center}
+#sheet-talents .talent-grille.deux-rangs>.rang-grands .cat-pill.gear-carre.talent-carre{width:58px;max-width:58px}
+#sheet-talents .talent-grille.deux-rangs>.rang-petits .cat-carte.talent-carte{width:40px;min-width:0;align-items:center}
+#sheet-talents .talent-grille.deux-rangs>.rang-petits .cat-pill.gear-carre.talent-carre{width:40px;max-width:40px}
+#gear .cat-pill.gear-carre,#gear .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:39px;min-width:39px;height:39px;min-height:39px}
+#gear .cat-pill.gear-carre .glyphe{font-size:20px}

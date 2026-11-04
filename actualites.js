@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.357","d":"2026-11-04","t":"Fiche de la Table : talents sur deux rangées, objets agrandis"},
 {"v":"1.356","d":"2026-11-04","t":"Sphères éditables dans la fiche d'aventurier"},
 {"v":"1.355","d":"2026-11-04","t":"Chambre forte : l'adversaire s'équipe de la pièce"},
 {"v":"1.354","d":"2026-11-04","t":"Semis : Action bonus, 1d6 Ronceurs"},

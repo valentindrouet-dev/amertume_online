@@ -3316,7 +3316,7 @@ function logoRemplace(a,t){if(!a||!t)return '';
  return ams.length?talentPourElement(ams[0],elementDe(a)).logo||'':''}
 /* « cases » : la fiche d'aventurier. Six talents par ligne, les places libres en ronds vides ; dessous,
    les améliorations acquises en petits ronds, douze par ligne — deux sous chaque talent. */
-function talentPills(a,cases){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'');
+function talentPills(a,cases,deuxRangs){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'')+(deuxRangs&&!cases?' deux-rangs':'');
  // Sur la fiche, les talents se rangent par nature : Actions, Réactions, Passifs, puis le reste ; l'ordre de l'arbre dans chacune.
  // Sur la fiche à cases, la Maîtrise ouvre la rangée moyenne, devant les Passifs.
  const ORDRE_FICHE=cases?['act','abon','mvt','reac','mait','pass','crit']:['act','abon','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
@@ -3328,7 +3328,10 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  // L'Attaque, que tout aventurier possède : la première de ses actions.
  /* Sur la fiche, quatre rangées : en grand, l'Attaque, les Actions et les Réactions ; en moyen, les Maîtrises et les Passifs ;
     en petit, les améliorations ; enfin les bonus, sous la ligne. */
- const rangee=cls=>{const r=document.createElement('div');r.className='talent-rang '+cls;return r},grands=cases?rangee('rang-grands'):out,moyens=cases?rangee('rang-moyens'):out;
+ /* v1.357 — Sur la fiche de la Table, deux rangées : en grand les Actions, Actions bonus, Mouvements, Réactions et les talents de début de
+    combat ; en petit, dessous, les autres. */
+ const deux=!!deuxRangs&&!cases,GRANDS=['act','abon','mvt','reac'],estGrand=t=>GRANDS.includes(talentType(t)[0])||(typeof talentDebut==='function'&&talentDebut(t));
+ const rangee=cls=>{const r=document.createElement('div');r.className='talent-rang '+cls;return r},grands=cases?rangee('rang-grands'):deux?rangee('rang-grands'):out,moyens=cases?rangee('rang-moyens'):deux?rangee('rang-petits'):out;
  const MOYENS=['mait','pass','crit'];
  const attaque=a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);const nb=liste.length+(attaque?1:0);
  liste.forEach(t=>{const k=palierDe(a,t);
@@ -3346,7 +3349,8 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   const cle=(a.id||'?')+'|'+t.id;
   const montre=()=>{talentOuvert=cle;gearOuvert=null;const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
   if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
-  surveille(pill,montre);(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});
+  surveille(pill,montre);(deux?(estGrand(t)?grands:moyens):MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});
+ if(deux){if(grands.childElementCount)out.append(grands);if(moyens.childElementCount)out.append(moyens)}
  if(cases){const vide=cls=>{const v=document.createElement('span');v.className=cls;v.setAttribute('aria-hidden','true');return v};
   const nbG=grands.childElementCount;for(let n=nbG;n<Math.max(6,Math.ceil(nbG/6)*6);n++)grands.append(vide('talent-case-vide'));
   out.append(grands);if(moyens.childElementCount)out.append(moyens);
