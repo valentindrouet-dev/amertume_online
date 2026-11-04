@@ -4868,3 +4868,5 @@ table.gemmes.spheres-fiche thead td,table.gemmes.spheres-fiche tbody th{width:11
 #sheet-talents .talent-grille.deux-rangs>.rang-petits .cat-pill.gear-carre.talent-carre{width:40px;max-width:40px}
 #gear .cat-pill.gear-carre,#gear .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:39px;min-width:39px;height:39px;min-height:39px}
 #gear .cat-pill.gear-carre .glyphe{font-size:20px}
+/* v1.363 — Sur la vignette d'un aventurier, chez le MJ en ligne : le menu de son joueur. */
+.hero-vignette select.vignette-joueur{display:block;width:100%;max-width:180px;margin:6px 0 0;padding:3px 6px;font:600 12px system-ui}

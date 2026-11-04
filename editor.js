@@ -9831,6 +9831,8 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  // v1.206 : coché pour l'aventure, un aventurier retiré de la table y revient.
  if(part){part.onclick=e=>e.stopPropagation();part.addEventListener('change',()=>{if(part.checked&&a.horsCarte)ramenerSurLaTable(a);setTimeout(renderHeroes,0)});c.append(part)}
  if(attente){c.classList.add('en-attente');attente.onclick=e=>e.stopPropagation();c.append(attente)}
+ // v1.363 : le joueur de l'aventurier, choisi d'ici aussi, parmi ceux de la table ; « MJ » le garde au MJ.
+ {const qui=fiche.querySelector('select.hero-joueur');if(qui){qui.classList.add('vignette-joueur');qui.onclick=e=>e.stopPropagation();qui.onmousedown=e=>e.stopPropagation();qui.addEventListener('change',()=>setTimeout(renderHeroes,0));t.append(qui)}}
  const ouvre=()=>{if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(arbresDialog.open){arbresOnglet='stats';renderArbres()}};
  c.onclick=e=>{if(e.target.closest('input,button'))return;ouvre()};c.onkeydown=e=>{if(e.target===c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ouvre()}};
  // En tri libre, la vignette se glisse avant ou après une autre.

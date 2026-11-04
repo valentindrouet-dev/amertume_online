@@ -6560,3 +6560,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const sh=fs.readFileSync('shared.js','utf8');assert.ok(sh.includes("(auth.currentUser.isAnonymous||(adminConnu&&!admin&&!appareilMJ))")&&sh.includes("function applyRemote(){if(!remote)return;gardeAvantRemote();")&&sh.includes('<button id="shared-avant" hidden>'),'v1.361');}
 /* v1.362 — La carte ouverte par le MJ est publiée aussitôt : les joueurs reçoivent exactement la sienne. */
 {const sh=fs.readFileSync('shared.js','utf8');assert.ok(sh.includes("async function publishShared(explicit=false,force=false){")&&sh.includes("if(current!==baseRevision&&!force)throw")&&sh.includes("{const oc=ouvreCarte;ouvreCarte=function(...x){const r=oc(...x);if(admin)setTimeout(()=>{status('Envoi de la carte aux joueurs…');publishShared(true,true)},400);return r}}"),'v1.362');}
+/* v1.363 — Le menu du joueur d'un aventurier, sur sa vignette aussi. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("{const qui=fiche.querySelector('select.hero-joueur');if(qui){qui.classList.add('vignette-joueur');"),'v1.363');}
