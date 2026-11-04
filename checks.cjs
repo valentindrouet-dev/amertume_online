@@ -6556,3 +6556,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const sd=require('./shared-data.js'),sh=fs.readFileSync('shared.js','utf8');const f=n=>({schema:1,catalog:{items:[],monsters:[]},actors:[{name:'A',hero:true,pool:Array(n).fill(0),skills:Array(8).fill(0),hp:1,max:1,def:0,dmg:0,x:1,y:1}]});
  assert.doesNotThrow(()=>sd.validate(f(8)));assert.doesNotThrow(()=>sd.validate(f(7)));assert.throws(()=>sd.validate(f(9)),/Fiche publiée invalide : A \(dés\)/);
  assert.ok(sh.includes("actors:actors.map(a=>ficheBornee({...structuredClone(a),target:null,checks:[false,false,false]}))}}"),'v1.360');}
+/* v1.361 — La scène publiée ne s'applique jamais d'elle-même sur l'appareil du MJ ; avant de l'appliquer, la partie locale est gardée et peut revenir. */
+{const sh=fs.readFileSync('shared.js','utf8');assert.ok(sh.includes("(auth.currentUser.isAnonymous||(adminConnu&&!admin&&!appareilMJ))")&&sh.includes("function applyRemote(){if(!remote)return;gardeAvantRemote();")&&sh.includes('<button id="shared-avant" hidden>'),'v1.361');}
