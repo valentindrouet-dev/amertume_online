@@ -9836,7 +9836,7 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
  if(attente){c.classList.add('en-attente');attente.onclick=e=>e.stopPropagation();c.append(attente)}
  // v1.366 : chez un joueur, à qui est chaque aventurier — le sien en vert, le nom du joueur pour les autres, « MJ » sans joueur.
  if(view!=='mj'){const moi=typeof aMoi==='function'&&aMoi(a),p=document.createElement('small');p.className='vignette-proprio'+(moi?' a-moi':'');
-  p.textContent=a.joueurNom||(a.joueur?'Joueur':'MJ');p.title=moi?'Ton aventurier':'Aventurier de '+p.textContent;t.append(p);if(moi)c.classList.add('a-moi')}
+  const siege=a.joueur&&typeof sieges!=='undefined'&&sieges[a.joueur];p.textContent=(siege&&typeof siege.nom==='string'&&siege.nom.trim())||a.joueurNom||(a.joueur?'Joueur':'MJ');p.title=moi?'Ton aventurier':'Aventurier de '+p.textContent;t.append(p);if(moi)c.classList.add('a-moi')}
  // v1.363 : le joueur de l'aventurier, choisi d'ici aussi, parmi ceux de la table ; « MJ » le garde au MJ.
  {const qui=fiche.querySelector('select.hero-joueur');if(qui){qui.classList.add('vignette-joueur');qui.onclick=e=>e.stopPropagation();qui.onmousedown=e=>e.stopPropagation();qui.addEventListener('change',()=>setTimeout(renderHeroes,0));t.append(qui)}}
  const ouvre=()=>{if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(arbresDialog.open){arbresOnglet='stats';renderArbres()}};

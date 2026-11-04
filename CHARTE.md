@@ -379,3 +379,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Coffre de groupe** (`#coffre-groupe`) : au dessin de la vitrine des bâtiments. Titre en Killam précédé du logo du coffre, en vert `--green` ; un filet dessous. À gauche, les onglets du coffre (`.vit-onglet`, l'onglet ouvert en vert, celui à acheter en tirets) et le nombre de places en puce ; à droite, un onglet au jeton et au nom de l'aventurier. Dessous, chacun son panneau `--panel` : l'or en Killam, son champ et son bouton, un filet, puis les pièces en cases (`.vit-case` : fond `--panel-2`, coins 10 px, nom en Killam, soulevées au survol).
 
 **À qui est l'aventurier** (`.vignette-proprio`, onglet Aventuriers, chez un joueur) : sous les icônes de chaque vignette, une pastille au nom de son joueur (« MJ » sans joueur), `system-ui` 700 11 px, encre `--muted`, fond `--panel-2`. Le sien : pastille et liseré de la vignette en `--green` (« à moi »).
+
+**Renommer** (`.joueur-connecte .renommer`, liste des joueurs connectés) : sur sa propre ligne seulement, petit bouton `system-ui` 600 11 px à droite ; il change le nom du compte et du siège, que toute la table voit.

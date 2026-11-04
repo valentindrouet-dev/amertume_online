@@ -628,6 +628,8 @@ function remplitJoueurs(boite,l){if(!boite)return;boite.replaceChildren();
    // Chez le MJ, dans la liste de l'Accueil et la fenêtre : Exclure, pour tout autre que lui.
    // Un compte qui attend la validation : Accepter, avant Exclure.
    if(boite.id&&estMJ()&&j.uid!==monUid&&admisRef&&!admis[j.uid]){c.classList.add('en-attente');const ok=document.createElement('button');ok.type='button';ok.className='accepter';ok.textContent='Accepter';ok.onclick=()=>admettre(j.uid,j.nom);c.append(ok)}
+   // v1.367 : soi-même, on peut changer son nom à la table.
+   if(boite.id&&j.uid===monUid){const r=document.createElement('button');r.type='button';r.className='renommer';r.textContent='Renommer';r.onclick=()=>renommeMoi(j.nom);c.append(r)}
    if(boite.id&&estMJ()&&j.uid!==monUid){const x=document.createElement('button');x.type='button';x.className='exclure';x.textContent='Exclure';x.onclick=()=>exclureJoueur(j.uid,j.nom);c.append(x)}
    boite.append(c)})}
 setInterval(()=>{if(tableId)renderJoueursConnectes()},30000);
@@ -668,6 +670,11 @@ async function prendreSiege(a){if(!siegesRef||!monUid||!tientAventurier(a))retur
   if(!estMJ()){view='player';$('view').value='player'}
   render();renderSieges();liveStatus('Tu incarnes '+a.name+'.')}
  catch(e){liveStatus('Siège refusé. '+liveErreur(e))}}
+/* v1.367 — Changer son nom : celui du compte, et du siège à la table, que tous voient. */
+async function renommeMoi(avant){const v=prompt('Ton nom à la table :',avant||'');if(v===null)return;const n=String(v).replace(/[<>]/g,'').trim().slice(0,30);
+ const u=typeof auth!=='undefined'&&auth&&auth.currentUser;if(!n||!u)return;
+ try{await u.updateProfile({displayName:n});if(siegesRef&&monUid)await siegesRef.doc(monUid).update({nom:n});
+  if(sieges[monUid])sieges[monUid].nom=n;renderJoueursConnectes();majTable();liveStatus('Tu t’appelles désormais '+n+'.')}catch(e){liveStatus(liveErreur(e))}}
 // Le pseudo du joueur : celui de son compte.
 function pseudoJoueur(){const u=typeof auth!=='undefined'&&auth&&auth.currentUser;return String(u&&u.displayName||'Joueur').trim().slice(0,30)||'Joueur'}
 /* Un joueur qui rejoint se signale à la table sous son pseudo, même sans aventurier : le MJ le voit, et peut lui en confier un.
