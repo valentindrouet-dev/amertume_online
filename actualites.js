@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.355","d":"2026-11-04","t":"Chambre forte : l'adversaire s'équipe de la pièce"},
 {"v":"1.354","d":"2026-11-04","t":"Semis : Action bonus, 1d6 Ronceurs"},
 {"v":"1.353","d":"2026-11-04","t":"Affixe Soin à activer, une fois par combat"},
 {"v":"1.352","d":"2026-11-04","t":"Racine de vie : zone de contact"},

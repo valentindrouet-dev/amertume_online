@@ -6541,3 +6541,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  &&cb.includes("const USAGES_LIMITES=['court','jour','combat'];")&&ed.includes("const marqueUsage=u=>u==='combat'?'combat:'+(typeof numeroCombat!=='undefined'?numeroCombat:0):u;"),'v1.353');}
 /* v1.354 — Semis : Action bonus, une fois par tour, invoque 1d6 alliés du modèle choisi autour du porteur. */
 {const ix=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(ix.includes("const n=d6();rollOnBoard([{dice:[[n,0]]}],a,null);invoqueAupres(a,m,n,a);")&&ix.includes("||code.cle==='semis';")&&cb.includes("semis:{cle:'semis',nom:'Semis',type:'abon',monstre:true,gratuit:true"),'v1.354');}
+/* v1.355 — Chambre forte : un adversaire en scène qui reçoit une pièce s'en équipe aussitôt. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("a.inventaire=[...(a.inventaire||[]),rec.id];if(a.hero)syncEquipped(a);else{equipeAdversaire(a);a.pool=poolOf(a)}}"),'v1.355');}

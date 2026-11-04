@@ -4873,7 +4873,8 @@ function retirePiecePartout(id){const o=objetDe(id);
  (catalog.monsters||[]).forEach(m=>{if(!m)return;['inventaire','weapons','armures'].forEach(k=>{if(Array.isArray(m[k]))m[k]=m[k].filter(x=>x!==id)});if(m.shieldId===id)m.shieldId=''})}
 function donnePiece(rec,cible){if(!rec||!cible)return;retirePiecePartout(rec.id);
  if(cible.m){cible.m.inventaire=[...(cible.m.inventaire||[]),rec.id]}
- else{const a=cible.a;a.forges=[...(a.forges||[]).filter(f=>f.id!==rec.id),structuredClone(rec)];a.inventaire=[...(a.inventaire||[]),rec.id];syncEquipped(a)}
+ // v1.355 : un adversaire en scène s'en équipe aussitôt, comme de tout ce qu'il porte ; un aventurier la range.
+ else{const a=cible.a;a.forges=[...(a.forges||[]).filter(f=>f.id!==rec.id),structuredClone(rec)];a.inventaire=[...(a.inventaire||[]),rec.id];if(a.hero)syncEquipped(a);else{equipeAdversaire(a);a.pool=poolOf(a)}}
  syncForges();render();if(typeof renderHeroes==='function')renderHeroes();sauveForge();renderChambre()}
 function renderChambre(){const corps=$('chambre-corps');if(!corps)return;corps.replaceChildren();catalog.chambreForte=normaliseForges(catalog.chambreForte);syncForges();
  if(!catalog.chambreForte.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucune pièce.';corps.append(p);return}
