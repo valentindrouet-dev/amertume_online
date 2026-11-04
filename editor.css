@@ -291,6 +291,11 @@ body.sas-attente main.layout{visibility:hidden}
 .joueur-connecte .accepter{margin-left:auto;font:600 11px system-ui;padding:2px 8px;color:#2e7d43;border-color:#9fc8a8}
 .joueur-connecte .accepter+.exclure{margin-left:6px}
 .joueur-connecte .renommer{margin-left:auto;font:600 11px system-ui;padding:2px 8px}
+.joueur-connecte .fragment-ame{margin-left:auto;font:600 11px system-ui;padding:2px 8px;color:#7a5cb8;border-color:#c4b4e0}
+.joueur-connecte .accepter+.fragment-ame,.joueur-connecte .fragment-ame+.exclure{margin-left:6px}
+.joueur-connecte .fragment-ame,.joueur-connecte .renommer{flex:none;white-space:nowrap}.joueurs-connectes:has(.fragment-ame,.renommer){grid-template-columns:1fr}
+#hero-grid .hero-vignette label.vignette-talents-libres{display:flex;align-items:center;gap:5px;margin:6px 0 0;font:600 12px system-ui;color:var(--muted);cursor:pointer}
+#hero-grid .hero-vignette label.vignette-talents-libres input{margin:0;width:15px;height:15px;accent-color:var(--accent)}
 .joueur-connecte.en-attente .point-connecte{background:#d9a13b}
 #open-joueurs.attente{position:relative}#open-joueurs.attente::after{content:'';position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#d9a13b;box-shadow:0 0 0 2px var(--panel,#fff)}
 /* Chez un joueur, les actions d'un aventurier qu'il ne commande pas ne paraissent pas. */

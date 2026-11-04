@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.368","d":"2026-11-04","t":"Fragment d'Âme et Talents libres"},
 {"v":"1.367","d":"2026-11-04","t":"Changer son nom à la table"},
 {"v":"1.366","d":"2026-11-04","t":"Onglets fixes et propriétaire des aventuriers"},
 {"v":"1.365","d":"2026-11-04","t":"Plus d'ancienne carte au rechargement d'un joueur"},

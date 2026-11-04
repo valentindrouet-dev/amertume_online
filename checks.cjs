@@ -6570,3 +6570,8 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(lv.includes("document.body.classList.toggle('joueur-en-ligne',inv);")&&css.includes('body.joueur-en-ligne>header>nav.tabs{grid-column:2;justify-self:center}')&&ed.includes("p.className='vignette-proprio'+(moi?' a-moi':'');"),'v1.366');}
 /* v1.367 — Chacun peut changer son nom à la table, depuis sa ligne des joueurs connectés. */
 {const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("if(boite.id&&j.uid===monUid){const r=document.createElement('button');r.type='button';r.className='renommer';")&&lv.includes("await u.updateProfile({displayName:n});if(siegesRef&&monUid)await siegesRef.doc(monUid).update({nom:n});"),'v1.367');}
+/* v1.368 — Fragment d'Âme donné par le MJ à un joueur : un aventurier de plus ; « Talents libres » coché par le MJ sur une vignette. */
+{const ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),rg=fs.readFileSync('regles.js','utf8');
+ assert.ok(lv.includes("f.className='fragment-ame';")&&lv.includes("out.fogReset.fa={...catalog.fragmentsAme};")&&ed.includes("return permisSansFragment()+Math.max(0,Math.trunc(f))")
+  &&lv.includes("if(a&&a.hero===true&&a.talentsLibres===true)return false;")&&lv.includes("CHAMPS_VIVANTS.push('talentsLibres');CHAMPS_ACTEUR_MJ.push('talentsLibres');")
+  &&ed.includes("l.className='vignette-talents-libres'")&&rg.includes('Fragment d’Âme')&&rg.includes('<b>Talents libres</b>'),'v1.368');}

@@ -381,3 +381,7 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **À qui est l'aventurier** (`.vignette-proprio`, onglet Aventuriers, chez un joueur) : sous les icônes de chaque vignette, une pastille au nom de son joueur (« MJ » sans joueur), `system-ui` 700 11 px, encre `--muted`, fond `--panel-2`. Le sien : pastille et liseré de la vignette en `--green` (« à moi »).
 
 **Renommer** (`.joueur-connecte .renommer`, liste des joueurs connectés) : sur sa propre ligne seulement, petit bouton `system-ui` 600 11 px à droite ; il change le nom du compte et du siège, que toute la table voit.
+
+**Fragment d'Âme** (`.joueur-connecte .fragment-ame`, liste des joueurs connectés, chez le MJ) : petit bouton `system-ui` 600 11 px, encre violette `#7a5cb8`, liseré `#c4b4e0`, avant « Exclure ». Après le nom, « · n » : les aventuriers que ce joueur peut encore créer.
+
+**Talents libres** (`.vignette-talents-libres`, vignette d'aventurier, chez le MJ) : case à cocher et son mot, `system-ui` 600 12 px, encre `--muted`, sous le choix du joueur.

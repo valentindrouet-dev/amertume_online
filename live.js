@@ -71,6 +71,8 @@ let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,rendu
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
 // Ce qu'un joueur a déjà vu de la table : le mode, le dernier envoi d'onglet. Remis à zéro en quittant la table.
 let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null;
+// v1.368 : les Fragments d'Âme donnés par le MJ, par joueur — chez le MJ, gardés dans le catalogue ; chez le joueur, reçus de la table.
+let fragmentsTable={};
 // La victoire sur la carte : son instant voyage avec la table ; celle qu'on trouve en arrivant ne s'annonce pas.
 let donjonConnu=false,donjonVu=null,envoiDonjon=null;
 // Le numéro des remises à zéro du brouillard, reçu une première fois de la table.
@@ -183,6 +185,7 @@ function etatVivant(){const out={actors:{}};
  if(typeof IMG_V==='string'&&typeof estMJ==='function'&&estMJ())out.fogReset.v=IMG_V;
  // Les onglets ouverts aux joueurs voyagent avec la table : cochés dans les Paramètres, ils s'ouvrent aussitôt, sans attendre une publication.
  if(typeof estMJ==='function'&&estMJ()&&typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs))out.fogReset.ong=catalog.ongletsJoueurs.slice();
+ if(typeof estMJ==='function'&&estMJ()&&typeof catalog!=='undefined'&&catalog&&catalog.fragmentsAme&&Object.keys(catalog.fragmentsAme).length)out.fogReset.fa={...catalog.fragmentsAme};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -325,6 +328,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    if(d.fogReset&&Array.isArray(d.fogReset.ong)&&typeof catalog!=='undefined'&&catalog&&typeof ONGLETS!=='undefined'){
     const l=d.fogReset.ong.filter(k=>typeof k==='string'&&ONGLETS.some(([x])=>x===k));
     if(!pareil(catalog.ongletsJoueurs,l)){catalog.ongletsJoueurs=l;if(typeof majOnglets==='function')majOnglets()}}
+   {const fa={},src=d.fogReset&&d.fogReset.fa&&typeof d.fogReset.fa==='object'?d.fogReset.fa:{};Object.entries(src).forEach(([u,n])=>{if(/^[A-Za-z0-9_-]{6,128}$/.test(u)&&Number.isFinite(+n)&&+n>0)fa[u]=Math.min(50,Math.trunc(+n))});
+    if(!pareil(fa,fragmentsTable)){fragmentsTable=fa;if(typeof renderAccueil==='function')setTimeout(renderAccueil,0)}}
    {const dn=d.fogReset&&typeof d.fogReset.dn==='number'?d.fogReset.dn:null;
     if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
@@ -388,6 +393,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
     // Le joueur d'un aventurier, chez le MJ : posé à sa création par le joueur, puis par le MJ seul ; un autre changement repart.
     if(estMJ()&&!neuf&&(k==='joueur'||k==='joueurNom')&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
+    // v1.368 : « Talents libres » ne s'ouvre et ne se ferme que chez le MJ.
+    if(estMJ()&&!neuf&&k==='talentsLibres'&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
     /* v1.010 : un coup d'un joueur sur un adversaire révélé ne compte que dans le combat en cours. Porté hors combat — son écran
        ne savait pas encore le combat commencé —, il est refusé, et le combat commence ; daté d'un autre combat, il est refusé. */
     if(estMJ()&&!neuf&&k==='hp'&&!a.hero&&a.vu&&typeof campDe==='function'&&campDe(a)==='adverse'&&typeof e.hp==='number'&&typeof local==='number'&&e.hp<local&&!(r&&pareil(r[k],e[k]))){
@@ -628,6 +635,9 @@ function remplitJoueurs(boite,l){if(!boite)return;boite.replaceChildren();
    // Chez le MJ, dans la liste de l'Accueil et la fenêtre : Exclure, pour tout autre que lui.
    // Un compte qui attend la validation : Accepter, avant Exclure.
    if(boite.id&&estMJ()&&j.uid!==monUid&&admisRef&&!admis[j.uid]){c.classList.add('en-attente');const ok=document.createElement('button');ok.type='button';ok.className='accepter';ok.textContent='Accepter';ok.onclick=()=>admettre(j.uid,j.nom);c.append(ok)}
+   // v1.368 : chez le MJ, un Fragment d'Âme pour un joueur : il pourra créer un aventurier de plus. Le chiffre : ce qu'il lui en reste.
+   if(boite.id&&estMJ()&&j.uid!==monUid){const f=document.createElement('button');f.type='button';f.className='fragment-ame';const reste=fragmentsRestants(j.uid);
+    f.textContent='Fragment d’Âme'+(reste?' · '+reste:'');f.title='Donner un Fragment d’Âme à '+j.nom+' : un aventurier de plus';f.onclick=()=>donneFragment(j.uid);c.append(f)}
    // v1.367 : soi-même, on peut changer son nom à la table.
    if(boite.id&&j.uid===monUid){const r=document.createElement('button');r.type='button';r.className='renommer';r.textContent='Renommer';r.onclick=()=>renommeMoi(j.nom);c.append(r)}
    if(boite.id&&estMJ()&&j.uid!==monUid){const x=document.createElement('button');x.type='button';x.className='exclure';x.textContent='Exclure';x.onclick=()=>exclureJoueur(j.uid,j.nom);c.append(x)}
@@ -670,6 +680,12 @@ async function prendreSiege(a){if(!siegesRef||!monUid||!tientAventurier(a))retur
   if(!estMJ()){view='player';$('view').value='player'}
   render();renderSieges();liveStatus('Tu incarnes '+a.name+'.')}
  catch(e){liveStatus('Siège refusé. '+liveErreur(e))}}
+/* v1.368 — Un Fragment d'Âme de plus pour un joueur, gardé dans le catalogue du MJ et envoyé à la table. */
+function donneFragment(uid){if(!estMJ()||typeof catalog==='undefined'||!catalog)return;const f=catalog.fragmentsAme&&typeof catalog.fragmentsAme==='object'?catalog.fragmentsAme:{};
+ f[uid]=Math.min(50,(Number(f[uid])||0)+1);catalog.fragmentsAme=f;scheduleSave();pousserBientot();renderJoueursConnectes()}
+// Ce qu'il reste au joueur : un aventurier par compte, plus ses fragments, moins ceux qu'il a déjà.
+function fragmentsRestants(uid){const f=typeof catalog!=='undefined'&&catalog&&catalog.fragmentsAme?Number(catalog.fragmentsAme[uid])||0:0;
+ return Math.max(0,1+f-actors.filter(a=>a&&a.hero&&a.joueur===uid).length)}
 /* v1.367 — Changer son nom : celui du compte, et du siège à la table, que tous voient. */
 async function renommeMoi(avant){const v=prompt('Ton nom à la table :',avant||'');if(v===null)return;const n=String(v).replace(/[<>]/g,'').trim().slice(0,30);
  const u=typeof auth!=='undefined'&&auth&&auth.currentUser;if(!n||!u)return;
@@ -1040,6 +1056,10 @@ function annonceVerrouBuild(){if(performance.now()-verrouAnnonce<1500)return;ver
  const hote=document.querySelector('dialog[open]')||document.body,el=document.createElement('div');el.className='annonce-flottante annonce-info';el.setAttribute('role','status');
  el.textContent='Votre aventurier est au cœur de l’action, il ne peut pas modifier ses talents avant le prochain repos court.';
  el.style.left='50%';el.style.top='32%';el.addEventListener('animationend',()=>el.remove());hote.append(el)}
+// v1.368 : « Talents libres », ouvert par le MJ : ni combat, ni Actif, ni repos n'empêchent le joueur de rendre ou racheter ses talents.
+{const figeSansLibres=figeEnCombat;figeEnCombat=function(a){if(a&&a.hero===true&&a.talentsLibres===true)return false;return figeSansLibres.apply(this,arguments)}}
+{const rendreSansLibres=peutRendreTalent;peutRendreTalent=function(a,t){if(a&&a.hero===true&&a.talentsLibres===true)return true;return rendreSansLibres.apply(this,arguments)}}
+CHAMPS_VIVANTS.push('talentsLibres');CHAMPS_ACTEUR_MJ.push('talentsLibres');
 // Le repos venu, chez qui commande l'aventurier : son arbre se rouvre, et il le lit.
 const actifsConnus=new Map();
 {const renderAvantRepos=render;render=function(){renderAvantRepos.apply(this,arguments);

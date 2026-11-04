@@ -29,6 +29,8 @@ function normalizeActor(a){a.id??=crypto.randomUUID();
  if(!(Number.isInteger(a.rangFiche)&&a.rangFiche>=0&&a.rangFiche<10000))delete a.rangFiche;
  // Part à l'aventure : coché par le MJ, ou rien.
  if(a.enAventure!==true)delete a.enAventure;
+ // v1.368 : les talents libres, ouverts par le MJ : vrai, ou rien.
+ if(a.talentsLibres!==true)delete a.talentsLibres;
  // L'image qu'un joueur a donnée à son aventurier : une image en ligne, légère.
  if(typeof a.imageJeton!=='string'||!/^data:image\/(webp|png|jpeg);base64,/.test(a.imageJeton)||a.imageJeton.length>200000)delete a.imageJeton;
 a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.coffreOps=normaliseOpsCoffre(a.coffreOps);if(!a.coffreOps.length)delete a.coffreOps;a.forges=normaliseForges(a.forges);
@@ -666,6 +668,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les paliers d'XP réglés à la main : gardés s'ils tiennent et diffèrent de ceux d'origine.
  if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;
  if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&k!=='gemmes'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
+ // v1.368 : les Fragments d'Âme donnés, par compte joueur : des entiers positifs, rien d'autre.
+ if(c.fragmentsAme&&typeof c.fragmentsAme==='object'){const f={};Object.entries(c.fragmentsAme).forEach(([u,n])=>{if(/^[A-Za-z0-9_-]{6,128}$/.test(u)&&Number.isFinite(+n)&&+n>0)f[u]=Math.min(50,Math.trunc(+n))});if(Object.keys(f).length)c.fragmentsAme=f;else delete c.fragmentsAme}else delete c.fragmentsAme;
  // La page d'accueil des joueurs : un onglet connu, jamais les Cartes.
  if(typeof c.pageAccueil!=='string'||!ONGLETS.some(([k])=>k===c.pageAccueil)||c.pageAccueil==='maps')delete c.pageAccueil;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
@@ -5163,6 +5167,8 @@ const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav i
 let creation=null;
 /* Un compte joueur crée un seul aventurier : des Éclats d'Âme en ouvriront d'autres. Le MJ n'a pas de limite. */
 function aventuriersPermis(){return 1}
+// v1.368 : chaque Fragment d'Âme que le MJ donne à un joueur lui ouvre un aventurier de plus.
+{const permisSansFragment=aventuriersPermis;aventuriersPermis=function(){const uid=typeof monUid!=='undefined'?monUid:null,f=typeof fragmentsTable!=='undefined'&&fragmentsTable&&uid?Number(fragmentsTable[uid])||0:0;return permisSansFragment()+Math.max(0,Math.trunc(f))}}
 function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEnLigne())return true;
  const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
 function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'Homme',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,lots:{},caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
@@ -9839,6 +9845,10 @@ function vignetteHeros(a,i){const c=document.createElement('div');c.className='a
   const siege=a.joueur&&typeof sieges!=='undefined'&&sieges[a.joueur];p.textContent=(siege&&typeof siege.nom==='string'&&siege.nom.trim())||a.joueurNom||(a.joueur?'Joueur':'MJ');p.title=moi?'Ton aventurier':'Aventurier de '+p.textContent;t.append(p);if(moi)c.classList.add('a-moi')}
  // v1.363 : le joueur de l'aventurier, choisi d'ici aussi, parmi ceux de la table ; « MJ » le garde au MJ.
  {const qui=fiche.querySelector('select.hero-joueur');if(qui){qui.classList.add('vignette-joueur');qui.onclick=e=>e.stopPropagation();qui.onmousedown=e=>e.stopPropagation();qui.addEventListener('change',()=>setTimeout(renderHeroes,0));t.append(qui)}}
+ // v1.368 : chez le MJ, « Talents libres » : coché, le joueur rend et rachète ses talents quand il veut, jusqu'à ce que le MJ décoche.
+ if(view==='mj'&&a.hero){const l=document.createElement('label'),x=document.createElement('input');l.className='vignette-talents-libres';x.type='checkbox';x.checked=a.talentsLibres===true;
+  l.onclick=e=>e.stopPropagation();x.onchange=()=>{if(x.checked)a.talentsLibres=true;else delete a.talentsLibres;scheduleSave();if(typeof pousserBientot==='function')pousserBientot()};
+  l.append(x,'Talents libres');t.append(l)}
  const ouvre=()=>{if(!peutVoirArbres(a))return;fermerBulle();openArbres(a);if(arbresDialog.open){arbresOnglet='stats';renderArbres()}};
  c.onclick=e=>{if(e.target.closest('input,button'))return;ouvre()};c.onkeydown=e=>{if(e.target===c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ouvre()}};
  // En tri libre, la vignette se glisse avant ou après une autre.
