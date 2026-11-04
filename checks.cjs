@@ -6539,3 +6539,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.353 — Affixe Soin à activer : x dés verts, une fois par combat ; usage d'objet « Une fois par combat ». */
 {const cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(cb.includes("['soinActif','Soin à activer : dés verts, une fois par combat']")&&cb.includes("else if(x.effet==='soinActif'&&!o.effet){o.effet='soin';o.params={quantite:x.valeur,forme:'des',radiant:'non'};o.mode='actif';o.usage='combat';")
  &&cb.includes("const USAGES_LIMITES=['court','jour','combat'];")&&ed.includes("const marqueUsage=u=>u==='combat'?'combat:'+(typeof numeroCombat!=='undefined'?numeroCombat:0):u;"),'v1.353');}
+/* v1.354 — Semis : Action bonus, une fois par tour, invoque 1d6 alliés du modèle choisi autour du porteur. */
+{const ix=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');assert.ok(ix.includes("const n=d6();rollOnBoard([{dice:[[n,0]]}],a,null);invoqueAupres(a,m,n,a);")&&ix.includes("||code.cle==='semis';")&&cb.includes("semis:{cle:'semis',nom:'Semis',type:'abon',monstre:true,gratuit:true"),'v1.354');}
