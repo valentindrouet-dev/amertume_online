@@ -1111,6 +1111,7 @@ function texteRage(n){const p=document.createElement('p');p.className='palier-ef
  p.append('aux ',cle('Attaques','Attaque'),' ',cle('au contact','contact','Contact'),'.');return p}
 function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null,descr=''}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
+ {const tb=getComputedStyle(b).getPropertyValue('--teinte-bulle').trim();if(tb)d.style.setProperty('--teinte',tb)}
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des)desAuTitre(tete,des);
  {const s=pointsDeCout(points);if(s)tete.prepend(s)}
@@ -10221,9 +10222,10 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
    else b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+ICONES_FICHE.find(([k])=>k==='inventaire')[2]+'</svg>'};
   if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom:'Inventaire'}));
   b.onclick=()=>{const a=actors[selected];if(a&&a.hero&&controlled(selected)){fermerBulle();openInventaire(a)}};
+  const sep=document.createElement('span');sep.className='barre-sep sep-inventaire';sep.hidden=true;
   /* v1.391 — Le bouton rejoint la rangée des ronds, juste à droite de « Changer d'armes » ; on ne le déplace que s'il n'y est pas. */
   const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1),arm=document.getElementById('changer-armes');
-   if(arm&&b.previousElementSibling!==arm)arm.after(b);b.hidden=!ok;w.hidden=true;carte.classList.remove('avec-inventaire');if(ok)icone()};
+   if(arm&&(b.previousElementSibling!==sep||sep.previousElementSibling!==arm))arm.after(sep,b);b.hidden=sep.hidden=!ok;w.hidden=true;carte.classList.remove('avec-inventaire');if(ok)icone()};
   const r0=render;render=function(...x){const o=r0.apply(this,x);try{maj()}catch(e){}return o}}}
 
 /* v1.390 — Des jetons légers sur la table. L'image qu'un joueur donne à son aventurier voyage dans le document de la table, qui

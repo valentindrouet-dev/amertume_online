@@ -402,7 +402,7 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 
 **Fouiller partie (v1.385)** (`#fouiller.en-cours`) : au clic, le rond s'enfonce un instant (2 px, 94 %, un peu plus clair) le temps que la fouille se joue ; un second clic dans les 0,7 s ne la relance pas. Le calque des fouilles passe sous les objets et les socles (`#fouilles-layer`, plan 0).
 
-**Inventaire sur la table (v1.386, v1.391)** (`#inventaire-table`) : dans la rangée des ronds de la barre des Actions, juste à droite de « Changer d'armes », un rond crème clair `#f6e8cf`, icône brune `#6b4320` — l'icône Inventaire des vignettes (celle choisie dans les Icônes, sinon le sac dessiné). Il paraît quand l'aventurier sélectionné est à soi, et ouvre son inventaire.
+**Inventaire sur la table (v1.386, v1.391)** (`#inventaire-table`) : dans la rangée des ronds de la barre des Actions, juste à droite de « Changer d'armes », un rond crème clair `#f6e8cf`, icône brune `#6b4320`, séparé d'un trait (`.barre-sep`) ; sa bulle prend le brun `#8a6440` — l'icône Inventaire des vignettes (celle choisie dans les Icônes, sinon le sac dessiné). Il paraît quand l'aventurier sélectionné est à soi, et ouvre son inventaire.
 
 **Débuter le combat (v1.387)** (`#debuter-combat`) : chez le MJ, dans le cadre du tour, au-dessus de « Tour suivant », sur toute la largeur, le bouton principal « ⚔ Débuter le combat » (15 px). Il paraît tant que le combat qui vient de commencer garde les socles verrouillés.
 

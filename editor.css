@@ -4970,6 +4970,8 @@ span.stats-ico,.stats-ico.glyphe-etat{display:inline-block;font-size:13px;line-h
 button.btn-inventaire{--fond:#8a6440;color:#fff}
 /* v1.391 — À droite de « Changer d'armes », en crème clair, icône brune. */
 #inventaire-table{--fond:#f6e8cf;color:#6b4320}#inventaire-table[hidden]{display:none}
+/* v1.392 — Un trait le sépare de « Changer d'armes » ; sa bulle prend le brun des Mouvements, lisible sur fond clair. */
+#inventaire-table{--teinte-bulle:#8a6440}.barre-sep.sep-inventaire{margin:4px 6px}.barre-sep.sep-inventaire[hidden]{display:none}
 #inventaire-table svg{width:58%;height:58%;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #inventaire-table img{width:66%;height:66%;object-fit:contain}
 /* v1.387 — « Débuter le combat », sur sa propre ligne au-dessus des boutons du tour. */
