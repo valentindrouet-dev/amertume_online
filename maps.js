@@ -4461,3 +4461,8 @@ $('masse-suppr').onclick=()=>{const l=masseLignes.filter(x=>x.tr&&x.tr.querySele
  if(!confirm('Supprimer '+(l.length>1?'ces '+l.length+' éléments':'cet élément')+' ?'))return;masseApplique(l.map(x=>x.o));masseRendu()};
 function ouvrirMasse(){if(!mapDraft||view!=='mj')return;masseRendu();masseDialog.showModal()}
 {const r=document.querySelector('#map-tools .outils-famille[data-famille="placement"]');if(r){const b=document.createElement('button');b.type='button';b.id='map-masse';b.textContent='Modifier en masse';b.onclick=ouvrirMasse;r.append(b)}}
+
+/* v1.381 — Chez le MJ, une carte nouvellement ouverte s'annonce au milieu de l'écran, par son nom (les joueurs la voient s'annoncer
+   à l'arrivée du document de la table). Rouvrir la carte déjà ouverte ne l'annonce pas. */
+{const oc=ouvreCarte;ouvreCarte=function(m,...x){const avant=typeof currentMapId!=='undefined'?currentMapId:null,r=oc.call(this,m,...x);
+ if(m&&m.id!==avant&&m.name&&!estPaysage(m)&&!(typeof loading!=='undefined'&&loading)&&typeof annonceFlottante==='function')setTimeout(()=>annonceFlottante(m.name,'annonce-carte'),300);return r}}

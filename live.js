@@ -70,7 +70,7 @@ let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=fa
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
 // Ce qu'un joueur a déjà vu de la table : le mode, le dernier envoi d'onglet. Remis à zéro en quittant la table.
-let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null;
+let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null,carteAnnoncable=false;
 // v1.368 : les Fragments d'Âme donnés par le MJ, par joueur — chez le MJ, gardés dans le catalogue ; chez le joueur, reçus de la table.
 let fragmentsTable={};
 // La victoire sur la carte : son instant voyage avec la table ; celle qu'on trouve en arrivant ne s'annonce pas.
@@ -345,6 +345,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    if(!d.mapId&&currentMapId){carteNeuve=true;currentMapId=null;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom')}
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){carteNeuve=true;
     currentMapId=d.mapId;const m=currentMap();mapImage=m&&m.image||null;
+    // v1.381 : la carte que le MJ ouvre s'annonce au milieu de l'écran, par son nom ; pas à l'arrivée à la table.
+    if(carteAnnoncable&&m&&m.name&&!(typeof estPaysage==='function'&&estPaysage(m))&&typeof annonceFlottante==='function')setTimeout(()=>annonceFlottante(m.name,'annonce-carte'),300);
     $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';
     $('map').classList.toggle('custom',!!mapImage)}
    // Le voile levé et la remise à zéro du brouillard viennent du MJ.
@@ -503,7 +505,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   if(combatExige&&estMJ()&&mode!=='combat'&&typeof basculerMode==='function')queueMicrotask(()=>{if(!enCombat())basculerMode('combat',true)});
   // Une carte neuve ouverte par le MJ se montre toute entière, à 100 %, chez chaque joueur aussi.
   if(carteNeuve&&typeof resetMapZoom==='function')setTimeout(resetMapZoom,0);
- }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard();
+ }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard();carteAnnoncable=true;
   /* Le premier état de la table posé, le voile d'arrivée tombe : la carte qui paraît est la bonne. Pas tant que la carte de la
      table manque encore ici : l'ancienne resterait à l'écran jusqu'au contenu publié, qui l'apporte et fait réappliquer la table. */
   if(!(d.mapId&&d.mapId!==currentMapId))document.body.classList.remove('table-attendue')}}

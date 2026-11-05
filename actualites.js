@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.381","d":"2026-11-05","t":"Chrono du combat et annonce de la carte"},
 {"v":"1.380","d":"2026-11-05","t":"Stats de Combat : colonnes égales"},
 {"v":"1.379","d":"2026-11-05","t":"Stats de Combat : bandeau, cadres, icônes"},
 {"v":"1.378","d":"2026-11-05","t":"Stats de Combat en deux colonnes"},

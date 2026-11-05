@@ -6604,3 +6604,7 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("const ICO_COL={infD:'degats',sub:'degats',soin:'soin',abat:'coma'}")&&ed.includes("c.dataset.k=p.k;c.append(jeton,t);")&&css.includes("#stats-combat>.dialog-head{position:sticky;top:0;z-index:3;"),'v1.379');}
 /* v1.380 — Stats de Combat : colonnes égales, en-têtes renommés (icônes Dégâts / Mouvement, États, Attaques, Kills). */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("dist:['metres','','Distance'],coups:[null,'Attaques'],crit:[null,'Critiques'],abat:['coma','Kills']}")&&css.includes(".stats-principal .stats-table{table-layout:fixed}"),'v1.380');}
+/* v1.381 — Durée chronométrée du combat (bilan, Stats), temps en combat de chaque aventurier, nom de la carte ouverte au milieu de l'écran. */
+{const pg=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ assert.ok(pg.includes("return {tours:round,...(duree?{duree}:{}),liste:")&&pg.includes("if(h&&bilan.duree)ajouteVie(h,'temps_combat',bilan.duree)")&&ed.includes("['temps_combat','Temps en combat']")
+  &&lv.includes("annonceFlottante(m.name,'annonce-carte')")&&mp.includes("annonceFlottante(m.name,'annonce-carte')"),'v1.381');}

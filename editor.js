@@ -1282,7 +1282,7 @@ const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-for
    face ; puis les distinctions, chacune à qui en a le plus ; enfin un tableau par camp. Le bilan vient du journal,
    d'un autre appareil parfois : il est relu, chiffres et noms bornés, avant d'être montré. */
 function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return null;const n=v=>Math.max(0,Math.min(1e6,Math.trunc(Number(v))||0));
- return {tours:n(o.tours),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
+ return {tours:n(o.tours),duree:n(o.duree),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
   inf:n(x.inf),infEtat:Math.min(n(x.inf),n(x.infEtat)),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic),tir:n(x.tir),etats:n(x.etats),objets:n(x.objets),donne:n(x.donne),bloc:n(x.bloc),
   sph:Object.fromEntries(Object.entries(x.sph&&typeof x.sph==='object'?x.sph:{}).filter(([k])=>/^(brisure|eclat|brome)-(citrine|emeraude|saphir|rubis|diamant)$/.test(k)).map(([k,v])=>[k,n(v)]).filter(([,v])=>v>0)),
   // v1.299 : la source de chaque sphère gagnée — « déclencheur|sphère » —, pour la bulle du MJ.
@@ -1353,6 +1353,8 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
   s.append(t);corps.append(s)});
  /* v1.378 — Deux colonnes : à gauche les scores et les tableaux des camps ; à droite les distinctions, les titres à Brisure en
     cartes dorées, les autres en lignes. Sous les dégâts d'un camp, la part des coups et celle des états. */
+ // v1.381 : sous les tours, la durée réelle du combat.
+ if(b.duree&&typeof dureeLisible==='function'){const c=tete.querySelector('.stats-score.tours');if(c)c.append(el('small','stats-score-detail stats-duree','⏱ '+dureeLisible(b.duree)))}
  [['troupe',troupe],['adverse',adv]].forEach(([k,l])=>{const e=somme(l,'infEtat'),c=tete.querySelector('.stats-score.'+k);if(e&&c)c.append(el('small','stats-score-detail','('+somme(l,'infD')+' directs + '+e+' d’états)'))});
  {const g=corps.querySelector('.stats-distinctions');if(g){const mise=el('div','stats-mise'),gauche=el('div','stats-principal'),cote=el('aside','stats-cote');
   g.remove();cote.append(el('h3','','Distinctions'),g);gauche.append(...corps.children);mise.append(gauche,cote);corps.append(mise)}}
@@ -9766,7 +9768,7 @@ addEventListener('resize',()=>{if(arbresDialog.open&&arbresOnglet==='inventaire'
 /* v1.190 — L'onglet Statistiques : ce que l'aventurier a fait depuis sa création, groupé, une tuile par chiffre. */
 let orSansGain=false;
 function noteTrouve(a,o,n=1){if(a&&o)ajouteVie(a,'rar_'+rareteDe(o),Math.max(0,Math.trunc(n)||0))}
-const STATS_VIE=[['Combat',[['combats','Combats'],['infD','Dégâts infligés'],['infEtat','Dégâts d’états'],['pic','Coup le plus fort'],['coups','Coups portés'],['crit','Critiques'],['abat','Mises à Mort'],['tir','Dégâts à distance'],['etats','États infligés'],['bloc','Dégâts bloqués par la DEF'],['titres','Titres']]],
+const STATS_VIE=[['Combat',[['combats','Combats'],['temps_combat','Temps en combat'],['infD','Dégâts infligés'],['infEtat','Dégâts d’états'],['pic','Coup le plus fort'],['coups','Coups portés'],['crit','Critiques'],['abat','Mises à Mort'],['tir','Dégâts à distance'],['etats','États infligés'],['bloc','Dégâts bloqués par la DEF'],['titres','Titres']]],
  ['Survie',[['sub','Dégâts subis'],['soin','PV récupérés'],['donne','PV soignés aux autres'],['chutes','Comas'],['morts','Morts'],['repos','Repos courts'],['objets','Objets utilisés']]],
  ['Exploration',[['dist','Distance parcourue'],['tests','Tests'],['reussis','Tests réussis']]],
  // v1.289 : l'or et les sphères dépensés, et les sphères gagnées couleur par couleur.
@@ -9780,7 +9782,7 @@ function statsVieEl(a){const s=a.statsVie&&typeof a.statsVie==='object'?a.statsV
  const tuile=(v,libelle,cls)=>{const t=el('div','vie-ligne'+(cls?' '+cls:'')+(v&&v!=='0'&&v!=='0 m'?'':' zero'));t.append(el('span','',libelle),el('b','',v));return t};
  const r=el('div','vie-stats vie-colonnes'),cols=[el('div','vie-colonne'),el('div','vie-colonne')];r.append(...cols);
  const groupe=(col,titre,tuiles)=>{const g=el('section','vie-groupe');g.append(el('h3','',titre));const l=el('div','vie-lignes');l.append(...tuiles);g.append(l);cols[col].append(g)};
- STATS_VIE.forEach(([titre,l],i)=>groupe(i<2?0:1,titre,l.map(([k,lib])=>tuile(k==='dist'?val(k)+' m':String(val(k)),lib))));
+ STATS_VIE.forEach(([titre,l],i)=>groupe(i<2?0:1,titre,l.map(([k,lib])=>tuile(k==='dist'?val(k)+' m':k==='temps_combat'?(val(k)&&typeof dureeLisible==='function'?dureeLisible(val(k)):'0'):String(val(k)),lib))));
  groupe(1,'Objets trouvés',[...RARETES.map(([k])=>k),'ressource'].map(k=>tuile(String(n('rar_'+k)),NOM_RARETE(k),'vie-rar r-'+k)));
  return r}
 // Le contenu tient dans le bloc, sans barre de défilement : trop haut, il se réduit.
