@@ -4941,3 +4941,13 @@ span.stats-ico,.stats-ico.glyphe-etat{display:inline-block;font-size:13px;line-h
 .stats-table th.avec-ico .stats-ico{width:14px;height:14px;margin-right:3px}
 .stats-prix-val .stats-ico{width:16px;height:16px}
 @media(max-width:1100px){.stats-cote{border-left:1px solid #c99a3c88;padding-left:14px}}
+/* v1.380 — Colonnes égales : le nom, puis huit colonnes chiffrées de même largeur, puis les sphères (vides chez les adversaires). */
+.stats-principal .stats-table{table-layout:fixed}
+.stats-principal .stats-table th:first-child,.stats-principal .stats-table td:first-child{width:19%}
+.stats-principal .stats-table th:last-child,.stats-principal .stats-table td:last-child{width:19%}
+.stats-principal .stats-table th:not(:first-child):not(:last-child),.stats-principal .stats-table td.stats-n:not(.stats-sph){text-align:center}
+.stats-principal .stats-table th.avec-ico{white-space:nowrap}
+.stats-principal .stats-table .stats-nom{overflow:hidden;text-overflow:ellipsis}
+.stats-principal .stats-table .stats-barre{right:auto;left:50%;translate:-50% 0}
+.stats-principal .stats-table th.ico-seule .stats-ico{width:20px;height:20px;margin:0;vertical-align:-5px}
+.stats-principal .stats-table th:last-child{text-align:right}

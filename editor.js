@@ -1361,7 +1361,14 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
  {const ico=k=>{let im=null;try{im=k==='soin'?(logoBonus({carac:'soin'})||(()=>{const i=document.createElement('img');i.src=imgUrl('item_healpotion.png');i.alt='';return i})())
    :k==='coma'?imageEtat('Coma'):logoBonus({carac:'dmg'})}catch(e){im=null}if(!im)return null;im=im.cloneNode?im:im;im.classList.add('stats-ico');im.setAttribute('aria-hidden','true');im.draggable=false;return im};
   const ICO_COL={infD:'degats',sub:'degats',soin:'soin',abat:'coma'},ICO_PRIX={inf:'degats',sub:'degats',pic:'degats',tir:'degats',intouch:'degats',donne:'soin',soin:'soin',abat:'coma'};
-  corps.querySelectorAll('.stats-table').forEach(t=>{const ths=t.tHead&&t.tHead.rows[0]?[...t.tHead.rows[0].cells]:[];COLONNES_STATS.forEach(([c],i)=>{const k=ICO_COL[c],th=ths[i+1];if(!k||!th)return;const im=ico(k);if(im){th.classList.add('avec-ico');th.prepend(im)}})});
+  /* v1.380 — Les en-têtes : Dégâts infligés et Distance par leur seule icône (Dégâts, Mouvement), « États » et « Kills » derrière
+     la leur, « Attaques » pour les coups. Les colonnes chiffrées ont toutes la même largeur ; le tableau des adversaires garde la
+     place des sphères, vide, pour que ses colonnes tombent sous celles des aventuriers. */
+  const icoM=()=>{try{const im=logoBonus({carac:'metres'});if(im){im.classList.add('stats-ico');im.setAttribute('aria-hidden','true');return im}}catch(e){}return null};
+  const ENTETES={infD:['degats','','Dégâts infligés'],infEtat:['degats','États'],sub:['degats','Subis'],soin:['soin','Soignés'],dist:['metres','','Distance'],coups:[null,'Attaques'],crit:[null,'Critiques'],abat:['coma','Kills']};
+  corps.querySelectorAll('.stats-table').forEach(t=>{const ths=t.tHead&&t.tHead.rows[0]?[...t.tHead.rows[0].cells]:[];COLONNES_STATS.forEach(([c],i)=>{const e=ENTETES[c],th=ths[i+1];if(!e||!th)return;
+   const im=e[0]==='metres'?icoM():e[0]?ico(e[0]):null;th.replaceChildren();if(im){th.classList.add('avec-ico');th.append(im)}if(e[1])th.append(e[1]);else{th.classList.add('ico-seule');th.setAttribute('aria-label',e[2]);th.title=e[2]}});
+   if(t.closest('.stats-camp.adverse'))[...(t.tHead?t.tHead.rows:[]),...t.tBodies[0].rows,...(t.tFoot?t.tFoot.rows:[])].forEach(r=>{const c=r.parentElement.tagName==='THEAD'?document.createElement('th'):document.createElement('td');c.className='stats-vide';r.append(c)})});
   corps.querySelectorAll('.stats-prix[data-k]').forEach(c=>{const k=ICO_PRIX[c.dataset.k],v=c.querySelector('.stats-prix-val');if(!k||!v)return;const im=ico(k);if(im)v.prepend(im)})}
  statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */
