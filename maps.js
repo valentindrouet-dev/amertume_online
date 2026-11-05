@@ -761,7 +761,12 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
     if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
     ouvrirCoffreGroupe(a,o);return}
    if(view==='mj'){menuObjetMJ(o,e.clientX,e.clientY);return}
-   const a=actors[selected],mien=!!(a&&a.hero&&controlled(selected)&&alive(a));
+   /* v1.385 : chez un joueur, l'objet se prend avec son aventurier — celui qui est au contact, sinon celui qu'il commande —,
+      sélectionné pour lui : plus besoin de l'avoir choisi d'abord. */
+   let a=actors[selected],mien=!!(a&&a.hero&&controlled(selected)&&alive(a));
+   if(!mien||!objetAPortee(a,o)){const miens=actors.map((h,j)=>[h,j]).filter(([h,j])=>h&&h.hero&&!h.horsCarte&&alive(h)&&controlled(j)),
+     proche=miens.find(([h])=>objetAPortee(h,o))||(mien?null:miens[0]);
+    if(proche){a=proche[0];mien=true;if(selected!==proche[1]){selected=proche[1];if(typeof markOnly==='function')markOnly(proche[1]);render()}}}
    if(!mien){log('Sélectionne d’abord ton aventurier.',{local:true});return}
    if(!objetAPortee(a,o)){log('Approche '+a.name+' : il faut être au contact de '+o.nom+'.',{local:true});return}
    if(o.indice){examinerIndice(a,o);return}

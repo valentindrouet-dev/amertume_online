@@ -1135,3 +1135,15 @@ function realigneCombat(){if(!combatAuMJ()||!dernierDoc)return false;const d=der
  const cb=d.fogReset&&Number.isFinite(d.fogReset.cb)?d.fogReset.cb:null;if(cb!==null&&typeof numeroCombat!=='undefined'&&numeroCombat!==cb){numeroCombat=cb;change=true}
  if(change&&typeof render==='function')render();return change}
 setInterval(()=>{try{realigneCombat()}catch(e){}},1500);
+
+/* v1.385 — Un clic ne se perd plus quand le bouton est rebâti sous le doigt. La barre des Actions, les ronds, les objets, les menus se
+   redessinent à chaque document de la table — plusieurs fois par seconde quand la troupe bouge — : un bouton appuyé puis remplacé
+   avant d'être relâché ne recevait jamais son clic (« il faut cliquer trois ou quatre fois »). Au relâchement, si le bouton appuyé
+   a quitté la page et que son remplaçant — même identité : id, données, nom — est sous le pointeur, le clic lui revient. Pas pour
+   les socles des combattants : eux se glissent. */
+{const sig=b=>[b.id,b.className,b.getAttribute('aria-label')||'',JSON.stringify({...b.dataset,contenuRond:undefined,sig:undefined})].join('|');
+ let appui=null;
+ document.addEventListener('pointerdown',e=>{const b=e.target&&e.target.closest&&e.target.closest('button');appui=b&&!(b.classList.contains('token')&&!b.classList.contains('objet'))?{b,s:sig(b)}:null},true);
+ document.addEventListener('pointerup',e=>{const a=appui;appui=null;if(!a||a.b.isConnected||e.button!==0)return;
+  const el=document.elementFromPoint(e.clientX,e.clientY),b=el&&el.closest&&el.closest('button');
+  if(b&&b!==a.b&&sig(b)===a.s&&!b.disabled)setTimeout(()=>b.click(),0)},true)}

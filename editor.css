@@ -4959,3 +4959,7 @@ span.stats-ico,.stats-ico.glyphe-etat{display:inline-block;font-size:13px;line-h
 /* v1.382 — Quatre cases en tête des Stats : la durée du combat entre les tours et les dégâts des adversaires. */
 .stats-tableau:has(.stats-score.duree){grid-template-columns:minmax(0,1fr) auto auto minmax(0,1fr)}
 .stats-score.duree{min-width:130px}.stats-score.duree b{white-space:nowrap}
+/* v1.385 — La Fouille partie : le rond s'enfonce un instant. */
+#fouiller.en-cours{transform:translateY(2px) scale(.94);filter:brightness(1.12)}
+/* v1.385 — Le calque des fouilles passe sous les objets et les socles : un chiffre de fouille posé près d'un objet ne prend plus son clic. */
+#map-view #fouilles-layer{z-index:0}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.385","d":"2026-11-05","t":"Clics fiables, Fouille, objets, repos"},
 {"v":"1.384","d":"2026-11-05","t":"Le combat appartient au MJ"},
 {"v":"1.383","d":"2026-11-05","t":"Murs infranchissables, sortie du bon côté"},
 {"v":"1.382","d":"2026-11-05","t":"Socle coincé dans un mur, case Durée"},

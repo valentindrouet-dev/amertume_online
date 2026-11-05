@@ -6616,3 +6616,8 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.384 — Le combat appartient au MJ : chez un joueur à la table, ni bascule ni tour suivant locaux ; mode, tour et numéro du
    combat réalignés sur le dernier état de la table, toutes les 1,5 s. */
 {const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("{const bm=basculerMode;basculerMode=function(...x){if(combatAuMJ())return;return bm.apply(this,x)}}")&&lv.includes("{const ts=tourSuivant;tourSuivant=function(...x){if(combatAuMJ())return;return ts.apply(this,x)}}")&&lv.includes("setInterval(()=>{try{realigneCombat()}catch(e){}},1500);"),'v1.384');}
+/* v1.385 — Clics rejoués sur le bouton rebâti, ronds non rebâtis s'ils n'ont pas changé, Fouille marquée, objets pris par l'aventurier
+   du joueur, fouilles sous les objets, repos à PV pleins pour un aventurier Actif. */
+{const lv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8'),rg=fs.readFileSync('regles.js','utf8');
+ assert.ok(lv.includes("if(b&&b!==a.b&&sig(b)===a.s&&!b.disabled)setTimeout(()=>b.click(),0)},true)}")&&pg.includes("if(b.dataset.contenuRond!==t.innerHTML||b.childNodes.length!==t.childNodes.length)")
+  &&pg.includes("function reposInutile(a){return a.actif!==true&&a.hp>=a.max&&")&&mp.includes("proche=miens.find(([h])=>objetAPortee(h,o))||(mien?null:miens[0]);")&&css.includes("#map-view #fouilles-layer{z-index:0}")&&rg.includes('seul un aventurier <b>Actif</b>'),'v1.385');}
