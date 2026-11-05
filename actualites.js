@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.375","d":"2026-11-05","t":"Ce qui s'efface s'efface partout"},
 {"v":"1.374","d":"2026-11-04","t":"Suppr sans XP ni butin"},
 {"v":"1.373","d":"2026-11-04","t":"Forme de Géant : un tour, en combat"},
 {"v":"1.372","d":"2026-11-04","t":"Repos courts selon la VIE"},

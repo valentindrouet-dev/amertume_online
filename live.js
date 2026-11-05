@@ -384,7 +384,14 @@ function appliquerSalleSeule(d,complet){if(!d)return;
       points du tour reviennent tels que le MJ les tient. Un aventurier déplacé sans date est traité de même. */
    const horsCombat=estMJ()&&!neuf&&mode==='combat'&&typeof numeroCombat!=='undefined'
     &&(typeof e.tourVu==='string'?!e.tourVu.startsWith('c'+numeroCombat+'.'):a.hero===true);
-   CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
+   CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined){
+     /* v1.375 — Un champ effacé ailleurs (une Forme de Géant finie, « Talents libres » décoché, un drapeau du tour levé) s'efface
+        ici aussi. Avant, il restait, et un envoi entier d'un joueur le rendait à la table : la forme ne disparaissait jamais.
+        Ce qu'on vient d'ajouter ici et qui n'est pas encore parti (absent de la référence) reste, et part au prochain envoi ;
+        sans référence, le MJ garde le sien. Le MJ ne perd jamais un champ qui n'appartient qu'à lui. */
+     if(a[k]===undefined||k==='x'||k==='y'||k==='cibles'||(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)))return;
+     if(r?r[k]===undefined:estMJ()){if(r)gardes.push([id,k,undefined]);return}
+     delete a[k];return}
     if(enMain&&(k==='x'||k==='y'))return;
     // Les cibles se comparent par identifiant, telles qu'elles partent : jamais par rang.
     const local=k==='cibles'?ciblesIds(a):k==='x'||k==='y'?positionVraie(a)[k]:a[k];
