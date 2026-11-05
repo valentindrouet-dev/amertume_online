@@ -6613,3 +6613,6 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.383 — Traverser un mur reste impossible : un socle pris dans la matière ressort du côté d'où il venait, par la sortie la plus
    courte ; un point dans la matière est hors de portée (on n'y pose pas un socle). */
 {const pg=fs.readFileSync('index.html','utf8');assert.ok(pg.includes("const dmin=Math.min(...sorties.map(u=>u.d)),courtes=sorties.filter(u=>u.d<=dmin+tk/2);")&&pg.includes("libre0:(noteLibre(a),dernierLibrePx(a,size)),")&&pg.includes(" return {pts:[S,p],long:Infinity}}\nfunction appliqueRegleMouvement")&&!pg.includes("return murs.some(f=>shapeContains(f,p))?{pts:[S,p],long:droit}"),'v1.383');}
+/* v1.384 — Le combat appartient au MJ : chez un joueur à la table, ni bascule ni tour suivant locaux ; mode, tour et numéro du
+   combat réalignés sur le dernier état de la table, toutes les 1,5 s. */
+{const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("{const bm=basculerMode;basculerMode=function(...x){if(combatAuMJ())return;return bm.apply(this,x)}}")&&lv.includes("{const ts=tourSuivant;tourSuivant=function(...x){if(combatAuMJ())return;return ts.apply(this,x)}}")&&lv.includes("setInterval(()=>{try{realigneCombat()}catch(e){}},1500);"),'v1.384');}

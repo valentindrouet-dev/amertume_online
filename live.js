@@ -1120,3 +1120,18 @@ function majBoutonJoueurs(){joueursButton.hidden=!(enLigne&&tableId)}
 {const rj=renderJoueursConnectes;renderJoueursConnectes=function(...x){const r=rj(...x);majBoutonJoueurs();return r}}
 {const bt=brancherTable;brancherTable=function(...x){const r=bt(...x);majBoutonJoueurs();return r}}
 majBoutonJoueurs();
+
+/* v1.384 — Le combat appartient au MJ, et à lui seul. Chez un joueur à la table, rien ne commence ni ne finit un combat, rien ne fait
+   passer le tour : ni un adversaire aperçu, ni la fin d'un combat qu'il croit gagnée, ni une carte rouverte. Il prend le mode, le
+   tour et le numéro du combat du dernier état de la table, et seulement de lui ; toutes les 1,5 s, il s'y réaligne s'il s'en est
+   écarté. Avant, un joueur pouvait se retrouver en exploration pendant que le combat continuait chez le MJ : ses attaques
+   attendaient un combat, ses pas, datés « hors combat », étaient refusés — il ne pouvait plus rien faire. */
+const combatAuMJ=()=>!estMJ()&&(enLigne||tableVoulue);
+{const bm=basculerMode;basculerMode=function(...x){if(combatAuMJ())return;return bm.apply(this,x)}}
+{const ts=tourSuivant;tourSuivant=function(...x){if(combatAuMJ())return;return ts.apply(this,x)}}
+function realigneCombat(){if(!combatAuMJ()||!dernierDoc)return false;const d=dernierDoc;let change=false;
+ if((d.mode==='combat'||d.mode==='exploration')&&mode!==d.mode){mode=d.mode;change=true}
+ if(Number.isFinite(d.round)&&d.round>0&&round!==d.round){round=d.round;change=true;const r=$('round');if(r)r.textContent=String(round).padStart(2,'0')}
+ const cb=d.fogReset&&Number.isFinite(d.fogReset.cb)?d.fogReset.cb:null;if(cb!==null&&typeof numeroCombat!=='undefined'&&numeroCombat!==cb){numeroCombat=cb;change=true}
+ if(change&&typeof render==='function')render();return change}
+setInterval(()=>{try{realigneCombat()}catch(e){}},1500);
