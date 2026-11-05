@@ -4963,3 +4963,12 @@ span.stats-ico,.stats-ico.glyphe-etat{display:inline-block;font-size:13px;line-h
 #fouiller.en-cours{transform:translateY(2px) scale(.94);filter:brightness(1.12)}
 /* v1.385 — Le calque des fouilles passe sous les objets et les socles : un chiffre de fouille posé près d'un objet ne prend plus son clic. */
 #map-view #fouilles-layer{z-index:0}
+/* v1.386 — Le bouton Inventaire de la barre des Actions : à droite, à part, derrière un filet. */
+.attack-card.avec-inventaire{position:relative;padding-right:88px}.map-panel>.attack-card.barre-actions.avec-inventaire{padding-right:98px}
+.barre-inventaire{position:absolute;right:0;top:14px;bottom:14px;width:76px;display:flex;align-items:center;justify-content:center;border-left:1px solid color-mix(in srgb,currentColor 22%,transparent)}
+.barre-inventaire[hidden]{display:none}
+button.btn-inventaire{--fond:#8a6440;color:#fff}
+#inventaire-table svg{width:58%;height:58%;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#inventaire-table img{width:66%;height:66%;object-fit:contain}
+/* v1.387 — « Débuter le combat », sur sa propre ligne au-dessus des boutons du tour. */
+#debuter-combat{display:block;width:100%;margin:0 0 10px;font-size:15px;padding:11px 12px}#debuter-combat[hidden]{display:none}

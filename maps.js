@@ -4477,3 +4477,18 @@ function ouvrirMasse(){if(!mapDraft||view!=='mj')return;masseRendu();masseDialog
 {let dernierRelevé='';const r0=render;render=function(...x){const o=r0.apply(this,x);try{if(typeof noteLibre==='function'&&mapSize().width){
  const miens=actors.filter(a=>a&&a.hero&&!a.horsCarte&&(view==='mj'||(typeof aMoi==='function'&&aMoi(a))));const cle=(currentMapId||'')+'|'+miens.map(a=>a.id+':'+a.x+','+a.y).join(';');
  if(cle!==dernierRelevé){dernierRelevé=cle;const size=mapSize(),murs=obstaclesDuPas((u,v)=>[u/100*size.width,v/100*size.height]);miens.forEach(a=>noteLibre(a,murs))}}}catch(e){}return o}}
+
+/* v1.387 — Au début d'un combat, personne ne bouge avant que le MJ ne le dise. Le combat qui commence chez le MJ verrouille les socles
+   (le verrou de la barre, que les joueurs suivent) : un aventurier qui vient de révéler une salle ne dépense plus son mouvement sans
+   le vouloir. Dans le cadre du tour, le bouton « Débuter le combat » rend la main à tous ; rouvrir le verrou de la barre fait de même.
+   Le MJ, lui, place les socles comme il veut pendant ce temps. */
+let verrouDebutCombat=false;
+{const nx=$('next'),ta=nx&&nx.closest('.turn-actions');if(nx){const b=document.createElement('button');b.type='button';b.id='debuter-combat';b.className='full primary';b.textContent='⚔ Débuter le combat';b.hidden=true;(ta||nx).before(b);
+ b.onclick=()=>{if(view!=='mj')return;verrouDebutCombat=false;tokensLocked=false;refreshGmBar();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}}}
+{const bm=basculerMode;basculerMode=function(neuf,...x){const commence=mode!=='combat'&&neuf==='combat',finit=mode==='combat'&&neuf!=='combat',mj=view==='mj'&&!(typeof estMJ==='function'&&!estMJ()&&typeof enLigne!=='undefined'&&enLigne);
+ const r=bm.call(this,neuf,...x);
+ if(mj&&commence&&mode==='combat'){verrouDebutCombat=true;tokensLocked=true;refreshGmBar();render();scheduleSave()}
+ else if(mj&&finit&&mode!=='combat'&&verrouDebutCombat){verrouDebutCombat=false;tokensLocked=false;refreshGmBar();render();scheduleSave()}
+ return r}}
+{const lo=lockBtn.onclick;lockBtn.onclick=(...x)=>{const r=lo(...x);if(!tokensLocked&&verrouDebutCombat){verrouDebutCombat=false;render()}return r}}
+{const r0=render;render=function(...x){const o=r0.apply(this,x);const b=$('debuter-combat');if(b)b.hidden=!(view==='mj'&&enCombat()&&tokensLocked&&(verrouDebutCombat||round===1));return o}}

@@ -10205,3 +10205,16 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
  e.title=l.sort((u,v)=>Number(vu(v.id))-Number(vu(u.id))||v.c-u.c).map(x=>x.nom+' : '+texteMarques(x.c)+(vu(x.id)?'':' — pas dans l’arbre, non compté')).join('\n')});
  const sp=[...arbresTotal.querySelectorAll('.arbres-tranches>span')];if(sp.length&&sp.every(e=>Number.isFinite(e._compte)||!(e._racines&&e._racines.length))){const t=[...arbresTotal.children].find(x=>x.tagName==='SPAN'&&/^Total /.test(x.textContent));
   if(t)t.textContent='Total '+texteMarques(sp.reduce((n,e)=>n+(Number.isFinite(e._compte)?e._compte:0),0))}}catch(err){}return r}}
+
+/* v1.386 — L'inventaire à portée de main, sur la table : dans la barre des Actions, à droite, à part, le bouton Inventaire — la même
+   icône que sur la vignette de l'onglet Aventuriers. Il ouvre l'inventaire de l'aventurier sélectionné, s'il est à soi. */
+{const carte=document.querySelector('section.attack-card');
+ if(carte){const w=document.createElement('div');w.className='barre-inventaire';w.hidden=true;const b=document.createElement('button');b.type='button';b.id='inventaire-table';b.className='btn-action btn-inventaire rond';
+  b.setAttribute('aria-label','Inventaire');w.append(b);carte.append(w);
+  const icone=()=>{const l=(catalog.iconesFiche||{}).inventaire||'';if(b.dataset.icone===l&&b.childNodes.length)return;b.dataset.icone=l;
+   if(l&&typeof poseLogo==='function'){const im=document.createElement('img');im.alt='';im.draggable=false;poseLogo(im,l);b.replaceChildren(im)}
+   else b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+ICONES_FICHE.find(([k])=>k==='inventaire')[2]+'</svg>'};
+  if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom:'Inventaire'}));
+  b.onclick=()=>{const a=actors[selected];if(a&&a.hero&&controlled(selected)){fermerBulle();openInventaire(a)}};
+  const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1);w.hidden=!ok;carte.classList.toggle('avec-inventaire',ok);if(ok)icone()};
+  const r0=render;render=function(...x){const o=r0.apply(this,x);try{maj()}catch(e){}return o}}}
