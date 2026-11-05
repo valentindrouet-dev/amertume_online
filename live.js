@@ -1003,7 +1003,7 @@ function pousserBrouillard(){if(!estMJ()||!enLigne||!brouillardsRef||brouillardP
  brouillardPousseTimer=setTimeout(()=>{brouillardPousseTimer=0;const m=typeof currentMap==='function'?currentMap():null;
   if(!m||!brouillardsRef||typeof m.fog!=='string'||m.fog.length>300000||(typeof estPaysage==='function'&&estPaysage(m)))return;
   const n=typeof brouillardReset!=='undefined'?brouillardReset.n:0,cle=n+'|'+m.fog;if(brouillardsPousses.get(m.id)===cle)return;brouillardsPousses.set(m.id,cle);
-  brouillardsRef.doc(m.id).set({f:m.fog,n,at:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>brouillardsPousses.delete(m.id))},3000)}
+  brouillardsRef.doc(m.id).set({f:m.fog,n,at:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>brouillardsPousses.delete(m.id))},8000)}
 // Une remise à zéro du MJ part aussitôt : la mémoire vidée remplace l'ancienne.
 {const resetFogSansTable=resetFog;resetFog=function(){const r=resetFogSansTable.apply(this,arguments);pousserBrouillard();return r}}
 function ecouterBrouillard(id){if(quitteBrouillard)quitteBrouillard();quitteBrouillard=null;brouillardTable=null;brouillardEcoute=id||null;
@@ -1149,3 +1149,14 @@ setInterval(()=>{try{realigneCombat()}catch(e){}},1500);
  document.addEventListener('pointerup',e=>{const a=appui;appui=null;if(!a||a.b.isConnected||e.button!==0)return;
   const el=document.elementFromPoint(e.clientX,e.clientY),b=el&&el.closest&&el.closest('button');
   if(b&&b!==a.b&&sig(b)===a.s&&!b.disabled)setTimeout(()=>b.click(),0)},true)}
+
+
+/* v1.390 — Ce que la table coûte au réseau, au survol de l'indice de performance du MJ : les envois et les réceptions de la dernière
+   minute, le poids du document de la table (qui repart tout entier vers chacun à chaque changement) et celui du brouillard. De quoi
+   mesurer les lags d'une partie au lieu de les deviner. Le brouillard ne repart plus qu'au plus toutes les 8 s (3 s avant). */
+{const env=[],rec=[];let poids=0,mesure=0;
+ const pe=pousserEtat;pousserEtat=function(...x){const avant=dernierPousse,r=pe.apply(this,x);if(dernierPousse!==avant)env.push(Date.now());return r};
+ const pa=programmerApplication;programmerApplication=function(...x){rec.push(Date.now());const t=Date.now();if(t-mesure>5000&&dernierDoc){mesure=t;try{poids=JSON.stringify(dernierDoc).length}catch(e){}}return pa.apply(this,x)};
+ setInterval(()=>{const b=$('indice-perf');if(!b)return;const t=Date.now(),garde=l=>{while(l.length&&t-l[0]>60000)l.shift();return l.length};
+  const m=typeof currentMap==='function'?currentMap():null,fog=m&&typeof m.fog==='string'?m.fog.length:0,ko=n=>Math.round(n/1024)+' Ko';
+  b.title=enLigne?'Table en ligne, dernière minute : '+garde(env)+' envois, '+garde(rec)+' réceptions. Document de la table : '+ko(poids)+' (il repart en entier à chaque changement). Brouillard de la carte : '+ko(fog)+'.':''},2000)}

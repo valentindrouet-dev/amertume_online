@@ -6645,3 +6645,7 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const rg=fs.readFileSync('regles.js','utf8');assert.ok(rg.includes('la <b>zone de contact</b> du départ du tour est gratuite'),'v1.388 règles');}
 /* v1.389 — La fiche du MJ enregistrée ne ramène pas le combattant en arrière : position, points du tour et suivis restent ceux de l'instant. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("else{const vif=actors[editing];if(vif)['x','y','checks','mvtReste','mvtTour','talentsJoues','target','targets',")&&ed.includes(" else if(editing===null){actors.push(a);selected=actors.length-1}\n"),'v1.389');}
+/* v1.390 — Des jetons légers (16 Ko au plus) dans le document de la table, réduits chez le MJ ; le brouillard toutes les 8 s ; le coût
+   réseau de la table au survol de l'indice de performance. */
+{const ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8');assert.ok(ed.includes("const JETON_LEGER_MAX=16000;")&&ed.includes("{const ip=imagePourTable;imagePourTable=async function(url){const l=await jetonLeger(url);return l||ip(url)}}")
+ &&lv.includes("}).catch(()=>brouillardsPousses.delete(m.id))},8000)}")&&lv.includes("b.title=enLigne?'Table en ligne, dernière minute : '"),'v1.390');}

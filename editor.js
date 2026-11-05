@@ -10223,3 +10223,19 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
   b.onclick=()=>{const a=actors[selected];if(a&&a.hero&&controlled(selected)){fermerBulle();openInventaire(a)}};
   const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1);w.hidden=!ok;carte.classList.toggle('avec-inventaire',ok);if(ok)icone()};
   const r0=render;render=function(...x){const o=r0.apply(this,x);try{maj()}catch(e){}return o}}}
+
+/* v1.390 — Des jetons légers sur la table. L'image qu'un joueur donne à son aventurier voyage dans le document de la table, qui
+   repart tout entier vers chaque joueur à chaque pas, plusieurs fois par seconde : à 60 Ko par aventurier, c'était une grande part
+   des lags. Elle vise désormais 16 Ko au plus — 128 px, la taille d'un jeton —, et l'ancienne règle ne sert qu'en dernier recours. */
+const JETON_LEGER_MAX=16000;
+async function jetonLeger(url){if(typeof url!=='string'||!url.startsWith('data:image/'))return null;if(url.length<=JETON_LEGER_MAX)return url;
+ try{const im=new Image();im.src=url;await im.decode();
+  for(const t of [128,112,96,80,64]){const k=Math.min(1,t/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');
+   cv.width=Math.max(1,Math.round(im.naturalWidth*k));cv.height=Math.max(1,Math.round(im.naturalHeight*k));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+   for(const q of [.82,.7,.58]){const d=cv.toDataURL('image/webp',q);if(d.startsWith('data:image/webp')&&d.length<=JETON_LEGER_MAX)return d}}}catch(e){}
+ return null}
+{const ip=imagePourTable;imagePourTable=async function(url){const l=await jetonLeger(url);return l||ip(url)}}
+/* Chez le MJ, une fois par aventurier, un jeton déjà trop lourd se réduit, et part ainsi à toute la table. */
+{const vus=new Set();setInterval(()=>{if(typeof estMJ!=='function'||!estMJ()||typeof enLigne==='undefined'||!enLigne)return;
+ actors.forEach(a=>{if(!a||typeof a.imageJeton!=='string'||a.imageJeton.length<=JETON_LEGER_MAX||vus.has(a.id))return;vus.add(a.id);
+  jetonLeger(a.imageJeton).then(u=>{if(u&&u.length<a.imageJeton.length){a.imageJeton=u;if(typeof pousserBientot==='function')pousserBientot()}})})},5000)}
