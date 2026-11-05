@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.389","d":"2026-11-05","t":"Fiche : plus de retour en arrière"},
 {"v":"1.388","d":"2026-11-05","t":"Zone de contact gratuite au mouvement"},
 {"v":"1.386","d":"2026-11-05","t":"Inventaire sur la table, Débuter le combat"},
 {"v":"1.385","d":"2026-11-05","t":"Clics fiables, Fouille, objets, repos"},

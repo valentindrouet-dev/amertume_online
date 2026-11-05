@@ -8113,7 +8113,12 @@ $('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=re
  const suivis=syncFromTemplate(modele);
  renderCatalogPages()}
  else if(templateNeuf){catalog.monsters.push(toMonster(a));templateNeuf=false;renderCatalogPages();document.dispatchEvent(new Event('amertume-content-changed'))}
- else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();renderHeroes();render();scheduleSave()};
+ /* v1.389 — La fiche enregistrée ne ramène pas le combattant en arrière : elle avait été copiée à son ouverture, et tout ce qui
+    avait changé depuis — sa position surtout, quand le joueur bougeait pendant que le MJ éditait — repartait à l'ancienne valeur.
+    Ce que la fiche n'édite pas reste celui du combattant à l'instant. */
+ else if(editing===null){actors.push(a);selected=actors.length-1}
+ else{const vif=actors[editing];if(vif)['x','y','checks','mvtReste','mvtTour','talentsJoues','target','targets','tourVu','origineTour','dernierLibre','ajuste','bilan','gemmesSuivi','statsVie','demandeCombat','sortiCombat','lameventPret','accelM','limitesCombat'].forEach(k=>{if(vif[k]===undefined)delete a[k];else a[k]=structuredClone(vif[k])});actors[editing]=a}
+ actorDialog.close();renderHeroes();render();scheduleSave()};
 $('save-template').onclick=()=>{if(!$('actor-form').reportValidity()||view!=='mj')return;catalog.monsters.push(toMonster(readActor()));$('actor-error').textContent='Copie ajoutée au bestiaire.';scheduleSave()};
 /* Retirer un combattant : les cibles qui le visaient et les indices qui le suivaient
    sont recalés, et la scène garde toujours au moins un aventurier. */

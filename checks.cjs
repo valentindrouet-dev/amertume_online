@@ -6643,3 +6643,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  const b={x:60,y:50,credit:0};const rb=ctx.regleMouvement(b);assert.equal(rb.ajustement,true,'sans point : l’ajustement, gratuit lui aussi');}
 /* v1.388 — page Règles : la zone de contact du départ, gratuite. */
 {const rg=fs.readFileSync('regles.js','utf8');assert.ok(rg.includes('la <b>zone de contact</b> du départ du tour est gratuite'),'v1.388 règles');}
+/* v1.389 — La fiche du MJ enregistrée ne ramène pas le combattant en arrière : position, points du tour et suivis restent ceux de l'instant. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("else{const vif=actors[editing];if(vif)['x','y','checks','mvtReste','mvtTour','talentsJoues','target','targets',")&&ed.includes(" else if(editing===null){actors.push(a);selected=actors.length-1}\n"),'v1.389');}
