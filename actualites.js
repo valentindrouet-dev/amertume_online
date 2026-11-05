@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.377","d":"2026-11-05","t":"Import de la sauvegarde globale fiable"},
 {"v":"1.376","d":"2026-11-05","t":"Goliath : retour à sa taille"},
 {"v":"1.375","d":"2026-11-05","t":"Ce qui s'efface s'efface partout"},
 {"v":"1.374","d":"2026-11-04","t":"Suppr sans XP ni butin"},

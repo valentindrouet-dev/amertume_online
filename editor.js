@@ -8876,16 +8876,31 @@ async function exporterTout(){const s=sauvegardeGlobale(),manques=[];
  const texte=JSON.stringify(s);const url=URL.createObjectURL(new Blob([texte],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde();document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
  log('Sauvegarde globale exportée : '+a.download+' ('+tailleLisible(texte.length)+')'+(manques.length?'. Illisible sur cet appareil, absent du fichier : '+manques.join(', ')+'.':'.'),{local:true})}
+/* v1.377 — Lire une sauvegarde globale sans la refuser à tort, et dire exactement pourquoi quand on la refuse.
+   Un fichier repassé par un autre logiciel (marque BOM en tête, texte autour), une sauvegarde sans numéro de version, d'une
+   version plus ancienne ou plus récente, une scène publiée : tout cela se lit. Un export de cartes, de domaine, de campagne
+   ou de talents dit où il se reprend. Le refus nomme le fichier, sa taille et l'erreur exacte. */
+function lisSauvegardeGlobale(texte,nom){let t=String(texte||'').replace(/^\uFEFF/,'').trim(),s=null,err=null;
+ try{s=JSON.parse(t)}catch(e){err=e;const i=t.indexOf('{'),j=t.lastIndexOf('}');if(i>=0&&j>i)try{s=JSON.parse(t.slice(i,j+1))}catch(_){}}
+ if(!s)throw Error('« '+nom+' » ('+tailleLisible(t.length)+') n’est pas du JSON lisible'+(t.length?'':' : le fichier est vide')+(err&&err.message?' — '+err.message:'')+'. Un fichier coupé pendant le téléchargement le fait : exporte à nouveau.');
+ if(typeof s!=='object'||Array.isArray(s))throw Error('« '+nom+' » ne contient pas une partie d’Amertume Online.');
+ if(s.format===(typeof MAP_FORMAT!=='undefined'?MAP_FORMAT:'')||(Array.isArray(s.maps)&&!Array.isArray(s.actors)&&!s.catalog))throw Error('« '+nom+' » est un export de cartes : reprends-le dans l’onglet Cartes, bouton « Importer ».');
+ if(s.genre==='domaine')throw Error('« '+nom+' » est un export du domaine : reprends-le dans l’onglet Domaine, bouton « Importer ».');
+ if(s.genre==='campagne')throw Error('« '+nom+' » est une campagne : reprends-la dans Paramètres → Campagnes.');
+ if(s.type==='talents')throw Error('« '+nom+' » est une sauvegarde de talents : reprends-la dans l’onglet Talents.');
+ // Une partie sans numéro de version, d'une version plus ancienne ou plus récente : la forme est la même, elle se lit.
+ if(Array.isArray(s.actors)&&s.version!==7&&s.version!==8)s={...s,version:8};
+ return s}
 function importerTout(fichier){const erreur=$('import-erreur');erreur.textContent='';
- fichier.text().then(async texte=>{let s;try{s=JSON.parse(texte)}catch(e){throw Error('ce fichier n’est pas du JSON lisible.')}
-  const souci=verifieSauvegarde(s);if(souci)throw Error(souci);
+ fichier.text().then(async texte=>{const s=lisSauvegardeGlobale(texte,fichier.name);
+  const souci=verifieSauvegarde(s);if(souci)throw Error('« '+fichier.name+' » : '+souci);
   // v1.343 : sur un appareil qui n'est pas encore celui du MJ, la partie importée ne s'enregistrerait pas : on se connecte d'abord.
   if(typeof mjIci==='function'&&!mjIci())throw Error('connecte-toi d’abord en MJ (Partager → Connexion MJ) : sur cet appareil, la partie importée ne serait pas enregistrée.');
   if(!confirm('Remplacer la partie de ce navigateur par « '+fichier.name+' » ?\n'+resumeSauvegarde(s)+'.\nLa partie actuelle sera perdue si elle n’a pas été exportée.'))return;
   appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();saveNow();
   const manques=[];for(const x of ANNEXES_SAUVEGARDE){try{await x.pose(s)}catch(e){manques.push(x.nom)}}
   log('Sauvegarde importée : '+fichier.name+' — '+resumeSauvegarde(s)+(manques.length?'. Non repris : '+manques.join(', ')+'.':'.'),{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})
- .catch(e=>{erreur.textContent='Import refusé : '+e.message})}
+ .catch(e=>{erreur.textContent='Import refusé : '+e.message;log('Import refusé : '+e.message,{local:true});alert('Import refusé : '+e.message)})}
 $('export-tout').onclick=exporterTout;
 $('import-tout').onclick=()=>{if(view!=='mj')return;$('import-fichier').click()};
 $('import-fichier').onchange=()=>{const f=$('import-fichier').files[0];$('import-fichier').value='';if(f)importerTout(f)};
