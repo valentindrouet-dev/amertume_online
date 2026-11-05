@@ -2402,7 +2402,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  pas(b,rb,[[23,20],[22,20]]);assert.ok(Math.abs(rb.long-20)<.5&&rb.chemin.length===2,'revenu sur ses pas : '+rb.long);
  // Un angle contourné allonge la distance : autour du mur, de (35,80) à (65,60) par (50,75).
  ctxR.murs=mur;const c={x:35,y:65,credit:1,mvt:99},rc=ctxR.regleMouvement(c);
- pas(c,rc,[[38,68],[41,71],[44,74],[47,76],[50,76],[53,74],[56,71],[59,68],[62,65],[65,62]]);
+ pas(c,rc,[[38,68],[41,71],[44,74],[47,76],[50,76],[53,74],[56,71],[60.5,70.5],[62,65],[65,62]]);
  const droit=Math.hypot(300,30);assert.ok(rc.long>droit+40&&rc.chemin.length>=3,'l’angle compte : '+rc.long.toFixed(1)+' contre '+droit.toFixed(1));ctxR.murs=null;
  // L'IA et le clavier s'arrêtent pile à la limite.
  const e={x:20,y:30,credit:1},re=ctxR.regleMouvement(e);e.x=40;assert.equal(ctxR.appliqueRegleMouvement(e,re),false);
@@ -6609,4 +6609,7 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
  assert.ok(pg.includes("return {tours:round,...(duree?{duree}:{}),liste:")&&pg.includes("if(h&&bilan.duree)ajouteVie(h,'temps_combat',bilan.duree)")&&ed.includes("['temps_combat','Temps en combat']")
   &&lv.includes("annonceFlottante(m.name,'annonce-carte')")&&mp.includes("annonceFlottante(m.name,'annonce-carte')"),'v1.381');}
 /* v1.382 — Un socle pris dans la matière en sort par le plus court ; la durée du combat a sa case ; l'icône Dégâts des scores est celle des colonnes. */
-{const pg=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(pg.includes("function sortieDeMatiere(S,murs,tk){")&&pg.includes("const c=cheminVers({...r,chemin0:T},p)")&&ed.includes("c.after(score('tours duree',dureeLisible(b.duree),'Durée'))")&&ed.includes("corps.querySelectorAll('.stats-score img.stats-degats')"),'v1.382');}
+{const pg=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(pg.includes("function sortieDeMatiere(S,murs,tk,pref){")&&pg.includes("const c=cheminVers({...r,chemin0:T},p)")&&ed.includes("c.after(score('tours duree',dureeLisible(b.duree),'Durée'))")&&ed.includes("corps.querySelectorAll('.stats-score img.stats-degats')"),'v1.382');}
+/* v1.383 — Traverser un mur reste impossible : un socle pris dans la matière ressort du côté d'où il venait, par la sortie la plus
+   courte ; un point dans la matière est hors de portée (on n'y pose pas un socle). */
+{const pg=fs.readFileSync('index.html','utf8');assert.ok(pg.includes("const dmin=Math.min(...sorties.map(u=>u.d)),courtes=sorties.filter(u=>u.d<=dmin+tk/2);")&&pg.includes("libre0:(noteLibre(a),dernierLibrePx(a,size)),")&&pg.includes(" return {pts:[S,p],long:Infinity}}\nfunction appliqueRegleMouvement")&&!pg.includes("return murs.some(f=>shapeContains(f,p))?{pts:[S,p],long:droit}"),'v1.383');}

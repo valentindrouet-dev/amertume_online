@@ -4466,3 +4466,9 @@ function ouvrirMasse(){if(!mapDraft||view!=='mj')return;masseRendu();masseDialog
    à l'arrivée du document de la table). Rouvrir la carte déjà ouverte ne l'annonce pas. */
 {const oc=ouvreCarte;ouvreCarte=function(m,...x){const avant=typeof currentMapId!=='undefined'?currentMapId:null,r=oc.call(this,m,...x);
  if(m&&m.id!==avant&&m.name&&!estPaysage(m)&&!(typeof loading!=='undefined'&&loading)&&typeof annonceFlottante==='function')setTimeout(()=>annonceFlottante(m.name,'annonce-carte'),300);return r}}
+
+/* v1.383 — Chaque appareil retient, pour les aventuriers qu'il commande, la dernière position où leur centre était libre : un socle
+   qui finit pris dans la matière en ressort de ce côté-là (sortieDeMatiere, index.html), jamais de l'autre. */
+{let dernierRelevé='';const r0=render;render=function(...x){const o=r0.apply(this,x);try{if(typeof noteLibre==='function'&&mapSize().width){
+ const miens=actors.filter(a=>a&&a.hero&&!a.horsCarte&&(view==='mj'||(typeof aMoi==='function'&&aMoi(a))));const cle=(currentMapId||'')+'|'+miens.map(a=>a.id+':'+a.x+','+a.y).join(';');
+ if(cle!==dernierRelevé){dernierRelevé=cle;const size=mapSize(),murs=obstaclesDuPas((u,v)=>[u/100*size.width,v/100*size.height]);miens.forEach(a=>noteLibre(a,murs))}}}catch(e){}return o}}

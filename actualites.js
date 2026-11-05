@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.383","d":"2026-11-05","t":"Murs infranchissables, sortie du bon côté"},
 {"v":"1.382","d":"2026-11-05","t":"Socle coincé dans un mur, case Durée"},
 {"v":"1.381","d":"2026-11-05","t":"Chrono du combat et annonce de la carte"},
 {"v":"1.380","d":"2026-11-05","t":"Stats de Combat : colonnes égales"},
