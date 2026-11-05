@@ -1334,7 +1334,7 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
    const tg=b.titres&&b.titres[p.k];if(tg&&typeof iconeDeGemme==='function'){const g=el('span','stats-titre-gemme');g.append(iconeDeGemme('brisure',tg.couleur,false),'+1');g.title='1 '+nomGemme('brisure',tg.couleur,false).replace(/^\S+/,'Brisure');t.append(g)}
    const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');jeton.setAttribute('aria-label',p.top.nom);
    surveille(jeton,()=>{const d=el('div','talent-detail large'),n=el('p','talent-bulle-nom');n.append(el('b','',p.top.nom));d.append(n);ouvrirBulle(jeton,d,'bulle-talent')});
-   c.append(jeton,t);rang.get(p.dore).append(c)});corps.append(g)}
+   c.dataset.k=p.k;c.append(jeton,t);rang.get(p.dore).append(c)});corps.append(g)}
  const maxInf=Math.max(1,...b.liste.map(x=>x.infD)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
  [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
@@ -1356,6 +1356,13 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
  [['troupe',troupe],['adverse',adv]].forEach(([k,l])=>{const e=somme(l,'infEtat'),c=tete.querySelector('.stats-score.'+k);if(e&&c)c.append(el('small','stats-score-detail','('+somme(l,'infD')+' directs + '+e+' d’états)'))});
  {const g=corps.querySelector('.stats-distinctions');if(g){const mise=el('div','stats-mise'),gauche=el('div','stats-principal'),cote=el('aside','stats-cote');
   g.remove();cote.append(el('h3','','Distinctions'),g);gauche.append(...corps.children);mise.append(gauche,cote);corps.append(mise)}}
+ /* v1.379 — Les icônes du jeu dans les Stats : Dégâts, Soin et Coma (celles de l'onglet Icônes), aux en-têtes des colonnes
+    et devant la valeur des distinctions. */
+ {const ico=k=>{let im=null;try{im=k==='soin'?(logoBonus({carac:'soin'})||(()=>{const i=document.createElement('img');i.src=imgUrl('item_healpotion.png');i.alt='';return i})())
+   :k==='coma'?imageEtat('Coma'):logoBonus({carac:'dmg'})}catch(e){im=null}if(!im)return null;im=im.cloneNode?im:im;im.classList.add('stats-ico');im.setAttribute('aria-hidden','true');im.draggable=false;return im};
+  const ICO_COL={infD:'degats',sub:'degats',soin:'soin',abat:'coma'},ICO_PRIX={inf:'degats',sub:'degats',pic:'degats',tir:'degats',intouch:'degats',donne:'soin',soin:'soin',abat:'coma'};
+  corps.querySelectorAll('.stats-table').forEach(t=>{const ths=t.tHead&&t.tHead.rows[0]?[...t.tHead.rows[0].cells]:[];COLONNES_STATS.forEach(([c],i)=>{const k=ICO_COL[c],th=ths[i+1];if(!k||!th)return;const im=ico(k);if(im){th.classList.add('avec-ico');th.prepend(im)}})});
+  corps.querySelectorAll('.stats-prix[data-k]').forEach(c=>{const k=ICO_PRIX[c.dataset.k],v=c.querySelector('.stats-prix-val');if(!k||!v)return;const im=ico(k);if(im)v.prepend(im)})}
  statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */
 // Les tris de l'Armurerie, déclarés avant sa page, qui en fait son menu (voir trieObjets).
