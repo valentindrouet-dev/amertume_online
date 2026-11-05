@@ -397,3 +397,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Durée du combat (v1.381)** (`.stats-duree`, Stats de Combat) : sous « Tours », « ⏱ 12 min 04 s » en `system-ui` 700 12 px `--accent`. À la fiche Statistiques, la ligne « Temps en combat », au même format.
 
 **Nom de la carte ouverte (v1.381)** (`.annonce-flottante.annonce-carte`) : au milieu de la carte, comme « Début du combat », mais à l'inverse : texte brun `#6b4320` sur parchemin `#f6e9d8f2`, liseré 2 px `#c99a3c`, doublé d'un trait `#f6e9d8f2` puis d'un filet `#c99a3c66` ; ombre `#0006`. Chez le MJ quand il ouvre une autre carte, chez chaque joueur quand elle arrive — pas à l'arrivée à la table.
+
+**Durée du combat, sa case (v1.382)** (`.stats-score.tours.duree`) : la durée ne se lit plus sous « Tours » : elle a sa case, à sa droite, au même dessin doré — la durée en grand (« 12 min 34 s »), « Durée » dessous. Les quatre cases : les deux de dégâts se partagent la place qui reste. Les scores du haut prennent l'icône Dégâts de l'onglet Icônes, comme les colonnes.

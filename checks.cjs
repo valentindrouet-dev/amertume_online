@@ -6608,3 +6608,5 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 {const pg=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
  assert.ok(pg.includes("return {tours:round,...(duree?{duree}:{}),liste:")&&pg.includes("if(h&&bilan.duree)ajouteVie(h,'temps_combat',bilan.duree)")&&ed.includes("['temps_combat','Temps en combat']")
   &&lv.includes("annonceFlottante(m.name,'annonce-carte')")&&mp.includes("annonceFlottante(m.name,'annonce-carte')"),'v1.381');}
+/* v1.382 — Un socle pris dans la matière en sort par le plus court ; la durée du combat a sa case ; l'icône Dégâts des scores est celle des colonnes. */
+{const pg=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');assert.ok(pg.includes("function sortieDeMatiere(S,murs,tk){")&&pg.includes("const c=cheminVers({...r,chemin0:T},p)")&&ed.includes("c.after(score('tours duree',dureeLisible(b.duree),'Durée'))")&&ed.includes("corps.querySelectorAll('.stats-score img.stats-degats')"),'v1.382');}

@@ -4955,3 +4955,7 @@ span.stats-ico,.stats-ico.glyphe-etat{display:inline-block;font-size:13px;line-h
 /* v1.381 — Le nom de la carte ouverte, au milieu de l'écran : l'inverse de « Début du combat », brun sur parchemin. */
 .annonce-flottante.annonce-carte{background:#f6e9d8f2;color:#6b4320;border:2px solid #c99a3c;box-shadow:0 0 0 4px #f6e9d8f2,0 0 0 5px #c99a3c66,0 10px 30px #0006;text-shadow:none}
 .stats-duree{margin-top:2px;font-weight:700;color:var(--accent)}
+
+/* v1.382 — Quatre cases en tête des Stats : la durée du combat entre les tours et les dégâts des adversaires. */
+.stats-tableau:has(.stats-score.duree){grid-template-columns:minmax(0,1fr) auto auto minmax(0,1fr)}
+.stats-score.duree{min-width:130px}.stats-score.duree b{white-space:nowrap}

@@ -1354,7 +1354,8 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
  /* v1.378 — Deux colonnes : à gauche les scores et les tableaux des camps ; à droite les distinctions, les titres à Brisure en
     cartes dorées, les autres en lignes. Sous les dégâts d'un camp, la part des coups et celle des états. */
  // v1.381 : sous les tours, la durée réelle du combat.
- if(b.duree&&typeof dureeLisible==='function'){const c=tete.querySelector('.stats-score.tours');if(c)c.append(el('small','stats-score-detail stats-duree','⏱ '+dureeLisible(b.duree)))}
+ // v1.382 : la durée a sa propre case, entre les tours et les dégâts des adversaires, au format des tours.
+ if(b.duree&&typeof dureeLisible==='function'){const c=tete.querySelector('.stats-score.tours');if(c)c.after(score('tours duree',dureeLisible(b.duree),'Durée'))}
  [['troupe',troupe],['adverse',adv]].forEach(([k,l])=>{const e=somme(l,'infEtat'),c=tete.querySelector('.stats-score.'+k);if(e&&c)c.append(el('small','stats-score-detail','('+somme(l,'infD')+' directs + '+e+' d’états)'))});
  {const g=corps.querySelector('.stats-distinctions');if(g){const mise=el('div','stats-mise'),gauche=el('div','stats-principal'),cote=el('aside','stats-cote');
   g.remove();cote.append(el('h3','','Distinctions'),g);gauche.append(...corps.children);mise.append(gauche,cote);corps.append(mise)}}
@@ -1371,6 +1372,8 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
   corps.querySelectorAll('.stats-table').forEach(t=>{const ths=t.tHead&&t.tHead.rows[0]?[...t.tHead.rows[0].cells]:[];COLONNES_STATS.forEach(([c],i)=>{const e=ENTETES[c],th=ths[i+1];if(!e||!th)return;
    const im=e[0]==='metres'?icoM():e[0]?ico(e[0]):null;th.replaceChildren();if(im){th.classList.add('avec-ico');th.append(im)}if(e[1])th.append(e[1]);else{th.classList.add('ico-seule');th.setAttribute('aria-label',e[2]);th.title=e[2]}});
    if(t.closest('.stats-camp.adverse'))[...(t.tHead?t.tHead.rows:[]),...t.tBodies[0].rows,...(t.tFoot?t.tFoot.rows:[])].forEach(r=>{const c=r.parentElement.tagName==='THEAD'?document.createElement('th'):document.createElement('td');c.className='stats-vide';r.append(c)})});
+  // v1.382 : les scores du haut prennent la même icône Dégâts que les colonnes.
+  corps.querySelectorAll('.stats-score img.stats-degats').forEach(i=>{const im=ico('degats');if(im){im.classList.add('stats-degats');i.replaceWith(im)}});
   corps.querySelectorAll('.stats-prix[data-k]').forEach(c=>{const k=ICO_PRIX[c.dataset.k],v=c.querySelector('.stats-prix-val');if(!k||!v)return;const im=ico(k);if(im)v.prepend(im)})}
  statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */
