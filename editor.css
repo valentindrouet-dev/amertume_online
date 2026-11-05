@@ -4895,3 +4895,31 @@ body.table-attendue #map-view{visibility:hidden}
 #hero-grid .hero-vignette small.vignette-proprio.a-moi{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--panel));color:var(--green)}
 #hero-grid .hero-vignette.a-moi{outline:2px solid var(--green);outline-offset:-2px}
 .maps-bar .field-check.map-sans-brisures,.maps-bar .field-check.map-jcj{white-space:nowrap}.maps-bar .map-sans-brisures input{width:auto;margin:0 6px 0 0}
+
+/* v1.378 — Stats de Combat en deux colonnes : les camps à gauche, les distinctions à droite. */
+#stats-combat:has(.stats-mise){width:min(1500px,97vw)}
+.stats-mise{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:22px;align-items:start}
+.stats-principal{min-width:0}.stats-principal>.stats-camp:first-of-type h3{margin-top:4px}
+.stats-score-detail{font:600 12px/1.2 system-ui;color:var(--muted)}
+.stats-cote{border-left:1px solid var(--line-strong);padding-left:22px}
+.stats-cote>h3{display:flex;align-items:center;gap:12px;margin:2px 0 14px;font:700 16px/1 'Killam',Georgia,serif;letter-spacing:1.6px;text-transform:uppercase;color:#7a5a1a}
+.stats-cote>h3::before,.stats-cote>h3::after{content:'';flex:1;height:1px;background:currentColor;opacity:.4}
+.stats-cote .stats-distinctions{gap:14px;margin:0}
+.stats-cote .stats-rang{grid-template-columns:1fr;gap:8px}
+.stats-cote .stats-rang.dorees .stats-prix{position:relative;padding:10px 74px 10px 12px}
+.stats-cote .stats-rang.dorees .stats-prix-texte strong{font-size:15.5px}
+.stats-cote .stats-rang.dorees .stats-prix-val{font-size:12.5px}
+.stats-cote .stats-rang.dorees .stats-titre-gemme{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:15px}
+.stats-cote .stats-rang.dorees .stats-titre-gemme :is(img,.gem-ico){width:24px;height:24px}
+.stats-cote .stats-rang:not(.dorees){gap:0}
+.stats-cote .stats-rang:not(.dorees) .stats-prix{flex-direction:row;justify-content:flex-start;gap:12px;padding:8px 4px;text-align:left;border:0;border-bottom:1px solid var(--line-strong);border-radius:0;background:none;box-shadow:none}
+.stats-cote .stats-rang:not(.dorees) .stats-prix-texte{flex:1;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px;overflow-wrap:normal}
+.stats-cote .stats-rang:not(.dorees) .stats-prix-val{text-align:right;white-space:nowrap}
+.stats-cote .stats-rang:not(.dorees) .stats-portrait.stats-jeton{width:32px;height:32px;border-width:2px;font-size:14px}
+@media(max-width:1100px){.stats-mise{grid-template-columns:1fr}.stats-cote{border-left:0;padding-left:0}}
+.stats-principal .stats-table{font-size:14.5px}.stats-principal .stats-table td{padding:9px 8px}
+.stats-principal .stats-table .stats-portrait{width:32px;height:32px;font-size:14px}
+.stats-principal .stats-table .stats-n.inf{font-size:16px}
+.stats-principal .stats-camp h3{font-size:17px}
+.stats-principal .stats-table th{white-space:normal;line-height:1.25;vertical-align:bottom}
+@media(max-width:1440px){.stats-mise{grid-template-columns:minmax(0,1fr) minmax(250px,300px);gap:16px}.stats-cote{padding-left:16px}.stats-principal .stats-table td{padding:8px 6px}.stats-principal .stats-table th{padding:6px 6px}}

@@ -387,3 +387,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Talents libres** (`.vignette-talents-libres`, vignette d'aventurier, chez le MJ) : case à cocher et son mot, `system-ui` 600 12 px, encre `--muted`, sous le choix du joueur.
 
 **Pas de Brisures** (`.map-sans-brisures`, barre de l'éditeur de cartes) : case à cocher `field-check`, comme « PvP », juste après elle.
+
+**Stats de Combat en deux colonnes (v1.378)** (`.stats-mise`) : à gauche (`.stats-principal`) les trois scores — sous les dégâts d'un camp, « (n directs + n d'états) » en `system-ui` 600 12 px `--muted` (`.stats-score-detail`) — puis les tableaux des camps ; à droite (`.stats-cote`, liseré gauche `--line-strong`) le titre « Distinctions » en Killam 16 px capitales `#7a5a1a` entre deux filets, les titres à Brisure en cartes dorées (la gemme et son « +1 » calés à droite), puis les autres titres en lignes : token 32 px, nom, valeur à droite, filet `--line-strong` dessous. Sous 1100 px, une seule colonne.

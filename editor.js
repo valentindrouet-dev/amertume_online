@@ -1351,6 +1351,11 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
   const tf=t.createTFoot().insertRow();tf.insertCell().textContent='Total';COLONNES_STATS.forEach(([c])=>{const d=tf.insertCell();d.className='stats-n';d.textContent=valeur(c,somme(l,c))});
   if(k==='troupe'){const tot={};l.forEach(x=>Object.entries(x.sph||{}).forEach(([g,v])=>{tot[g]=(tot[g]||0)+v}));const d=tf.insertCell();sph(d,tot);sourcesSph(d,l)}
   s.append(t);corps.append(s)});
+ /* v1.378 — Deux colonnes : à gauche les scores et les tableaux des camps ; à droite les distinctions, les titres à Brisure en
+    cartes dorées, les autres en lignes. Sous les dégâts d'un camp, la part des coups et celle des états. */
+ [['troupe',troupe],['adverse',adv]].forEach(([k,l])=>{const e=somme(l,'infEtat'),c=tete.querySelector('.stats-score.'+k);if(e&&c)c.append(el('small','stats-score-detail','('+somme(l,'infD')+' directs + '+e+' d’états)'))});
+ {const g=corps.querySelector('.stats-distinctions');if(g){const mise=el('div','stats-mise'),gauche=el('div','stats-principal'),cote=el('aside','stats-cote');
+  g.remove();cote.append(el('h3','','Distinctions'),g);gauche.append(...corps.children);mise.append(gauche,cote);corps.append(mise)}}
  statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */
 // Les tris de l'Armurerie, déclarés avant sa page, qui en fait son menu (voir trieObjets).
