@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.391","d":"2026-11-05","t":"Inventaire à côté de Changer d'armes, en crème clair"},
 {"v":"1.390","d":"2026-11-05","t":"Moins de lags : jetons légers, brouillard espacé"},
 {"v":"1.389","d":"2026-11-05","t":"Fiche : plus de retour en arrière"},
 {"v":"1.388","d":"2026-11-05","t":"Zone de contact gratuite au mouvement"},

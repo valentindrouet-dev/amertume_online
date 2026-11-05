@@ -10221,7 +10221,9 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
    else b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+ICONES_FICHE.find(([k])=>k==='inventaire')[2]+'</svg>'};
   if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom:'Inventaire'}));
   b.onclick=()=>{const a=actors[selected];if(a&&a.hero&&controlled(selected)){fermerBulle();openInventaire(a)}};
-  const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1);w.hidden=!ok;carte.classList.toggle('avec-inventaire',ok);if(ok)icone()};
+  /* v1.391 — Le bouton rejoint la rangée des ronds, juste à droite de « Changer d'armes » ; on ne le déplace que s'il n'y est pas. */
+  const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1),arm=document.getElementById('changer-armes');
+   if(arm&&b.previousElementSibling!==arm)arm.after(b);b.hidden=!ok;w.hidden=true;carte.classList.remove('avec-inventaire');if(ok)icone()};
   const r0=render;render=function(...x){const o=r0.apply(this,x);try{maj()}catch(e){}return o}}}
 
 /* v1.390 — Des jetons légers sur la table. L'image qu'un joueur donne à son aventurier voyage dans le document de la table, qui
