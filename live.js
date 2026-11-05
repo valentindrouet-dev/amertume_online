@@ -1084,6 +1084,8 @@ function annonceVerrouBuild(){if(performance.now()-verrouAnnonce<1500)return;ver
 {const figeSansLibres=figeEnCombat;figeEnCombat=function(a){if(a&&a.hero===true&&a.talentsLibres===true)return false;return figeSansLibres.apply(this,arguments)}}
 {const rendreSansLibres=peutRendreTalent;peutRendreTalent=function(a,t){if(a&&a.hero===true&&a.talentsLibres===true)return true;return rendreSansLibres.apply(this,arguments)}}
 CHAMPS_VIVANTS.push('talentsLibres');CHAMPS_ACTEUR_MJ.push('talentsLibres');
+// v1.388 : la zone gratuite du départ voyage avec le combattant : une page rechargée ne la rend pas.
+CHAMPS_VIVANTS.push('origineTour');
 // Le repos venu, chez qui commande l'aventurier : son arbre se rouvre, et il le lit.
 const actifsConnus=new Map();
 {const renderAvantRepos=render;render=function(){renderAvantRepos.apply(this,arguments);

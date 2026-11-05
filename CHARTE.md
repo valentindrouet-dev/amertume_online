@@ -405,3 +405,5 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 **Inventaire sur la table (v1.386)** (`#inventaire-table`, `.barre-inventaire`) : dans la barre des Actions, à droite, à part derrière un filet (`currentColor` à 22 %), un rond brun `#8a6440`, icône blanche — l'icône Inventaire des vignettes (celle choisie dans les Icônes, sinon le sac dessiné). Il paraît quand l'aventurier sélectionné est à soi, et ouvre son inventaire.
 
 **Débuter le combat (v1.387)** (`#debuter-combat`) : chez le MJ, dans le cadre du tour, au-dessus de « Tour suivant », sur toute la largeur, le bouton principal « ⚔ Débuter le combat » (15 px). Il paraît tant que le combat qui vient de commencer garde les socles verrouillés.
+
+**Zone gratuite du départ (v1.388)** : pendant un geste dans la zone de contact du départ du tour, le même cercle que la zone d'ajustement (`#zone-ajustement`) paraît autour de ce départ ; contre son bord, il s'allume (`.au-bord`). La barre de mouvement ne compte que ce qui dépasse la zone.

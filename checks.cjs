@@ -6624,3 +6624,22 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.386 — Bouton Inventaire dans la barre des Actions ; v1.387 — socles verrouillés au début du combat, « Débuter le combat » les libère. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),rg=fs.readFileSync('regles.js','utf8');assert.ok(ed.includes("b.id='inventaire-table';b.className='btn-action btn-inventaire rond';")&&ed.includes("b.onclick=()=>{const a=actors[selected];if(a&&a.hero&&controlled(selected)){fermerBulle();openInventaire(a)}};")
  &&mp.includes("if(mj&&commence&&mode==='combat'){verrouDebutCombat=true;tokensLocked=true;")&&mp.includes("b.id='debuter-combat'")&&rg.includes('« Débuter le combat »'),'v1.386-387');}
+/* v1.388 — La zone de contact du départ est gratuite : dedans, on bouge sans payer ; la limite franchie, le point se paie et les mètres
+   partent de la limite ; une fois sortie, la zone ne revient qu'au tour suivant. */
+{const page=fs.readFileSync('index.html','utf8'),C=require('./combat.js');const regle=page.slice(page.indexOf('let mouvementClavier=null;'),page.indexOf('function contactsDe(a)'));
+ const ctx={ZONE_DEPART_LIBRE:true,combat:true,round:3,zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:0}),cleTour:()=>'c1.'+ctx.round,
+  enCombat:()=>ctx.combat,items:()=>[],tokenPx:()=>10,tokenOf:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:a=>a.mvt??9,
+  wallsInPixels:()=>[],obstaclesDuPas:()=>[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,
+  pointsUses:(a,q)=>a.uses||0,pointsRestants:(a,q)=>q==='action'?(a.action??1):a.credit,zoneDe:()=>0,floatNumber:()=>{},log:t=>ctx.journal.push(t)};vm.createContext(ctx);vm.runInContext(regle,ctx);
+ const pas=(a,r,pts)=>{for(const [x,y] of pts){a.x=x;a.y=y;if(!ctx.appliqueRegleMouvement(a,r))return false}return true};
+ const a={x:20,y:50,credit:1};let r=ctx.regleMouvement(a);
+ assert.equal(r.auraLibre+'/'+r.max+'/'+r.auraR,'true/100/10','la zone (10) s’ajoute aux neuf mètres');
+ assert.ok(pas(a,r,[[20.5,50]]));assert.equal(ctx.soldeRegleMouvement(a,r),0,'dans la zone : rien à payer');assert.equal(a.mvtReste,undefined,'et rien de compté');
+ r=ctx.regleMouvement(a);assert.equal(r.auraLibre,true,'toujours la zone du départ');assert.ok(pas(a,r,[[21,50]]));assert.equal(ctx.soldeRegleMouvement(a,r),0,'à volonté');
+ r=ctx.regleMouvement(a);assert.ok(pas(a,r,[[23,50],[25,50]]));assert.equal(ctx.soldeRegleMouvement(a,r),1,'la limite franchie : le point se paie');
+ assert.equal(a.mvtReste,5,'les mètres partent de la limite de la zone : 9 − (50 − 10) / 10');
+ a.uses=1;a.credit=0;const r2=ctx.regleMouvement(a);assert.equal(!!r2.auraLibre+'/'+r2.max,'false/50','sortie, la zone ne revient pas dans le tour');
+ ctx.round=4;a.uses=0;a.credit=1;const r3=ctx.regleMouvement(a);assert.equal(r3.auraLibre+'/'+r3.auraDe.x,'true/25','au tour suivant, la zone de son nouveau départ');
+ const b={x:60,y:50,credit:0};const rb=ctx.regleMouvement(b);assert.equal(rb.ajustement,true,'sans point : l’ajustement, gratuit lui aussi');}
+/* v1.388 — page Règles : la zone de contact du départ, gratuite. */
+{const rg=fs.readFileSync('regles.js','utf8');assert.ok(rg.includes('la <b>zone de contact</b> du départ du tour est gratuite'),'v1.388 règles');}
