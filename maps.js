@@ -4491,4 +4491,9 @@ let verrouDebutCombat=false;
  else if(mj&&finit&&mode!=='combat'&&verrouDebutCombat){verrouDebutCombat=false;tokensLocked=false;refreshGmBar();render();scheduleSave()}
  return r}}
 {const lo=lockBtn.onclick;lockBtn.onclick=(...x)=>{const r=lo(...x);if(!tokensLocked&&verrouDebutCombat){verrouDebutCombat=false;render()}return r}}
-{const r0=render;render=function(...x){const o=r0.apply(this,x);const b=$('debuter-combat');if(b)b.hidden=!(view==='mj'&&enCombat()&&tokensLocked&&(verrouDebutCombat||round===1));return o}}
+/* v1.393 — Le combat lancé sans le bouton se débute de lui-même : dès qu'un combattant dépense une Action, ou au tour 2, le verrou
+   du début tombe et le bouton s'en va. */
+const combatEntame=()=>round>1||actors.some(a=>!a.horsCarte&&pointsUses(a,'action')>0);
+{const r0=render;render=function(...x){const o=r0.apply(this,x);const b=$('debuter-combat');
+ if(verrouDebutCombat&&view==='mj'&&enCombat()&&combatEntame()){verrouDebutCombat=false;if(tokensLocked){tokensLocked=false;setTimeout(()=>{refreshGmBar();render();scheduleSave()},0)}}
+ if(b)b.hidden=!(view==='mj'&&enCombat()&&tokensLocked&&(verrouDebutCombat||!combatEntame()));return o}}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.393","d":"2026-11-06","t":"Débuter le combat : le bouton s'en va quand le combat est entamé"},
 {"v":"1.392","d":"2026-11-05","t":"Textes flottants sans chevauchement, Inventaire séparé et bulle lisible"},
 {"v":"1.391","d":"2026-11-05","t":"Inventaire à côté de Changer d'armes, en crème clair"},
 {"v":"1.390","d":"2026-11-05","t":"Moins de lags : jetons légers, brouillard espacé"},
