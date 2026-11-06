@@ -22,6 +22,7 @@ const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','garde2','plasma','plasmaPose','plasmaTour','inventions','armesAvantInventions','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','quantites','lameventPret','fouilles','revanche','traction','bondissement','decoupe','vengeance','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','enAventure','imageJeton','joueur','joueurNom','poussiere','savoirAnterieur','nature','gages','deguise','deguisements','malefice','rancunes','necrose','radiance','armure','pvBase','formeGeant','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
  'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege','muraille','murailleImmo','carapaceRecue','inspiration','metier','gemmesSuivi'];
+let verrouConnu=false;
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
@@ -339,7 +340,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(!pareil(fa,fragmentsTable)){fragmentsTable=fa;if(typeof renderAccueil==='function')setTimeout(renderAccueil,0)}}
    {const dn=d.fogReset&&typeof d.fogReset.dn==='number'?d.fogReset.dn:null;
     if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
-   if(typeof d.locked==='boolean')tokensLocked=d.locked;
+   /* v1.394 — Le verrou appartient au MJ : chez lui, seul le premier document (son retour à la table) le lui rend. Un document
+      parti avant son clic ne le reverrouille plus — c'est ce qui ramenait « Débuter le combat » et refigeait les joueurs. */
+   if(typeof d.locked==='boolean'&&(!estMJ()||!verrouConnu))tokensLocked=d.locked;verrouConnu=true;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
    // Sans carte chez le MJ, aucune chez le joueur : ni un paysage refermé, ni une carte d'une vieille copie de son navigateur.
    if(!d.mapId&&currentMapId){carteNeuve=true;currentMapId=null;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom')}

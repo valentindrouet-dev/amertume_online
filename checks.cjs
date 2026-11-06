@@ -1695,7 +1695,7 @@ assert.ok(page.includes("const soignes=actors.filter(a=>(hero?duCoteTroupe(a):ca
 /* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
 /* v0.306 : sans bordure qui mange la hauteur — le liseré passe en ombre —, le rempli occupe
    les 4 px du fil et ne s'arrondit plus à rien. */
-assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 1.5px);width:calc(var(--token) * .96);height:3.2px;')
+assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 1.5px);width:calc(var(--token) * .96);height:2.4px;')
  &&!page.includes('.token.selected .pv'),'la jauge est fine et pareille pour tous');
 /* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
@@ -6652,3 +6652,4 @@ assert.ok(require('./combat.js').passeDef([6,0],6)&&!require('./combat.js').pass
 /* v1.391 */ {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("arm.after(sep,b);b.hidden=sep.hidden=!ok;")&&css.includes("#inventaire-table{--fond:#f6e8cf;color:#6b4320}"),'v1.391');}
 /* v1.392 */ {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),pg=fs.readFileSync('index.html','utf8');assert.ok(ed.includes("getPropertyValue('--teinte-bulle')")&&css.includes("#inventaire-table{--teinte-bulle:#8a6440}")&&pg.includes("let rang=0;while(rang<8&&gene(rang))rang++;"),'v1.392');}
 /* v1.393 */ {const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes("const combatEntame=()=>round>1||actors.some(a=>!a.horsCarte&&pointsUses(a,'action')>0);")&&mp.includes("tokensLocked&&(verrouDebutCombat||!combatEntame())"),'v1.393');}
+/* v1.394 */ {const lv=fs.readFileSync('live.js','utf8'),gm=fs.readFileSync('gemmes.js','utf8'),pg=fs.readFileSync('index.html','utf8');assert.ok(lv.includes("if(typeof d.locked==='boolean'&&(!estMJ()||!verrouConnu))tokensLocked=d.locked;verrouConnu=true;")&&gm.includes("Math.max(13,Math.round(tk*.3))")&&pg.includes("Math.round(2.4*e)"),'v1.394');}
