@@ -1445,6 +1445,12 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="reglage" id="reglage-import"><div><strong>Importer une sauvegarde</strong><p class="muted">Remplace la partie de ce navigateur par le fichier choisi. Exporte d’abord la partie actuelle si tu veux la garder.</p></div>'
  +'<button id="import-tout">⇧ Importer</button><input type="file" id="import-fichier" accept=".json,application/json" hidden></div>'
  +'<p class="form-error" id="import-erreur" role="status" aria-live="polite"></p></div>'
+ +'<div id="bloc-diagnostic" hidden><div class="divider"></div><h3 class="reglage-titre">Diagnostic</h3>'
+ +'<div class="reglage"><div><strong>Mesures de cet appareil</strong><p class="muted" id="diag-quand"></p></div><button id="diag-lancer" class="primary">Mesurer</button></div>'
+ +'<div id="diag-lignes"></div>'
+ +'<div id="diag-copies-bloc" hidden><div class="divider"></div><h3 class="reglage-titre">Copies de la partie</h3><div id="diag-copies"></div></div></div>'
+ +'<div id="bloc-erreurs" hidden><div class="divider"></div><h3 class="reglage-titre">Erreurs récentes</h3><div id="diag-erreurs"></div>'
+ +'<div class="side-actions"><button id="erreurs-copier">Copier</button><button id="erreurs-vider">Vider</button></div></div>'
  +'</section>';
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
@@ -7634,6 +7640,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('reglage-import').hidden=view!=='mj';
  // La sauvegarde globale de toute la partie est l'affaire du MJ : un joueur n'a rien à en exporter.
  $('bloc-sauvegarde-globale').hidden=view!=='mj';
+ if(typeof renderDiagnostic==='function')renderDiagnostic();
  // Les onglets ouverts aux joueurs : une case par onglet ; la Table cochée, les Cartes non, sans y toucher.
  $('bloc-onglets').hidden=view!=='mj';
  {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');
@@ -8937,7 +8944,7 @@ $('import-fichier').onchange=()=>{const f=$('import-fichier').files[0];$('import
 /* L'état de la sauvegarde a quitté la table pour les Paramètres. Un échec, lui, ne
    doit pas attendre qu'on aille l'y chercher : il passe une fois par le journal. */
 let dernierSouci='';
-function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
+function noterSauvegarde(texte,souci){saveLabel.textContent=texte;if(souci&&texte!==dernierSouci&&typeof signaleErreur==='function')signaleErreur(texte,'sauvegarde');
  saveLabel.classList.toggle('form-error',!!souci);
  if(souci&&texte!==dernierSouci){dernierSouci=texte;log(texte,{local:true})}
  if(!souci)dernierSouci=''}
@@ -9061,7 +9068,7 @@ function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime
  if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();
  /* v1.397 — La forme légère : les images neuves d'abord, puis la partie sans ses images, dans une seule écriture — tout passe ou
     rien ne change. Le moindre échec fait enregistrer la partie entière, comme avant. */
- let replie=false;const repli=raison=>{if(replie)return;replie=true;sauveEntier(raison)};
+ let replie=false;const repli=raison=>{if(replie)return;replie=true;if(typeof signaleErreur==='function')signaleErreur('Enregistrement léger impossible ('+raison+') : la partie est enregistrée entière.','sauvegarde');sauveEntier(raison)};
  try{const t0=performance.now(),tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),utilisees=new Map(),s=allegePartie(snapshot(),utilisees);
   s.imagesAPart=1;s.enregistreLe=Date.now();const jour=jourDe(s.enregistreLe);let neuves=0;
   utilisees.forEach((image,c)=>{if(!imagesEcrites.has(c)){st.put(image,CLE_IMAGE+c);neuves++}});
@@ -10338,6 +10345,85 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
   const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1),arm=document.getElementById('changer-armes');
    if(arm&&(b.previousElementSibling!==sep||sep.previousElementSibling!==arm))arm.after(sep,b);b.hidden=sep.hidden=!ok;w.hidden=true;carte.classList.remove('avec-inventaire');if(ok)icone()};
   const r0=render;render=function(...x){const o=r0.apply(this,x);try{maj()}catch(e){}return o}}}
+
+/* ---------- v1.398 — Le Diagnostic (Paramètres, appareil du MJ) ----------
+   Ce que l'appareil mesure pendant qu'on joue — durée des rendus, enregistrements, document de la table en ligne — et ce qu'il
+   garde : stockage, images qui ne servent plus, copies datées de la partie, contenu publié face à ses limites. « Mesurer »
+   relit tout. Rien ne s'efface sans un bouton et une confirmation. Les erreurs récentes, elles, se lisent sur tout appareil. */
+let diagnosticMesure=null;
+function ligneDiag(titre,texte,bouton,action,classe){const l=document.createElement('div');l.className='reglage';const d=document.createElement('div'),s=document.createElement('strong'),p=document.createElement('p');
+ s.textContent=titre;p.className='muted';p.textContent=texte;d.append(s,p);l.append(d);
+ if(bouton){const b=document.createElement('button');b.type='button';b.textContent=bouton;if(classe)b.className=classe;b.onclick=action;l.append(b)}return l}
+const mediane=l=>{const t=[...l].sort((a,b)=>a-b);return t.length?t[Math.floor(t.length/2)]:0};
+const ms=n=>(n<10?n.toFixed(1).replace('.',','):String(Math.round(n)))+' ms';
+const grosseTaille=o=>o>=1073741824?(o/1073741824).toFixed(1).replace('.',',')+' Go':tailleLisible(o),tant=(n,un,des)=>n+' '+(n>1?des:un);
+/* Ce que la base de l'appareil contient : les images rangées à part, celles qu'aucune partie ni copie ne cite, leur poids.
+   « complet » lit aussi tout le reste de la base, pour ne rien ôter qui serait cité ailleurs. */
+function inventaireImages(st,complet,f){const k=st.getAllKeys();k.onerror=()=>f(null);
+ k.onsuccess=()=>{const cles=k.result.map(String),images=cles.filter(c=>c.startsWith(CLE_IMAGE)),citees=new Set();
+  // Ce que la partie en mémoire emploie compte aussi : une image tout juste importée n'est pas encore enregistrée.
+  try{const u=new Map();allegePartie(snapshot(),u);u.forEach((_,c)=>citees.add(c))}catch(e){}
+  const alire=cles.filter(c=>!c.startsWith(CLE_IMAGE)&&(complet||c==='session'||c.startsWith(CLE_COPIE)));let reste=alire.length;
+  const suite=()=>{const orphelines=images.filter(c=>!citees.has(c.slice(CLE_IMAGE.length)));let octets=0,total=0,n=images.length;
+   if(!n){f({images:0,total:0,orphelines:[],octets:0});return}
+   images.forEach(c=>{const g=st.get(c);const fin=()=>{if(--n)return;f({images:images.length,total,orphelines,octets})};
+    g.onsuccess=()=>{const t=typeof g.result==='string'?g.result.length:0;total+=t;if(orphelines.includes(c))octets+=t;fin()};g.onerror=fin})};
+  if(!reste){suite();return}
+  alire.forEach(c=>{const g=st.get(c);const fin=()=>{if(--reste)return;suite()};
+   g.onsuccess=()=>{try{refsLocales(g.result,citees)}catch(e){}fin()};g.onerror=fin})}}
+function mesureAppareil(f){const m={quand:Date.now()};
+ // Les rendus, tels qu'ils se sont joués.
+ if(typeof rendusMesures!=='undefined'){const t=Date.now();m.rendu={n:rendusMesures.durees.length,mediane:mediane(rendusMesures.durees),pire:Math.max(0,...rendusMesures.durees),minute:rendusMesures.instants.filter(x=>t-x<60000).length}}
+ m.sauve=mesureSauvegarde;
+ try{const u=new Map(),leger=allegePartie(snapshot(),u);m.partie=JSON.stringify(leger).length;m.imagesPartie=u.size;m.poidsImages=[...u.values()].reduce((s,x)=>s+x.length,0)}catch(e){}
+ try{if(typeof mesureTable==='function')m.table=mesureTable()}catch(e){}
+ // Le contenu publié face à ses limites (shared-data.js) : 60 cartes, 500 fiches, 16 Mo hors grandes images.
+ try{if(typeof publicContent==='function'){const c=publicContent();m.publie={cartes:(c.maps||[]).length,fiches:(c.actors||[]).length,octets:JSON.stringify(allegePartie(c,new Map())).length}}}catch(e){}
+ const fin=()=>{diagnosticMesure=m;f(m)};
+ const stock=()=>{try{if(!navigator.storage||!navigator.storage.estimate){base();return}
+   Promise.all([navigator.storage.estimate(),navigator.storage.persisted?navigator.storage.persisted():false]).then(([e,p])=>{m.stock={usage:e.usage||0,quota:e.quota||0,persiste:!!p};base()}).catch(base)}catch(e){base()}};
+ const base=()=>{if(!db){fin();return}try{inventaireImages(db.transaction('state').objectStore('state'),false,r=>{m.images=r;listeCopies(l=>{m.copies=l;fin()})})}catch(e){fin()}};
+ stock()}
+function nettoieImages(f){if(!db){f(0);return}
+ try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state');let n=0;
+  inventaireImages(st,true,r=>{if(!r)return;r.orphelines.forEach(c=>{st.delete(c);imagesEcrites.delete(c.slice(CLE_IMAGE.length));n++})});
+  tx.oncomplete=()=>{try{localStorage.setItem('amertume-images-menage',String(Date.now()))}catch(e){}f(n)};tx.onerror=()=>f(0)}catch(e){f(0)}}
+// Une autre fenêtre a fait le ménage : ce que celle-ci croyait écrit ne l'est peut-être plus.
+window.addEventListener('storage',e=>{if(e.key==='amertume-images-menage')imagesEcrites.clear()});
+function renderDiagnostic(){const bloc=$('bloc-diagnostic');if(!bloc)return;const mj=view==='mj'&&typeof mjIci==='function'&&mjIci();bloc.hidden=!mj;
+ renderErreurs();if(!mj)return;
+ const m=diagnosticMesure,boite=$('diag-lignes');boite.replaceChildren();
+ $('diag-quand').textContent=m?'Relevées à '+new Date(m.quand).toLocaleTimeString('fr-FR')+'.':'';
+ if(!m){$('diag-copies-bloc').hidden=true;return}
+ const L=(...x)=>boite.append(ligneDiag(...x)),relit=()=>mesureAppareil(()=>renderDiagnostic());
+ if(m.rendu)L('Rendu de la table',m.rendu.n?'Médiane '+ms(m.rendu.mediane)+', le plus long '+ms(m.rendu.pire)+' sur les '+m.rendu.n+' derniers. '+m.rendu.minute+' dans la dernière minute.':'Aucun rendu mesuré depuis l’ouverture de la page.');
+ L('Enregistrement',(m.sauve?'Le dernier à '+new Date(m.sauve.quand).toLocaleTimeString('fr-FR')+', en '+ms(m.sauve.ms)+', forme '+m.sauve.forme+(m.sauve.raison?' ('+m.sauve.raison+')':'')+'. ':'Aucun depuis l’ouverture de la page. ')
+  +(m.partie?'Partie : '+tailleLisible(m.partie)+' ; '+m.imagesPartie+' image'+(m.imagesPartie>1?'s':'')+' à part : '+tailleLisible(m.poidsImages||0)+'.':''));
+ if(m.stock)L('Stockage de l’appareil',grosseTaille(m.stock.usage)+' utilisés sur '+grosseTaille(m.stock.quota)+'. '+(m.stock.persiste?'Le navigateur s’engage à garder la partie.':'Le navigateur peut effacer la partie s’il manque de place.'),
+  m.stock.persiste?'':'Demander',()=>{try{navigator.storage.persist().then(relit,relit)}catch(e){relit()}});
+ if(m.images)L('Images qui ne servent plus',m.images.orphelines.length?m.images.orphelines.length+' sur '+m.images.images+', soit '+tailleLisible(m.images.octets)+'.':'Aucune sur '+m.images.images+'.',
+  m.images.orphelines.length?'Nettoyer':'',()=>{if(!confirm('Effacer de cet appareil les '+m.images.orphelines.length+' images qu’aucune partie ni copie n’emploie ?'))return;nettoieImages(relit)});
+ if(m.table)L('Table en ligne',m.table.enLigne?'Document : '+tailleLisible(m.table.poids)+' pour '+tant(m.table.acteurs,'combattant','combattants')+(m.table.lourd?' ; le plus lourd : '+m.table.lourd.nom+', '+tailleLisible(m.table.lourd.octets):'')
+  +'. Dernière minute : '+tant(m.table.envois,'envoi','envois')+', '+tant(m.table.receptions,'réception','réceptions')+', soit environ '+tailleLisible(m.table.receptions*m.table.poids)+' reçus.':'Hors ligne.');
+ if(m.publie)L('Contenu publié',tant(m.publie.cartes,'carte','cartes')+' sur 60, '+tant(m.publie.fiches,'fiche','fiches')+' sur 500, '+tailleLisible(m.publie.octets)+' sur 16 Mo.');
+ // Les copies : la plus récente d'abord ; reprendre l'une garde d'abord ce qui est enregistré à l'instant.
+ const copies=m.copies||[],bc=$('diag-copies');bc.replaceChildren();$('diag-copies-bloc').hidden=!copies.length;
+ copies.forEach(c=>{const date=c.quand?new Date(c.quand).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'';
+  const titre=c.genre==='avant-images'?'Avant la v1.397'+(date?' — '+date:''):c.genre==='avant-reprise'?'Avant la dernière reprise':date.charAt(0).toUpperCase()+date.slice(1);
+  const l=ligneDiag(titre,c.resume+'.','Reprendre',()=>{if(!confirm('Remplacer la partie de ce navigateur par cette copie ?\n'+c.resume+'.\nLa partie enregistrée à l’instant est gardée dans « Avant la dernière reprise ».'))return;
+   reprendCopie(c.cle,(ok,texte)=>{if(!ok)alert('Reprise impossible : '+texte);else log('Copie reprise : '+titre+'.',{local:true});relit()})});
+  if(c.genre==='avant-images'){const b=document.createElement('button');b.type='button';b.textContent='Supprimer';
+   b.onclick=()=>{if(!confirm('Effacer de cet appareil la partie gardée entière avant la v1.397 ?'))return;
+    try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state');st.delete(CLE_AVANT_IMAGES);st.delete(CLE_AVANT_META);tx.oncomplete=relit}catch(e){relit()}};l.append(b)}
+  bc.append(l)})}
+function renderErreurs(){const bloc=$('bloc-erreurs');if(!bloc)return;const l=typeof erreursVues!=='undefined'?erreursVues:[];bloc.hidden=!l.length;const boite=$('diag-erreurs');boite.replaceChildren();
+ [...l].reverse().slice(0,12).forEach(e=>boite.append(ligneDiag(new Date(e.t).toLocaleString('fr-FR')+(e.o?' — '+e.o:''),e.m+(e.n>1?' (×'+e.n+')':'')+(e.v?' · '+e.v:''))))}
+$('diag-lancer').onclick=()=>mesureAppareil(()=>renderDiagnostic());
+$('erreurs-copier').onclick=()=>{const t=erreursVues.map(e=>new Date(e.t).toISOString()+' ['+(e.v||'')+'] '+(e.o||'')+' : '+e.m+(e.n>1?' (×'+e.n+')':'')).join('\n');
+ try{navigator.clipboard.writeText(t).then(()=>noterReglage('Erreurs copiées.'),()=>prompt('À copier :',t))}catch(e){prompt('À copier :',t)}};
+$('erreurs-vider').onclick=()=>{erreursVues=[];try{localStorage.removeItem(ERREURS_CLE)}catch(e){}renderErreurs()};
+// Les erreurs partent aussi dans la sauvegarde globale ; à l'import, celles de l'appareil restent les siennes.
+ANNEXES_SAUVEGARDE.push({nom:'les erreurs récentes',lit:()=>({erreurs:typeof erreursVues!=='undefined'?erreursVues:[]}),pose:()=>{}});
 
 /* v1.390 — Des jetons légers sur la table. L'image qu'un joueur donne à son aventurier voyage dans le document de la table, qui
    repart tout entier vers chaque joueur à chaque pas, plusieurs fois par seconde : à 60 Ko par aventurier, c'était une grande part

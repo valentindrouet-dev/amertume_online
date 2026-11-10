@@ -23,7 +23,7 @@ const profil=fs.mkdtempSync(path.join(os.tmpdir(),'amertume-essai-'));
 // Un profil gardé d'une page à l'autre : c'est lui qui porte la partie enregistrée, comme le navigateur du MJ.
 const ctx=await chromium.launchPersistentContext(profil,{viewport:{width:1500,height:900}});
 const erreurs=[];
-const ouvre=async()=>{const p=await ctx.newPage();p.on('pageerror',e=>erreurs.push(etape+' : '+String(e.message).slice(0,200)));
+const ouvre=async()=>{const p=await ctx.newPage();p.on('pageerror',e=>erreurs.push(etape+' : '+String(e.message).slice(0,200)));p.on('dialog',d=>d.accept().catch(()=>{}));
  await p.goto(URL_PAGE);await p.waitForFunction(()=>{const c=document.getElementById('busy-cover');return !c||c.hidden},{timeout:20000});await p.waitForTimeout(600);return p};
 // Ce qui doit se retrouver à l'identique après un enregistrement : fiches, catalogue, cartes et leurs images.
 const empreinte=p=>p.evaluate(()=>{const s=snapshot();const h=t=>{let a=0;for(let i=0;i<t.length;i++)a=(a*31+t.charCodeAt(i))|0;return a};
@@ -162,6 +162,29 @@ try{
  {const r=await p.evaluate(h=>new Promise(ok=>reprendCopie('copie:'+h,(fait,texte)=>setTimeout(()=>ok({fait,texte,nom:actors[0].name,images:maps.every(m=>!m.image||m.image.startsWith('data:image/'))}),500))),hier);
   dit(r.fait&&r.nom===nomHier&&r.images,'reprendre la copie de la veille remet la partie, images comprises',JSON.stringify(r));
   const av=await lis(p,'copie:avant-reprise');dit(!!av&&av.nom0==='Aujourd’hui','et ce qui était enregistré juste avant est gardé')}
+
+ /* ---------- 10. Le Diagnostic des Paramètres : il mesure, liste les copies, fait le ménage sur demande ---------- */
+ etape='Diagnostic';console.log(etape);
+ await p.evaluate(()=>new Promise(ok=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put('data:image/webp;base64,'+'A'.repeat(40000),'img:essai-orpheline');tx.oncomplete=ok}));
+ await p.evaluate(()=>{for(let i=0;i<5;i++)render();signaleErreur('Erreur d’essai','essai');showPage('settings')});
+ await p.click('#diag-lancer');await p.waitForFunction(()=>document.querySelectorAll('#diag-lignes .reglage').length>=5,{timeout:8000}).catch(()=>{});
+ {const r=await p.evaluate(()=>({lignes:[...document.querySelectorAll('#diag-lignes .reglage')].map(l=>l.querySelector('strong').textContent+' : '+l.querySelector('p').textContent),
+   copies:document.querySelectorAll('#diag-copies .reglage').length,visible:!document.getElementById('bloc-diagnostic').hidden,erreurs:document.getElementById('diag-erreurs').textContent}));
+  dit(r.visible&&r.lignes.length>=6,'« Mesurer » remplit les lignes du Diagnostic',r.lignes.length+' lignes');
+  dit(r.lignes.some(l=>/^Rendu de la table : Médiane [\d,]+ ms/.test(l)),'les rendus sont chronométrés',r.lignes.find(l=>l.startsWith('Rendu'))||'');
+  dit(r.lignes.some(l=>/^Enregistrement : Le dernier à .* forme légère/.test(l)),'le dernier enregistrement se lit',r.lignes.find(l=>l.startsWith('Enregistrement'))||'');
+  dit(r.lignes.some(l=>/^Images qui ne servent plus : 1 sur /.test(l)),'l’image qui ne sert plus est comptée',r.lignes.find(l=>l.startsWith('Images'))||'');
+  dit(r.lignes.some(l=>/^Contenu publié : \d+ cartes? sur 60, \d+ fiches? sur 500/.test(l)),'le contenu publié est mesuré face à ses limites',r.lignes.find(l=>l.startsWith('Contenu'))||'');
+  dit(r.copies>=6,'les copies de la partie sont listées',r.copies+' copies');
+  dit(r.erreurs.includes('Erreur d’essai'),'une erreur signalée se lit dans les Paramètres')}
+ {const avant=(await base(p)).filter(c=>c.startsWith('img:'));
+  await p.evaluate(()=>{[...document.querySelectorAll('#diag-lignes .reglage button')].find(b=>b.textContent==='Nettoyer').click()});
+  await p.waitForFunction(()=>[...document.querySelectorAll('#diag-lignes .reglage p')].some(x=>x.textContent.startsWith('Aucune sur')),{timeout:8000}).catch(()=>{});
+  const apres=(await base(p)).filter(c=>c.startsWith('img:'));
+  dit(avant.length-apres.length===1&&!apres.includes('img:essai-orpheline'),'« Nettoyer » n’ôte que l’image qui ne sert plus',avant.length+' → '+apres.length);
+  dit(await p.evaluate(()=>maps.every(m=>!m.image||m.image.startsWith('data:image/'))),'les images de la partie sont intactes')}
+ await p.evaluate(()=>{ongletPerime=true});await p.close();p=await ouvre();
+ dit(await p.evaluate(()=>maps.length>0&&maps.every(m=>!m.image||m.image.startsWith('data:image/'))&&erreursVues.some(e=>e.m==='Erreur d’essai')),'après réouverture : images et journal des erreurs sont là');
  await p.close();
 }catch(e){soucis.push(etape+' : l’essai s’est arrêté — '+String(e.message).split('\n')[0])}
 finally{await ctx.close().catch(()=>{});serveur.close();try{fs.rmSync(profil,{recursive:true,force:true})}catch(e){}}

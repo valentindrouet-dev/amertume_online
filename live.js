@@ -236,7 +236,7 @@ function pousserEtat(){pousseTimer=null;if(!enLigne||!salleRef||sasEnAttente())r
  if(!Object.keys(maj).length)return;
  dernierPousse=ap;maj.at=firebase.firestore.FieldValue.serverTimestamp();
  salleRef.update(maj).then(()=>{const b=$('open-live');if(b&&b.dataset.souci){delete b.dataset.souci;b.title=''}})
-  .catch(e=>{dernierPousse=null;const texte='Envoi impossible. '+liveErreur(e);liveStatus(texte);
+  .catch(e=>{dernierPousse=null;const texte='Envoi impossible. '+liveErreur(e);liveStatus(texte);if(typeof signaleErreur==='function')signaleErreur(texte,'table en ligne');
    // Un refus se voit sur le bouton de la table, et se dit une fois au journal de l'appareil.
    const b=$('open-live');if(b){b.dataset.souci='1';b.title=texte}
    if(texte!==dernierRefus){dernierRefus=texte;log('Table : '+texte,{local:true})}})}
@@ -1142,7 +1142,7 @@ function realigneCombat(){if(!combatAuMJ()||!dernierDoc)return false;const d=der
  if(Number.isFinite(d.round)&&d.round>0&&round!==d.round){round=d.round;change=true;const r=$('round');if(r)r.textContent=String(round).padStart(2,'0')}
  const cb=d.fogReset&&Number.isFinite(d.fogReset.cb)?d.fogReset.cb:null;if(cb!==null&&typeof numeroCombat!=='undefined'&&numeroCombat!==cb){numeroCombat=cb;change=true}
  if(change&&typeof render==='function')render();return change}
-setInterval(()=>{try{realigneCombat()}catch(e){}},1500);
+setInterval(()=>{try{realigneCombat()}catch(e){if(typeof signaleErreur==='function')signaleErreur(e,'realigneCombat')}},1500);
 
 /* v1.385 — Un clic ne se perd plus quand le bouton est rebâti sous le doigt. La barre des Actions, les ronds, les objets, les menus se
    redessinent à chaque document de la table — plusieurs fois par seconde quand la troupe bouge — : un bouton appuyé puis remplacé
@@ -1163,6 +1163,15 @@ setInterval(()=>{try{realigneCombat()}catch(e){}},1500);
 {const env=[],rec=[];let poids=0,mesure=0;
  const pe=pousserEtat;pousserEtat=function(...x){const avant=dernierPousse,r=pe.apply(this,x);if(dernierPousse!==avant)env.push(Date.now());return r};
  const pa=programmerApplication;programmerApplication=function(...x){rec.push(Date.now());const t=Date.now();if(t-mesure>5000&&dernierDoc){mesure=t;try{poids=JSON.stringify(dernierDoc).length}catch(e){}}return pa.apply(this,x)};
+ // v1.398 : les mêmes chiffres pour le Diagnostic des Paramètres, plus le combattant le plus lourd du document.
+ window.mesureTable=()=>{const t=Date.now(),garde=l=>{while(l.length&&t-l[0]>60000)l.shift();return l.length};let lourd=null;
+  try{poids=dernierDoc?JSON.stringify(dernierDoc).length:0;Object.entries((dernierDoc&&dernierDoc.actors)||{}).forEach(([id,e])=>{const n=JSON.stringify(e).length;if(!lourd||n>lourd.octets)lourd={nom:String(e&&e.name||'?'),octets:n}})}catch(e){}
+  return {enLigne:!!enLigne,envois:garde(env),receptions:garde(rec),poids,lourd,acteurs:Object.keys((dernierDoc&&dernierDoc.actors)||{}).length}};
  setInterval(()=>{const b=$('indice-perf');if(!b)return;const t=Date.now(),garde=l=>{while(l.length&&t-l[0]>60000)l.shift();return l.length};
   const m=typeof currentMap==='function'?currentMap():null,fog=m&&typeof m.fog==='string'?m.fog.length:0,ko=n=>Math.round(n/1024)+' Ko';
   b.title=enLigne?'Table en ligne, dernière minute : '+garde(env)+' envois, '+garde(rec)+' réceptions. Document de la table : '+ko(poids)+' (il repart en entier à chaque changement). Brouillard de la carte : '+ko(fog)+'.':''},2000)}
+/* v1.398 — Chaque rendu de la table est chronométré, tel qu'il se joue : les cinquante derniers, et leur nombre à la minute. Le
+   Diagnostic des Paramètres les lit ; rien d'autre ne change. Dernière enveloppe du rendu : elle mesure tout ce qui précède. */
+const rendusMesures={durees:[],instants:[]};
+{const r0=render;render=function(...x){const t=performance.now();try{return r0.apply(this,x)}finally{const d=performance.now()-t,m=rendusMesures;
+  m.durees.push(d);if(m.durees.length>50)m.durees.shift();m.instants.push(Date.now());if(m.instants.length>600)m.instants.shift()}}}
