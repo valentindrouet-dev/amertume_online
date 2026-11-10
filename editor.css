@@ -4976,3 +4976,12 @@ button.btn-inventaire{--fond:#8a6440;color:#fff}
 #inventaire-table img{width:66%;height:66%;object-fit:contain}
 /* v1.387 — « Débuter le combat », sur sa propre ligne au-dessus des boutons du tour. */
 #debuter-combat{display:block;width:100%;margin:0 0 10px;font-size:15px;padding:11px 12px}#debuter-combat[hidden]{display:none}
+/* v1.400 — Le journal se filtre : les puces reprennent le style de « Vider » ; celle qui est choisie prend l'encre. */
+.journal-filtres{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 8px}.stack.right.calee .journal-filtres{flex:none}
+.journal-filtres .journal-filtre{margin-left:0}.journal-filtre.on{color:var(--ink);border-color:var(--ink)}
+#journal-recherche{flex:1 1 90px;min-width:0;width:auto;margin:0;padding:3px 8px;font:500 12px system-ui;border-radius:6px}
+#journal[data-filtre="combat"]>li:not(.ton-attaque):not(.ton-talent):not(.ton-soin):not(.ton-degats):not(.ton-etat):not(.j-turn),
+#journal[data-filtre="exploration"]>li:not(.ton-reveal):not(.ton-carte):not(.ton-butin):not(.ton-competence),
+#journal[data-filtre="discussion"]>li:not(.j-chat),#journal>li.j-hors-recherche{display:none}
+/* v1.400 — Le chiffre de la touche sur chaque rond de la barre d'actions, sur les écrans à clavier. */
+@media (hover:hover) and (pointer:fine){section.attack-card button.btn-action[data-touche]::after{content:attr(data-touche);position:absolute;left:-3px;top:-3px;min-width:16px;height:16px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--ink);border:1px solid var(--line);font:700 10px/1 system-ui;text-shadow:none;pointer-events:none}}

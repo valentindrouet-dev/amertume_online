@@ -2467,6 +2467,12 @@ function ouvrirBulle(ancre,contenu,classe){const suite=!!bulleEl||performance.no
  /* Une vignette dans une fenêtre ouverte — l'arbre de talents — y pose sa bulle : posée
     sur la page, elle passerait sous la fenêtre. */
  bulleEl.append(contenu);(ancre.closest('dialog[open]')||document.body).append(bulleEl);bulleAncre=ancre;
+ /* v1.400 — Maj tenue compare partout : toute bulle de pièce (Armurerie, magasin, butin, coffre, carte) se compare à ce que
+    porte l'aventurier sélectionné, comme le faisaient déjà l'inventaire et le journal. Là où la bulle règle elle-même sa
+    comparaison, la sienne l'emporte : elle est posée juste après. */
+ {const o=contenu._piece,h=o&&typeof actors!=='undefined'?actors[selected]:null;
+  if(o&&h&&h.hero===true&&(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&(typeof controlled!=='function'||controlled(selected))){
+   comparerAvec={ancre,liste:()=>equipesComparables(h,o),detail:x=>gearDetail(x,h,false)};Promise.resolve().then(()=>{if(bulleAncre===ancre)montreComparaison()})}}
  // Seule une bulle épinglée reçoit la souris : la quitter, alors, la referme.
  bulleEl.addEventListener('pointerleave',()=>{if(bulleEpinglee)fermerBulle()});
  placerBulle();
@@ -2586,7 +2592,7 @@ function teinteTerrains(el){const parNom=new Map(),cartes=typeof maps!=='undefin
  l.forEach(t=>{const v=String(t.nodeValue);rx.lastIndex=0;if(!rx.test(v))return;rx.lastIndex=0;const f=document.createDocumentFragment();let last=0,m;
   while((m=rx.exec(v))){if(m.index>last)f.append(v.slice(last,m.index));const b=document.createElement('b');b.className='mot-cle mot-terrain';b.textContent=m[0];b.style.color=parNom.get(m[0].toLowerCase());f.append(b);last=rx.lastIndex}
   if(last<v.length)f.append(v.slice(last));t.replaceWith(f)});return el}
-function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
+function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d._piece=o;d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  if(o.invention)d.classList.add('gear-invention');
  const titre=document.createElement('p');titre.className='gear-nom';avecTirets(titre,o.name);d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
@@ -10330,6 +10336,39 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
  const sp=[...arbresTotal.querySelectorAll('.arbres-tranches>span')];if(sp.length&&sp.every(e=>Number.isFinite(e._compte)||!(e._racines&&e._racines.length))){const t=[...arbresTotal.children].find(x=>x.tagName==='SPAN'&&/^Total /.test(x.textContent));
   if(t)t.textContent='Total '+texteMarques(sp.reduce((n,e)=>n+(Number.isFinite(e._compte)?e._compte:0),0))}}catch(err){}return r}}
 
+/* v1.400 — Les touches 1 à 9 jouent la barre d'actions : les neuf premiers ronds affichés, dans l'ordre où on les lit, portent
+   leur chiffre (écrans à clavier) et répondent à la touche de même rang — celle du haut du clavier, sans Maj même en AZERTY, ou
+   celle du pavé. Un rond grisé garde son chiffre et ne répond pas. Rien en dehors de la Table, ni fenêtre ouverte, ni en écrivant. */
+function rondsDeLaBarre(){return [...document.querySelectorAll('section.attack-card button.btn-action')].filter(b=>!b.hidden&&b.offsetParent)}
+function numeroteBarre(){const l=rondsDeLaBarre();
+ document.querySelectorAll('section.attack-card button[data-touche]').forEach(b=>{const i=l.indexOf(b);if(i<0||i>8)delete b.dataset.touche});
+ l.slice(0,9).forEach((b,i)=>{const n=String(i+1);if(b.dataset.touche!==n)b.dataset.touche=n})}
+addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.defaultPrevented)return;
+ const m=/^(?:Digit|Numpad)([1-9])$/.exec(e.code||'');if(!m)return;
+ if((e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))||document.querySelector('dialog[open]'))return;
+ if([...document.body.classList].some(c=>c.startsWith('page-')))return;
+ const b=rondsDeLaBarre()[Number(m[1])-1];if(!b)return;e.preventDefault();
+ if(b.disabled||b.classList.contains('inerte'))return;if(typeof fermerBulle==='function')fermerBulle();b.click()});
+
+/* v1.400 — Le journal se filtre : Tout, Combat, Exploration, Discussion, et une recherche. Le filtre ne cache que l'affichage :
+   rien n'est retiré du journal, ni ici ni chez les autres. Il est retenu sur l'appareil ; la recherche, non. */
+{const j=$('journal'),titre=j&&j.parentNode.querySelector('.journal-title');
+ if(j&&titre){const CLE='amertume-journal-filtre',FILTRES=[['tout','Tout'],['combat','Combat'],['exploration','Exploration'],['discussion','Discussion']];
+  const boite=document.createElement('div');boite.className='journal-filtres';boite.id='journal-filtres';
+  const pose=f=>{if(!FILTRES.some(([k])=>k===f))f='tout';if(f==='tout')delete j.dataset.filtre;else j.dataset.filtre=f;
+   boite.querySelectorAll('button').forEach(b=>{const on=b.dataset.filtre===f;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
+   try{localStorage.setItem(CLE,f)}catch(e){}j.scrollTop=j.scrollHeight};
+  FILTRES.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';b.className='journal-vider journal-filtre';b.dataset.filtre=k;b.textContent=nom;b.onclick=()=>pose(k);boite.append(b)});
+  const champ=document.createElement('input');champ.id='journal-recherche';champ.type='search';champ.placeholder='Rechercher…';champ.setAttribute('aria-label','Rechercher dans le journal');boite.append(champ);
+  titre.after(boite);
+  const sansAccent=t=>String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');let q='';
+  const trie=li=>{if(li.nodeType===1)li.classList.toggle('j-hors-recherche',!!q&&!sansAccent(li.textContent).includes(q))};
+  champ.oninput=()=>{q=sansAccent(champ.value.trim());[...j.children].forEach(trie);j.scrollTop=j.scrollHeight};
+  // Une ligne qui arrive pendant une recherche est triée une fois écrite.
+  new MutationObserver(l=>{if(!q)return;const neuves=[];l.forEach(m=>m.addedNodes.forEach(n=>neuves.push(n)));setTimeout(()=>neuves.forEach(trie),0)}).observe(j,{childList:true});
+  let voulu='tout';try{voulu=localStorage.getItem(CLE)||'tout'}catch(e){}pose(voulu);
+  if(typeof REGLAGES_APPAREIL!=='undefined')REGLAGES_APPAREIL.push(CLE)}}
+
 /* v1.386 — L'inventaire à portée de main, sur la table : dans la barre des Actions, à droite, à part, le bouton Inventaire — la même
    icône que sur la vignette de l'onglet Aventuriers. Il ouvre l'inventaire de l'aventurier sélectionné, s'il est à soi. */
 {const carte=document.querySelector('section.attack-card');
@@ -10343,7 +10382,7 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
   const sep=document.createElement('span');sep.className='barre-sep sep-inventaire';sep.hidden=true;
   /* v1.391 — Le bouton rejoint la rangée des ronds, juste à droite de « Changer d'armes » ; on ne le déplace que s'il n'y est pas. */
   const maj=()=>{const a=actors[selected],ok=!!a&&a.hero===true&&!a.horsCarte&&controlled(selected)&&!(marked&&marked.size>1),arm=document.getElementById('changer-armes');
-   if(arm&&(b.previousElementSibling!==sep||sep.previousElementSibling!==arm))arm.after(sep,b);b.hidden=sep.hidden=!ok;w.hidden=true;carte.classList.remove('avec-inventaire');if(ok)icone()};
+   if(arm&&(b.previousElementSibling!==sep||sep.previousElementSibling!==arm))arm.after(sep,b);b.hidden=sep.hidden=!ok;w.hidden=true;carte.classList.remove('avec-inventaire');if(ok)icone();numeroteBarre()};
   const r0=render;render=function(...x){const o=r0.apply(this,x);try{maj()}catch(e){}return o}}}
 
 /* ---------- v1.398 — Le Diagnostic (Paramètres, appareil du MJ) ----------

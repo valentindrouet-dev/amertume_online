@@ -405,6 +405,12 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 
 **Inventaire sur la table (v1.386, v1.391)** (`#inventaire-table`) : dans la rangée des ronds de la barre des Actions, juste à droite de « Changer d'armes », un rond crème clair `#f6e8cf`, icône brune `#6b4320`, séparé d'un trait (`.barre-sep`) ; sa bulle prend le brun `#8a6440` — l'icône Inventaire des vignettes (celle choisie dans les Icônes, sinon le sac dessiné). Il paraît quand l'aventurier sélectionné est à soi, et ouvre son inventaire.
 
+**Filtres du journal (v1.400)** (`#journal-filtres`) : sous le titre du journal, quatre puces au style de « Vider » (`.journal-vider`) — Tout, Combat, Exploration, Discussion —, celle qui est choisie à l'encre `--ink` ; à leur suite, un champ « Rechercher… ». Un filtre cache des lignes à l'écran, il n'en retire aucune.
+
+**Touches de la barre d'actions (v1.400)** (`[data-touche]`) : sur les écrans à clavier, chacun des neuf premiers ronds porte son chiffre en haut à gauche, dans un petit rond de 16 px (fond `--panel`, liseré `--line`, chiffre gras à l'encre `--ink`).
+
+**Comparaison d'une pièce (v1.400)** : Maj tenue au survol d'une arme, d'une armure ou de munitions, où que ce soit, pose à gauche de la bulle celle de ce que l'aventurier sélectionné porte au même endroit (`.bulles-comparaison`, déjà en place dans l'inventaire et le journal).
+
 **Diagnostic (v1.398)** (`#bloc-diagnostic`, Paramètres, appareil du MJ seul) : aucun style neuf. Un titre de section (`.reglage-titre`), puis des lignes `.reglage` : le nom en gras, la mesure en `.muted` dessous, et à droite, quand il y a lieu, un bouton du site (« Mesurer » en bouton principal ; « Demander », « Nettoyer », « Reprendre », « Supprimer »). Dessous, « Copies de la partie » : une ligne par copie, sa date en toutes lettres, son contenu en `.muted`. « Erreurs récentes » (`#bloc-erreurs`, tout appareil, seulement s'il y en a) : l'heure et l'endroit en gras, le message dessous ; « Copier » et « Vider » en `.side-actions`. Tout effacement passe par une confirmation.
 
 **Débuter le combat (v1.387)** (`#debuter-combat`) : chez le MJ, dans le cadre du tour, au-dessus de « Tour suivant », sur toute la largeur, le bouton principal « ⚔ Débuter le combat » (15 px). Il paraît tant que le combat qui vient de commencer garde les socles verrouillés ; il s'en va de lui-même à la première Action dépensée ou au tour 2 (v1.393).

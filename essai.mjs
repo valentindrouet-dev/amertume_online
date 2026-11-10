@@ -102,6 +102,35 @@ try{
  dit(await p.evaluate(()=>{basculerMode('exploration');return !enCombat()}),'« Fin du combat » rend la main à l’exploration');
  await p.evaluate(()=>{actors.forEach(a=>{if(!a.hero)a.vu=false})});await p.waitForTimeout(200);
 
+ /* ---------- Le journal se filtre, les touches 1 à 9 jouent la barre, Maj compare une pièce à celle qu'on porte ---------- */
+ etape='Journal, touches, comparaison';console.log(etape);
+ {const r=await p.evaluate(async()=>{logChat({name:'Jasnah',hero:true},'On y va ?');log('Éla fouille la salle.',{ton:'carte'});log('Kaël · Feu : 3 PV perdus.',{ton:'degats'});
+   const vus=f=>{document.querySelector('#journal-filtres [data-filtre="'+f+'"]').click();return [...document.querySelectorAll('#journal>li')].filter(l=>l.offsetParent).map(l=>l.textContent)};
+   const tout=vus('tout').length,combat=vus('combat'),explo=vus('exploration'),disc=vus('discussion');vus('tout');
+   const c=document.getElementById('journal-recherche');c.value='fouille';c.dispatchEvent(new Event('input'));const cherche=[...document.querySelectorAll('#journal>li')].filter(l=>l.offsetParent).map(l=>l.textContent);
+   c.value='';c.dispatchEvent(new Event('input'));return {tout,combat,explo,disc,cherche,total:document.querySelectorAll('#journal>li').length}});
+  dit(r.combat.some(t=>t.includes('Feu'))&&!r.combat.some(t=>t.includes('fouille')||t.includes('On y va')),'« Combat » ne montre que le combat');
+  dit(r.explo.length>=1&&r.explo.every(t=>!t.includes('Feu')&&!t.includes('On y va')),'« Exploration » ne montre que l’exploration');
+  dit(r.disc.length>=1&&r.disc.every(t=>t.includes('On y va')),'« Discussion » ne montre que les paroles');
+  dit(r.cherche.length===1&&r.cherche[0].includes('fouille'),'la recherche ne garde que les lignes qui portent le mot');
+  dit(r.tout>=3&&r.total>=r.tout,'« Tout » remontre le journal entier, rien n’en est retiré')}
+ {await p.evaluate(()=>{basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();selected=actors.findIndex(a=>a.hero);marked=new Set([selected]);render();if(document.activeElement)document.activeElement.blur();
+   window.__clics=[];document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('section.attack-card button');if(b)window.__clics.push(b.dataset.touche)},true)});
+  const barre=await p.evaluate(()=>rondsDeLaBarre().map(b=>b.dataset.touche).join(''));
+  await p.keyboard.press('Digit2');await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());fermerBulle();render()});
+  await p.focus('#journal-texte');await p.keyboard.press('Digit1');await p.evaluate(()=>{document.getElementById('journal-texte').value='';document.activeElement.blur()});
+  const clics=await p.evaluate(()=>window.__clics.join(','));
+  dit(/^123/.test(barre),'les ronds de la barre portent leur chiffre',barre);
+  dit(clics==='2','la touche 2 joue le deuxième rond, et rien ne part quand on écrit',clics);
+  await p.evaluate(()=>{basculerMode('exploration');actors.forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0)});render()})}
+ {const r=await p.evaluate(async()=>{const h=actors[selected],porte=objetDe((h.weapons||[])[0]),autre=catalog.items.find(o=>o.category==='weapon'&&o!==porte&&!(h.weapons||[]).includes(o.id));
+   if(!porte||!autre)return {saute:true};
+   const ancre=document.getElementById('journal-texte'),d=gearDetail(autre,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(ancre,d,'bulle-gear');
+   /* Sans attendre : un rendu survenu entre-temps refermerait la bulle. */document.dispatchEvent(new KeyboardEvent('keydown',{key:'Shift'}));
+   const c=document.querySelector('.bulles-comparaison'),avec=c?c.textContent:'';document.dispatchEvent(new KeyboardEvent('keyup',{key:'Shift'}));const apres=!!document.querySelector('.bulles-comparaison');fermerBulle();
+   return {vu:!!c,bon:avec.includes(porte.name),apres,porte:porte.name,autre:autre.name}});
+  dit(r.saute||(r.vu&&r.bon&&!r.apres),'Maj tenue sur une arme montre à côté celle que porte l’aventurier',JSON.stringify(r))}
+
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
  const onglets=await p.evaluate(async()=>{const vus=[];for(const [k] of ONGLETS){showPage(k);await new Promise(r=>setTimeout(r,180));vus.push(k)}showPage('table');return vus});
