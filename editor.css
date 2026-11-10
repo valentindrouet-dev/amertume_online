@@ -5002,3 +5002,6 @@ button.btn-inventaire{--fond:#8a6440;color:#fff}
 #aventure-fenetre{width:min(640px,94vw)}#aventure-corps{max-height:min(60dvh,520px);overflow:auto}
 .aventure-groupe{margin:0 0 12px}.aventure-noms{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 0;font-size:14px}
 .aventure-noms .aventure-marque{font-style:italic;color:var(--muted)}.aventure-aussi{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:14px}.aventure-aussi input{width:auto;margin:0}
+/* v1.406 — Les murs automatiques : l'image de la carte et, par-dessus, les murs lus, à la teinte de la matière ; dessous, la sensibilité. */
+dialog#murs-auto{width:fit-content;max-width:94vw}#murs-auto-apercu{display:block;max-width:100%;border-radius:8px;border:1px solid var(--line)}
+.murs-auto-reglage{display:flex;align-items:center;gap:12px;margin:12px 0 0}.murs-auto-reglage input{flex:1;margin:0}
