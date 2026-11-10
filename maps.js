@@ -3429,6 +3429,11 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
 /* Le cadre prend la taille de la carte avant tout : ce que le rendu mesure — vue,
    contact, révélation — se mesure dans le bon cadre dès le premier passage. */
+/* v1.396 — Le temps d'un rendu, la géométrie de la carte et ses lumières ne bougent pas : leurs clés de cache, relues pour chaque
+   socle, ne se calculent plus qu'une fois par rendu. Hors d'un rendu, rien n'est retenu. */
+let memoClesRendu=null;
+{const gk=geometryKey;geometryKey=function(m){if(!memoClesRendu)return gk(m);const c=memoClesRendu.g;if(c&&c.m===m)return c.v;const v=gk(m);memoClesRendu.g={m,v};return v}}
+{const cl=clesLumieres;clesLumieres=function(){if(!memoClesRendu)return cl();return memoClesRendu.l===undefined?(memoClesRendu.l=cl()):memoClesRendu.l}}
 const renderBeforeMaps=render;render=function(){
  // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
@@ -3436,8 +3441,8 @@ const renderBeforeMaps=render;render=function(){
  applyMapRatio();const dehors=cadreFige;cadreFige=mesureCadre();
  /* v1.080 : la carte, mesurée ici, ne se remesure pas au milieu du rendu : la relire après tant de changements forçait la page
     entière à se recalculer. La rangée des Actions qui change de hauteur la fait remesurer d'elle-même (son observateur). */
- ratioDuRendu=true;
- try{computeFog();oublieEntendus();renderBeforeMaps();renderMapLayer();renderFouilles()}finally{cadreFige=dehors?cadreFige:null;ratioDuRendu=false}
+ ratioDuRendu=true;const memoClesDehors=memoClesRendu;memoClesRendu=memoClesRendu||{};
+ try{computeFog();oublieEntendus();renderBeforeMaps();renderMapLayer();renderFouilles()}finally{memoClesRendu=memoClesDehors;cadreFige=dehors?cadreFige:null;ratioDuRendu=false}
  calerColonnes();
  majOnglets()};
 /* Le journal descend jusqu'au bas de la carte : son panneau est calé dessus à chaque rendu

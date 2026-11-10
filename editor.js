@@ -9014,6 +9014,10 @@ function loadSession(){
  ouvrir();
  setTimeout(()=>{if(!sessionRepondue)ouvrir()},3000);
  setTimeout(()=>{if(loading){noterSauvegarde('La partie enregistrée ne répond pas : la scène s’ouvre sans elle, elle se posera si l’appareil finit par la lire.',true);finish()}},8000)}
+/* v1.396 — La partie ne vit que sur cet appareil : le navigateur est prié de ne pas l'effacer de lui-même quand la place manque.
+   Sur l'appareil du MJ seulement ; Firefox pose la question, Chrome décide seul. */
+document.addEventListener('amertume-partie-chargee',()=>{try{if(typeof mjIci!=='function'||!mjIci()||!navigator.storage||!navigator.storage.persist)return;
+ navigator.storage.persisted().then(d=>d||navigator.storage.persist()).catch(()=>{})}catch(e){}});
 function finish(){if(!loading)return;loading=false;cover.hidden=true;render();
  if(!db)noterSauvegarde('Sauvegarde locale indisponible dans ce navigateur.',true);
  // La partie est là : les onglets peuvent rouvrir la page où l'on travaillait.

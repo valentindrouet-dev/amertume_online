@@ -151,7 +151,8 @@ function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon
 const drapeauxPiege=p=>(p.revele?1:0)|(p.declenche?2:0)|(p.desamorce?4:0)|(p.rate?8:0);
 function etatVivant(){const out={actors:{}};
  actors.forEach(a=>{if(!a||!a.id)return;const e={};
-  CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined)e[k]=a[k]});
+  // v1.396 : les notes d'un adversaire ou d'un PNJ sont au MJ, elles ne partent pas à la table ; celles d'un aventurier, si.
+  CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined&&!(k==='notes'&&a.hero!==true))e[k]=a[k]});
   if(glissements.has(a.id)){const v=glissements.get(a.id).cible;e.x=v.x;e.y=v.y}
   e.cibles=ciblesIds(a);
   out.actors[a.id]=e});
@@ -395,6 +396,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
         Ce qu'on vient d'ajouter ici et qui n'est pas encore parti (absent de la référence) reste, et part au prochain envoi ;
         sans référence, le MJ garde le sien. Le MJ ne perd jamais un champ qui n'appartient qu'à lui. */
      if(a[k]===undefined||k==='x'||k==='y'||k==='cibles'||(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)))return;
+     // v1.396 : les notes d'un adversaire ne sont plus à la table ; chez le MJ, leur absence n'efface jamais les siennes.
+     if(k==='notes'&&a.hero!==true&&estMJ())return;
      if(r?r[k]===undefined:estMJ()){if(r)gardes.push([id,k,undefined]);return}
      delete a[k];return}
     if(enMain&&(k==='x'||k==='y'))return;

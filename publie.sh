@@ -4,6 +4,8 @@
 set -e;cd "$(dirname "$0")"
 V="$1";T="$2";B="$3";[ -n "$V" ] && [ -n "$T" ] || { echo "usage : sh publie.sh 0.362 \"titre\" [corps.txt]";exit 1; }
 node verif.cjs
+# L'essai en navigateur : le jeu est lancé et joué quelques secondes. ESSAI=non le saute, en connaissance de cause.
+[ "$ESSAI" = "non" ] && echo "! essai en navigateur sauté (ESSAI=non)" || node essai.mjs
 A=$(grep -o "const IMG_V='[0-9.]*'" index.html | grep -o "[0-9.]*[0-9]")
 sed -i "s/?v=$A\b/?v=$V/g; s/const IMG_V='$A';/const IMG_V='$V';/; s|<span class=\"ver\">v$A</span>|<span class=\"ver\">v$V</span>|" index.html
 [ "$(grep -o "$V" index.html | wc -l)" -ge 17 ] || { echo "✗ numéro de version incomplet";exit 1; }
@@ -14,6 +16,6 @@ git fetch -q origin main && git merge -q --ff-only origin/main
 node -e "const fs=require('fs'),f='actualites.js',[v,t]=process.argv.slice(1);if(!fs.existsSync(f))process.exit(0);let s=fs.readFileSync(f,'utf8');if(s.includes('\"v\":'+JSON.stringify(v)))process.exit(0);s=s.replace('/* versions */','/* versions */\n'+JSON.stringify({v,d:new Date().toISOString().slice(0,10),t})+',');fs.writeFileSync(f,s)" "$V" "$T"
 # L'onglet Versions : la publication et ses lignes (une par modification, le corps du message), en tête de versions.json.
 node -e "const fs=require('fs'),[v,t,b]=process.argv.slice(1),f='versions.json';let l=[];try{l=JSON.parse(fs.readFileSync(f,'utf8'))}catch(e){}if(l.some(x=>x.v===v))process.exit(0);const lignes=b&&fs.existsSync(b)?fs.readFileSync(b,'utf8').split('\\n').map(x=>x.trim().replace(/^[-*•] +/,'')).filter(Boolean):[];l.unshift({v,d:new Date().toISOString().slice(0,10),t,l:lignes.length?lignes:[t]});fs.writeFileSync(f,JSON.stringify(l))" "$V" "$T" "$B"
-git add -A -- '*.js' '*.html' '*.css' '*.cjs' '*.sh' '*.md' version.json versions.json img fonts
-{ echo "v$V : $T";echo;[ -n "$B" ] && cat "$B" && echo;echo "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>";echo "Claude-Session: https://claude.ai/code/session_01PF75UrdhWECBCA3fXu5RYa"; } | git commit -q -F -
+git add -A -- '*.js' '*.mjs' '*.html' '*.css' '*.cjs' '*.sh' '*.md' version.json versions.json img fonts
+{ echo "v$V : $T";echo;[ -n "$B" ] && cat "$B" && echo;echo "Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>";echo "Claude-Session: https://claude.ai/code/session_01PF75UrdhWECBCA3fXu5RYa"; } | git commit -q -F -
 git push -q -u origin claude/reprise-code-chatgpt-lc34es && git push -q origin HEAD:main && git log --oneline -1

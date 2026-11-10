@@ -1061,7 +1061,7 @@ const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderNuit();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
-assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles()}finally{cadreFige=dehors?cadreFige:null;ratioDuRendu=false}\n calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
+assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles()}finally{memoClesRendu=memoClesDehors;cadreFige=dehors?cadreFige:null;ratioDuRendu=false}\n calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
 assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
 assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px")&&!page.includes('titre-actions')&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}'),'un seul lettrage de titres');
@@ -2351,7 +2351,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    campagnes s'enregistrent dans l'appli : troupe, adversaires, domaine, scène, progression des cartes. */
 {const fief=fs.readFileSync('domaine.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(fs.readFileSync('editor.js','utf8').includes("const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];")
-  &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),")
+  &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));(c.monsters||[]).forEach(m=>{if(m&&m.notes)m.notes=''});return c})(structuredClone(catalog)),")
   &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){const d=normaliseDomaine(remote.domaine);if(typeof poidsDomaine!=='function'||poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null}")
   &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');
  assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")
@@ -3944,7 +3944,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  assert.equal(C11.rareteForge(2),'rare');assert.equal(C11.normaliseForgeAdv({chance:'',min:0,max:4}),null);assert.deepEqual(C11.normaliseForgeAdv({chance:50,min:1,max:2}),{chance:50,min:1,max:2});
  assert.ok(ed.includes("c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);")&&ed.includes("function syncForges(){")&&ed.includes("const renderSansForges=render;render=function(){syncForges();renderSansForges()};")
   &&ed.includes("a.forges=normaliseForges(a.forges);")&&ed.includes("if(o.forge)deplaceForge(a,o.id);")&&ed.includes("function openForge(){")&&ed.includes("function editeurForgeAdv(cible,apres){")
-  &&sh.includes("catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),")&&fs.readFileSync('live.js','utf8').includes("'forges',"),'la Forge câblée');}
+  &&sh.includes("catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));(c.monsters||[]).forEach(m=>{if(m&&m.notes)m.notes=''});return c})(structuredClone(catalog)),")&&fs.readFileSync('live.js','utf8').includes("'forges',"),'la Forge câblée');}
 /* v0.676 — Les dés qu'un talent ajoute à une attaque, Coup de Bouclier, se lisent dans ses bulles, comme ils partent au jet. */
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(ajouteDes(desAttaque(a,at.dice),ap.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
@@ -4931,7 +4931,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("+'<div id=\"bloc-niveaux\" hidden><div class=\"divider\"></div><h3 class=\"reglage-titre\">Niveaux d’XP</h3><div id=\"niveaux-xp\" class=\"niveaux-xp\"></div></div>'")
   &&src.includes("$('bloc-niveaux').hidden=true;")&&src.includes("catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();")
   &&src.includes("function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}")
-  &&src.includes("catalog=normalizeCatalog(s.catalog);syncForges();niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();")
+  &&src.includes("catalog=normalizeCatalog(s.catalog);syncForges();niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);remetNotesDuMJ(notesIci);if(typeof niveauxHeros==='function')niveauxHeros();")
   &&src.includes("function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a&&a.xp))||0)"),'les paliers d’XP à la main');
  assert.deepEqual(C.voletsDe({effet:'contagioncontact'}),{vue:2});assert.ok(T.contagionvue.retire);
  assert.ok(C.phraseTalent('contagioncontact',{},2).includes('visibles')&&C.phraseTalent('contagioncontact',{},1).includes('au contact'));

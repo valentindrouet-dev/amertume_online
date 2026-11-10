@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.396","d":"2026-11-10","t":"Essai en navigateur avant publication, rendu plus rapide, notes du MJ gardées chez lui"},
 {"v":"1.395","d":"2026-11-06","t":"Sphères et jauges à la mesure du socle"},
 {"v":"1.394","d":"2026-11-06","t":"Débuter le combat tient, sphères et jauges plus discrètes"},
 {"v":"1.393","d":"2026-11-06","t":"Débuter le combat : le bouton s'en va quand le combat est entamé"},

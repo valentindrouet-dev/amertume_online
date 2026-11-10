@@ -21,7 +21,7 @@ function texteStable(value){const v={...value,round:1,mode:'exploration',locked:
   maps:(value.maps||[]).map(m=>{const c={...m};delete c.fog;delete c.seen;c.doors=(m.doors||[]).map(d=>{const p={...d};delete p.open;delete p.decouvert;delete p.crochetee;return p});
    c.coffres=(m.coffres||[]).map(x=>{const p={...x};['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete p[k]);return p});return c})};
  return JSON.stringify(v)}
-function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),actors:actors.map(a=>ficheBornee({...structuredClone(a),target:null,checks:[false,false,false]}))}}
+function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));(c.monsters||[]).forEach(m=>{if(m&&m.notes)m.notes=''});return c})(structuredClone(catalog)),actors:actors.map(a=>ficheBornee({...structuredClone(a),target:null,checks:[false,false,false]}))}}
 /* v1.360 — La fiche publiée reste dans les bornes que la publication exige (shared-data.js, validate) : un compte de 0 à 12 par couleur de dé, 8 compétences
    de 0 à 30, au plus 40 états de 40 lettres, des PV et des chiffres positifs. Un dé de trop — une arme forgée, un effet du moment —
    suspendait toute la publication ; la copie publiée est bornée, la partie locale n'est pas touchée. */
@@ -31,7 +31,10 @@ function ficheBornee(a){const ent=(v,lo,hi)=>{const n=Math.trunc(Number(v));retu
  a.skills=Array.from({length:8},(_,i)=>{const n=Number(Array.isArray(a.skills)?a.skills[i]:0);return Number.isFinite(n)?Math.max(0,Math.min(30,n)):0});
  if(a.states!==undefined)a.states=(Array.isArray(a.states)?a.states:[]).filter(e=>typeof e==='string'&&e.length<=40).slice(0,40);
  ['def','dmg','x','y'].forEach(k=>{const n=Number(a[k]);a[k]=Number.isFinite(n)&&n>=0?n:0});
- const max=Number(a.max),hp=Number(a.hp);a.max=Number.isFinite(max)&&max>=1?max:1;a.hp=Number.isFinite(hp)&&hp>=0?Math.min(hp,a.max):0;return a}
+ const max=Number(a.max),hp=Number(a.hp);a.max=Number.isFinite(max)&&max>=1?max:1;a.hp=Number.isFinite(hp)&&hp>=0?Math.min(hp,a.max):0;
+ /* v1.396 — Les notes que le MJ écrit sur un adversaire, un PNJ ou un modèle du Bestiaire ne sont plus publiées : elles arrivaient
+    dans le navigateur de chaque joueur, sans s'y afficher. Celles d'un aventurier, que son joueur écrit, voyagent toujours. */
+ if(a.hero!==true)a.notes='';return a}
 /* ---------- Les grandes images, publiées à part ----------
    Une carte, un calque du domaine, un grand portrait pèsent des mégaoctets : ensemble, ils
    faisaient passer la publication au-delà de 16 Mo, et chaque republication les renvoyait tous.
@@ -101,7 +104,13 @@ $('shared-logout').onclick=async()=>{if(auth)await auth.signOut();admin=false;au
    « avant-scene-publiee ») ; « Reprendre ma partie d'avant » la remet. */
 function gardeAvantRemote(){try{if(typeof snapshot!=='function'||typeof db==='undefined'||!db||!(localStorage.getItem('amertume-mj-appareil')==='1'))return;
  const s=snapshot();db.transaction('state','readwrite').objectStore('state').put({t:Date.now(),s},'avant-scene-publiee')}catch(e){}}
-function applyRemote(){if(!remote)return;gardeAvantRemote();if(typeof recoitIcones==='function')recoitIcones(remote.icones);actors.splice(0,actors.length,...structuredClone(remote.actors).map(normalizeActor));catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();if(remote.domaine&&typeof normaliseDomaine==='function'){const d=normaliseDomaine(remote.domaine);if(typeof poidsDomaine!=='function'||poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null}maps=Array.isArray(remote.maps)?structuredClone(remote.maps):[];currentMapId=remote.currentMapId||null;if(typeof rattacheCarteEditee==='function')rattacheCarteEditee();tokensLocked=remote.locked===true;round=remote.round||1;mode=remote.mode==='exploration'?'exploration':'combat';owner=actors.findIndex(a=>a.hero);selected=owner;mapImage=remote.mapImage||null;sceneTitle(remote.title||'Amertume');$('round').textContent=String(round).padStart(2,'0');$('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);baseRevision=remoteId;view=admin?'mj':'player';$('view').value=view;
+/* v1.396 — La scène publiée n'a plus les notes des adversaires : sur l'appareil du MJ, celles qu'il tient ici sont reprises,
+   par identifiant, quand la scène publiée se pose. */
+function notesDuMJ(){try{if(typeof mjIci!=='function'||!mjIci())return null;
+ return {a:new Map(actors.filter(a=>a&&a.hero!==true&&a.notes).map(a=>[a.id,a.notes])),m:new Map(((catalog&&catalog.monsters)||[]).filter(m=>m&&m.id&&m.notes).map(m=>[m.id,m.notes]))}}catch(e){return null}}
+function remetNotesDuMJ(n){if(!n)return;actors.forEach(a=>{if(a&&a.hero!==true&&!a.notes&&n.a.has(a.id))a.notes=n.a.get(a.id)});
+ ((catalog&&catalog.monsters)||[]).forEach(m=>{if(m&&!m.notes&&n.m.has(m.id))m.notes=n.m.get(m.id)})}
+function applyRemote(){if(!remote)return;gardeAvantRemote();const notesIci=notesDuMJ();if(typeof recoitIcones==='function')recoitIcones(remote.icones);actors.splice(0,actors.length,...structuredClone(remote.actors).map(normalizeActor));catalog=structuredClone(remote.catalog);remetNotesDuMJ(notesIci);if(typeof niveauxHeros==='function')niveauxHeros();if(remote.domaine&&typeof normaliseDomaine==='function'){const d=normaliseDomaine(remote.domaine);if(typeof poidsDomaine!=='function'||poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null}maps=Array.isArray(remote.maps)?structuredClone(remote.maps):[];currentMapId=remote.currentMapId||null;if(typeof rattacheCarteEditee==='function')rattacheCarteEditee();tokensLocked=remote.locked===true;round=remote.round||1;mode=remote.mode==='exploration'?'exploration':'combat';owner=actors.findIndex(a=>a.hero);selected=owner;mapImage=remote.mapImage||null;sceneTitle(remote.title||'Amertume');$('round').textContent=String(round).padStart(2,'0');$('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);baseRevision=remoteId;view=admin?'mj':'player';$('view').value=view;
  // En table, chez un joueur, c'est la table qui rend : le contenu publié ne pose pas ses valeurs entre-temps.
  if(!(typeof enLigne!=='undefined'&&enLigne&&!admin&&typeof dernierDoc!=='undefined'&&dernierDoc))render();
  scheduleSave();status('Scène partagée chargée.');if(admin){lastPublishedText=texteStable(publicContent());autoReady=true}
