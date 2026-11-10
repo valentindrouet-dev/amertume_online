@@ -606,6 +606,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='intervention'&&typeof interventionRecue==='function')interventionRecue(rec);
   else if(rec.effet==='plasma'&&typeof billesPlasma==='function')billesPlasma(acteurDuJournal(rec.a),Number(rec.logo)||1,false);
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
+  else if(rec.effet==='foudre'&&typeof eclairFoudre==='function')eclairFoudre(acteurDuJournal(rec.a),acteurDuJournal(rec.b),Number(rec.logo)||0);
   else if(rec.effet==='balayage'&&typeof coupDeToken==='function')coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='choc'&&typeof chocImpact==='function'){const [x,y]=(typeof rec.logo==='string'?rec.logo:'').split('|').map(Number);
    chocImpact(acteurDuJournal(rec.a),acteurDuJournal(rec.b),170,Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null)}

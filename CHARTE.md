@@ -341,6 +341,7 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 - Elles montrent un mouvement réel : une bille de Plasma qui part du token vers la Cellule, une flèche, une poussée.
 - L'arrivée d'une animation se marque par un **éclat** bref (agrandissement et halo de la teinte).
 - Si l'appareil demande de réduire les animations (`prefers-reduced-motion`), seul l'éclat reste.
+- **Foudre (v1.399)** (`.vfx-foudre`, `.vfx-foudre-impact`, images de `img/vfx/`) : quand le porteur de la Foudre se déplace, un arc jaune part de son socle vers le touché le plus proche, puis rebondit de touché en touché ; il tremble (trois dessins alternés) et s'efface en 400 ms, chaque rebond 95 ms après le précédent. Chaque touché reçoit un éclat en étoile, large de 1,8 socle. Aucun texte, aucune ligne au journal. Un joueur ne voit pas l'arc d'un combattant qu'il ne voit pas.
 
 ---
 

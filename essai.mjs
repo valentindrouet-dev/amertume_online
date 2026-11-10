@@ -73,6 +73,22 @@ try{
    return {change:k1!==k2,tient:k2===k3,vide:memoClesRendu===null}});
   dit(r.change&&r.tient&&r.vide,'une porte ouverte change aussitôt la vue de la carte')}
 
+ /* ---------- La Foudre se voit : un arc par rebond, un éclat par touché, puis plus rien ; jamais vers un socle qu'on ne voit pas ---------- */
+ etape='Foudre';console.log(etape);
+ {const r=await p.evaluate(async()=>{const h=actors.filter(a=>a.hero),adv=actors.filter(a=>!a.hero),pv=actors.map(a=>a.hp);
+   const places=actors.map(a=>[a.x,a.y]);h[0].x=40;h[0].y=50;adv[0].x=44;adv[0].y=47;adv[1].x=44;adv[1].y=54;render();
+   infligeEtat(h[0],'Foudre');afterMove(h[0],true);
+   const arcs=document.querySelectorAll('.vfx-foudre').length,eclats=document.querySelectorAll('.vfx-foudre-impact').length,touches=actors.filter((a,i)=>a.hp<pv[i]).length;
+   await new Promise(ok=>setTimeout(ok,1500));const restes=document.querySelectorAll('.vfx-foudre,.vfx-foudre-impact').length;
+   // En vue joueur, un adversaire que la troupe ne voit pas ne reçoit pas d'arc.
+   adv[0].vu=false;adv[0].hidden=true;view='player';render();const cache=eclairFoudre(h[0],adv[0],0),vuCache=document.querySelectorAll('.vfx-foudre').length;view='mj';adv[0].vu=true;adv[0].hidden=false;
+   // La scène reprend sa place et ses PV pour la suite de l'essai.
+   actors.forEach((a,i)=>{a.x=places[i][0];a.y=places[i][1];a.hp=pv[i];a.states=(a.states||[]).filter(e=>!/^Foudre/.test(e))});if(typeof retireEtat==='function')actors.forEach(a=>{try{retireEtat(a,'Foudre')}catch(e){}});render();
+   return {arcs,eclats,touches,restes,cache,vuCache}});
+  dit(r.touches>=2&&r.arcs===r.touches&&r.eclats===r.touches,'un arc et un éclat par combattant touché',JSON.stringify(r));
+  dit(r.restes===0,'l’effet fini, il ne reste rien sur la carte');
+  dit(r.cache===0&&r.vuCache===0,'aucun arc vers un adversaire que le joueur ne voit pas')}
+
  /* ---------- 3. Un combat : il commence, un socle se glisse, le tour passe, il finit ---------- */
  etape='Combat';console.log(etape);
  await p.evaluate(()=>{basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();selected=actors.findIndex(a=>a.hero);marked=new Set([selected]);render()});
