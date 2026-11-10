@@ -154,3 +154,109 @@ $('campagne-fichier').onchange=()=>{const f=$('campagne-fichier').files[0];$('ca
 // Le bloc est au MJ ; les joueurs ne le voient pas. La liste se lit une fois la base ouverte.
 const renderSettingsSansCampagnes=renderSettings;renderSettings=function(){renderSettingsSansCampagnes();$('bloc-campagnes').hidden=view!=='mj';renderCampagnes()};
 document.addEventListener('amertume-partie-chargee',chargeCampagnes);
+
+/* ---------- v1.405 — Les aventures ----------
+   Une aventure arrive en un seul fichier (format : AVENTURE-FORMAT.md) : ses talents, ses objets, ses adversaires et ses
+   cartes. Avant d'ajouter quoi que ce soit, la fenêtre montre tout ce qui va entrer, nom par nom. Chaque aventure importée est
+   retenue (catalog.aventures : son nom, et l'identifiant de chaque chose qu'elle a apportée), et se retire d'un clic. Au
+   retrait, ce qui sert ailleurs — un objet dans un sac, un talent appris, une carte ouverte, un élément cité par le reste du
+   contenu — reste, sauf si le MJ coche le contraire ; la partie d'avant le retrait est gardée dans les copies. */
+const GENRES_AVENTURE=[['talents','talent','talents'],['items','objet','objets'],['monsters','adversaire','adversaires'],['maps','carte','cartes']];
+const idSur=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v);
+const aventuresImportees=()=>Array.isArray(catalog.aventures)?catalog.aventures.filter(a=>a&&idSur(a.id)&&typeof a.nom==='string'):[];
+function resumeAventure(x){const l=GENRES_AVENTURE.map(([k,un,des])=>{const n=Array.isArray(x[k])?x[k].length:0;return n?n+' '+(n>1?des:un):''}).filter(Boolean);return l.length?l.join(', '):'rien'}
+// Lire le fichier : une aventure d'Amertüme Online, ou un refus qui dit pourquoi.
+function lisAventure(texte,nom){let s=null;try{s=JSON.parse(String(texte||'').replace(/^﻿/,'').trim())}catch(e){throw Error('« '+nom+' » n’est pas du JSON lisible — '+e.message)}
+ if(!s||typeof s!=='object'||Array.isArray(s)||s.genre!=='aventure')throw Error('« '+nom+' » n’est pas une aventure (il lui faut « "genre": "aventure" »).');
+ if(!idSur(s.id))throw Error('« '+nom+' » : l’identifiant de l’aventure manque ou est invalide.');
+ if(typeof s.nom!=='string'||!s.nom.trim())throw Error('« '+nom+' » : l’aventure n’a pas de nom.');
+ const a={id:s.id,nom:s.nom.trim().slice(0,80)};
+ GENRES_AVENTURE.forEach(([k])=>{const l=s[k];if(l!==undefined&&!Array.isArray(l))throw Error('« '+nom+' » : « '+k+' » doit être une liste.');
+  a[k]=(l||[]).filter(x=>x&&typeof x==='object'&&!Array.isArray(x)&&typeof x.name==='string'&&x.name.trim()).map(x=>structuredClone(x))});
+ if(!GENRES_AVENTURE.some(([k])=>a[k].length))throw Error('« '+nom+' » ne contient ni talent, ni objet, ni adversaire, ni carte.');
+ return a}
+/* Préparer l'ajout : chaque chose garde son identifiant s'il est libre ; sinon elle en reçoit un neuf, et chaque mention de
+   l'ancien dans l'aventure (un talent d'adversaire, un objet posé sur une carte…) suit. Rien n'est encore ajouté. */
+function prepareAventure(a){const pris=new Set([...(catalog.talents||[]),...(catalog.items||[]),...(catalog.monsters||[]),...(maps||[]),...actors].map(x=>x&&x.id).filter(Boolean));
+ const neufs=new Map(),vus=new Set();
+ GENRES_AVENTURE.forEach(([k])=>a[k].forEach(x=>{const ancien=x.id;if(idSur(ancien)&&!pris.has(ancien)&&!vus.has(ancien)){vus.add(ancien);return}
+  const n=crypto.randomUUID();if(idSur(ancien))neufs.set(ancien,n);x.id=n;vus.add(n)}));
+ const suit=v=>{if(typeof v==='string')return neufs.has(v)?neufs.get(v):v;if(Array.isArray(v))return v.map(suit);
+  if(v&&typeof v==='object'){for(const c of Object.keys(v))if(c!=='__proto__')v[c]=suit(v[c]);return v}return v};
+ if(neufs.size)GENRES_AVENTURE.forEach(([k])=>{a[k]=a[k].map(x=>{const id=x.id;const y=suit(x);y.id=id;return y})});
+ // Les noms déjà pris, pour le dire dans l'aperçu : rien n'est remplacé, les deux coexistent.
+ const noms=k=>new Set((k==='maps'?maps:(catalog[k]||[])).map(x=>x&&x.name).filter(Boolean));
+ a.doublons={};GENRES_AVENTURE.forEach(([k])=>{const n=noms(k);a.doublons[k]=a[k].filter(x=>n.has(x.name)).map(x=>x.name)});
+ a.renommes=neufs.size;return a}
+function ajouteAventure(a){if(aventuresImportees().some(x=>x.id===a.id))throw Error('« '+a.nom+' » est déjà importée : retire-la d’abord pour la réimporter.');
+ const base={ratio:16/9,fitted:true,image:null,matiere:[],doors:[],start:null,foes:[],objets:[],coffres:[],echelle:{x:8,y:8,t:typeof SOCLE_DEFAUT!=='undefined'?SOCLE_DEFAUT:1}};
+ catalog.talents.push(...a.talents);catalog.items.push(...a.items);catalog.monsters.push(...a.monsters);
+ maps.push(...a.maps.map(m=>Object.assign(structuredClone(base),m)));
+ catalog=normalizeCatalog(catalog);
+ // Ce qui est vraiment entré, d'après ce qui est là après la normalisation.
+ const ici={talents:new Set(catalog.talents.map(x=>x.id)),items:new Set(catalog.items.map(x=>x.id)),monsters:new Set(catalog.monsters.map(x=>x.id)),maps:new Set(maps.map(x=>x.id))};
+ const r={id:a.id,nom:a.nom,le:Date.now()};GENRES_AVENTURE.forEach(([k])=>{r[k]=a[k].map(x=>x.id).filter(id=>ici[k].has(id))});
+ catalog.aventures=[...aventuresImportees(),r];
+ if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
+ log('Aventure importée : '+a.nom+' — '+resumeAventure(r)+'.',{local:true});renderAventures();return r}
+/* Ce qu'un retrait toucherait : chaque chose de l'aventure encore là, et parmi elles ce qui sert ailleurs. */
+function bilanRetrait(r){const tous={talents:catalog.talents,items:catalog.items,monsters:catalog.monsters,maps};
+ const siens=new Set(GENRES_AVENTURE.flatMap(([k])=>r[k]||[]));
+ // Ailleurs : les combattants, le domaine, et tout le contenu qui n'est pas de cette aventure.
+ const ailleurs=JSON.stringify([actors,typeof domaine!=='undefined'?domaine:null,...GENRES_AVENTURE.map(([k])=>tous[k].filter(x=>x&&!siens.has(x.id)))]);
+ const out={};GENRES_AVENTURE.forEach(([k])=>{const l=tous[k].filter(x=>x&&(r[k]||[]).includes(x.id));
+  out[k]=l.map(x=>({id:x.id,nom:x.name,sert:(k==='maps'&&x.id===currentMapId)?'ouverte':ailleurs.includes('"'+x.id+'"')?'ailleurs':''}))});
+ return out}
+function retireAventure(r,aussiUtilises){const b=bilanRetrait(r),otes={};
+ const part=k=>b[k].filter(x=>aussiUtilises?x.sert!=='ouverte':!x.sert).map(x=>x.id);
+ GENRES_AVENTURE.forEach(([k])=>{otes[k]=new Set(part(k))});
+ catalog.talents=catalog.talents.filter(x=>!otes.talents.has(x.id));catalog.items=catalog.items.filter(x=>!otes.items.has(x.id));catalog.monsters=catalog.monsters.filter(x=>!otes.monsters.has(x.id));
+ maps=maps.filter(x=>!otes.maps.has(x.id));if(typeof mapDraft!=='undefined'&&mapDraft&&!maps.includes(mapDraft))mapDraft=maps[0]||null;
+ // L'aventure reste inscrite tant qu'il lui reste quelque chose : un second retrait l'achève.
+ const reste={...r};let vide=true;GENRES_AVENTURE.forEach(([k])=>{reste[k]=(r[k]||[]).filter(id=>!otes[k].has(id));if(reste[k].length)vide=false});
+ catalog.aventures=aventuresImportees().map(x=>x.id===r.id?(vide?null:reste):x).filter(Boolean);
+ catalog=normalizeCatalog(catalog);
+ if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
+ const n=GENRES_AVENTURE.reduce((s,[k])=>s+otes[k].size,0);log('Aventure retirée : '+r.nom+' — '+n+' élément'+(n>1?'s':'')+' ôté'+(n>1?'s':'')+(vide?'.':' ; le reste sert encore ailleurs.'),{local:true});
+ renderAventures();return {otes:n,vide}}
+// Avant un retrait, la partie telle qu'elle est se garde : « Avant le dernier retrait d'aventure », dans les copies.
+function gardeAvantRetrait(){return new Promise(ok=>{try{if(typeof db==='undefined'||!db){ok();return}const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),g=st.get('session');
+ g.onsuccess=()=>{if(g.result){const c=structuredClone(g.result);c.enregistreLe=Date.now();st.put(c,'copie:avant-retrait')}};tx.oncomplete=()=>ok();tx.onerror=()=>ok()}catch(e){ok()}})}
+
+/* ---------- La fenêtre : l'aperçu d'un import, le bilan d'un retrait ---------- */
+const aventureDialog=dialog('aventure-fenetre','Aventure','<div id="aventure-corps"></div><label class="aventure-aussi" id="aventure-aussi-label" hidden><input type="checkbox" id="aventure-aussi"> Retirer aussi ce qui sert ailleurs</label><div class="form-actions"><button type="button" id="aventure-non">Annuler</button><button type="button" id="aventure-oui" class="primary"></button></div>');
+function listeNoms(titre,noms,marques){const d=document.createElement('div');d.className='aventure-groupe';const h=document.createElement('h3');h.className='reglage-titre';h.textContent=titre+' · '+noms.length;
+ const p=document.createElement('p');p.className='aventure-noms';noms.forEach((n,i)=>{const s=document.createElement('span');s.textContent=n;if(marques&&marques[i])s.className='aventure-marque';p.append(s)});d.append(h,p);return d}
+function apercuAventure(a){const corps=$('aventure-corps');corps.replaceChildren();aventureDialog.querySelector('.dialog-head h2').textContent='Importer « '+a.nom+' »';
+ GENRES_AVENTURE.forEach(([k,,des])=>{if(!a[k].length)return;const nom=des.charAt(0).toUpperCase()+des.slice(1);
+  corps.append(listeNoms(nom,a[k].map(x=>x.name+(a.doublons[k].includes(x.name)?' (nom déjà pris)':'')),a[k].map(x=>a.doublons[k].includes(x.name))))});
+ $('aventure-aussi-label').hidden=true;$('aventure-oui').textContent='Importer';
+ $('aventure-oui').onclick=()=>{try{ajouteAventure(a);aventureDialog.close()}catch(e){alert('Import refusé : '+e.message)}};
+ $('aventure-non').onclick=()=>aventureDialog.close();aventureDialog.showModal()}
+function fenetreRetrait(r){const b=bilanRetrait(r),corps=$('aventure-corps');corps.replaceChildren();aventureDialog.querySelector('.dialog-head h2').textContent='Retirer « '+r.nom+' »';
+ const otes=[],garde=[];GENRES_AVENTURE.forEach(([k,,des])=>{const nom=des.charAt(0).toUpperCase()+des.slice(1),l=b[k];
+  const o=l.filter(x=>!x.sert),g=l.filter(x=>x.sert);if(o.length)otes.push(listeNoms(nom,o.map(x=>x.nom)));
+  if(g.length)garde.push(listeNoms(nom+' qui servent ailleurs',g.map(x=>x.nom+(x.sert==='ouverte'?' (ouverte en ce moment)':'')),g.map(()=>true)))});
+ corps.append(...otes,...garde);if(!otes.length&&!garde.length){const p=document.createElement('p');p.className='muted';p.textContent='Plus rien de cette aventure n’est là.';corps.append(p)}
+ const utilises=GENRES_AVENTURE.some(([k])=>b[k].some(x=>x.sert==='ailleurs'));$('aventure-aussi-label').hidden=!utilises;$('aventure-aussi').checked=false;
+ $('aventure-oui').textContent='Retirer';
+ $('aventure-oui').onclick=async()=>{const aussi=$('aventure-aussi').checked;aventureDialog.close();await gardeAvantRetrait();retireAventure(r,aussi)};
+ $('aventure-non').onclick=()=>aventureDialog.close();aventureDialog.showModal()}
+
+/* ---------- Le bloc des Paramètres, sous les campagnes ---------- */
+const blocAventures=document.createElement('div');blocAventures.id='bloc-aventures';
+blocAventures.innerHTML='<div class="divider"></div><h3 class="reglage-titre">Aventures</h3><div id="aventure-liste"></div>'
+ +'<div class="side-actions"><button id="aventure-importer">⇧ Importer une aventure</button><input type="file" id="aventure-fichier" accept=".json,application/json" hidden></div>'
+ +'<p class="form-error" id="aventure-erreur" role="status" aria-live="polite"></p>';
+blocCampagnes.after(blocAventures);
+function renderAventures(){const liste=$('aventure-liste');if(!liste)return;blocAventures.hidden=view!=='mj';liste.replaceChildren();
+ aventuresImportees().forEach(r=>{const l=document.createElement('div');l.className='reglage';const d=document.createElement('div'),s=document.createElement('strong'),p=document.createElement('p');
+  s.textContent=r.nom;p.className='muted';p.textContent=resumeAventure(r)+(r.le?' · importée le '+dateCampagne(r.le):'');d.append(s,p);
+  const b=document.createElement('button');b.type='button';b.textContent='Retirer';b.onclick=()=>fenetreRetrait(r);l.append(d,b);liste.append(l)})}
+$('aventure-importer').onclick=()=>{if(view!=='mj')return;$('aventure-erreur').textContent='';$('aventure-fichier').click()};
+$('aventure-fichier').onchange=()=>{const f=$('aventure-fichier').files[0];$('aventure-fichier').value='';if(!f)return;
+ f.text().then(t=>{const a=prepareAventure(lisAventure(t,f.name));if(aventuresImportees().some(x=>x.id===a.id))throw Error('« '+a.nom+' » est déjà importée : retire-la d’abord pour la réimporter.');apercuAventure(a)})
+  .catch(e=>{$('aventure-erreur').textContent='Import refusé : '+e.message;if(typeof signaleErreur==='function')signaleErreur(e,'aventure')})};
+{const rs=renderSettings;renderSettings=function(...x){const r=rs.apply(this,x);try{renderAventures()}catch(e){}return r}}
+renderAventures();
+

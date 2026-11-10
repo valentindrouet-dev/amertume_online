@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.405","d":"2026-11-10","t":"Paquet d'aventure : import avec aperçu, retrait en un clic"},
 {"v":"1.404","d":"2026-11-10","t":"Recherche globale (Ctrl+K)"},
 {"v":"1.403","d":"2026-11-10","t":"Journal sur une ligne, contour des +1 des sphères"},
 {"v":"1.402","d":"2026-11-10","t":"Chiffres des touches toujours affichés, icônes des filtres au choix"},

@@ -164,6 +164,35 @@ try{
   dit(carte,'une carte trouvée s’ouvre dans l’onglet Cartes');dit(!joueur,'un joueur n’ouvre pas la recherche');
   await p.evaluate(()=>showPage('table'))}
 
+ /* ---------- Une aventure : l'aperçu montre tout, l'import ajoute tout, le retrait ôte tout sauf ce qui sert ailleurs ---------- */
+ etape='Aventure';console.log(etape);
+ {const r=await p.evaluate(async()=>{const avant={t:catalog.talents.length,o:catalog.items.length,m:catalog.monsters.length,c:maps.length},prisId=catalog.items[0].id;
+   // Un paquet comme Claude le produirait : un talent, deux objets (l'un sous un identifiant déjà pris), un adversaire qui cite le talent, une carte qui pose l'objet.
+   const paquet={app:'amertume_online',genre:'aventure',version:1,id:'essai-crypte',nom:'Crypte d’essai',
+    talents:[{...structuredClone(catalog.talents[0]),id:'av-talent',name:'Murmure d’essai'}],
+    items:[{...structuredClone(catalog.items[0]),id:prisId,name:'Clef d’os'},{...structuredClone(catalog.items[1]),id:'av-objet-2',name:catalog.items[1].name}],
+    monsters:[{...structuredClone(catalog.monsters[0]),id:'av-goule',name:'Goule d’essai',talents:['av-talent']}],
+    maps:[{id:'av-carte',name:'Crypte',objets:[{id:'po1',item:prisId,x:50,y:50}],foes:[]}]};
+   const a=prepareAventure(lisAventure(JSON.stringify(paquet),'essai.json'));
+   const clef=a.items.find(x=>x.name==='Clef d’os');
+   const apercu=(apercuAventure(a),document.getElementById('aventure-corps').textContent);aventureDialog.close();
+   const reg=ajouteAventure(a);
+   const ici={t:catalog.talents.some(x=>x.name==='Murmure d’essai'),o:catalog.items.some(x=>x.name==='Clef d’os'),m:catalog.monsters.some(x=>x.name==='Goule d’essai'&&(x.talents||[]).includes('av-talent')),c:maps.some(x=>x.name==='Crypte'&&x.objets[0].item===clef.id)};
+   let double='';try{ajouteAventure(prepareAventure(lisAventure(JSON.stringify(paquet),'essai.json')))}catch(e){double=e.message}
+   // L'aventurier porte la Clef d'os : elle sert ailleurs.
+   const h=actors.find(x=>x.hero);h.inventaire=[...(h.inventaire||[]),clef.id];
+   const bilan=bilanRetrait(reg);retireAventure(reg,false);
+   const apres1={clef:catalog.items.some(x=>x.id===clef.id),goule:catalog.monsters.some(x=>x.name==='Goule d’essai'),carte:maps.some(x=>x.name==='Crypte'),inscrite:aventuresImportees().map(x=>x.nom+':'+resumeAventure(x)).join()};
+   retireAventure(aventuresImportees().find(x=>x.id==='essai-crypte'),true);h.inventaire=h.inventaire.filter(x=>x!==clef.id);
+   const apres2={clef:catalog.items.some(x=>x.id===clef.id),inscrite:aventuresImportees().length};
+   return {renomme:clef.id!==prisId,apercu,ici,double,sert:bilan.items.filter(x=>x.sert).map(x=>x.nom),apres1,apres2,
+    retour:catalog.talents.length===avant.t&&catalog.items.length===avant.o&&catalog.monsters.length===avant.m&&maps.length===avant.c}});
+  dit(r.apercu.includes('Murmure d’essai')&&r.apercu.includes('Clef d’os')&&r.apercu.includes('Goule d’essai')&&r.apercu.includes('Crypte')&&r.apercu.includes('(nom déjà pris)'),'l’aperçu nomme tout ce qui va entrer, et les noms déjà pris');
+  dit(r.renomme&&r.ici.t&&r.ici.o&&r.ici.m&&r.ici.c,'l’import ajoute tout ; un identifiant déjà pris est changé, et la carte suit',JSON.stringify(r.ici));
+  dit(r.double.includes('déjà importée'),'la même aventure ne s’importe pas deux fois');
+  dit(r.sert.join()==='Clef d’os'&&r.apres1.clef&&!r.apres1.goule&&!r.apres1.carte&&r.apres1.inscrite.includes('1 objet'),'le retrait ôte tout, sauf l’objet qu’un aventurier porte, qui reste inscrit',JSON.stringify(r.apres1));
+  dit(!r.apres2.clef&&r.apres2.inscrite===0&&r.retour,'« Retirer aussi ce qui sert ailleurs » achève : le contenu revient à ce qu’il était',JSON.stringify(r.apres2))}
+
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
  const onglets=await p.evaluate(async()=>{const vus=[];for(const [k] of ONGLETS){showPage(k);await new Promise(r=>setTimeout(r,180));vus.push(k)}showPage('table');return vus});

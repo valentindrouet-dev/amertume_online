@@ -4997,3 +4997,8 @@ button.btn-inventaire{--fond:#8a6440;color:#fff}
 .recherche-ligne.choisie{background:var(--line)}
 .recherche-icone{flex:none;width:28px;height:28px;display:grid;place-items:center}.recherche-icone>*{max-width:28px;max-height:28px}.recherche-icone .logo-equip{width:28px;height:28px;margin:0}
 .recherche-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.recherche-genre{flex:none;font-size:12px}
+/* v1.405 — Les aventures : l'aperçu d'un import et le bilan d'un retrait, un titre de section par sorte, les noms à la suite ;
+   un nom déjà pris, ou ce qui sert ailleurs, en italique --muted. */
+#aventure-fenetre{width:min(640px,94vw)}#aventure-corps{max-height:min(60dvh,520px);overflow:auto}
+.aventure-groupe{margin:0 0 12px}.aventure-noms{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 0;font-size:14px}
+.aventure-noms .aventure-marque{font-style:italic;color:var(--muted)}.aventure-aussi{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:14px}.aventure-aussi input{width:auto;margin:0}

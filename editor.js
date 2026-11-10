@@ -9042,14 +9042,14 @@ function sauveEntier(raison){try{const tx=db.transaction('state','readwrite'),st
    la partie enregistrée à l'instant est gardée (« copie:avant-reprise »). */
 function listeCopies(f){if(!db){f([]);return}try{const st=db.transaction('state').objectStore('state'),k=st.getAllKeys();
   k.onerror=()=>f([]);
-  k.onsuccess=()=>{const cles=k.result.filter(x=>typeof x==='string'&&(/^copie:\d{4}-\d{2}-\d{2}$/.test(x)||x===CLE_AVANT_REPRISE||x===CLE_AVANT_META)),out=[];let reste=cles.length;
+  k.onsuccess=()=>{const cles=k.result.filter(x=>typeof x==='string'&&(/^copie:\d{4}-\d{2}-\d{2}$/.test(x)||x===CLE_AVANT_REPRISE||x==='copie:avant-retrait'||x===CLE_AVANT_META)),out=[];let reste=cles.length;
    if(!reste){f([]);return}
    // La partie entière d'avant la v1.397 ne se relit pas pour être listée : sa fiche, écrite avec elle, suffit.
    cles.forEach(c=>{const g=st.get(c);const fin=()=>{if(--reste)return;f(out.sort((a,b)=>b.quand-a.quand))};
     g.onsuccess=()=>{const s=g.result;
      if(c===CLE_AVANT_META){if(s&&k.result.includes(CLE_AVANT_IMAGES))out.push({cle:CLE_AVANT_IMAGES,quand:Number(s.t)||0,resume:String(s.resume||''),genre:'avant-images'})}
      else if(s&&typeof s==='object'&&Array.isArray(s.actors)){let resume='';try{resume=resumeSauvegarde(s)}catch(e){}
-      out.push({cle:c,quand:Number(s.enregistreLe)||0,resume,genre:c===CLE_AVANT_REPRISE?'avant-reprise':'jour'})}fin()};
+      out.push({cle:c,quand:Number(s.enregistreLe)||0,resume,genre:c===CLE_AVANT_REPRISE?'avant-reprise':c==='copie:avant-retrait'?'avant-retrait':'jour'})}fin()};
     g.onerror=fin})}}catch(e){f([])}}
 function reprendCopie(cle,f){const fin=(ok,texte)=>{if(f)f(ok,texte)};if(!db){fin(false,'Sauvegarde locale indisponible.');return}
  lisPartie(cle,(s,manque)=>{try{if(!s||verifieSauvegarde(s)){fin(false,'Copie illisible.');return}
@@ -10505,7 +10505,7 @@ function renderDiagnostic(){const bloc=$('bloc-diagnostic');if(!bloc)return;cons
  // Les copies : la plus récente d'abord ; reprendre l'une garde d'abord ce qui est enregistré à l'instant.
  const copies=m.copies||[],bc=$('diag-copies');bc.replaceChildren();$('diag-copies-bloc').hidden=!copies.length;
  copies.forEach(c=>{const date=c.quand?new Date(c.quand).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'';
-  const titre=c.genre==='avant-images'?'Avant la v1.397'+(date?' — '+date:''):c.genre==='avant-reprise'?'Avant la dernière reprise':date.charAt(0).toUpperCase()+date.slice(1);
+  const titre=c.genre==='avant-images'?'Avant la v1.397'+(date?' — '+date:''):c.genre==='avant-retrait'?'Avant le dernier retrait d’aventure':c.genre==='avant-reprise'?'Avant la dernière reprise':date.charAt(0).toUpperCase()+date.slice(1);
   const l=ligneDiag(titre,c.resume+'.','Reprendre',()=>{if(!confirm('Remplacer la partie de ce navigateur par cette copie ?\n'+c.resume+'.\nLa partie enregistrée à l’instant est gardée dans « Avant la dernière reprise ».'))return;
    reprendCopie(c.cle,(ok,texte)=>{if(!ok)alert('Reprise impossible : '+texte);else log('Copie reprise : '+titre+'.',{local:true});relit()})});
   if(c.genre==='avant-images'){const b=document.createElement('button');b.type='button';b.textContent='Supprimer';
