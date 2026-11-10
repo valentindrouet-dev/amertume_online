@@ -637,30 +637,46 @@ function migreMatiere(map){const r=Math.max(.05,Number(map.ratio)||16/9);
  map.matiere=garderVerrous(depuisClip(mp),verrous);
  delete map.walls;delete map.traits;delete map.carves;delete map.cuts;delete map.visions;
  return map}
-/* ---------- v1.406 — Les murs lus sur l'image ----------
-   L'image de la carte, réduite à une grille de luminances, se partage en deux : ce qui est sombre (les murs, le dehors) et
-   ce qui est clair (le sol). Le seuil vient de l'image elle-même (méthode d'Otsu), déplacé par la sensibilité : plus elle est
-   haute, plus de gris passe pour du mur. Les poussières (traits de grille, ombres, mobilier fin) sont ôtées : une ouverture
-   d'un pixel de grille, puis les taches et les trous trop petits. Chaque masse restante est suivie le long de son bord, ses
-   trous compris, simplifiée, et devient un polygone de matière marqué « auto ». Le passage d'une porte reste ouvert : rien
-   ne referme les brèches. */
-function seuilOtsu(L){const h=new Array(256).fill(0);for(const v of L)h[v|0]++;const n=L.length;let tot=0;for(let i=0;i<256;i++)tot+=i*h[i];
- let sB=0,wB=0,best=0,t=128;for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=n-wB;if(!wF)break;sB+=i*h[i];const mB=sB/wB,mF=(tot-sB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>best){best=v;t=i}}
- return t}
-function masqueMurs(L,W,H,sensibilite){const s=Math.max(0,Math.min(100,Number(sensibilite)));const T=seuilOtsu(L)+(Number.isFinite(s)?s-50:0)*1.1;
- let m=new Uint8Array(W*H);for(let i=0;i<m.length;i++)m[i]=L[i]<=T?1:0;
- const voisins=(src,x,y,v)=>{for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=H)continue;if(src[Y*W+X]!==v)return true}return false};
- // Ouverture : on ronge d'une case, puis on regonfle — un trait fin disparaît, une masse garde sa forme.
- const ronge=new Uint8Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;ronge[i]=m[i]&&!voisins(m,x,y,0)?1:0}
- const ouvert=new Uint8Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;ouvert[i]=ronge[i]||(m[i]&&voisins(ronge,x,y,1))?1:0}
- m=ouvert;
- // Les taches de mur trop petites s'en vont ; les trous de sol trop petits se bouchent.
- const mini=Math.max(4,Math.round(W*H*.0004));
- const nettoie=(v)=>{const vu=new Uint8Array(W*H),pile=[];for(let i0=0;i0<W*H;i0++){if(vu[i0]||m[i0]!==v)continue;const tache=[i0];vu[i0]=1;pile.push(i0);let bord=false;
+/* ---------- v1.406, v1.407 — Les murs lus sur l'image ----------
+   La v1.406 prenait le sombre pour du mur : sur une carte au plancher sombre et aux murs de pierre claire, tout le sol devenait
+   mur. Désormais le MJ montre un mur sur l'image, d'un clic (et d'autres clics pour d'autres matières de mur) : chaque case de la
+   grille dont la couleur ressemble à l'une de celles montrées devient mur, la ressemblance mesurée comme l'œil la voit (Lab).
+   La tolérance règle jusqu'où « ressembler » va. Les joints entre les pierres d'un mur se comblent ; les taches trop petites
+   s'en vont, les trous trop petits se bouchent ; un mur fin reste un mur. Chaque masse est suivie le long de son bord, trous compris, simplifiée, et devient un
+   polygone de matière marqué « auto ». */
+// Une couleur sRGB (0-255) en Lab D65.
+function versLab(r,g,b){const lin=c=>{c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)},R=lin(r),G=lin(g),B=lin(b);
+ const X=(R*.4124+G*.3576+B*.1805)/.95047,Y=R*.2126+G*.7152+B*.0722,Z=(R*.0193+G*.1192+B*.9505)/1.08883,f=t=>t>.008856?Math.cbrt(t):7.787*t+16/116;
+ const fx=f(X),fy=f(Y),fz=f(Z);return [116*fy-16,500*(fx-fy),200*(fy-fz)]}
+function masqueCouleurs(lab,W,H,echantillons,tolerance,graines){const m=new Uint8Array(W*H),ech=(echantillons||[]).filter(e=>Array.isArray(e)&&e.length===3);if(!ech.length)return m;
+ const t=4+Math.max(0,Math.min(100,Number(tolerance)||0))*.42,t2=t*t;
+ for(let i=0;i<W*H;i++){const l=lab[i*3],a=lab[i*3+1],b=lab[i*3+2];for(const e of ech){const dl=l-e[0],da=a-e[1],db=b-e[2];if(dl*dl+da*da+db*db<=t2){m[i]=1;break}}}
+ /* Une fermeture de trois cases : on gonfle, puis on ronge d'autant. Les joints sombres entre deux pierres claires d'un même mur se
+    comblent — sans quoi un socle passerait par la fente — ; une porte ou un couloir, bien plus larges, restent ouverts. */
+ {const R=3,etire=(src,v)=>{const a=new Uint8Array(W*H),b=new Uint8Array(W*H);
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++){let o=1-v;for(let d=-R;d<=R&&o!==v;d++){const X=x+d;if(X>=0&&X<W&&src[y*W+X]===v)o=v}a[y*W+x]=o}
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++){let o=1-v;for(let d=-R;d<=R&&o!==v;d++){const Y=y+d;if(Y>=0&&Y<H&&a[Y*W+x]===v)o=v}b[y*W+x]=o}return b};
+  const f=etire(etire(m,1),0);m.set(f)}
+ // Les taches de mur trop petites s'en vont ; les trous de sol trop petits, entourés de mur, se bouchent.
+ const mini=Math.max(3,Math.round(W*H*.00015));
+ const nettoie=v=>{const vu=new Uint8Array(W*H),pile=[];for(let i0=0;i0<W*H;i0++){if(vu[i0]||m[i0]!==v)continue;const tache=[i0];vu[i0]=1;pile.push(i0);let bord=false;
    while(pile.length){const i=pile.pop(),x=i%W,y=(i-x)/W;if(x===0||y===0||x===W-1||y===H-1)bord=true;
     for(const j of [x>0?i-1:-1,x<W-1?i+1:-1,y>0?i-W:-1,y<H-1?i+W:-1])if(j>=0&&!vu[j]&&m[j]===v){vu[j]=1;pile.push(j);tache.push(j)}}
    if(tache.length<mini&&(v===1||!bord))tache.forEach(i=>m[i]=1-v)}};
- nettoie(1);nettoie(0);return m}
+ nettoie(1);nettoie(0);
+ /* v1.407 : « reliés aux clics » — seules restent les masses que touche un clic. Un mur fait d'un seul tenant se prend d'un clic,
+    sans les meules, les dalles ou le mobilier de la même pierre posés à l'écart. */
+ if(Array.isArray(graines)&&graines.length){const garde=new Uint8Array(W*H),pile=[];
+  graines.forEach(g=>{const x=Math.round(g[0]),y=Math.round(g[1]);
+   // Un clic tombé à côté du mur se rattache au mur le plus proche, à deux cases près.
+   for(let r=0;r<=2;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=H)continue;const i=Y*W+X;if(m[i]&&!garde[i]){garde[i]=1;pile.push(i)}}});
+  while(pile.length){const i=pile.pop(),x=i%W,y=(i-x)/W;for(const j of [x>0?i-1:-1,x<W-1?i+1:-1,y>0?i-W:-1,y<H-1?i+W:-1])if(j>=0&&m[j]&&!garde[j]){garde[j]=1;pile.push(j)}}
+  m.set(garde)}
+ return m}
+// La couleur montrée d'un clic : la moyenne des cases autour du point, en Lab.
+function couleurAuPoint(lab,W,H,x,y){let n=0,s=[0,0,0];const cx=Math.round(x),cy=Math.round(y);
+ for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=cx+dx,Y=cy+dy;if(X<0||Y<0||X>=W||Y>=H)continue;const i=(Y*W+X)*3;s[0]+=lab[i];s[1]+=lab[i+1];s[2]+=lab[i+2];n++}
+ return n?s.map(v=>v/n):null}
 // Le bord de chaque masse, en suivant les arêtes de la grille ; le mur toujours à droite du trajet.
 function bordsMasque(m,W,H){const est=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&m[y*W+x]===1,depart=new Map(),cle=(x,y)=>y*(W+1)+x;
  const arete=(x1,y1,x2,y2)=>{const k=cle(x1,y1);if(!depart.has(k))depart.set(k,[]);depart.get(k).push([x2,y2])};
@@ -682,8 +698,8 @@ function simplifieAnneau(r,eps){if(r.length<=4)return r;
  // Coupé en deux au point le plus loin du premier, l'anneau se simplifie moitié par moitié.
  let k=0,dm=-1;r.forEach((p,i)=>{const d=Math.hypot(p[0]-r[0][0],p[1]-r[0][1]);if(d>dm){dm=d;k=i}});
  const s=[...dp(r.slice(0,k+1)).slice(0,-1),...dp([...r.slice(k),r[0]]).slice(0,-1)];return s.length>=3?s:r}
-/* L'image → les polygones « auto », en pour cent de la carte. L : luminances 0-255, W × H cases. */
-function mursDepuisLuminances(L,W,H,sensibilite){const m=masqueMurs(L,W,H,sensibilite),boucles=bordsMasque(m,W,H);
+/* Le masque → les polygones « auto », en pour cent de la carte, W × H cases. */
+function mursDepuisMasque(m,W,H){const boucles=bordsMasque(m,W,H);
  const anneaux=boucles.map(b=>{const r=simplifieAnneau(b,.75);return {r,a:aireSignee(r)}}).filter(x=>Math.abs(x.a)>=1);
  const dehors=anneaux.filter(x=>x.a>0).sort((p,q)=>p.a-q.a),trous=anneaux.filter(x=>x.a<0);
  const polys=dehors.map(x=>({r:x.r,a:x.a,trous:[]}));
@@ -4113,7 +4129,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={mursDepuisLuminances,seuilOtsu,masqueMurs,metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,pointsDuModele,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,BRUIT_PAS,BRUIT_PAS_PORTE,BRUIT_ATTAQUE,BRUIT_CRI,metresDiscretion,formuleDegats,lisFormuleDegats,tireDegats,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TYPES_RESSOURCE_BASE,normaliseTypesRessources,normaliseQuantite,tireQuantite,normaliseRecolte,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={versLab,masqueCouleurs,couleurAuPoint,mursDepuisMasque,metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,pointsDuModele,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,BRUIT_PAS,BRUIT_PAS_PORTE,BRUIT_ATTAQUE,BRUIT_CRI,metresDiscretion,formuleDegats,lisFormuleDegats,tireDegats,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TYPES_RESSOURCE_BASE,normaliseTypesRessources,normaliseQuantite,tireQuantite,normaliseRecolte,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  etatAdvBonus,segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,XP_PAR_MARQUE,marquesGagnees,marquesDisponibles,NIVEAUX_XP,niveauDeXp,xpDuNiveau,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,CARACS_AFFIXE,CARACS_POINTS,bonusTalents,bonusDebutCombat,metresBonus,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,FORGE_TYPE_ADV,FORGE_MAX_TYPE_ADV,plafondForgeAdv,forgeAdvEffectif,clesAffixes,repetable,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
