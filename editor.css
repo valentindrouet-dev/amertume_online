@@ -4978,7 +4978,7 @@ button.btn-inventaire{--fond:#8a6440;color:#fff}
 #debuter-combat{display:block;width:100%;margin:0 0 10px;font-size:15px;padding:11px 12px}#debuter-combat[hidden]{display:none}
 /* v1.400, v1.401 — Le journal se filtre : quatre puces à icône, au style de « Vider » ; celle qui est choisie prend l'encre. */
 .journal-filtres{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 8px}.stack.right.calee .journal-filtres{flex:none}
-.journal-filtres .journal-filtre{margin-left:0;font-size:14px;line-height:1;letter-spacing:0;padding:4px 10px}.journal-filtre.on{color:var(--ink);border-color:var(--ink)}
+.journal-filtres .journal-filtre{margin-left:0;font-size:14px;line-height:1;letter-spacing:0;padding:4px 10px}.journal-filtre img{width:18px;height:18px;object-fit:contain;display:block}.journal-filtre.on{color:var(--ink);border-color:var(--ink)}
 #journal[data-filtre="combat"]>li:not(.ton-attaque):not(.ton-talent):not(.ton-soin):not(.ton-degats):not(.ton-etat):not(.j-turn),
 #journal[data-filtre="exploration"]>li:not(.ton-reveal):not(.ton-carte):not(.ton-butin):not(.ton-competence),
 #journal[data-filtre="discussion"]>li:not(.j-chat){display:none}

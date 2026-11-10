@@ -17,5 +17,5 @@ node -e "const fs=require('fs'),f='actualites.js',[v,t]=process.argv.slice(1);if
 # L'onglet Versions : la publication et ses lignes (une par modification, le corps du message), en tête de versions.json.
 node -e "const fs=require('fs'),[v,t,b]=process.argv.slice(1),f='versions.json';let l=[];try{l=JSON.parse(fs.readFileSync(f,'utf8'))}catch(e){}if(l.some(x=>x.v===v))process.exit(0);const lignes=b&&fs.existsSync(b)?fs.readFileSync(b,'utf8').split('\\n').map(x=>x.trim().replace(/^[-*•] +/,'')).filter(Boolean):[];l.unshift({v,d:new Date().toISOString().slice(0,10),t,l:lignes.length?lignes:[t]});fs.writeFileSync(f,JSON.stringify(l))" "$V" "$T" "$B"
 git add -A -- '*.js' '*.mjs' '*.html' '*.css' '*.cjs' '*.sh' '*.md' version.json versions.json img fonts
-{ echo "v$V : $T";echo;[ -n "$B" ] && cat "$B" && echo;echo "Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>";echo "Claude-Session: https://claude.ai/code/session_01PF75UrdhWECBCA3fXu5RYa"; } | git commit -q -F -
+{ echo "v$V : $T";echo;[ -n "$B" ] && cat "$B" && echo;echo "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>";echo "Claude-Session: https://claude.ai/code/session_01PF75UrdhWECBCA3fXu5RYa"; } | git commit -q -F -
 git push -q -u origin claude/reprise-code-chatgpt-lc34es && git push -q origin HEAD:main && git log --oneline -1

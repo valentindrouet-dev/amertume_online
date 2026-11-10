@@ -405,7 +405,7 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 
 **Inventaire sur la table (v1.386, v1.391)** (`#inventaire-table`) : dans la rangée des ronds de la barre des Actions, juste à droite de « Changer d'armes », un rond crème clair `#f6e8cf`, icône brune `#6b4320`, séparé d'un trait (`.barre-sep`) ; sa bulle prend le brun `#8a6440` — l'icône Inventaire des vignettes (celle choisie dans les Icônes, sinon le sac dessiné). Il paraît quand l'aventurier sélectionné est à soi, et ouvre son inventaire.
 
-**Filtres du journal (v1.400)** (`#journal-filtres`) : sous le titre du journal, quatre puces au style de « Vider » (`.journal-vider`), une icône chacune — 📜 Tout, ⚔ Combat, 🧭 Exploration, 💬 Discussion —, leur nom dans leur bulle ; celle qui est choisie à l'encre `--ink`. Aucun champ de recherche (v1.401). Un filtre cache des lignes à l'écran, il n'en retire aucune.
+**Filtres du journal (v1.400)** (`#journal-filtres`) : sous le titre du journal, quatre puces au style de « Vider » (`.journal-vider`), une icône chacune — 📜 Tout, ⚔ Combat, 🧭 Exploration, 💬 Discussion —, leur nom dans leur bulle ; celle qui est choisie à l'encre `--ink`. Le MJ peut remplacer chaque emoji par une icône du site (fenêtre des icônes, « Filtres du journal », v1.402), posée à 18 px. Aucun champ de recherche (v1.401). Un filtre cache des lignes à l'écran, il n'en retire aucune.
 
 **Touches de la barre d'actions (v1.400)** (`[data-touche]`) : sur les écrans à clavier, chacun des neuf premiers ronds de la ligne du haut (attaques et talents ; pas la ligne du bas, v1.401) porte son chiffre en haut à gauche, dans un petit rond de 16 px (fond `--panel`, liseré `--line`, chiffre gras à l'encre `--ink`).
 

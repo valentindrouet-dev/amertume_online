@@ -121,6 +121,13 @@ try{
   await p.keyboard.press('Digit1');await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());fermerBulle();render()});
   await p.focus('#journal-texte');await p.keyboard.press('Digit1');await p.keyboard.press('Digit2');await p.evaluate(()=>{document.getElementById('journal-texte').value='';document.activeElement.blur()});
   const clics=await p.evaluate(()=>window.__clics.join(','));
+  // La ligne du haut rebâtie hors du rendu (autre combattant choisi, document reçu) garde ses chiffres.
+  const rebatie=await p.evaluate(()=>new Promise(ok=>{renderAttackChoices();setTimeout(()=>ok(rondsDeLaBarre().map(b=>b.dataset.touche||'-').join('')),30)}));
+  dit(/^1/.test(rebatie)&&!rebatie.includes('-'),'rebâtie hors du rendu, la ligne du haut garde ses chiffres',rebatie);
+  // L'icône d'un filtre se choisit parmi celles du site ; sans choix, l'emoji.
+  {const r=await p.evaluate(()=>{catalog.logosFiltres={combat:'weapon_cotte.png'};render();const b=document.querySelector('#journal-filtres [data-filtre="combat"]'),t=document.querySelector('#journal-filtres [data-filtre="tout"]');
+    const avec=!!b.querySelector('img'),emoji=t.textContent;catalog.logosFiltres={};render();return {avec,emoji,sans:!b.querySelector('img')&&b.textContent==='⚔'}});
+   dit(r.avec&&r.emoji==='📜'&&r.sans,'l’icône choisie remplace l’emoji d’un filtre, et l’emoji revient sans choix',JSON.stringify(r))}
   dit(/^1\d*\|0$/.test(barre),'seuls les ronds de la ligne du haut portent leur chiffre',barre);
   dit(clics==='1','la touche 1 joue le premier rond du haut, et rien ne part quand on écrit',clics||'aucun clic');
   await p.evaluate(()=>{const adv=actors.find(a=>!a.hero);[adv.x,adv.y,adv.vu]=window.__place;actors.forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0);a.hp=a.max});basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()})}
