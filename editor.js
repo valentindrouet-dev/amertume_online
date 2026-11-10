@@ -10358,6 +10358,45 @@ addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.de
  const b=rondsDeLaBarre()[Number(m[1])-1];if(!b)return;e.preventDefault();
  if(b.disabled||b.classList.contains('inerte'))return;if(typeof fermerBulle==='function')fermerBulle();b.click()});
 
+/* ---------- v1.404 — La recherche globale (Ctrl+K, ⌘K sur Mac), chez le MJ ----------
+   Un nom tapé, depuis n'importe quel onglet : talents, objets de l'Armurerie, modèles du Bestiaire, combattants de la partie,
+   cartes et sections des Règles. Entrée ou un clic ouvre ce qui est trouvé, là où il se modifie. Les accents et la casse ne
+   comptent pas ; un nom qui commence par ce qu'on tape passe devant. La fenêtre se referme d'Échap, ou du même raccourci. */
+const rechercheDialog=dialog('recherche-globale','Recherche','<input id="recherche-globale-champ" type="search" autocomplete="off" spellcheck="false" aria-label="Rechercher"><div id="recherche-globale-liste" class="recherche-liste" role="listbox"></div>');
+let rechercheChoix=0,rechercheTrouves=[],reglesConnues=null;
+const sansAccents=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’']/g,' ').trim();
+// Les sections des Règles : bâties une fois par séance, pour leur titre seulement.
+function sectionsRegles(){if(reglesConnues)return reglesConnues;reglesConnues=[];
+ try{if(typeof REGLES_SECTIONS!=='undefined')REGLES_SECTIONS.forEach(f=>{const s=f();if(s&&s.id&&s.dataset&&s.dataset.titre)reglesConnues.push({id:s.id,titre:s.dataset.titre})})}catch(e){}
+ return reglesConnues}
+function entreesRecherche(){const out=[],ajoute=(genre,nom,ouvre,icone,cle)=>{if(typeof nom==='string'&&nom.trim())out.push({genre,nom:nom.trim(),cle:sansAccents(nom),ouvre,icone,id:cle})};
+ (catalog.talents||[]).forEach((t,i)=>ajoute('Talent',t&&t.name,()=>openTalent(i),()=>typeof logoTalent==='function'?logoTalent(t,'logo-equip'):null,'t'+i));
+ (catalog.items||[]).forEach((o,i)=>{if(o&&!o.forge)ajoute('Objet',o.name,()=>openItem(i),()=>typeof logoEquipement==='function'?logoEquipement(o,'logo-equip'):null,'o'+i)});
+ (catalog.monsters||[]).forEach((m,i)=>ajoute(m&&m.pnj?'PNJ':'Bestiaire',m&&m.name,()=>openActor(null,false,i),()=>jetonRond(m.image,m.name,'mini'),'m'+i));
+ actors.forEach((a,i)=>ajoute(a&&a.hero?'Aventurier':'Sur la carte',a&&(typeof nomNum==='function'?nomNum(a):a.name),()=>openActor(i),()=>jetonRond(a.image,a.name,'mini'),'a'+i));
+ (maps||[]).forEach(m=>ajoute(typeof estPaysage==='function'&&estPaysage(m)?'Paysage':'Carte',m&&m.name,()=>{showPage('maps');mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()},null,'c'+m.id));
+ sectionsRegles().forEach(r=>ajoute('Règles',r.titre,()=>{showPage('regles');requestAnimationFrame(()=>{const e=document.getElementById(r.id);if(e)e.scrollIntoView({block:'start'})})},null,'r'+r.id));
+ return out}
+function chercheGlobal(q){const c=sansAccents(q);if(!c)return [];
+ const mots=c.split(/\s+/).filter(Boolean),rang=e=>{if(e.cle===c)return 0;if(e.cle.startsWith(c))return 1;if(e.cle.split(/[\s\-–—·:()]+/).some(m=>m.startsWith(c)))return 2;return 3};
+ return entreesRecherche().filter(e=>mots.every(m=>e.cle.includes(m))).map(e=>({e,r:rang(e)})).sort((a,b)=>a.r-b.r||a.e.nom.length-b.e.nom.length||a.e.nom.localeCompare(b.e.nom,'fr')).slice(0,30).map(x=>x.e)}
+function dessineRecherche(){const liste=$('recherche-globale-liste');liste.replaceChildren();
+ rechercheTrouves=chercheGlobal($('recherche-globale-champ').value);rechercheChoix=Math.min(rechercheChoix,Math.max(0,rechercheTrouves.length-1));
+ rechercheTrouves.forEach((e,i)=>{const b=document.createElement('button');b.type='button';b.className='recherche-ligne'+(i===rechercheChoix?' choisie':'');b.setAttribute('role','option');b.setAttribute('aria-selected',String(i===rechercheChoix));
+  const ic=document.createElement('span');ic.className='recherche-icone';try{const im=e.icone&&e.icone();if(im)ic.append(im)}catch(err){}
+  const n=document.createElement('span');n.className='recherche-nom';n.textContent=e.nom;const g=document.createElement('span');g.className='recherche-genre muted';g.textContent=e.genre;
+  b.append(ic,n,g);b.onmousemove=()=>{if(rechercheChoix!==i){rechercheChoix=i;marqueChoix()}};b.onclick=()=>ouvreTrouve(i);liste.append(b)})}
+function marqueChoix(){[...$('recherche-globale-liste').children].forEach((b,i)=>{b.classList.toggle('choisie',i===rechercheChoix);b.setAttribute('aria-selected',String(i===rechercheChoix));if(i===rechercheChoix)b.scrollIntoView({block:'nearest'})})}
+function ouvreTrouve(i){const e=rechercheTrouves[i];if(!e)return;rechercheDialog.close();try{e.ouvre()}catch(err){if(typeof signaleErreur==='function')signaleErreur(err,'recherche')}}
+function ouvreRecherche(){if(view!=='mj'||!(typeof mjIci!=='function'||mjIci()))return;if(rechercheDialog.open){rechercheDialog.close();return}
+ document.querySelectorAll('dialog[open]').forEach(d=>{if(d!==rechercheDialog)d.close()});if(typeof fermerBulle==='function')fermerBulle();
+ const champ=$('recherche-globale-champ');champ.value='';rechercheChoix=0;dessineRecherche();rechercheDialog.showModal();champ.focus()}
+$('recherche-globale-champ').oninput=()=>{rechercheChoix=0;dessineRecherche()};
+$('recherche-globale-champ').onkeydown=e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!rechercheTrouves.length)return;
+  rechercheChoix=(rechercheChoix+(e.key==='ArrowDown'?1:-1)+rechercheTrouves.length)%rechercheTrouves.length;marqueChoix()}
+ else if(e.key==='Enter'){e.preventDefault();ouvreTrouve(rechercheChoix)}};
+addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey||e.shiftKey||String(e.key).toLowerCase()!=='k')return;if(view!=='mj')return;e.preventDefault();ouvreRecherche()});
+
 const FILTRES_JOURNAL=[['tout','📜','Tout'],['combat','⚔','Combat'],['exploration','🧭','Exploration'],['discussion','💬','Discussion']];
 // v1.403 : les deux boutons du MJ, en icônes eux aussi, sur la même ligne que les filtres.
 const BOUTONS_JOURNAL=[['session','🆕','Nouvelle session','journal-session'],['vider','🧹','Vider','journal-vider']];let majIconesFiltres=null;

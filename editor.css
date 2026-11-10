@@ -4989,3 +4989,11 @@ button.btn-inventaire{--fond:#8a6440;color:#fff}
 /* v1.400, v1.401 — Le chiffre de la touche sur chaque rond de la ligne du haut de la barre d'actions, sur les écrans à clavier. Un
    talent déjà joué garde sa coche, sans chiffre. */
 @media (hover:hover) and (pointer:fine){section.attack-card .choix-attaques button.btn-action[data-touche]:not(.pris)::after{content:attr(data-touche);position:absolute;left:-3px;top:-3px;min-width:16px;height:16px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--ink);border:1px solid var(--line);font:700 10px/1 system-ui;text-shadow:none;pointer-events:none}}
+/* v1.404 — La recherche globale : un champ, puis une ligne par trouvaille — son icône, son nom, sa sorte en .muted ; la ligne
+   choisie au clavier ou sous la souris prend le fond --line. */
+#recherche-globale{width:min(560px,94vw)}#recherche-globale-champ{width:100%;margin:0 0 10px;font-size:16px}
+.recherche-liste{display:flex;flex-direction:column;gap:2px;max-height:min(60dvh,460px);overflow:auto}
+.recherche-ligne{display:flex;align-items:center;gap:10px;width:100%;margin:0;padding:6px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);text-align:left;font:500 15px system-ui;box-shadow:none;cursor:pointer}
+.recherche-ligne.choisie{background:var(--line)}
+.recherche-icone{flex:none;width:28px;height:28px;display:grid;place-items:center}.recherche-icone>*{max-width:28px;max-height:28px}.recherche-icone .logo-equip{width:28px;height:28px;margin:0}
+.recherche-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.recherche-genre{flex:none;font-size:12px}

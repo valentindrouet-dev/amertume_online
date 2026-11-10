@@ -148,6 +148,22 @@ try{
    return {vu:!!c,bon:avec.includes(porte.name),apres,porte:porte.name,autre:autre.name}});
   dit(r.saute||(r.vu&&r.bon&&!r.apres),'Maj tenue sur une arme montre à côté celle que porte l’aventurier',JSON.stringify(r))}
 
+ /* ---------- La recherche globale : Ctrl+K, un nom, Entrée ouvre ce qui est trouvé ---------- */
+ etape='Recherche globale';console.log(etape);
+ {await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());showPage('domaine')});await p.keyboard.press('Control+k');await p.waitForTimeout(100);
+  const ouverte=await p.evaluate(()=>rechercheDialog.open&&document.activeElement.id==='recherche-globale-champ');
+  const nom=await p.evaluate(()=>catalog.items.find(o=>o&&!o.forge&&o.name).name);await p.fill('#recherche-globale-champ',nom.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''));
+  const premier=await p.evaluate(()=>rechercheTrouves[0]&&rechercheTrouves[0].nom);await p.keyboard.press('Enter');await p.waitForTimeout(200);
+  const ouvert=await p.evaluate(()=>document.getElementById('item-editor').open&&catalog.items[itemIndex].name);await p.evaluate(()=>document.querySelectorAll('dialog[open]').forEach(d=>d.close()));
+  const genres=await p.evaluate(()=>[...new Set(entreesRecherche().map(e=>e.genre))].sort().join(','));
+  const carte=await p.evaluate(()=>{const e=chercheGlobal(maps[0].name).find(x=>x.genre==='Carte'||x.genre==='Paysage');e.ouvre();return document.body.classList.contains('page-maps')&&mapDraft===maps[0]});
+  const joueur=await p.evaluate(()=>{showPage('table');view='player';ouvreRecherche();const o=rechercheDialog.open;view='mj';return o});
+  dit(ouverte,'Ctrl+K ouvre la recherche, le champ prêt à écrire');
+  dit(premier===nom&&ouvert===nom,'un nom tapé sans accents ni casse trouve l’objet, Entrée ouvre sa fiche',premier+' → '+ouvert);
+  dit(['Aventurier','Bestiaire','Carte','Objet','Règles','Talent'].every(g=>genres.includes(g)),'talents, objets, Bestiaire, combattants, cartes et Règles sont cherchés',genres);
+  dit(carte,'une carte trouvée s’ouvre dans l’onglet Cartes');dit(!joueur,'un joueur n’ouvre pas la recherche');
+  await p.evaluate(()=>showPage('table'))}
+
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
  const onglets=await p.evaluate(async()=>{const vus=[];for(const [k] of ONGLETS){showPage(k);await new Promise(r=>setTimeout(r,180));vus.push(k)}showPage('table');return vus});
