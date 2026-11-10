@@ -111,14 +111,23 @@ try{
   dit(r.combat.some(t=>t.includes('Feu'))&&!r.combat.some(t=>t.includes('fouille')||t.includes('On y va')),'« Combat » ne montre que le combat');
   dit(r.explo.length>=1&&r.explo.every(t=>!t.includes('Feu')&&!t.includes('On y va')),'« Exploration » ne montre que l’exploration');
   dit(r.disc.length>=1&&r.disc.every(t=>t.includes('On y va')),'« Discussion » ne montre que les paroles');
-  dit(!r.champ&&r.puces==='Tout,Combat,Exploration,Discussion','quatre puces à icône, chacune son nom, et pas de champ de recherche',r.puces);
+  dit(!r.champ&&r.puces.startsWith('Tout,Combat,Exploration,Discussion'),'quatre puces à icône, chacune son nom, et pas de champ de recherche',r.puces);
+  {const l=await p.evaluate(()=>{const bs=[...document.querySelectorAll('#journal-filtres button')].filter(b=>!b.hidden),tops=new Set(bs.map(b=>Math.round(b.getBoundingClientRect().top)));
+    return {n:bs.length,lignes:tops.size,noms:bs.map(b=>b.getAttribute('aria-label')).join(','),texte:bs.map(b=>b.textContent).join('')}});
+   dit(l.n===6&&l.lignes===1&&l.noms.endsWith('Nouvelle session,Vider')&&!/[A-Za-z]/.test(l.texte),'les six boutons tiennent sur une ligne, Nouvelle session et Vider en icônes',JSON.stringify(l))}
   dit(r.tout>=3&&r.total>=r.tout,'« Tout » remontre le journal entier, rien n’en est retiré')}
  {await p.evaluate(()=>{basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();selected=actors.findIndex(a=>a.hero);marked=new Set([selected]);
    // Un adversaire au contact : l'attaque du premier rond a une cible, le rond n'est pas grisé.
-   {const h=actors[selected],adv=actors.find(a=>!a.hero);window.__place=[adv.x,adv.y,adv.vu];adv.x=h.x+3;adv.y=h.y;adv.vu=true;adv.hidden=false}render();if(document.activeElement)document.activeElement.blur();
+   {const h=actors[selected],adv=actors.find(a=>!a.hero&&a.hp>0);window.__place=[adv.x,adv.y,adv.vu];
+    // Collés, socle contre socle : au contact quelle que soit la taille des socles. Les points du tour reviennent.
+    window.__placeH=[h.x,h.y];h.x=30;h.y=40;adv.x=h.x+(tokenOf(h)+tokenOf(adv))/2*.9/mapSize().width*100;adv.y=h.y;adv.horsCarte=false;adv.hp=adv.max;adv.states=[];adv.vu=true;adv.hidden=false;[h,adv].forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0)})}render();if(document.activeElement)document.activeElement.blur();
    window.__clics=[];document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('section.attack-card button');if(b)window.__clics.push(b.dataset.touche)},true)});
   const barre=await p.evaluate(()=>rondsDeLaBarre().map(b=>b.dataset.touche).join('')+'|'+document.querySelectorAll('section.attack-card .attack-row button[data-touche]').length);
-  await p.keyboard.press('Digit1');await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());fermerBulle();render()});
+  const avantTouche=await p.evaluate(()=>{const b=rondsDeLaBarre()[0];return {pourquoi:rondsDeLaBarre().map(b=>(b.getAttribute('aria-label')||'')+' / '+(b.dataset.dit||'')).join(' | ').slice(0,300),mode,round,cible:actors[selected]&&ciblesDe(actors[selected]).length,dialogue:[...document.querySelectorAll('dialog[open]')].map(d=>d.id).join(','),grise:!!b&&(b.disabled||b.classList.contains('inerte')),focus:document.activeElement&&(document.activeElement.id||document.activeElement.tagName),page:[...document.body.classList].filter(c=>c.startsWith('page-')).join(',')}});
+  // Le premier rond du haut qui n'est pas grisé : un rond grisé ne répond pas, c'est voulu.
+  const rang=await p.evaluate(()=>rondsDeLaBarre().findIndex(b=>!b.disabled&&!b.classList.contains('inerte')));
+  if(rang<0)console.log('    (touche : '+JSON.stringify(await p.evaluate(()=>{const h=actors[selected],a=actors.find(x=>!x.hero&&x.hp>0);return {h:[h.x,h.y,tokenOf(h)],a:[a.x,a.y,tokenOf(a),a.horsCarte,a.vu],mur:wallsBetween(h,a,walls()),contact:inContact(h,a,mapSize(),tokenOf(h),tokenOf(a)),voit:partySees(a),cache:cachePour(a,actors.indexOf(a)),portee:reachableTargets(selected).map(i=>actors[i].name),etatsH:h.states,etatsA:a.states,attaques:(h.attacks||[]).map(x=>x.name+':'+x.range)}}))+')');
+  if(rang>=0)await p.keyboard.press('Digit'+(rang+1));await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());fermerBulle();render()});
   await p.focus('#journal-texte');await p.keyboard.press('Digit1');await p.keyboard.press('Digit2');await p.evaluate(()=>{document.getElementById('journal-texte').value='';document.activeElement.blur()});
   const clics=await p.evaluate(()=>window.__clics.join(','));
   // La ligne du haut rebâtie hors du rendu (autre combattant choisi, document reçu) garde ses chiffres.
@@ -129,8 +138,8 @@ try{
     const avec=!!b.querySelector('img'),emoji=t.textContent;catalog.logosFiltres={};render();return {avec,emoji,sans:!b.querySelector('img')&&b.textContent==='⚔'}});
    dit(r.avec&&r.emoji==='📜'&&r.sans,'l’icône choisie remplace l’emoji d’un filtre, et l’emoji revient sans choix',JSON.stringify(r))}
   dit(/^1\d*\|0$/.test(barre),'seuls les ronds de la ligne du haut portent leur chiffre',barre);
-  dit(clics==='1','la touche 1 joue le premier rond du haut, et rien ne part quand on écrit',clics||'aucun clic');
-  await p.evaluate(()=>{const adv=actors.find(a=>!a.hero);[adv.x,adv.y,adv.vu]=window.__place;actors.forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0);a.hp=a.max});basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()})}
+  dit(rang>=0&&clics===String(rang+1),'la touche d’un rond du haut le joue, et rien ne part quand on écrit',(clics||'aucun clic')+' '+JSON.stringify({...avantTouche,rang}));
+  await p.evaluate(()=>{const adv=actors.find(a=>!a.hero&&a.hp>0);[adv.x,adv.y,adv.vu]=window.__place;[actors[selected].x,actors[selected].y]=window.__placeH;actors.forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0);a.hp=a.max});basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()})}
  {const r=await p.evaluate(async()=>{const h=actors[selected],porte=objetDe((h.weapons||[])[0]),autre=catalog.items.find(o=>o.category==='weapon'&&o!==porte&&!(h.weapons||[]).includes(o.id));
    if(!porte||!autre)return {saute:true};
    const ancre=document.getElementById('journal-texte'),d=gearDetail(autre,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(ancre,d,'bulle-gear');

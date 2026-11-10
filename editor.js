@@ -726,7 +726,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(c.textesFiche&&typeof c.textesFiche==='object'&&!Array.isArray(c.textesFiche)){const o={};Object.entries(c.textesFiche).forEach(([k,v])=>{if(/^[\wÀ-ÿ’' -]{1,40}$/.test(k)&&Array.isArray(v))o[k]=v.filter(x=>typeof x==='string').map(x=>x.slice(0,400)).slice(0,12)});if(Object.keys(o).length)c.textesFiche=o;else delete c.textesFiche}else delete c.textesFiche;
  if(Array.isArray(c.majVerifiees))c.majVerifiees=c.majVerifiees.filter(v=>typeof v==='string'&&/^\d+\.\d+(#\d{1,3})?$/.test(v)).slice(-8000);else delete c.majVerifiees;
  // v1.402 : l'icône de chaque filtre du journal, choisie parmi les icônes du site.
- {const o=c.logosFiltres&&typeof c.logosFiltres==='object'&&!Array.isArray(c.logosFiltres)?c.logosFiltres:{};c.logosFiltres={};['tout','combat','exploration','discussion'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.logosFiltres[k]=v})}
+ {const o=c.logosFiltres&&typeof c.logosFiltres==='object'&&!Array.isArray(c.logosFiltres)?c.logosFiltres:{};c.logosFiltres={};['tout','combat','exploration','discussion','session','vider'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.logosFiltres[k]=v})}
  {const o=c.iconesFiche&&typeof c.iconesFiche==='object'&&!Array.isArray(c.iconesFiche)?c.iconesFiche:{};c.iconesFiche={};['stats','inventaire','classe','bonus','espece','metier','statistiques'].forEach(k=>{const v=o[k];if(typeof v==='string'&&v&&v.length<=200&&!/["'<>&\\]/.test(v))c.iconesFiche[k]=v})}
  // v1.195 : l'icône choisie de chaque sphère ; et la planche des sphères, 6 × 5, découpée une fois.
  c.iconesGemmes=normaliseIconesGemmes(c.iconesGemmes);
@@ -2270,7 +2270,7 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
   // v1.204 : les six boutons d'une vignette de la page Aventuriers.
   +'<h3 class="reglage-titre icones-titre">Boutons des aventuriers</h3>'+ICONES_FICHE.map(([k,n])=>selGrille(selGroupes(esc(n),'fiche-'+k,(catalog.iconesFiche||{})[k]||'',groupes))).join('')
   // v1.402 : les quatre filtres du journal.
-  +'<h3 class="reglage-titre icones-titre">Filtres du journal</h3>'+FILTRES_JOURNAL.map(([k,,n])=>selGrille(selGroupes(esc(n),'filtre-'+k,(catalog.logosFiltres||{})[k]||'',groupes))).join('')
+  +'<h3 class="reglage-titre icones-titre">Filtres du journal</h3>'+[...FILTRES_JOURNAL,...BOUTONS_JOURNAL].map(([k,,n])=>selGrille(selGroupes(esc(n),'filtre-'+k,(catalog.logosFiltres||{})[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Recettes</h3>'+[['herboristerie','Herboristerie'],['tannerie','Tannerie'],['forge','Forge']].map(([k,n])=>selGrille(selGroupes(n,'recette-'+k,(catalog.logosRecettes||{})[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))
@@ -2278,7 +2278,7 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
   // v1.097 : l'icône des PV d'Armure, celle de {armure} dans les textes.
   if(/^fiche-(stats|inventaire|classe|bonus|espece|metier|statistiques)$/.test(nom)){const o={...(catalog.iconesFiche||{})};if(e.target.value)o[nom.slice(6)]=e.target.value;else delete o[nom.slice(6)];catalog.iconesFiche=o}
-  else if(/^filtre-(tout|combat|exploration|discussion)$/.test(nom)){const o={...(catalog.logosFiltres||{})};if(e.target.value)o[nom.slice(7)]=e.target.value;else delete o[nom.slice(7)];catalog.logosFiltres=o;if(typeof majIconesFiltres==='function')majIconesFiltres()}
+  else if(/^filtre-(tout|combat|exploration|discussion|session|vider)$/.test(nom)){const o={...(catalog.logosFiltres||{})};if(e.target.value)o[nom.slice(7)]=e.target.value;else delete o[nom.slice(7)];catalog.logosFiltres=o;if(typeof majIconesFiltres==='function')majIconesFiltres()}
   else if(nom==='etat-armure'){if(e.target.value)catalog.logoArmure=e.target.value;else delete catalog.logoArmure}
   else if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
   else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
@@ -10358,7 +10358,9 @@ addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.de
  const b=rondsDeLaBarre()[Number(m[1])-1];if(!b)return;e.preventDefault();
  if(b.disabled||b.classList.contains('inerte'))return;if(typeof fermerBulle==='function')fermerBulle();b.click()});
 
-const FILTRES_JOURNAL=[['tout','📜','Tout'],['combat','⚔','Combat'],['exploration','🧭','Exploration'],['discussion','💬','Discussion']];let majIconesFiltres=null;
+const FILTRES_JOURNAL=[['tout','📜','Tout'],['combat','⚔','Combat'],['exploration','🧭','Exploration'],['discussion','💬','Discussion']];
+// v1.403 : les deux boutons du MJ, en icônes eux aussi, sur la même ligne que les filtres.
+const BOUTONS_JOURNAL=[['session','🆕','Nouvelle session','journal-session'],['vider','🧹','Vider','journal-vider']];let majIconesFiltres=null;
 /* v1.400, v1.401 — Le journal se filtre : Tout, Combat, Exploration, Discussion — une icône chacun, son nom dans sa bulle. Le
    filtre ne cache que l'affichage : rien n'est retiré du journal, ni ici ni chez les autres. Il est retenu sur l'appareil. */
 {const j=$('journal'),titre=j&&j.parentNode.querySelector('.journal-title');
@@ -10370,12 +10372,16 @@ const FILTRES_JOURNAL=[['tout','📜','Tout'],['combat','⚔','Combat'],['explor
   FILTRES.forEach(([k,icone,nom])=>{const b=document.createElement('button');b.type='button';b.className='journal-vider journal-filtre';b.dataset.filtre=k;b.setAttribute('aria-label',nom);
    b.onclick=()=>pose(k);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));boite.append(b)});
   titre.after(boite);
+  /* v1.403 — « Nouvelle session » et « Vider » quittent le titre pour le bout de cette ligne, en icônes : tout tient sur une ligne.
+     Mêmes boutons, mêmes clics ; leur nom passe dans leur bulle. */
+  BOUTONS_JOURNAL.forEach(([k,,nom,id],i)=>{const b=$(id);if(!b)return;b.removeAttribute('title');b.setAttribute('aria-label',nom);b.dataset.bouton=k;b.classList.add('journal-icone');if(!i)b.classList.add('premier');boite.append(b);
+   if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}))});
   /* v1.402 — L'icône de chaque filtre : celle que le MJ a choisie parmi les icônes du site (fenêtre des icônes), sinon son emoji.
      Elle ne se repose que si elle a changé. */
   majIconesFiltres=()=>{const l=(typeof catalog!=='undefined'&&catalog&&catalog.logosFiltres)||{};
-   boite.querySelectorAll('button[data-filtre]').forEach(b=>{const k=b.dataset.filtre,v=l[k]||'';if(b.dataset.icone===v&&b.childNodes.length)return;b.dataset.icone=v;
+   boite.querySelectorAll('button[data-filtre],button[data-bouton]').forEach(b=>{const k=b.dataset.filtre||b.dataset.bouton,v=l[k]||'';if(b.dataset.icone===v&&b.childNodes.length&&b.dataset.pose)return;b.dataset.icone=v;b.dataset.pose='1';
     if(v&&typeof poseLogo==='function'){const im=document.createElement('img');im.alt='';im.draggable=false;poseLogo(im,v);b.replaceChildren(im)}
-    else b.textContent=(FILTRES.find(([x])=>x===k)||[])[1]||''})};
+    else b.textContent=([...FILTRES,...BOUTONS_JOURNAL].find(([x])=>x===k)||[])[1]||''})};
   majIconesFiltres();
   {const r0=render;render=function(...x){const o=r0.apply(this,x);try{majIconesFiltres()}catch(e){}return o}}
   let voulu='tout';try{voulu=localStorage.getItem(CLE)||'tout'}catch(e){}pose(voulu);
