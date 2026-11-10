@@ -10336,10 +10336,10 @@ function coutTotalSpherier(classe){const tot={};talentsSphere(classe).forEach(t=
  const sp=[...arbresTotal.querySelectorAll('.arbres-tranches>span')];if(sp.length&&sp.every(e=>Number.isFinite(e._compte)||!(e._racines&&e._racines.length))){const t=[...arbresTotal.children].find(x=>x.tagName==='SPAN'&&/^Total /.test(x.textContent));
   if(t)t.textContent='Total '+texteMarques(sp.reduce((n,e)=>n+(Number.isFinite(e._compte)?e._compte:0),0))}}catch(err){}return r}}
 
-/* v1.400 — Les touches 1 à 9 jouent la barre d'actions : les neuf premiers ronds affichés, dans l'ordre où on les lit, portent
-   leur chiffre (écrans à clavier) et répondent à la touche de même rang — celle du haut du clavier, sans Maj même en AZERTY, ou
+/* v1.400, v1.401 — Les touches 1 à 9 jouent la ligne du haut de la barre d'actions (attaques et talents) : ses neuf premiers ronds
+   affichés, dans l'ordre où on les lit, portent leur chiffre (écrans à clavier) et répondent à la touche de même rang — celle du haut du clavier, sans Maj même en AZERTY, ou
    celle du pavé. Un rond grisé garde son chiffre et ne répond pas. Rien en dehors de la Table, ni fenêtre ouverte, ni en écrivant. */
-function rondsDeLaBarre(){return [...document.querySelectorAll('section.attack-card button.btn-action')].filter(b=>!b.hidden&&b.offsetParent)}
+function rondsDeLaBarre(){return [...document.querySelectorAll('section.attack-card .choix-attaques button.btn-action')].filter(b=>!b.hidden&&b.offsetParent)}
 function numeroteBarre(){const l=rondsDeLaBarre();
  document.querySelectorAll('section.attack-card button[data-touche]').forEach(b=>{const i=l.indexOf(b);if(i<0||i>8)delete b.dataset.touche});
  l.slice(0,9).forEach((b,i)=>{const n=String(i+1);if(b.dataset.touche!==n)b.dataset.touche=n})}
@@ -10350,22 +10350,17 @@ addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.de
  const b=rondsDeLaBarre()[Number(m[1])-1];if(!b)return;e.preventDefault();
  if(b.disabled||b.classList.contains('inerte'))return;if(typeof fermerBulle==='function')fermerBulle();b.click()});
 
-/* v1.400 — Le journal se filtre : Tout, Combat, Exploration, Discussion, et une recherche. Le filtre ne cache que l'affichage :
-   rien n'est retiré du journal, ni ici ni chez les autres. Il est retenu sur l'appareil ; la recherche, non. */
+/* v1.400, v1.401 — Le journal se filtre : Tout, Combat, Exploration, Discussion — une icône chacun, son nom dans sa bulle. Le
+   filtre ne cache que l'affichage : rien n'est retiré du journal, ni ici ni chez les autres. Il est retenu sur l'appareil. */
 {const j=$('journal'),titre=j&&j.parentNode.querySelector('.journal-title');
- if(j&&titre){const CLE='amertume-journal-filtre',FILTRES=[['tout','Tout'],['combat','Combat'],['exploration','Exploration'],['discussion','Discussion']];
+ if(j&&titre){const CLE='amertume-journal-filtre',FILTRES=[['tout','📜','Tout'],['combat','⚔','Combat'],['exploration','🧭','Exploration'],['discussion','💬','Discussion']];
   const boite=document.createElement('div');boite.className='journal-filtres';boite.id='journal-filtres';
   const pose=f=>{if(!FILTRES.some(([k])=>k===f))f='tout';if(f==='tout')delete j.dataset.filtre;else j.dataset.filtre=f;
    boite.querySelectorAll('button').forEach(b=>{const on=b.dataset.filtre===f;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
    try{localStorage.setItem(CLE,f)}catch(e){}j.scrollTop=j.scrollHeight};
-  FILTRES.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';b.className='journal-vider journal-filtre';b.dataset.filtre=k;b.textContent=nom;b.onclick=()=>pose(k);boite.append(b)});
-  const champ=document.createElement('input');champ.id='journal-recherche';champ.type='search';champ.placeholder='Rechercher…';champ.setAttribute('aria-label','Rechercher dans le journal');boite.append(champ);
+  FILTRES.forEach(([k,icone,nom])=>{const b=document.createElement('button');b.type='button';b.className='journal-vider journal-filtre';b.dataset.filtre=k;b.textContent=icone;b.setAttribute('aria-label',nom);
+   b.onclick=()=>pose(k);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));boite.append(b)});
   titre.after(boite);
-  const sansAccent=t=>String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');let q='';
-  const trie=li=>{if(li.nodeType===1)li.classList.toggle('j-hors-recherche',!!q&&!sansAccent(li.textContent).includes(q))};
-  champ.oninput=()=>{q=sansAccent(champ.value.trim());[...j.children].forEach(trie);j.scrollTop=j.scrollHeight};
-  // Une ligne qui arrive pendant une recherche est triée une fois écrite.
-  new MutationObserver(l=>{if(!q)return;const neuves=[];l.forEach(m=>m.addedNodes.forEach(n=>neuves.push(n)));setTimeout(()=>neuves.forEach(trie),0)}).observe(j,{childList:true});
   let voulu='tout';try{voulu=localStorage.getItem(CLE)||'tout'}catch(e){}pose(voulu);
   if(typeof REGLAGES_APPAREIL!=='undefined')REGLAGES_APPAREIL.push(CLE)}}
 

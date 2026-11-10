@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.401","d":"2026-11-10","t":"Journal : filtres en icônes, sans recherche ; touches 1 à 9 sur la ligne du haut"},
 {"v":"1.400","d":"2026-11-10","t":"Journal à filtres, touches 1 à 9, comparaison Maj partout"},
 {"v":"1.399","d":"2026-11-10","t":"La Foudre se voit : arc qui rebondit de socle en socle"},
 {"v":"1.398","d":"2026-11-10","t":"Diagnostic dans les Paramètres, copies de la partie, journal des erreurs"},

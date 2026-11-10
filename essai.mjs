@@ -107,22 +107,23 @@ try{
  {const r=await p.evaluate(async()=>{logChat({name:'Jasnah',hero:true},'On y va ?');log('Éla fouille la salle.',{ton:'carte'});log('Kaël · Feu : 3 PV perdus.',{ton:'degats'});
    const vus=f=>{document.querySelector('#journal-filtres [data-filtre="'+f+'"]').click();return [...document.querySelectorAll('#journal>li')].filter(l=>l.offsetParent).map(l=>l.textContent)};
    const tout=vus('tout').length,combat=vus('combat'),explo=vus('exploration'),disc=vus('discussion');vus('tout');
-   const c=document.getElementById('journal-recherche');c.value='fouille';c.dispatchEvent(new Event('input'));const cherche=[...document.querySelectorAll('#journal>li')].filter(l=>l.offsetParent).map(l=>l.textContent);
-   c.value='';c.dispatchEvent(new Event('input'));return {tout,combat,explo,disc,cherche,total:document.querySelectorAll('#journal>li').length}});
+   return {tout,combat,explo,disc,total:document.querySelectorAll('#journal>li').length,champ:!!document.getElementById('journal-recherche'),puces:[...document.querySelectorAll('#journal-filtres button')].map(b=>b.getAttribute('aria-label')).join(',')}});
   dit(r.combat.some(t=>t.includes('Feu'))&&!r.combat.some(t=>t.includes('fouille')||t.includes('On y va')),'« Combat » ne montre que le combat');
   dit(r.explo.length>=1&&r.explo.every(t=>!t.includes('Feu')&&!t.includes('On y va')),'« Exploration » ne montre que l’exploration');
   dit(r.disc.length>=1&&r.disc.every(t=>t.includes('On y va')),'« Discussion » ne montre que les paroles');
-  dit(r.cherche.length===1&&r.cherche[0].includes('fouille'),'la recherche ne garde que les lignes qui portent le mot');
+  dit(!r.champ&&r.puces==='Tout,Combat,Exploration,Discussion','quatre puces à icône, chacune son nom, et pas de champ de recherche',r.puces);
   dit(r.tout>=3&&r.total>=r.tout,'« Tout » remontre le journal entier, rien n’en est retiré')}
- {await p.evaluate(()=>{basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();selected=actors.findIndex(a=>a.hero);marked=new Set([selected]);render();if(document.activeElement)document.activeElement.blur();
+ {await p.evaluate(()=>{basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();selected=actors.findIndex(a=>a.hero);marked=new Set([selected]);
+   // Un adversaire au contact : l'attaque du premier rond a une cible, le rond n'est pas grisé.
+   {const h=actors[selected],adv=actors.find(a=>!a.hero);window.__place=[adv.x,adv.y,adv.vu];adv.x=h.x+3;adv.y=h.y;adv.vu=true;adv.hidden=false}render();if(document.activeElement)document.activeElement.blur();
    window.__clics=[];document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('section.attack-card button');if(b)window.__clics.push(b.dataset.touche)},true)});
-  const barre=await p.evaluate(()=>rondsDeLaBarre().map(b=>b.dataset.touche).join(''));
-  await p.keyboard.press('Digit2');await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());fermerBulle();render()});
-  await p.focus('#journal-texte');await p.keyboard.press('Digit1');await p.evaluate(()=>{document.getElementById('journal-texte').value='';document.activeElement.blur()});
+  const barre=await p.evaluate(()=>rondsDeLaBarre().map(b=>b.dataset.touche).join('')+'|'+document.querySelectorAll('section.attack-card .attack-row button[data-touche]').length);
+  await p.keyboard.press('Digit1');await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());fermerBulle();render()});
+  await p.focus('#journal-texte');await p.keyboard.press('Digit1');await p.keyboard.press('Digit2');await p.evaluate(()=>{document.getElementById('journal-texte').value='';document.activeElement.blur()});
   const clics=await p.evaluate(()=>window.__clics.join(','));
-  dit(/^123/.test(barre),'les ronds de la barre portent leur chiffre',barre);
-  dit(clics==='2','la touche 2 joue le deuxième rond, et rien ne part quand on écrit',clics);
-  await p.evaluate(()=>{basculerMode('exploration');actors.forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0)});render()})}
+  dit(/^1\d*\|0$/.test(barre),'seuls les ronds de la ligne du haut portent leur chiffre',barre);
+  dit(clics==='1','la touche 1 joue le premier rond du haut, et rien ne part quand on écrit',clics||'aucun clic');
+  await p.evaluate(()=>{const adv=actors.find(a=>!a.hero);[adv.x,adv.y,adv.vu]=window.__place;actors.forEach(a=>{if(Array.isArray(a.checks))a.checks=a.checks.map(()=>0);a.hp=a.max});basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()})}
  {const r=await p.evaluate(async()=>{const h=actors[selected],porte=objetDe((h.weapons||[])[0]),autre=catalog.items.find(o=>o.category==='weapon'&&o!==porte&&!(h.weapons||[]).includes(o.id));
    if(!porte||!autre)return {saute:true};
    const ancre=document.getElementById('journal-texte'),d=gearDetail(autre,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(ancre,d,'bulle-gear');
