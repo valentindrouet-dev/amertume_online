@@ -1007,7 +1007,7 @@ assert.equal(sauve.tailleLisible(3*1048576),'3,0 Mo');
 // Les Paramètres portent les deux gestes, et l'import ne prend que du JSON.
 ['id="export-tout"','id="import-tout"','id="import-fichier"','accept=".json,application/json"','id="import-erreur"'].forEach(m=>assert.ok(src.includes(m),'Paramètres sans '+m));
 // La sauvegarde locale et le fichier passent par la même vérification et la même pose.
-assert.ok(src.includes('get.onsuccess=()=>{sessionLue=true;poser(get.result);finish()}')&&src.includes("if(db&&!sessionLue){")&&src.includes('if(verifieSauvegarde(s))return;'));
+assert.ok(src.includes("lisPartie('session',(s,manque)=>{sessionLue=true;")&&src.includes("if(db&&!sessionLue){")&&src.includes('if(verifieSauvegarde(s))return;'));
 /* v0.329 — Un enregistrement sans domaine en mémoire garde celui déjà enregistré. */
 {const ctxS={};vm.createContext(ctxS);vm.runInContext(src.match(/function domaineRempli\(d\)\{[\s\S]*?catch\(e\)\{return false\}\}/)[0]+';this.domaineRempli=domaineRempli;',ctxS);
  assert.equal(ctxS.domaineRempli(undefined),false);assert.equal(ctxS.domaineRempli({carte:{calques:[null,null]},batiments:[{nom:'Forge',zone:null}]}),false);
@@ -2855,7 +2855,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("const saveNowSansSecours=saveNow;saveNow=function(){saveNowSansSecours();gardeSecoursDomaine()};")&&fief.includes("tx.objectStore('state').put(rec,'domaine:secours');")
   &&fief.includes("||poidsDomaine(domaine)<=0)return;")&&fief.includes("b.textContent='⟲ Reprendre ce domaine';")
   &&fief.includes("o.genre==='campagne'&&o.partie&&o.partie.domaine?o.partie.domaine:"),'le domaine de secours, et l’import depuis une campagne');
- assert.ok(src.includes("function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();")
+ assert.ok(src.includes("function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime){")&&src.includes("tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),utilisees=new Map(),s=allegePartie(snapshot(),utilisees);")
   &&src.includes("window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;")&&src.includes("if(document.visibilityState==='visible'&&ongletPerime)relireSession()"),'une fenêtre périmée n’écrase plus la partie');
  assert.ok(cartes2.includes("Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;")&&cartes2.includes("Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine")
   &&!cartes2.includes('Un fichier qui contient toutes tes cartes'),'l’import des cartes reconnaît les autres fichiers ; v1.024 : plus de texte au-dessus d’Exporter et d’Importer');

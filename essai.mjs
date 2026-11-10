@@ -30,6 +30,11 @@ const empreinte=p=>p.evaluate(()=>{const s=snapshot();const h=t=>{let a=0;for(le
  return JSON.stringify({acteurs:s.actors.map(a=>[a.id,a.name,a.hp,a.max,a.notes||'']),cartes:s.maps.map(m=>[m.id,m.name,m.image?m.image.length+':'+h(m.image):0,(m.matiere||[]).length]),
   carte:s.currentMapId,objets:s.catalog.items.length,monstres:s.catalog.monsters.length,talents:(s.catalog.talents||[]).length,titre:s.title,domaine:s.domaine?[s.domaine.nom,(s.domaine.batiments||[]).map(b=>b.id+':'+b.nom)]:null})});
 const enregistre=p=>p.evaluate(()=>new Promise(ok=>{saveNow();setTimeout(ok,700)}));
+// Ce que la base de l'appareil contient : les clés, et pour une clé donnée, le poids de ses images restées dedans.
+const base=p=>p.evaluate(()=>new Promise(ok=>{const st=db.transaction('state').objectStore('state'),k=st.getAllKeys();k.onsuccess=()=>ok(k.result.map(String))}));
+const lis=(p,cle)=>p.evaluate(cle=>new Promise(ok=>{const g=db.transaction('state').objectStore('state').get(cle);g.onsuccess=()=>{const r=g.result,s=r&&r.s?r.s:r;if(!s){ok(null);return}
+ const t=JSON.stringify(s);ok({leger:!!s.imagesAPart,octets:t.length,imagesDedans:(t.match(/data:image\/[a-z]+;base64,[A-Za-z0-9+\/=]{20000,}/g)||[]).length,refs:(t.match(/amertume-locale:/g)||[]).length,titre:s.title,quand:s.enregistreLe||r.t||0,nom0:s.actors[0].name})};g.onerror=()=>ok(null)}),cle);
+const ecris=(p,f)=>p.evaluate(f);
 
 try{
  /* ---------- 1. Une page neuve, appareil du MJ ---------- */
@@ -92,12 +97,14 @@ try{
  p=await ouvre();const e2=await empreinte(p);
  {const a=JSON.parse(e1),b=JSON.parse(e2),diff=Object.keys(a).filter(k=>JSON.stringify(a[k])!==JSON.stringify(b[k]));
   dit(!diff.length,'la partie relue après fermeture est identique',diff.map(k=>k+' : '+JSON.stringify(a[k]).slice(0,160)+' ≠ '+JSON.stringify(b[k]).slice(0,160)).join(' | '))}
- // L'export en fichier se relit lui aussi.
- dit(await p.evaluate(()=>{const t=JSON.stringify(sauvegardeGlobale()),l=lisSauvegardeGlobale(t,'essai.json');return !!l&&l.actors.length===actors.length&&l.maps.length===maps.length}),'la sauvegarde en fichier se relit');
+ {const k=await base(p),r=await lis(p,'session');
+  dit(!!r&&r.leger&&r.imagesDedans===0&&r.refs>0&&k.some(c=>c.startsWith('img:')),'la partie enregistrée est légère, ses images rangées à part',r?r.octets+' octets, '+r.refs+' références, '+k.filter(c=>c.startsWith('img:')).length+' images':'rien')}
+ // L'export en fichier se relit lui aussi, images dedans.
+ dit(await p.evaluate(()=>{const t=JSON.stringify(sauvegardeGlobale()),l=lisSauvegardeGlobale(t,'essai.json');return !!l&&l.actors.length===actors.length&&l.maps.length===maps.length&&!t.includes('amertume-locale:')&&l.maps.every((m,i)=>m.image===maps[i].image)}),'la sauvegarde en fichier se relit, images comprises');
 
  /* ---------- 6. Une partie enregistrée par une version d'avant (une seule clé « session », images dedans) ---------- */
  etape='Partie d’une version d’avant';console.log(etape);
- await p.evaluate(()=>new Promise((ok,ko)=>{const s=structuredClone(snapshot());s.title='Partie d’avant';s.maps.push({...structuredClone(s.maps[s.maps.length-1]),id:crypto.randomUUID(),name:'Vieille carte',image:window.__image?window.__image(800,450):s.maps[s.maps.length-1].image});
+ await p.evaluate(()=>new Promise((ok,ko)=>{const s=structuredClone(snapshot());s.title='Partie d’avant';s.maps.push({...structuredClone(s.maps[s.maps.length-1]),id:crypto.randomUUID(),name:'Vieille carte',image:(()=>{const c=document.createElement('canvas');c.width=800;c.height=450;const g=c.getContext('2d'),d=g.createImageData(800,450);for(let i=0;i<d.data.length;i+=4){const v=90+(Math.random()*120|0);d.data[i]=v;d.data[i+1]=v*.8;d.data[i+2]=v*.7;d.data[i+3]=255}g.putImageData(d,0,0);return c.toDataURL('image/webp',.8)})()});
   const r=indexedDB.open('amertume_online_v007');r.onsuccess=()=>{const b=r.result,tx=b.transaction('state','readwrite'),st=tx.objectStore('state');
    // Tout ce que les versions récentes ont pu écrire est ôté : il ne reste que l'ancienne forme.
    const k=st.getAllKeys();k.onsuccess=()=>{k.result.forEach(c=>{if(c!=='session')st.delete(c)});st.put(s,'session')};
@@ -111,7 +118,50 @@ try{
  const e3=await empreinte(p);await p.evaluate(()=>{actors[0].name=actors[0].name+' ';render()});await enregistre(p);await p.close();
  p=await ouvre();const e4=await empreinte(p);
  dit(e4.replace(/ "/,'"')===e3||JSON.parse(e4).cartes+''===JSON.parse(e3).cartes+'','puis s’enregistre et se relit avec ses cartes et leurs images');
- dit(await p.evaluate(()=>new Promise(ok=>{const g=db.transaction('state').objectStore('state').get('session');g.onsuccess=()=>ok(!!g.result&&Array.isArray(g.result.maps));g.onerror=()=>ok(false)})),'l’ancienne clé « session » est toujours là');
+ {const av=await lis(p,'session:avant-images'),se=await lis(p,'session');
+  dit(!!av&&!av.leger&&av.imagesDedans>=2&&av.titre==='Partie d’avant','la partie d’avant est gardée entière, de côté',av?av.imagesDedans+' images dedans':'absente');
+  dit(!!se&&se.leger&&se.imagesDedans===0,'et la partie courante est passée à la forme légère')}
+
+ /* ---------- 7. Une image introuvable ne casse rien, et revient si on la rend ---------- */
+ etape='Image introuvable';console.log(etape);
+ const perdue=await p.evaluate(()=>new Promise(ok=>{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),k=st.getAllKeys();
+  k.onsuccess=()=>{const c='img:'+cleImage(maps[maps.length-1].image);const g=st.get(c);g.onsuccess=()=>{window.__img=[c,g.result];st.put({cle:c,image:g.result},'essai:image-otee');st.delete(c)};tx.oncomplete=()=>ok(c)}}));
+ await p.evaluate(()=>{ongletPerime=true});await p.close();p=await ouvre();
+ {const r=await p.evaluate(()=>({cartes:maps.length,refs:maps.filter(m=>typeof m.image==='string'&&m.image.startsWith('amertume-locale:')).length,images:maps.filter(m=>typeof m.image==='string'&&m.image.startsWith('data:image/')).length,acteurs:actors.length}));
+  dit(r.acteurs>0&&r.refs===1&&r.images===r.cartes-1,'la partie s’ouvre, seule la carte touchée est sans image',JSON.stringify(r))}
+ await p.evaluate(()=>{actors[0].name=actors[0].name.trim()+' !';render()});await enregistre(p);
+ {const se=await lis(p,'session');dit(!!se&&se.leger&&se.nom0.endsWith('!'),'elle s’enregistre encore, la référence gardée')}
+ await p.evaluate(()=>new Promise(ok=>{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),g=st.get('essai:image-otee');g.onsuccess=()=>{st.put(g.result.image,g.result.cle);st.delete('essai:image-otee')};tx.oncomplete=ok}));
+ await p.evaluate(()=>{ongletPerime=true});await p.close();p=await ouvre();
+ dit(await p.evaluate(()=>maps.every(m=>!m.image||m.image.startsWith('data:image/'))),'l’image rendue, la carte la retrouve');
+
+ /* ---------- 8. Si la forme légère échoue, la partie s'enregistre entière, comme avant ---------- */
+ etape='Repli';console.log(etape);
+ await p.evaluate(()=>{window.__ap=allegePartie;allegePartie=()=>{throw Error('panne d’essai')};actors[0].name='Repli';render()});await enregistre(p);
+ {const se=await lis(p,'session');dit(!!se&&!se.leger&&se.imagesDedans>=2&&se.nom0==='Repli','l’enregistrement se replie sur la forme entière',se?JSON.stringify(se).slice(0,160):'rien')}
+ await p.evaluate(()=>{ongletPerime=true});await p.close();p=await ouvre();
+ dit(await p.evaluate(()=>actors[0].name==='Repli'&&maps.every(m=>!m.image||m.image.startsWith('data:image/'))),'et se relit');
+ await p.evaluate(()=>{render()});await enregistre(p);
+ {const se=await lis(p,'session');dit(!!se&&se.leger,'puis repasse à la forme légère')}
+
+ /* ---------- 9. Les copies datées : la veille est gardée, cinq au plus, et se reprend ---------- */
+ etape='Copies datées';console.log(etape);
+ const hier=await p.evaluate(()=>new Promise(ok=>{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),g=st.get('session');
+  g.onsuccess=()=>{const s=g.result,j=86400000;s.enregistreLe=Date.now()-j;st.put(s,'session');
+   // Six copies plus anciennes : il ne doit en rester que cinq en tout après l'enregistrement du jour.
+   for(let i=2;i<=7;i++){const c=structuredClone(s);c.enregistreLe=Date.now()-i*j;st.put(c,'copie:'+jourDe(c.enregistreLe))}
+   window.__hier=jourDe(s.enregistreLe)};tx.oncomplete=()=>ok(window.__hier)}));
+ await p.evaluate(()=>{ongletPerime=true});await p.close();p=await ouvre();
+ const nomHier=await p.evaluate(()=>actors[0].name);
+ await p.evaluate(()=>{actors[0].name='Aujourd’hui';render()});await enregistre(p);
+ {const k=(await base(p)).filter(c=>/^copie:\d{4}-/.test(c)).sort(),c=await lis(p,'copie:'+hier);
+  dit(k.length===5&&k.includes('copie:'+hier),'la veille a sa copie, les cinq dernières sont gardées',k.join(' '));
+  dit(!!c&&c.leger&&c.nom0===nomHier,'la copie porte la partie telle qu’elle était la veille')}
+ {const l=await p.evaluate(()=>new Promise(ok=>listeCopies(ok)));
+  dit(l.length>=6&&l[0].quand>=l[1].quand&&l.some(x=>x.genre==='avant-images')&&l.every(x=>typeof x.resume==='string'&&x.resume.length>0),'la liste des copies se lit, la plus récente d’abord',l.map(x=>x.cle).join(' '))}
+ {const r=await p.evaluate(h=>new Promise(ok=>reprendCopie('copie:'+h,(fait,texte)=>setTimeout(()=>ok({fait,texte,nom:actors[0].name,images:maps.every(m=>!m.image||m.image.startsWith('data:image/'))}),500))),hier);
+  dit(r.fait&&r.nom===nomHier&&r.images,'reprendre la copie de la veille remet la partie, images comprises',JSON.stringify(r));
+  const av=await lis(p,'copie:avant-reprise');dit(!!av&&av.nom0==='Aujourd’hui','et ce qui était enregistré juste avant est gardé')}
  await p.close();
 }catch(e){soucis.push(etape+' : l’essai s’est arrêté — '+String(e.message).split('\n')[0])}
 finally{await ctx.close().catch(()=>{});serveur.close();try{fs.rmSync(profil,{recursive:true,force:true})}catch(e){}}

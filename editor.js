@@ -8954,12 +8954,96 @@ const bandeauFenetres=document.createElement('div');bandeauFenetres.id='bandeau-
 bandeauFenetres.innerHTML='<span>Une autre fenêtre d’Amertume a enregistré la partie. Celle-ci n’enregistre plus rien, pour ne pas l’écraser.</span>'
  +'<button type="button" id="fenetre-relire" class="primary">Relire la partie enregistrée</button><button type="button" id="fenetre-garder">Garder cette fenêtre</button>';
 document.body.append(bandeauFenetres);
-function relireSession(){if(!db)return;try{const get=db.transaction('state').objectStore('state').get('session');
- get.onsuccess=()=>{const s=get.result;if(!s||verifieSauvegarde(s))return;
+/* ---------- v1.397 — Les images à part, la partie légère, les copies datées ----------
+   Chaque enregistrement recopiait toute la partie, images des cartes comprises : des dizaines de mégaoctets, plusieurs fois par
+   minute. Les grandes images sont désormais rangées une seule fois, chacune sous une clé tirée de son contenu (« img:… ») ; la
+   partie enregistrée (« session ») ne garde que leur référence, et ne pèse plus que ses fiches et ses cartes.
+   · Rien n'est jamais ôté de lui-même : une image qui ne sert plus reste, jusqu'à ce que le MJ fasse le ménage (Paramètres).
+   · Avant le premier enregistrement à la nouvelle forme, la partie telle qu'elle était, entière, est gardée de côté
+     (« session:avant-images ») et n'est plus touchée.
+   · Si l'enregistrement léger échoue, pour quelque raison que ce soit, la partie s'enregistre entière, comme avant.
+   · Une partie enregistrée à l'ancienne forme se lit toujours ; la nouvelle porte « imagesAPart ».
+   · Chaque jour de jeu laisse une copie datée de la veille (« copie:AAAA-MM-JJ »), les cinq dernières sont gardées : légères,
+     elles partagent les images. */
+const SEUIL_IMAGE_LOCALE=16384,PREFIXE_IMAGE_LOCALE='amertume-locale:',CLE_IMAGE='img:',CLE_COPIE='copie:',CLE_AVANT_IMAGES='session:avant-images',CLE_AVANT_REPRISE='copie:avant-reprise',CLE_AVANT_META='meta:avant-images',COPIES_GARDEES=5;
+const IMAGES_CLES=new Map(),CLES_IMAGES=new Map(),imagesEcrites=new Set();
+let jourEnregistre='',avantImagesVu=false,mesureSauvegarde=null;
+const estImageLourde=v=>typeof v==='string'&&v.length>SEUIL_IMAGE_LOCALE&&v.startsWith('data:image/');
+const estRefLocale=v=>typeof v==='string'&&v.length<90&&v.startsWith(PREFIXE_IMAGE_LOCALE);
+const jourDe=t=>{const d=new Date(t),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+/* La clé d'une image : sa longueur et quatre sommes de tout son contenu. Deux images différentes sous la même clé, en mémoire,
+   se voient et se séparent. Calculée une fois par image et par page. */
+function cleImage(t){let c=IMAGES_CLES.get(t);if(c)return c;
+ let a=0x811c9dc5^t.length,b=0x41c6ce57,x=0x9e3779b9,y=0x85ebca6b;
+ for(let i=0;i<t.length;i++){const ch=t.charCodeAt(i);a=Math.imul(a^ch,16777619);b=Math.imul(b^ch,1597334677)^(b>>>15);x=Math.imul(x+ch,0x27d4eb2f)^(x>>>13);y=Math.imul(y^(ch+i),0x165667b1)}
+ c=t.length.toString(36)+'-'+[a,b,x,y].map(n=>(n>>>0).toString(36)).join('-');
+ while(CLES_IMAGES.has(c)&&CLES_IMAGES.get(c)!==t)c+='x';
+ IMAGES_CLES.set(t,c);CLES_IMAGES.set(c,t);return c}
+const objetSimple=v=>{const p=Object.getPrototypeOf(v);return p===Object.prototype||p===null};
+// Une copie de la partie où chaque grande image est remplacée par sa référence ; « utilisees » reçoit clé → image.
+function allegePartie(v,utilisees){
+ if(typeof v==='string'){if(!estImageLourde(v))return v;const c=cleImage(v);utilisees.set(c,v);return PREFIXE_IMAGE_LOCALE+c}
+ if(Array.isArray(v))return v.map(x=>allegePartie(x,utilisees));
+ if(v&&typeof v==='object'&&objetSimple(v)){const o={};for(const k of Object.keys(v)){if(k!=='__proto__')o[k]=allegePartie(v[k],utilisees)}return o}
+ return v}
+function refsLocales(v,out){if(typeof v==='string'){if(estRefLocale(v))out.add(v.slice(PREFIXE_IMAGE_LOCALE.length));return}
+ if(Array.isArray(v)){for(const x of v)refsLocales(x,out);return}
+ if(v&&typeof v==='object'&&objetSimple(v))for(const k of Object.keys(v))refsLocales(v[k],out)}
+// Sur place : chaque référence dont l'image est connue redevient son image ; une référence sans image reste telle quelle.
+function reposeImages(v,table){const rend=x=>estRefLocale(x)&&table.has(x.slice(PREFIXE_IMAGE_LOCALE.length))?table.get(x.slice(PREFIXE_IMAGE_LOCALE.length)):x;
+ if(Array.isArray(v)){for(let i=0;i<v.length;i++){if(typeof v[i]==='string')v[i]=rend(v[i]);else reposeImages(v[i],table)}return}
+ if(v&&typeof v==='object'&&objetSimple(v))for(const k of Object.keys(v)){if(typeof v[k]==='string')v[k]=rend(v[k]);else reposeImages(v[k],table)}}
+/* Lire une partie enregistrée et lui rendre ses images, dans une seule lecture. f(partie, images manquantes, forme) :
+   forme « légère » ou « entière ». Une image manquante laisse sa référence en place : rien ne s'écrit par-dessus à tort. */
+function lisPartie(cle,f){let dit=false;const rend=(s,m,forme)=>{if(dit)return;dit=true;f(s,m,forme)};
+ try{const st=db.transaction('state').objectStore('state'),g=st.get(cle);
+  g.onerror=()=>rend(undefined,0,'');
+  g.onsuccess=()=>{let s=g.result;const enveloppe=cle===CLE_AVANT_IMAGES&&s&&s.s?s.s:s;if(!enveloppe||typeof enveloppe!=='object'){rend(enveloppe,0,'');return}
+   s=enveloppe;const forme=s.imagesAPart?'légère':'entière',refs=new Set();
+   try{refsLocales(s,refs)}catch(e){rend(s,0,forme);return}
+   if(!refs.size){rend(s,0,forme);return}
+   const table=new Map();let reste=refs.size,manque=0;
+   const fin=()=>{if(--reste)return;try{reposeImages(s,table)}catch(e){}rend(s,manque,forme)};
+   refs.forEach(c=>{const q=st.get(CLE_IMAGE+c);
+    q.onsuccess=()=>{if(typeof q.result==='string'){table.set(c,q.result);IMAGES_CLES.set(q.result,c);CLES_IMAGES.set(c,q.result);imagesEcrites.add(c)}else manque++;fin()};
+    q.onerror=()=>{manque++;fin()}})}}
+ catch(e){rend(undefined,0,'')}}
+const direManque=n=>{if(n)noterSauvegarde(n+' image'+(n>1?'s':'')+' de la partie enregistrée '+(n>1?'sont introuvables':'est introuvable')+' sur cet appareil : la partie s’ouvre sans '+(n>1?'elles':'elle')+'. Rien d’autre n’est touché.',true)};
+// Les copies datées au-delà des cinq dernières s'en vont, dans l'écriture en cours.
+function elagueCopies(st){const k=st.getAllKeys();k.onsuccess=()=>{const c=k.result.filter(x=>typeof x==='string'&&/^copie:\d{4}-\d{2}-\d{2}$/.test(x)).sort();
+ c.slice(0,Math.max(0,c.length-COPIES_GARDEES)).forEach(x=>st.delete(x))}}
+/* L'enregistrement entier, comme avant la v1.397 : le repli quand la forme légère échoue. */
+function sauveEntier(raison){try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot(),t0=performance.now();
+  if(domaineRempli(s.domaine))st.put(s,'session');
+  else{const g=st.get('session');g.onsuccess=()=>{const avant=g.result;if(avant&&domaineRempli(avant.domaine))s.domaine=avant.domaine;st.put(s,'session')}}
+  tx.oncomplete=()=>{mesureSauvegarde={quand:Date.now(),ms:Math.round(performance.now()-t0),forme:'entière',images:0,neuves:0,raison:String(raison||'')};
+   noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur')};
+  tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}
+ catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
+/* Les copies datées, pour les Paramètres : la liste, la plus récente d'abord, puis reprendre l'une d'elles. Avant de reprendre,
+   la partie enregistrée à l'instant est gardée (« copie:avant-reprise »). */
+function listeCopies(f){if(!db){f([]);return}try{const st=db.transaction('state').objectStore('state'),k=st.getAllKeys();
+  k.onerror=()=>f([]);
+  k.onsuccess=()=>{const cles=k.result.filter(x=>typeof x==='string'&&(/^copie:\d{4}-\d{2}-\d{2}$/.test(x)||x===CLE_AVANT_REPRISE||x===CLE_AVANT_META)),out=[];let reste=cles.length;
+   if(!reste){f([]);return}
+   // La partie entière d'avant la v1.397 ne se relit pas pour être listée : sa fiche, écrite avec elle, suffit.
+   cles.forEach(c=>{const g=st.get(c);const fin=()=>{if(--reste)return;f(out.sort((a,b)=>b.quand-a.quand))};
+    g.onsuccess=()=>{const s=g.result;
+     if(c===CLE_AVANT_META){if(s&&k.result.includes(CLE_AVANT_IMAGES))out.push({cle:CLE_AVANT_IMAGES,quand:Number(s.t)||0,resume:String(s.resume||''),genre:'avant-images'})}
+     else if(s&&typeof s==='object'&&Array.isArray(s.actors)){let resume='';try{resume=resumeSauvegarde(s)}catch(e){}
+      out.push({cle:c,quand:Number(s.enregistreLe)||0,resume,genre:c===CLE_AVANT_REPRISE?'avant-reprise':'jour'})}fin()};
+    g.onerror=fin})}}catch(e){f([])}}
+function reprendCopie(cle,f){const fin=(ok,texte)=>{if(f)f(ok,texte)};if(!db){fin(false,'Sauvegarde locale indisponible.');return}
+ lisPartie(cle,(s,manque)=>{try{if(!s||verifieSauvegarde(s)){fin(false,'Copie illisible.');return}
+   const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),g=st.get('session');
+   g.onsuccess=()=>{if(g.result&&cle!==CLE_AVANT_REPRISE)st.put(g.result,CLE_AVANT_REPRISE)};
+   tx.oncomplete=()=>{try{appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();saveNow();direManque(manque);fin(true,'')}catch(e){fin(false,e.message)}};
+   tx.onerror=()=>fin(false,'Écriture impossible.')}catch(e){fin(false,e.message)}})}
+function relireSession(){if(!db)return;try{lisPartie('session',(s,manque)=>{if(!s||verifieSauvegarde(s))return;if(s.enregistreLe)jourEnregistre=jourDe(s.enregistreLe);direManque(manque);
   try{appliquerSauvegarde(s);ongletPerime=false;bandeauFenetres.hidden=true;if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();
-   noterSauvegarde('Partie relue : une autre fenêtre l’avait modifiée.',false)}catch(e){noterSauvegarde('Partie enregistrée illisible : '+e.message,true)}}}catch(e){}}
+   if(!manque)noterSauvegarde('Partie relue : une autre fenêtre l’avait modifiée.',false)}catch(e){noterSauvegarde('Partie enregistrée illisible : '+e.message,true)}})}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;let m=null;try{m=JSON.parse(e.newValue)}catch(_){}
- if(!m||m.onglet===MON_ONGLET)return;ongletPerime=true;clearTimeout(saveTimer);if(document.visibilityState==='visible')bandeauFenetres.hidden=false});
+ if(!m||m.onglet===MON_ONGLET)return;ongletPerime=true;imagesEcrites.clear();avantImagesVu=false;clearTimeout(saveTimer);if(document.visibilityState==='visible')bandeauFenetres.hidden=false});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ongletPerime)relireSession()});
 $('fenetre-relire').onclick=relireSession;
 $('fenetre-garder').onclick=()=>{ongletPerime=false;bandeauFenetres.hidden=true;saveNow()};
@@ -8974,11 +9058,34 @@ function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime
  // Une partie mise de côté au chargement attend de se poser : rien ne s'écrit par-dessus avant.
  if(sessionDeCote)return;
  if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}
- if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();
+ if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();
+ /* v1.397 — La forme légère : les images neuves d'abord, puis la partie sans ses images, dans une seule écriture — tout passe ou
+    rien ne change. Le moindre échec fait enregistrer la partie entière, comme avant. */
+ let replie=false;const repli=raison=>{if(replie)return;replie=true;sauveEntier(raison)};
+ try{const t0=performance.now(),tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),utilisees=new Map(),s=allegePartie(snapshot(),utilisees);
+  s.imagesAPart=1;s.enregistreLe=Date.now();const jour=jourDe(s.enregistreLe);let neuves=0;
+  utilisees.forEach((image,c)=>{if(!imagesEcrites.has(c)){st.put(image,CLE_IMAGE+c);neuves++}});
+  const pose=()=>{
   if(domaineRempli(s.domaine))st.put(s,'session');
   // Sans domaine en mémoire, celui déjà enregistré reste : relu et remis dans la même écriture.
-  else{const g=st.get('session');g.onsuccess=()=>{const avant=g.result;if(avant&&domaineRempli(avant.domaine))s.domaine=avant.domaine;st.put(s,'session')}}
-  tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
+  else{const g=st.get('session');g.onsuccess=()=>{const avant=g.result;if(avant&&domaineRempli(avant.domaine))s.domaine=avant.domaine;st.put(s,'session')}}};
+  /* Au premier enregistrement de la page, et quand le jour a changé : ce qui est enregistré est relu avant d'être remplacé.
+     Encore à l'ancienne forme, il est gardé entier, une fois pour toutes ; d'un autre jour, il devient la copie de ce jour-là. */
+  if(!avantImagesVu||(jourEnregistre&&jourEnregistre!==jour)){const g=st.get('session');
+   g.onsuccess=()=>{const av=g.result;
+    if(av&&typeof av==='object'&&Array.isArray(av.actors)){
+     if(!av.imagesAPart){const n=st.count(CLE_AVANT_IMAGES);n.onsuccess=()=>{if(n.result)return;const t=Date.now();let resume='';try{resume=resumeSauvegarde(av)}catch(e){}st.put({t,s:av},CLE_AVANT_IMAGES);st.put({t,resume},CLE_AVANT_META)}}
+     else if(jourEnregistre&&jourEnregistre!==jour){st.put(av,CLE_COPIE+jourEnregistre);elagueCopies(st)}}
+    pose()};
+   g.onerror=()=>pose()}
+  else pose();
+  tx.oncomplete=()=>{utilisees.forEach((_,c)=>imagesEcrites.add(c));avantImagesVu=true;jourEnregistre=jour;
+   // Les clés des images qui ne servent plus quittent la mémoire de la page ; ce qui est enregistré ne bouge pas.
+   CLES_IMAGES.forEach((image,c)=>{if(!utilisees.has(c)){CLES_IMAGES.delete(c);IMAGES_CLES.delete(image)}});
+   mesureSauvegarde={quand:Date.now(),ms:Math.round(performance.now()-t0),forme:'légère',images:utilisees.size,neuves,raison:''};
+   noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur')};
+  tx.onerror=()=>repli('écriture refusée');tx.onabort=()=>repli('écriture interrompue')}
+ catch(e){repli(e&&e.message)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
 /* Safari iOS laisse parfois une ouverture d'IndexedDB sans réponse. On réessaie une fois,
    puis la scène s'ouvre quand même ; si la sauvegarde répond plus tard, elle se pose
@@ -9008,8 +9115,8 @@ function loadSession(){
  const ouvrir=()=>{try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');
    req.onerror=()=>{sessionRepondue=true;finish()};req.onblocked=()=>finish();
    req.onsuccess=()=>{if(sessionRepondue){req.result.close();return}sessionRepondue=true;db=req.result;
-    const get=db.transaction('state').objectStore('state').get('session');get.onerror=()=>{sessionLue=true;finish()};
-    get.onsuccess=()=>{sessionLue=true;poser(get.result);finish()}}}
+    // v1.397 : la partie est lue avec ses images, rangées à part ; une partie à l'ancienne forme se lit telle quelle.
+    lisPartie('session',(s,manque)=>{sessionLue=true;if(s&&s.enregistreLe)jourEnregistre=jourDe(s.enregistreLe);poser(s);direManque(manque);finish()})}}
   catch(e){sessionRepondue=true;finish()}};
  ouvrir();
  setTimeout(()=>{if(!sessionRepondue)ouvrir()},3000);
