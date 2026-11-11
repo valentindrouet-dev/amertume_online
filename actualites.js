@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.408","d":"2026-11-11","t":"Murs automatiques retirés"},
 {"v":"1.407","d":"2026-11-10","t":"Murs automatiques : on montre un mur d'un clic"},
 {"v":"1.406","d":"2026-11-10","t":"Murs automatiques lus sur l'image de la carte"},
 {"v":"1.405","d":"2026-11-10","t":"Paquet d'aventure : import avec aperçu, retrait en un clic"},

@@ -1829,7 +1829,7 @@ mapsPage.innerHTML=
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label class="map-code">Code<input id="map-code" maxlength="24"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><label class="field-check map-jcj" title="Les aventuriers s’y affrontent : chacun est neutre, ennemi de tous ; pas d’XP sur cette carte."><input type="checkbox" id="map-jcj">PvP</label><label class="field-check map-sans-brisures" title="Aucune gemme gagnée sur cette carte : combat, tests, fin de combat, titres, boss."><input type="checkbox" id="map-sans-brisures">Pas de Brisures</label><span class="map-xp" id="map-xp"></span>'
- +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-murs-auto">Murs automatiques</button><button id="map-murs-auto-effacer" hidden>Effacer les murs automatiques</button><button id="map-play" class="primary">Ouvrir la Carte</button><button id="map-progression" hidden>Effacer la progression</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
+ +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-murs-auto-effacer" hidden>Effacer les murs automatiques</button><button id="map-play" class="primary">Ouvrir la Carte</button><button id="map-progression" hidden>Effacer la progression</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
  +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cadre">Carré de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button><button data-tool="courbe">Ligne de points</button>'
@@ -2007,9 +2007,7 @@ $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='
  // Le rapport de l'image devient celui de la carte : le tracé et le jeu voient le même cadrage.
  if(f)openImage(f,'map',url=>{pushUndo();mapDraft.image=url;const img=new Image();
   img.onload=()=>{if(img.naturalHeight)mapDraft.ratio=img.naturalWidth/img.naturalHeight;
-   renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render();
-   // v1.406 : une image neuve propose ses murs ; « Annuler » s'en passe.
-   if(typeof ouvreMursAuto==='function')setTimeout(()=>ouvreMursAuto(mapDraft),0)};
+   renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
   img.onerror=()=>{renderCanvas();saveMaps()};img.src=url})};
 $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;renderCanvas();saveMaps()}};
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
@@ -4505,49 +4503,10 @@ const combatEntame=()=>round>1||actors.some(a=>!a.horsCarte&&pointsUses(a,'actio
  if(verrouDebutCombat&&view==='mj'&&enCombat()&&combatEntame()){verrouDebutCombat=false;if(tokensLocked){tokensLocked=false;setTimeout(()=>{refreshGmBar();render();scheduleSave()},0)}}
  if(b)b.hidden=!(view==='mj'&&enCombat()&&tokensLocked&&(verrouDebutCombat||!combatEntame()));return o}}
 
-/* ---------- v1.406, v1.407 — Les murs automatiques ----------
-   Après l'import d'une image de carte, ou à la demande (« Murs automatiques »), une fenêtre montre l'image. Un clic sur un mur
-   le montre au site ; d'autres clics ajoutent d'autres matières de mur (pierre, bois, roche). Tout ce qui leur ressemble se teinte
-   à la couleur de la matière ; la sensibilité règle la ressemblance, l'aperçu suit. « Poser les murs » les ajoute, marqués
-   « auto », à la place des murs automatiques d'avant ; « Recommencer » oublie les clics ; « Annuler » ne pose rien.
-   « Effacer les murs automatiques » les ôte d'un coup, sans toucher à ceux tracés à la main. Pose et effacement s'annulent. */
-const GRAIN_MURS=384;
-// L'image réduite par moitiés successives, pour que chaque case soit la vraie moyenne de ses pixels, puis ses couleurs en Lab.
-function couleursCarte(img,W,H){let c=document.createElement('canvas'),w=img.naturalWidth,h=img.naturalHeight;c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0);
- while(w/2>=W*1.5&&h/2>=H*1.5){const d=document.createElement('canvas');d.width=Math.round(w/2);d.height=Math.round(h/2);const dg=d.getContext('2d');dg.imageSmoothingQuality='high';dg.drawImage(c,0,0,d.width,d.height);c=d;w=d.width;h=d.height}
- const f=document.createElement('canvas');f.width=W;f.height=H;const fg=f.getContext('2d',{willReadFrequently:true});fg.imageSmoothingQuality='high';fg.drawImage(c,0,0,W,H);
- const px=fg.getImageData(0,0,W,H).data,lab=new Float32Array(W*H*3);for(let i=0;i<W*H;i++)lab.set(versLab(px[i*4],px[i*4+1],px[i*4+2]),i*3);return lab}
-const mursAutoDialog=dialog('murs-auto','Murs automatiques','<p class="muted murs-auto-aide">Clique sur un mur de l’image ; d’autres clics ajoutent d’autres murs.</p><canvas id="murs-auto-apercu"></canvas><label class="murs-auto-reglage">Sensibilité<input type="range" id="murs-auto-sensibilite" min="0" max="100" value="45"></label><label class="murs-auto-relies"><input type="checkbox" id="murs-auto-relies" checked> Seulement les murs reliés aux clics</label><div class="form-actions"><button type="button" id="murs-auto-recommencer">Recommencer</button><button type="button" id="murs-auto-non">Annuler</button><button type="button" id="murs-auto-oui" class="primary">Poser les murs</button></div>');
-let mursAutoEtat=null;
-function ouvreMursAuto(m){if(view!=='mj'||!m||!m.image)return;const img=new Image();
- img.onload=()=>{const W=GRAIN_MURS,H=Math.max(8,Math.round(GRAIN_MURS*img.naturalHeight/Math.max(1,img.naturalWidth)));
-  mursAutoEtat={m,img,W,H,lab:couleursCarte(img,W,H),points:[],murs:[]};const s=$('murs-auto-sensibilite');
-  let v=45;try{const x=localStorage.getItem('amertume-murs-sensibilite');if(x!==null&&Number.isFinite(+x))v=+x}catch(e){}s.value=String(v);try{$('murs-auto-relies').checked=localStorage.getItem('amertume-murs-relies')!=='0'}catch(e){}dessineMursAuto();if(!mursAutoDialog.open)mursAutoDialog.showModal()};
- img.src=m.image}
-function dessineMursAuto(){const e=mursAutoEtat;if(!e)return;const sens=Number($('murs-auto-sensibilite').value);
- const ech=e.points.map(p=>couleurAuPoint(e.lab,e.W,e.H,p.x*e.W,p.y*e.H)).filter(Boolean);
- const graines=$('murs-auto-relies').checked?e.points.map(p=>[p.x*e.W,p.y*e.H]):null;
- e.murs=ech.length?mursDepuisMasque(masqueCouleurs(e.lab,e.W,e.H,ech,sens,graines),e.W,e.H):[];
- $('murs-auto-oui').disabled=!e.murs.length;$('murs-auto-recommencer').disabled=!e.points.length;
- const c=$('murs-auto-apercu'),lg=Math.min(760,innerWidth*.86),k=lg/e.img.naturalWidth;c.width=Math.round(lg*devicePixelRatio);c.height=Math.round(e.img.naturalHeight*k*devicePixelRatio);
- c.style.width=Math.round(lg)+'px';c.style.height=Math.round(e.img.naturalHeight*k)+'px';
- const g=c.getContext('2d'),accent=getComputedStyle(document.body).getPropertyValue('--accent').trim()||'#a16207';g.drawImage(e.img,0,0,c.width,c.height);
- // La teinte de la matière, plus franche qu'à l'éditeur (65 %) et cernée : sur une pierre claire, elle doit se voir.
- g.fillStyle=accent;g.strokeStyle=accent;g.lineWidth=1.5*devicePixelRatio;
- e.murs.forEach(p=>{g.beginPath();p.anneaux.forEach(r=>{r.forEach(([x,y],i)=>g[i?'lineTo':'moveTo'](x/100*c.width,y/100*c.height));g.closePath()});g.globalAlpha=.65;g.fill('evenodd');g.globalAlpha=1;g.stroke()});g.globalAlpha=1;
- // Chaque clic se voit : un petit rond à l'accent, cerné de clair.
- e.points.forEach(p=>{const x=p.x*c.width,y=p.y*c.height,r=5*devicePixelRatio;g.beginPath();g.arc(x,y,r,0,7);g.lineWidth=2*devicePixelRatio;g.strokeStyle='#fff';g.stroke();g.beginPath();g.arc(x,y,r-devicePixelRatio,0,7);g.strokeStyle=accent;g.stroke()})}
-$('murs-auto-apercu').onclick=ev=>{const e=mursAutoEtat;if(!e)return;const r=ev.currentTarget.getBoundingClientRect();
- e.points.push({x:Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height))});dessineMursAuto()};
-$('murs-auto-relies').onchange=()=>{try{localStorage.setItem('amertume-murs-relies',$('murs-auto-relies').checked?'1':'0')}catch(e){}dessineMursAuto()};
-$('murs-auto-recommencer').onclick=()=>{if(mursAutoEtat){mursAutoEtat.points=[];dessineMursAuto()}};
-{let attente=null;$('murs-auto-sensibilite').oninput=()=>{clearTimeout(attente);attente=setTimeout(()=>{try{localStorage.setItem('amertume-murs-sensibilite',$('murs-auto-sensibilite').value)}catch(e){}dessineMursAuto()},60)}}
-$('murs-auto-non').onclick=()=>mursAutoDialog.close();
-mursAutoDialog.addEventListener('close',()=>{mursAutoEtat=null});
-$('murs-auto-oui').onclick=()=>{const e=mursAutoEtat;if(!e||!e.murs.length)return;const m=e.m;pushUndo();
- m.matiere=[...matiereDe(m).filter(p=>!p.auto),...e.murs.map(p=>structuredClone(p))];mursAutoDialog.close();
- renderCanvas();saveMaps();if(m.id===currentMapId)render();log('Murs automatiques posés sur '+(m.name||'la carte')+'.',{local:true})};
-$('map-murs-auto').onclick=()=>{if(mapDraft&&mapDraft.image)ouvreMursAuto(mapDraft)};
+/* ---------- v1.406-v1.407, retirés en v1.408 — Les murs automatiques ----------
+   La détection des murs sur l'image est retirée (v1.408) : elle ne lisait pas assez bien les vraies cartes. Il ne reste que de
+   quoi effacer d'un coup les murs qu'elle a pu poser (marqués « auto ») : le bouton ne paraît que sur une carte qui en porte.
+   Les murs tracés à la main ne sont jamais touchés ; l'effacement s'annule (Ctrl+Z). */
 $('map-murs-auto-effacer').onclick=()=>{const m=mapDraft;if(!m||!matiereDe(m).some(p=>p.auto))return;pushUndo();m.matiere=matiereDe(m).filter(p=>!p.auto);
  renderCanvas();saveMaps();if(m.id===currentMapId)render()};
-{const rc=renderCanvas;renderCanvas=function(...x){const r=rc.apply(this,x);try{const m=mapDraft;$('map-murs-auto').disabled=!(m&&m.image);$('map-murs-auto-effacer').hidden=!(m&&matiereDe(m).some(p=>p.auto))}catch(e){}return r}}
+{const rc=renderCanvas;renderCanvas=function(...x){const r=rc.apply(this,x);try{const m=mapDraft;$('map-murs-auto-effacer').hidden=!(m&&matiereDe(m).some(p=>p.auto))}catch(e){}return r}}

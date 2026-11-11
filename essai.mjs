@@ -193,38 +193,18 @@ try{
   dit(r.sert.join()==='Clef d’os'&&r.apres1.clef&&!r.apres1.goule&&!r.apres1.carte&&r.apres1.inscrite.includes('1 objet'),'le retrait ôte tout, sauf l’objet qu’un aventurier porte, qui reste inscrit',JSON.stringify(r.apres1));
   dit(!r.apres2.clef&&r.apres2.inscrite===0&&r.retour,'« Retirer aussi ce qui sert ailleurs » achève : le contenu revient à ce qu’il était',JSON.stringify(r.apres2))}
 
- /* ---------- Les murs automatiques : lus sur l'image, posés à part, effacés sans toucher aux murs tracés ---------- */
- etape='Murs automatiques';console.log(etape);
- {const r=await p.evaluate(async()=>{const c=document.createElement('canvas');c.width=900;c.height=600;const g=c.getContext('2d');g.fillStyle='#24211f';g.fillRect(0,0,900,600);
-   g.fillStyle='#c8c0b0';g.fillRect(100,100,300,250);g.fillRect(500,150,300,350);g.fillRect(400,200,100,60);
-   // Un pilier de la même roche au milieu d'une salle, à l'écart du mur.
-   g.fillStyle='#24211f';g.fillRect(620,300,60,60);
-   showPage('maps');const m=newMap();m.name='Essai murs';m.image=c.toDataURL('image/png');m.ratio=1.5;renderMapList();renderCanvas();
-   ajouteMatiere(m,[[2,2],[6,2],[6,6],[2,6]]);const mains=matiereDe(m).length;
-   ouvreMursAuto(m);await new Promise(ok=>{const t=Date.now(),iv=setInterval(()=>{if(mursAutoEtat||Date.now()-t>5000){clearInterval(iv);ok()}},40)});
-   const ouverte=mursAutoDialog.open,avantClic=mursAutoEtat.murs.length+(document.getElementById('murs-auto-oui').disabled?'':'!');
-   // Un clic sur la roche, dans le coin : elle devient mur, d'un seul tenant ; le pilier, à l'écart, non.
-   const cv=document.getElementById('murs-auto-apercu'),rc=cv.getBoundingClientRect();document.getElementById('murs-auto-relies').checked=true;
-   cv.dispatchEvent(new MouseEvent('click',{clientX:rc.left+rc.width*.03,clientY:rc.top+rc.height*.9,bubbles:true}));
-   const lus=mursAutoEtat.murs.length,trous=lus?mursAutoEtat.murs[0].anneaux.length:0;
-   const pilierRelie=mursAutoEtat.murs.some(p=>polygoneContient(p,[72.2,55]));
-   document.getElementById('murs-auto-relies').checked=false;document.getElementById('murs-auto-relies').dispatchEvent(new Event('change'));
-   const pilierTout=mursAutoEtat.murs.some(p=>polygoneContient(p,[72.2,55]));document.getElementById('murs-auto-relies').checked=true;document.getElementById('murs-auto-relies').dispatchEvent(new Event('change'));
-   document.getElementById('murs-auto-oui').click();const poses=matiereDe(m).filter(x=>x.auto).length,bouton=!document.getElementById('map-murs-auto-effacer').hidden;
-   // Le sol d'une salle n'est pas un mur ; la roche autour, si.
-   const bloque=(x,y)=>matiereDe(m).some(p=>p.auto&&polygoneContient(p,[x,y]));const solLibre=!bloque(27,37),rocheBloque=bloque(3,90);
-   ajouteMatiere(m,[[50,80],[60,80],[60,90],[50,90]]);const apresBloc=matiereDe(m).filter(x=>x.auto).length;
-   document.getElementById('map-murs-auto-effacer').click();const restent=matiereDe(m),annule=(undo(),matiereDe(mapDraft).filter(x=>x.auto).length);
-   const valide=(()=>{try{SharedData.validate({...publicContent(),maps:[m]});return true}catch(e){return e.message}})();
+ /* ---------- v1.408 — La détection des murs est retirée ; une carte qui porte des murs détectés se nettoie toujours ---------- */
+ etape='Murs automatiques retirés';console.log(etape);
+ {const r=await p.evaluate(()=>{showPage('maps');const m=newMap();m.name='Essai murs';renderMapList();renderCanvas();
+   const sansAuto=document.getElementById('map-murs-auto-effacer').hidden,plusDeDetection=!document.getElementById('map-murs-auto')&&!document.getElementById('murs-auto')&&typeof ouvreMursAuto==='undefined';
+   ajouteMatiere(m,[[2,2],[6,2],[6,6],[2,6]]);m.matiere.push({anneaux:[[[20,20],[40,20],[40,40],[20,40]]],auto:true});
+   ajouteMatiere(m,[[30,30],[50,30],[50,50],[30,50]]);const separes=matiereDe(m).filter(x=>x.auto).length===1;renderCanvas();
+   const montre=!document.getElementById('map-murs-auto-effacer').hidden;document.getElementById('map-murs-auto-effacer').click();
+   const restent=matiereDe(m),annule=(undo(),matiereDe(mapDraft).filter(x=>x.auto).length);
    {const i=maps.findIndex(x=>x.id===m.id);if(i>=0)maps.splice(i,1)}mapDraft=maps[0]||null;renderMapList();showPage('table');
-   return {avantClic,pilierRelie,pilierTout,ouverte,lus,trous,poses,bouton,solLibre,rocheBloque,apresBloc,restent:restent.length,restentAuto:restent.filter(x=>x.auto).length,mains,annule,valide}});
-  dit(r.ouverte&&r.avantClic==='0','la fenêtre s’ouvre sans rien poser tant qu’on n’a pas montré un mur',r.avantClic);
-  dit(r.lus===1&&r.trous>=2,'un clic sur la roche en fait un mur, les salles en creux',JSON.stringify(r));
-  dit(!r.pilierRelie&&r.pilierTout,'« reliés aux clics » laisse le pilier à l’écart ; décoché, il est pris lui aussi');
-  dit(r.poses===r.lus&&r.bouton&&r.solLibre&&r.rocheBloque,'posés, ils bloquent la roche et laissent le sol libre');
-  dit(r.apresBloc===r.poses,'un bloc tracé à la main ne fond pas avec les murs automatiques');
-  dit(r.restentAuto===0&&r.restent===r.mains+1,'« Effacer les murs automatiques » ne garde que les murs tracés à la main');
-  dit(r.annule===r.poses,'l’effacement s’annule');dit(r.valide===true,'la carte reste publiable',String(r.valide))}
+   return {sansAuto,plusDeDetection,separes,montre,restent:restent.length,restentAuto:restent.filter(x=>x.auto).length,annule}});
+  dit(r.plusDeDetection&&r.sansAuto,'plus de détection ; sans mur détecté, pas de bouton',JSON.stringify(r));
+  dit(r.separes&&r.montre&&r.restentAuto===0&&r.restent===2&&r.annule===1,'un mur détecté d’avant s’efface d’un coup, sans toucher aux murs tracés, et l’effacement s’annule')}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
