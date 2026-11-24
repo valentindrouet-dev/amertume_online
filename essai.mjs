@@ -206,57 +206,9 @@ try{
   dit(r.plusDeDetection&&r.sansAuto,'plus de détection ; sans mur détecté, pas de bouton',JSON.stringify(r));
   dit(r.separes&&r.montre&&r.restentAuto===0&&r.restent===2&&r.annule===1,'un mur détecté d’avant s’efface d’un coup, sans toucher aux murs tracés, et l’effacement s’annule')}
 
- /* ---------- v1.409 — Le temps réel, à l'essai : éteint, rien ne change ; allumé, un PA dépensé revient seul ---------- */
- etape='Temps réel';console.log(etape);
- {const pose=()=>p.evaluate(()=>{showPage('table');basculerMode('combat');tokensLocked=false;verrouDebutCombat=false;if(typeof triaCombat!=='undefined')triaCombat=null;
-    const h=actors.find(a=>a.hero&&!a.horsCarte&&alive(a));h.checks=[0,0,0];delete h.recharges;h.points={...(h.points||{}),action:1};selected=actors.indexOf(h);marked=new Set([selected]);render();return enCombat()});
-  const vu=()=>p.evaluate(()=>{const h=actors[selected],b=document.querySelector('#attack-choices button.btn-action');
-    return {reste:pointsRestants(h,'action'),memo:(h.checks||[])[0],rech:(h.recharges||[]).filter(f=>f>Date.now()).length,voile:!!(b&&b.querySelector('.tr-voile')),gris:!!(b&&b.classList.contains('inerte')),attend:!!b&&/Action déjà dépensée/.test(b.getAttribute('aria-label')||''),
-     bille:!!document.querySelector('.actor.selected .pastilles .pt.action.tr-pt'),on:document.getElementById('temps-reel').classList.contains('on')}});
-  dit(await pose()&&await p.evaluate(()=>tempsReel===false&&!!document.getElementById('temps-reel')&&!document.getElementById('temps-reel').hidden),'le bouton ⏱ est dans la barre du MJ, éteint par défaut');
-  // Éteint : le tour par tour de toujours.
-  {const r0=await p.evaluate(()=>{const h=actors[selected];trSecondes=1;depensePoint(h,'action');render();return [pointsRestants(h,'action'),(h.recharges||[]).length]});await p.waitForTimeout(300);
-   const r=await vu();dit(r0[0]===0&&r0[1]===0&&r.rech===0&&!r.voile&&!r.bille,'éteint : un PA dépensé le reste, rien ne part en recharge',JSON.stringify([r0,r]))}
-  // Allumé.
-  await pose();await p.click('#temps-reel');await p.evaluate(()=>{trSecondes=1;depensePoint(actors[selected],'action');render()});await p.waitForTimeout(200);
-  {const r=await vu();dit(r.on&&r.reste===0&&r.rech===1&&r.voile&&r.bille&&r.gris,'allumé : le PA dépensé part en recharge, son rond et sa pastille se grisent',JSON.stringify(r))}
-  await p.waitForTimeout(1200);
-  {const r=await vu();dit(r.reste===1&&!r.voile&&!r.bille&&!r.attend,'le PA revient seul à son heure',JSON.stringify(r))}
-  {const r=await p.evaluate(()=>{const h=actors[selected];h.checks=[0,0,0];delete h.recharges;depensePoint(h,'action');h.recharges=[Date.now()-5];const x=[pointsRestants(h,'action'),h.checks[0]];h.checks=[0,0,0];delete h.recharges;return x});
-   dit(r[0]===1&&r[1]===1,'un PA revenu reste compté comme dépensé ce tour : le tour garde sa mémoire',JSON.stringify(r))}
-  // Deux PA : chacun sa recharge.
-  {const r=await p.evaluate(async()=>{const h=actors[selected],att=ms=>new Promise(ok=>setTimeout(ok,ms));h.points.action=2;h.checks=[0,0,0];delete h.recharges;render();
-    depensePoint(h,'action');await att(500);depensePoint(h,'action');const a=pointsRestants(h,'action');await att(620);const b=pointsRestants(h,'action');await att(520);const c=pointsRestants(h,'action');
-    // Un remboursement rend le PA aussitôt ; « Tour suivant » (checks remis à zéro) les rend tous.
-    depensePoint(h,'action');rendPoint(h,'action');const d=[pointsRestants(h,'action'),(h.recharges||[]).length];
-    epuisePoints(h,'action');const e=pointsRestants(h,'action');h.checks=[0,0,0];const f=pointsRestants(h,'action');
-    h.points.action=1;delete h.recharges;render();return {a,b,c,d,e,f}});
-   dit(r.a===0&&r.b===1&&r.c===2,'deux PA dépensés à une demi-seconde d’écart reviennent l’un après l’autre',JSON.stringify(r));
-   dit(r.d[0]===2&&r.d[1]===0&&r.e===0&&r.f===2,'un PA remboursé revient aussitôt ; le tour suivant les rend tous',JSON.stringify(r))}
-  // L'option et les recharges partent à la table ; un joueur prend l'option du MJ.
-  {const r=await p.evaluate(()=>{const h=actors[selected],av=[admin,enLigne,dernierDoc];let o,joueur;trSecondes=6;depensePoint(h,'action');
-    try{admin=true;o=etatVivant();admin=false;enLigne=true;dernierDoc={fogReset:{tr:4}};trLisTable();joueur=[tempsReel,trSecondes];dernierDoc={fogReset:{}};trLisTable();joueur.push(tempsReel)}
-    finally{[admin,enLigne,dernierDoc]=av;tempsReel=true;trSecondes=1}
-    const part=o&&o.actors&&o.actors[h.id];h.checks=[0,0,0];delete h.recharges;return {tr:o&&o.fogReset&&o.fogReset.tr,rech:part&&Array.isArray(part.recharges)&&part.recharges.length,joueur}});
-   dit(r.tr===6&&r.rech===1&&r.joueur[0]===true&&r.joueur[1]===4&&r.joueur[2]===false,'l’option et les recharges voyagent avec la table ; un joueur suit l’option du MJ',JSON.stringify(r))}
-  // Éteint de nouveau : retour au tour par tour, rien ne traîne.
-  await pose();await p.click('#temps-reel');
-  {const r0=await p.evaluate(()=>{const h=actors[selected];depensePoint(h,'action');render();return [pointsRestants(h,'action'),(h.recharges||[]).length]});await p.waitForTimeout(300);
-   const r=await vu();dit(!r.on&&r0[0]===0&&r0[1]===0&&r.rech===0&&!r.voile&&!r.bille,'éteint de nouveau : le combat redevient au tour par tour',JSON.stringify([r0,r]))}
-  await p.evaluate(()=>{const h=actors[selected];h.checks=[0,0,0];delete h.recharges;trSecondes=6;try{localStorage.removeItem('amertume-temps-reel')}catch(e){}basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(200)}
-
- /* ---------- v1.410 — Temps réel : le déplacement n'a plus de distance, il lui faut un PM disponible ; l'IA des adversaires ---------- */
- etape='Temps réel : mouvement et IA';console.log(etape);
- {const garde=await p.evaluate(()=>{window.__avantIA=structuredClone(actors);showPage('table');basculerMode('combat');const b=document.getElementById('debuter-combat');
-    const h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),e=actors.filter(a=>!a.hero&&!a.pnj&&alive(a)&&!a.horsCarte);
-    h.forEach(a=>{a.checks=[0,0,0];delete a.recharges;delete a.rechargesM});e.forEach((a,k)=>{a.vu=true;a.hidden=false;a.checks=[0,0,0];a.x=Math.min(95,h[0].x+45);a.y=Math.max(5,Math.min(95,h[0].y-10+k*10))});
-    selected=actors.indexOf(h[0]);marked=new Set([selected]);render();return {heros:h.length,adv:e.length,bouton:!!b&&!b.hidden}});
-  // Le déplacement.
-  {const r=await p.evaluate(async()=>{const h=actors[selected],classique=regleMouvement(h);document.getElementById('temps-reel').click();trSecondes=1;
-    const libre=regleMouvement(h);epuisePoints(h,'mouvement');const vide=regleMouvement(h),rech=(h.rechargesM||[]).length;await new Promise(ok=>setTimeout(ok,1200));const revenu=regleMouvement(h);
-    return {classique:classique.max>=0,libre:!libre.fini&&!(libre.max>=0),vide:vide.fini,rech,revenu:!revenu.fini,on:tempsReel}});
-   dit(r.on&&r.classique&&r.libre,'en temps réel le déplacement n’a plus de distance comptée ; au tour par tour, si',JSON.stringify(r));
-   dit(r.vide&&r.rech>=1&&r.revenu,'sans PM disponible le socle ne bouge pas ; le PM revient seul et le libère',JSON.stringify(r))}
+ /* ---------- v1.413 — L'IA au tour par tour : les aventuriers d'abord, puis les adversaires seuls, puis le tour suivant ---------- */
+ etape='IA au tour par tour';console.log(etape);
+ {await p.evaluate(()=>{window.__avantIA=structuredClone(actors);showPage('table')});
   // La fiche : Focus et Priorité d'action, avec leurs valeurs de base.
   {const r=await p.evaluate(async()=>{const k=catalog.monsters.findIndex(m=>!m.pnj),m=catalog.monsters[k];openActor(null,false,k);await new Promise(ok=>setTimeout(ok,250));
     const d=document.getElementById('actor-editor'),f=d.querySelector('form'),champs=!!(f&&f.menace&&f.priorite),base=champs?[f.menace.value,f.priorite.value]:null;d.close();
@@ -264,44 +216,44 @@ try{
     return {champs,base,propre:[c.menace,c.priorite],acteur:[a.menace,a.priorite],defaut:prioriteDe(fromMonster(m))}});
    dit(r.champs&&r.base[0]==='closest'&&(r.base[1]==='contact'||r.base[1]==='distance')&&r.defaut===r.base[1],'la fiche d’un adversaire propose Focus et Priorité d’action, déjà réglés par défaut',JSON.stringify(r));
    dit(r.propre.join()==='pvLow,distance'&&r.acteur.join()==='pvLow,distance','ces réglages se gardent au Bestiaire et suivent l’adversaire posé',JSON.stringify(r))}
-  // Les garde-fous de l'IA.
-  const pos=()=>p.evaluate(()=>JSON.stringify(actors.filter(a=>!a.hero&&!a.pnj).map(a=>[Math.round(a.x*10),Math.round(a.y*10),(a.checks||[])[0]])));
-  {const a0=await pos();await p.waitForTimeout(1600);const a1=await pos(),r=await p.evaluate(()=>({tourne:triaTourne(),bouton:!document.getElementById('debuter-combat').hidden}));
-   dit(garde.adv>0&&a0===a1&&!r.tourne&&r.bouton,'temps réel allumé, sans « Débuter le combat » : aucun adversaire ne bouge, le bouton attend',JSON.stringify({garde,r}))}
-  await p.click('#debuter-combat');
-  {const a0=await pos();let a1=a0;for(let n=0;n<16&&a1===a0;n++){await p.waitForTimeout(300);a1=await pos()}
-   const r=await p.evaluate(()=>({tourne:triaTourne(),sel:actors[selected]&&actors[selected].hero===true}));
-   dit(r.tourne&&a1!==a0,'« Débuter le combat » cliqué : les adversaires se mettent en marche vers leur cible',JSON.stringify(r));
-   dit(r.sel,'le MJ retrouve sa sélection après le geste d’un adversaire')}
-  // Un coup de l'IA, au contact : il part par la table et coûte son PA.
-  {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));triaCombat=null;
-    const h=actors.find(a=>a.hero&&!a.horsCarte&&alive(a)),a=actors.find(o=>!o.hero&&!o.pnj&&alive(o)&&!o.horsCarte);a.x=h.x;a.y=h.y-5;a.checks=[0,0,0];delete a.recharges;a.menace='closest';settleActor(a);render();
-    const j=triaCible(a),avant=pointsRestants(a,'action'),fait=await triaFrappe(a,j);return {cible:actors[j]&&actors[j].hero===true,avant,fait,apres:pointsRestants(a,'action'),rech:(a.recharges||[]).length}});
-   dit(r.cible&&r.fait&&r.avant===1&&r.apres===0&&r.rech===1,'au contact, l’adversaire frappe sa cible : le coup part et son PA entre en recharge',JSON.stringify(r))}
-  // Éteindre le temps réel arrête l'IA.
-  await p.evaluate(()=>{triaCombat=numeroCombat});await p.click('#temps-reel');
-  {const a0=await pos();await p.waitForTimeout(1500);const a1=await pos(),r=await p.evaluate(()=>({tourne:triaTourne(),on:tempsReel}));
-   dit(!r.on&&!r.tourne&&a0===a1,'temps réel éteint : l’IA s’arrête, plus rien ne bouge seul',JSON.stringify(r))}
-  // v1.412 — Les aventuriers menés par l'IA : une option du temps réel ; celui que le MJ a sélectionné reste dans sa main.
-  {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));triaCombat=null;
-    const b=document.getElementById('ia-aventuriers'),h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),out={eteint:!!b&&b.hidden};
-    document.getElementById('temps-reel').click();out.visible=!b.hidden;selected=actors.indexOf(h[0]);marked=new Set([selected]);render();out.sans=triaAventuriers().length;
-    b.click();out.on=b.classList.contains('on');out.avec=triaAventuriers().map(a=>a.id);out.enMain=!out.avec.includes(h[0].id)&&out.avec.length===h.length-1;
-    selected=actors.indexOf(h[1]);render();out.repris=!triaAventuriers().some(a=>a.id===h[1].id)&&triaAventuriers().some(a=>a.id===h[0].id);
+  // La scène : un seul adversaire révélé, loin des aventuriers.
+  const scene=()=>p.evaluate(()=>{const h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),e=actors.filter(a=>!a.hero&&!a.pnj&&alive(a));
+    e.forEach((a,k)=>{a.horsCarte=k>0;a.vu=k===0;a.hidden=false;a.checks=[0,0,0]});e[0].horsCarte=false;e[0].x=Math.min(92,h[0].x+30);e[0].y=h[0].y;
+    h.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour});selected=actors.indexOf(h[0]);marked=new Set([selected]);render();return {heros:h.length,adv:e.length}});
+  const vu=()=>p.evaluate(()=>{const e=actors.find(a=>!a.hero&&!a.pnj&&!a.horsCarte);return {tour:round,x:Math.round(e.x*10),y:Math.round(e.y*10),adv:(e.checks||[]).join(''),heros:actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)).map(a=>pointsRestants(a,'action')).join(''),tourne:triaTourne(),on:iaTour}});
+  const epuise=()=>p.evaluate(()=>{actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)).forEach(a=>epuisePoints(a,'action'));render()});
+  // Éteinte : le tour par tour de toujours — rien ne joue seul, le tour ne passe pas.
+  await p.evaluate(()=>{basculerMode('exploration');document.getElementById('start-combat').click()});const g=await scene();await epuise();
+  {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),b=await p.evaluate(()=>[!document.getElementById('ia-adversaires').hidden,document.getElementById('ia-aventuriers').hidden,actors.some(a=>a.recharges||a.rechargesM),regleMouvement(actors.find(a=>a.hero)).max>=0]);
+   dit(g.adv>0&&!a1.on&&!a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour,'option éteinte : les aventuriers sans PA, aucun adversaire ne joue seul, le tour ne passe pas',JSON.stringify([a0,a1]));
+   dit(b[0]&&b[1]&&!b[2]&&b[3],'le bouton 🤖 est dans la barre du MJ ; plus de recharge à l’horloge, le déplacement a retrouvé sa distance',JSON.stringify(b))}
+  // Allumée, mais combat parti tout seul : elle attend le MJ.
+  await p.evaluate(()=>{basculerMode('exploration');basculerMode('combat')});await scene();await p.click('#ia-adversaires');await epuise();
+  {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),bouton=await p.evaluate(()=>!document.getElementById('debuter-combat').hidden);
+   dit(a1.on&&!a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour&&bouton,'option allumée, combat parti tout seul : rien ne joue, « Débuter le combat » attend le MJ',JSON.stringify([a0,a1,bouton]))}
+  // Combat lancé à la main : tant qu'un aventurier garde son PA, les adversaires attendent ; le dernier PA dépensé, ils jouent, puis le tour suivant part seul.
+  await p.evaluate(()=>{basculerMode('exploration');document.getElementById('start-combat').click()});await scene();
+  {const a0=await vu();await p.waitForTimeout(2000);const a1=await vu();
+   dit(a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour,'combat lancé à la main, les aventuriers ont leurs PA : les adversaires attendent',JSON.stringify([a0,a1]));
+   await epuise();let a2=a1,bouge=false;for(let n=0;n<50&&a2.tour===a0.tour;n++){await p.waitForTimeout(300);a2=await vu();if(a2.x!==a0.x||a2.y!==a0.y||a2.adv!=='000')bouge=true}
+   dit(bouge,'le dernier PA des aventuriers dépensé, l’adversaire joue seul : il avance vers sa cible',JSON.stringify(a2));
+   dit(a2.tour===a0.tour+1&&!/0/.test(a2.heros),'puis le tour suivant part de lui-même : les aventuriers retrouvent leurs PA',JSON.stringify(a2))}
+  // « Tour suivant », cliqué par le MJ alors qu'un aventurier garde son PA : les adversaires jouent d'abord.
+  {await p.evaluate(async()=>{for(let n=0;n<60&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100))});const a0=await vu();await p.click('#next');
+   let a1=a0,joue=false;for(let n=0;n<50&&a1.tour===a0.tour;n++){await p.waitForTimeout(300);a1=await vu();if(a1.x!==a0.x||a1.y!==a0.y||a1.adv!=='000')joue=true}
+   dit(joue&&a1.tour===a0.tour+1,'« Tour suivant » cliqué par le MJ : les adversaires jouent, puis le tour passe',JSON.stringify([a0,a1]))}
+  // Les aventuriers menés par l'IA : sauf celui que le MJ a sélectionné.
+  {const r=await p.evaluate(async()=>{for(let n=0;n<60&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));triaCombat=null;
+    const b=document.getElementById('ia-aventuriers'),h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),out={visible:!b.hidden};
+    selected=actors.indexOf(h[0]);marked=new Set([selected]);render();out.sans=triaAventuriers().length;b.click();out.avec=triaAventuriers().map(a=>a.id);out.enMain=!out.avec.includes(h[0].id)&&out.avec.length===h.length-1;
     selected=null;marked=new Set();render();out.tous=triaAventuriers().length===h.length;
-    // Un aventurier mené par l'IA frappe l'adversaire révélé à son contact, par la table, pour son PA.
-    const a=h[1],adv=actors.find(o=>!o.hero&&!o.pnj&&alive(o)&&!o.horsCarte);adv.vu=true;adv.x=a.x;adv.y=a.y-5;settleActor(adv);a.checks=[0,0,0];delete a.recharges;render();
+    const a=h[1],adv=actors.find(o=>!o.hero&&!o.pnj&&!o.horsCarte);adv.vu=true;adv.x=a.x;adv.y=a.y-5;settleActor(adv);a.checks=[0,0,0];render();
     const j=triaCible(a);out.cible=j!==null&&actors[j]===adv;out.fait=await triaFrappe(a,j);out.pa=pointsRestants(a,'action');
-    b.click();out.off=!triaHeros&&triaAventuriers().length===0;document.getElementById('temps-reel').click();out.cache=b.hidden;try{localStorage.removeItem('amertume-ia-aventuriers')}catch(e){}return out});
-   dit(r.eteint&&r.visible&&r.sans===0&&r.on&&r.cache,'le bouton 🤖 n’existe qu’en temps réel ; éteint, l’IA ne mène aucun aventurier',JSON.stringify(r));
-   dit(r.enMain&&r.repris&&r.tous&&r.off,'allumé, l’IA mène les aventuriers sauf celui que le MJ a sélectionné ; aucun sélectionné, tous',JSON.stringify(r));
+    b.click();out.off=triaAventuriers().length===0;document.getElementById('ia-adversaires').click();out.cache=b.hidden;
+    try{localStorage.removeItem('amertume-ia-adversaires');localStorage.removeItem('amertume-ia-aventuriers')}catch(e){}return out});
+   dit(r.visible&&r.sans===0&&r.enMain&&r.tous&&r.off&&r.cache,'👥 : l’IA mène les aventuriers sauf celui que le MJ a sélectionné ; aucun sélectionné, tous',JSON.stringify(r));
    dit(r.cible&&r.fait&&r.pa===0,'un aventurier mené par l’IA frappe l’adversaire révélé à son contact',JSON.stringify(r))}
-  // v1.411 — Le combat lancé à la main (« ⚔ Début du combat ») lance l'IA ; reparti tout seul, il l'attend de nouveau.
-  {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));
-    basculerMode('exploration');document.getElementById('temps-reel').click();const avant=triaTourne();document.getElementById('start-combat').click();const main=[enCombat(),triaTourne(),triaCombat===numeroCombat];
-    basculerMode('exploration');basculerMode('combat');const seul=[enCombat(),triaTourne()];document.getElementById('temps-reel').click();return {avant,main,seul,on:tempsReel}});
-   dit(!r.avant&&r.main.every(Boolean)&&r.seul[0]&&!r.seul[1]&&!r.on,'« Début du combat » lancé à la main lance l’IA ; un combat reparti tout seul l’attend',JSON.stringify(r))}
-  await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));trSecondes=6;try{localStorage.removeItem('amertume-temps-reel')}catch(e){}
+  await p.evaluate(async()=>{for(let n=0;n<60&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));
    basculerMode('exploration');actors.splice(0,actors.length,...window.__avantIA);delete window.__avantIA;selected=actors.findIndex(a=>a.hero);marked=new Set();actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(300)}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
