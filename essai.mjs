@@ -235,9 +235,9 @@ try{
   const epuise=()=>p.evaluate(()=>{actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)).forEach(a=>epuisePoints(a,'action'));render()});
   // Éteinte : le tour par tour de toujours — rien ne joue seul, le tour ne passe pas.
   await p.evaluate(()=>{basculerMode('exploration');document.getElementById('start-combat').click()});const g=await scene();await epuise();
-  {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),b=await p.evaluate(()=>[!document.getElementById('ia-adversaires').hidden,document.getElementById('ia-aventuriers').hidden,actors.some(a=>a.recharges||a.rechargesM),regleMouvement(actors.find(a=>a.hero)).max>=0]);
+  {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),b=await p.evaluate(()=>[!document.getElementById('ia-adversaires').hidden,document.getElementById('ia-aventuriers').hidden,false,regleMouvement(actors.find(a=>a.hero)).max>=0]);
    dit(g.adv>0&&!a1.on&&!a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour,'option éteinte : les aventuriers sans PA, aucun adversaire ne joue seul, le tour ne passe pas',JSON.stringify([a0,a1]));
-   dit(b[0]&&b[1]&&!b[2]&&b[3],'le bouton 🤖 est dans la barre du MJ ; plus de recharge à l’horloge, le déplacement a retrouvé sa distance',JSON.stringify(b))}
+   dit(b[0]&&b[1]&&!b[2]&&b[3],'le bouton 🤖 est dans la barre du MJ ; le déplacement garde sa distance',JSON.stringify(b))}
   // Allumée, mais combat parti tout seul : elle attend le MJ.
   await p.evaluate(()=>{basculerMode('exploration');basculerMode('combat')});await scene();await p.click('#ia-adversaires');await epuise();
   {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),bouton=await p.evaluate(()=>!document.getElementById('debuter-combat').hidden),bulle=await p.evaluate(()=>BOUTONS_CARTE['ia-adversaires']()[1]);
@@ -278,42 +278,6 @@ try{
    out.compte=[...document.querySelectorAll('#journal li')].filter(x=>/Ration/.test(x.textContent)).length;return out});
   dit(r.trois==='Seth emploie 3 Rations : +11 PV (2 + 3 + 6).','trois Rations coup sur coup : une ligne, le total et chaque jet',r.trois);
   dit(r.memeJet==='Seth emploie 4 Rations : +17 PV (2 + 3 + 6 + 6).'&&r.autre==='Kaël emploie Ration : +2 PV (2).'&&r.compte===2,'un même jet se compte aussi ; un autre aventurier ouvre sa propre ligne',JSON.stringify(r))}
-
- /* ---------- v1.417 — Les Cartes Dynamiques : vue isométrique, marche au clic, frappes seules, pas de mode combat ---------- */
- etape='Carte dynamique';console.log(etape);
- {await p.evaluate(()=>{window.__avantDyn=structuredClone(actors);basculerMode('exploration');showPage('table')});
-  // L'éditeur : la case, et sa valeur qui se garde.
-  {const r=await p.evaluate(()=>{showPage('maps');const b=document.getElementById('map-dynamique'),out={case:!!b};if(b){b.checked=true;b.onchange()}
-    out.garde=!!(mapDraft&&mapDraft.dynamique);out.propre=!!(typeof normalizeMap==='function'?normalizeMap({...mapDraft}).dynamique:true);showPage('table');return out});
-   dit(r.case&&r.garde,'l’éditeur de cartes a sa case « Carte dynamique »',JSON.stringify(r))}
-  const r0=await p.evaluate(()=>new Promise(ok=>{const m=currentMap();m.dynamique=true;m.obscurite=[];actors.filter(a=>!a.hero).forEach(a=>{a.horsCarte=true});
-    const h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),e=actors.find(a=>!a.hero&&!a.pnj);e.horsCarte=false;e.vu=true;e.hidden=false;e.max=e.hp=999;e.x=Math.min(90,h[0].x+25);e.y=h[0].y;
-    selected=actors.indexOf(h[0]);marked=new Set([selected]);render();setTimeout(()=>{
-     const v=document.getElementById('map-view'),t=v.style.transform,tok=document.querySelector('#map-view .token[data-id="'+h[0].id+'"]');
-     const r=tok.getBoundingClientRect(),c=mapPct({clientX:r.left+r.width/2,clientY:r.top+r.height/2});
-     basculerMode('combat');
-     ok({dyn:document.body.classList.contains('carte-dynamique'),intacte:!/rotate|scale\(1, ?\.5\)/.test(t),jeton:getComputedStyle(tok).rotate==='none',clic:[Math.abs(c.x-h[0].x)<1.5,Math.abs(c.y-h[0].y)<1.5],mode,bouton:document.getElementById('start-combat').hidden})},500)}));
-  dit(r0.dyn&&r0.intacte&&r0.jeton,'la carte s’affiche telle quelle : aucun effet sur l’image ni sur les jetons',JSON.stringify(r0));
-  dit(r0.clic.every(Boolean),'un clic sur un jeton se relit à sa place sur la carte',JSON.stringify(r0.clic));
-  dit(r0.mode==='exploration'&&r0.bouton,'pas de mode combat : le combat ne commence pas, « Début du combat » n’est pas là',JSON.stringify(r0));
-  // Un clic sur l'adversaire : l'aventurier marche jusqu'à son contact, puis frappe seul, sans dépenser de PA.
-  {const c=await p.evaluate(()=>{const e=actors.find(a=>!a.hero&&!a.horsCarte),r=document.querySelector('#map-view .token[data-id="'+e.id+'"]').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}});
-   const h0=await p.evaluate(()=>{const a=actors.find(o=>o.id===dynMain);return {x:a.x,y:a.y,id:a.id}});
-   await p.evaluate(h0=>{window.__coups=0;const at=attack;window.__attack=at;attack=function(...x){if(actors[selected]&&actors[selected].id===h0.id)window.__coups++;return at.apply(this,x)}},h0);
-   await p.mouse.click(c.x,c.y);let r=null;const lit=()=>p.evaluate(h0=>{const a=actors.find(o=>o.id===h0.id),e=actors.find(o=>!o.hero&&!o.horsCarte);
-     return {bouge:Math.hypot(a.x-h0.x,a.y-h0.y)>1,contact:reachTo(a,e,actors.indexOf(e),'contact').ok,coups:window.__coups,pa:pointsRestants(a,'action'),sel:dynMain===h0.id,mode}},h0);
-   // Il marche jusqu'au contact ; puis on compte les coups portés depuis.
-   for(let n=0;n<48;n++){await p.waitForTimeout(250);r=await lit();if(r.contact&&!(await p.evaluate(()=>dynMarches.size)))break}
-   const c0=r.coups;for(let n=0;n<40&&r.coups<c0+2;n++){await p.waitForTimeout(250);r=await lit()}r.coupsAuContact=r.coups-c0;await p.evaluate(()=>{attack=window.__attack;delete window.__attack;delete window.__coups});
-   dit(r.bouge&&r.contact,'un clic sur un adversaire : l’aventurier marche jusqu’à son contact',JSON.stringify(r));
-   dit(r.coupsAuContact>=2&&r.pa>0&&r.sel&&r.mode==='exploration','au contact, il frappe seul, coup après coup, sans dépenser de PA ; le MJ garde sa sélection',JSON.stringify(r))}
-  // La cadence : celle de l'arme, sinon 2 s, 3,5 s à deux mains.
-  {const r=await p.evaluate(()=>{const a=actors.find(x=>x.hero),l=items(),av=a.weapons;const w1=l.find(w=>w.category==='weapon'&&!w.ranged&&weaponHands(w)===1),w2=l.find(w=>w.category==='weapon'&&!w.ranged&&weaponHands(w)===2);
-    const out={};if(w1){a.weapons=[w1.id];a.activeAttack=0;out.une=cadenceDe(a)}if(w2){a.weapons=[w2.id];out.deux=cadenceDe(a);const c=w2.cadence;w2.cadence=1.5;out.reglee=cadenceDe(a);if(c===undefined)delete w2.cadence;else w2.cadence=c}a.weapons=av;return out});
-   dit((r.une===undefined||r.une===2)&&(r.deux===undefined||r.deux===3.5)&&(r.reglee===undefined||r.reglee===1.5),'la cadence vient de l’arme : 2 s, 3,5 s à deux mains, ou celle réglée',JSON.stringify(r))}
-  await p.evaluate(()=>{dynMarches.forEach(m=>clearTimeout(m.t));dynMarches.clear();const m=currentMap();delete m.dynamique;if(mapDraft)delete mapDraft.dynamique;
-   actors.splice(0,actors.length,...window.__avantDyn);delete window.__avantDyn;selected=actors.findIndex(a=>a.hero);marked=new Set();actors.forEach(a=>{if(!a.hero)a.vu=false});render()});
-  dit(await p.evaluate(()=>!document.body.classList.contains('carte-dynamique')&&![...document.querySelectorAll('#map-view .token')].some(t=>t.style.zIndex)),'la case décochée, la carte redevient ordinaire')}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);

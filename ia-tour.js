@@ -11,7 +11,6 @@
    L'IA n'use que des gestes de la table (attack, les boutons de talents, le déplacement réglé) : mêmes refus, mêmes
    portées, mêmes dégâts d'opportunité qu'à la main. Elle lit sur la fiche d'un adversaire son Focus (« menace ») et sa
    Priorité d'action (« priorite », prioriteDe dans editor.js).
-   Le temps réel des v1.409 à v1.412 (recharge des points à l'horloge) est retiré ; l'historique du dépôt le garde.
 
    Pour retirer l'IA : ôter la balise <script> de ce fichier dans index.html. */
 'use strict';
@@ -20,8 +19,6 @@ const triaLu=k=>{try{return localStorage.getItem(k)==='1'}catch(e){return false}
 /* « iaTour » : l'option. « triaHeros » : les aventuriers aussi (le bouton 👥, visible quand l'option est allumée) — l'IA mène
    alors tous les aventuriers debout SAUF celui que le MJ a sélectionné (« triaMain » : sa sélection à lui, pas celle que
    l'IA prend le temps d'un geste). « triaFait » : le tour dont les adversaires ont joué. */
-// v1.414 : qui avait allumé ⏱ (le temps réel, retiré) retrouve 🤖 allumé, une fois.
-try{if(localStorage.getItem(TRIA_CLE)===null&&localStorage.getItem('amertume-temps-reel')==='1')localStorage.setItem(TRIA_CLE,'1');localStorage.removeItem('amertume-temps-reel')}catch(e){}
 let iaTour=triaLu(TRIA_CLE),triaHeros=triaLu(TRIA_CLE_HEROS),triaMain=null,triaCombat=null,triaOccupe=false,triaRang=0,triaFait='';
 const triaAttente=new Map(),triaBoude=new Map(),triaTourTalent=new Map(),triaFinis=new Set();
 const triaPause=ms=>new Promise(r=>setTimeout(r,ms));
@@ -196,10 +193,7 @@ if(triaBouton){limiteBtn.after(triaBouton);triaBouton.after(triaBoutonHeros);tex
  const depart=()=>{if(view==='mj'&&enCombat()){triaCombat=numeroCombat;triaFait='';triaBoude.clear();triaAttente.clear();triaFinis.clear();render()}};
  // Posés après les gestes de la table : au clic, le combat a déjà commencé et porte son numéro.
  if(b)b.addEventListener('click',depart);if(lance)lance.addEventListener('click',depart);
- let menage=false;
  const rendu=render;render=function(...x){
-  // Une fois : les heures de recharge laissées par le temps réel retiré s'effacent des fiches.
-  if(!menage&&typeof actors!=='undefined'&&actors.length){menage=true;actors.forEach(a=>{if(a){delete a.recharges;delete a.rechargesM}})}
   const o=rendu.apply(this,x);
   if(!enCombat())triaCombat=null;
   // Ce que le MJ a en main : sa sélection, lue hors des gestes de l'IA.
