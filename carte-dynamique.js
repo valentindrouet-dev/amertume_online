@@ -1,7 +1,7 @@
 /* ---------- v1.417 — Les Cartes Dynamiques ----------
    Une carte cochée « Carte dynamique » dans l'éditeur de cartes se joue autrement, sur la Table :
-   - la vue est isométrique : l'image tourne de 45° et s'aplatit de moitié, la carte devient un losange ; les jetons, leurs
-     jauges et les mots qui montent restent debout, face à l'écran, et se recouvrent selon leur profondeur ;
+   - la carte s'affiche telle qu'elle est (v1.418 : plus de vue isométrique calculée — une carte se peint en isométrique si
+     on la veut ainsi) ; les jetons se recouvrent selon leur profondeur, le plus bas devant ;
    - un clic sur le sol fait marcher l'aventurier sélectionné jusque-là, en contournant les murs ; un clic sur un adversaire
      le fait marcher jusqu'à son contact ;
    - il n'y a plus de mode combat : tant que la carte est ouverte, le combat ne commence jamais ;
@@ -13,43 +13,17 @@
    Tout tient dans ce fichier, la case de l'éditeur et le champ « Cadence » de l'Armurerie exceptés (editor.js, maps.js).
    Pour retirer les Cartes Dynamiques : ôter sa balise <script> dans index.html. */
 'use strict';
-const DYN_VITESSE=4,DYN_PAS=80,DYN_RACINE=Math.SQRT2;
+const DYN_VITESSE=4,DYN_PAS=80;
 let dynMain=null,dynFrappe=false,dynAttaquant=null;
 const dynMarches=new Map(),dynProchain=new Map();
 const dynTable=()=>typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
 function carteDynamique(){const m=typeof currentMap==='function'?currentMap():null;return !!(m&&m.dynamique===true)}
 const dynChezMJ=()=>view==='mj'&&!(typeof enLigne!=='undefined'&&enLigne&&typeof estMJ==='function'&&!estMJ());
 
-/* ---------- La vue isométrique ----------
-   La carte garde ses coordonnées : seule sa vue change. À la transformation de la Table (panoramique, zoom) s'ajoute, au
-   plus près de la carte, la rotation de 45° et l'aplatissement de moitié, mis à l'échelle pour que le losange tienne dans
-   le cadre. Le clic se relit par la transformation inverse, le geste de chaque socle compris. */
-function dynIso(){const v=$('map-view');const w=v.offsetWidth,h=v.offsetHeight;if(!w||!h)return '';
- const f=Math.min(w/((w+h)/DYN_RACINE),h/((w+h)/(2*DYN_RACINE)));
- return ' translate('+w/2+'px,'+h/2+'px) scale('+f+') scale(1,.5) rotate(45deg) translate('+(-w/2)+'px,'+(-h/2)+'px)'}
-{const zoom=applyMapZoom;applyMapZoom=function(...x){const o=zoom.apply(this,x);
-  if(document.body.classList.contains('carte-iso')){const v=$('map-view');v.style.transform=v.style.transform.replace(/ translate\([^)]*\) scale\([^)]*\) scale\(1, ?\.5\) rotate\(45deg\).*$/,'')+dynIso()}
-  return o}}
-{const pct=mapPct;mapPct=function(e){if(!document.body.classList.contains('carte-iso'))return pct(e);
-  const v=$('map-view'),m=$('map'),r=m.getBoundingClientRect(),M=new DOMMatrix(getComputedStyle(v).transform);
-  const p=M.inverse().transformPoint(new DOMPoint(e.clientX-r.left-m.clientLeft,e.clientY-r.top-m.clientTop));
-  return {x:100*p.x/v.offsetWidth,y:100*p.y/v.offsetHeight}}}
-/* Ce qui doit apparaître « au-dessus » d'un socle à l'écran se décale, dans le plan de la carte, en diagonale : un écart d
-   vers le haut de l'écran vaut −d·√2 sur chaque axe de la carte. */
-const dynAuDessus=(x,y,d)=>({left:'calc('+x+'% - '+(d*DYN_RACINE)+'px)',top:'calc('+y+'% - '+(d*DYN_RACINE)+'px)'});
-{const place=placeJauge;placeJauge=function(j,...x){if(!document.body.classList.contains('carte-iso'))return place.call(this,j,...x);
-  if(!j)return;const X=parseFloat(j.dataset.x),Y=parseFloat(j.dataset.y);if(!Number.isFinite(X)||!Number.isFinite(Y))return;
-  const tok=parseFloat(j.style.getPropertyValue('--token'))||tokenPx();j.classList.remove('calee');j.style.transform='';j.style.margin='0';
-  Object.assign(j.style,dynAuDessus(X,Y,tok/2+1.5));j.style.width=tok*.96+'px';j.style.height='2.4px'}}
-// Les mots qui montent : posés par la table au-dessus du socle, ils se recalent dès leur arrivée, d'où qu'ils viennent.
-{const couche=$('floaters');if(couche)new MutationObserver(ms=>{if(!document.body.classList.contains('carte-iso'))return;
-  ms.forEach(m=>m.addedNodes.forEach(el=>{if(!(el instanceof HTMLElement)||!el.classList.contains('floater')||el.dataset.iso)return;
-   const l=/^([\d.]+)%$/.exec(el.style.left),t=/^calc\(([\d.]+)% - ([\d.]+)px\)$/.exec(el.style.top);if(!l||!t)return;
-   el.dataset.iso='1';Object.assign(el.style,dynAuDessus(Number(l[1]),Number(t[1]),Number(t[2])))}))}).observe(couche,{childList:true})}
-// La profondeur : plus un socle est bas à l'écran, plus il passe devant.
-function dynProfondeur(){const iso=document.body.classList.contains('carte-iso'),s=mapSize();
+// La profondeur : plus un socle est bas sur la carte, plus il passe devant — une carte peinte en isométrique se lit ainsi.
+function dynProfondeur(){const dyn=document.body.classList.contains('carte-dynamique');
  document.querySelectorAll('#map-view .token[data-id]').forEach(el=>{const a=actors.find(o=>o.id===el.dataset.id);
-  el.style.zIndex=iso&&a?String(2+Math.round((a.x*s.width+a.y*s.height)/100)):''})}
+  el.style.zIndex=dyn&&a?String(2+Math.round(a.y*10)):''})}
 
 /* ---------- Pas de mode combat ---------- */
 {const bascule=basculerMode;basculerMode=function(neuf,...x){if(neuf==='combat'&&carteDynamique())return;return bascule.call(this,neuf,...x)}}
@@ -99,7 +73,7 @@ function dynMarche(a,but,cible){dynArrete(a);const s=mapSize(),i=actors.indexOf(
   dynMarches.set(a.id,{t:setTimeout(avance,DYN_PAS)})};
  dynMarches.set(a.id,{t:setTimeout(avance,0)})}
 // Le clic : sur le sol, l'aventurier en main y marche ; sur un adversaire, il marche jusqu'à son contact. Le reste ne change pas.
-$('map').addEventListener('pointerdown',e=>{if(!document.body.classList.contains('carte-iso')||e.button!==0||e.altKey||e.shiftKey||e.metaKey||e.ctrlKey)return;
+$('map').addEventListener('pointerdown',e=>{if(!document.body.classList.contains('carte-dynamique')||e.button!==0||e.altKey||e.shiftKey||e.metaKey||e.ctrlKey)return;
  if(e.target.closest('#map-doors,#map-fenetres,#map-coffres,#map-pieges,#piege-boutons,#porte-boutons,#objet-boutons'))return;
  const k=actors.findIndex(o=>o&&o.id===dynMain),a=actors[k];if(!a||!a.hero||!alive(a)||!controlled(k)||!canMove(k))return;
  const t=e.target.closest('.token');let cible=null;
@@ -142,23 +116,15 @@ setInterval(()=>{try{dynFrappes()}catch(e){dynFrappe=false;dynAttaquant=null;if(
 
 /* ---------- À chaque rendu ---------- */
 {const rendu=render;render=function(...x){
-  const iso=carteDynamique()&&dynTable(),avant=document.body.classList.contains('carte-iso');
-  document.body.classList.toggle('carte-iso',iso);
+  const dyn=carteDynamique()&&dynTable();
+  document.body.classList.toggle('carte-dynamique',dyn);
   const o=rendu.apply(this,x);
   // L'aventurier en main : la sélection du MJ (ou du joueur), lue hors des frappes.
   if(!dynAttaquant||actors[selected]!==dynAttaquant)dynMain=actors[selected]?actors[selected].id:null;
-  if(iso!==avant){applyMapZoom();if(typeof caleJauges==='function')caleJauges()}
   dynProfondeur();
   // Sans mode combat, pas de « Début du combat ».
-  {const b=$('start-combat');if(b&&iso)b.hidden=true}
+  {const b=$('start-combat');if(b&&dyn)b.hidden=true}
   // Une carte dynamique ouverte en plein combat : le combat s'achève.
-  if(iso&&dynChezMJ()&&enCombat())setTimeout(()=>{if(carteDynamique()&&enCombat()){basculerMode('exploration');render()}},0);
+  if(dyn&&dynChezMJ()&&enCombat())setTimeout(()=>{if(carteDynamique()&&enCombat()){basculerMode('exploration');render()}},0);
   return o}}
 
-/* Le style : jetons, jauges et mots qui montent défont la rotation et l'aplatissement de la carte (rotation de −45°, puis
-   hauteur doublée, autour de leur point d'ancrage) ; ils passent devant la carte et ses calques. */
-{const st=document.createElement('style');st.id='carte-dynamique-style';st.textContent=`
-body.carte-iso #map-view .token,body.carte-iso #floaters .floater{transform-origin:0 0;rotate:-45deg;scale:1 2}
-body.carte-iso #pv-layer .pv{transform-origin:0 0;rotate:-45deg;scale:1 2;transform:translate(-50%,-100%)}
-body.carte-iso #pv-layer,body.carte-iso #floaters{z-index:100000}
-`;document.head.append(st)}

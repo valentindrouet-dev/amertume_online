@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.418","d":"2026-11-24","t":"Cartes Dynamiques : la carte s'affiche telle quelle"},
 {"v":"1.417","d":"2026-11-24","t":"Cartes Dynamiques : vue isométrique, marche au clic, frappes seules"},
 {"v":"1.416","d":"2026-11-24","t":"Journal : filtres à cocher et transparence"},
 {"v":"1.415","d":"2026-11-24","t":"Journal : un objet employé coup sur coup se cumule sur une ligne"},

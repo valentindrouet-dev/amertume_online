@@ -395,7 +395,7 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 
 **Talents libres** (`.vignette-talents-libres`, vignette d'aventurier, chez le MJ) : case à cocher et son mot, `system-ui` 600 12 px, encre `--muted`, sous le choix du joueur.
 
-**Carte dynamique** (v1.417, `.map-dynamique`, barre de l'éditeur de cartes) : case à cocher `field-check`, juste après « Pas de Brisures ». Sur la Table, une carte dynamique se voit en isométrique (`body.carte-iso`, `carte-dynamique.js`) : l'image tourne de 45° et s'aplatit de moitié ; les jetons, leurs jauges de PV et les mots qui montent restent debout, face à l'écran, le plus bas à l'écran passant devant. Un clic sur le sol pose le signal habituel (`pingCarte`) là où l'aventurier va. « Début du combat » ne s'y montre pas. Aucune couleur nouvelle, aucun texte.
+**Carte dynamique** (v1.417, `.map-dynamique`, barre de l'éditeur de cartes) : case à cocher `field-check`, juste après « Pas de Brisures ». Sur la Table, une carte dynamique (`body.carte-dynamique`, `carte-dynamique.js`) s'affiche telle quelle, sans aucun effet sur l'image (v1.418) : une carte isométrique se peint ainsi ; seuls les jetons se recouvrent selon leur profondeur, le plus bas sur la carte passant devant. Un clic sur le sol pose le signal habituel (`pingCarte`) là où l'aventurier va. « Début du combat » ne s'y montre pas. Aucune couleur nouvelle, aucun texte.
 
 **Cadence d'une arme** (v1.417, fiche d'un objet de l'Armurerie, armes seulement) : champ nombre « Cadence (s) », après « Mains » ; vide, il montre la cadence par défaut en gris (2, ou 3.5 à deux mains).
 

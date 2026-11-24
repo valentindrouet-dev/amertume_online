@@ -292,8 +292,8 @@ try{
      const v=document.getElementById('map-view'),t=v.style.transform,tok=document.querySelector('#map-view .token[data-id="'+h[0].id+'"]');
      const r=tok.getBoundingClientRect(),c=mapPct({clientX:r.left+r.width/2,clientY:r.top+r.height/2});
      basculerMode('combat');
-     ok({iso:document.body.classList.contains('carte-iso'),rot:/rotate\(45deg\)/.test(t),debout:getComputedStyle(tok).rotate==='-45deg',clic:[Math.abs(c.x-h[0].x)<1.5,Math.abs(c.y-h[0].y)<1.5],mode,bouton:document.getElementById('start-combat').hidden})},500)}));
-  dit(r0.iso&&r0.rot&&r0.debout,'la carte se voit en isométrique, les jetons restent debout',JSON.stringify(r0));
+     ok({dyn:document.body.classList.contains('carte-dynamique'),intacte:!/rotate|scale\(1, ?\.5\)/.test(t),jeton:getComputedStyle(tok).rotate==='none',clic:[Math.abs(c.x-h[0].x)<1.5,Math.abs(c.y-h[0].y)<1.5],mode,bouton:document.getElementById('start-combat').hidden})},500)}));
+  dit(r0.dyn&&r0.intacte&&r0.jeton,'la carte s’affiche telle quelle : aucun effet sur l’image ni sur les jetons',JSON.stringify(r0));
   dit(r0.clic.every(Boolean),'un clic sur un jeton se relit à sa place sur la carte',JSON.stringify(r0.clic));
   dit(r0.mode==='exploration'&&r0.bouton,'pas de mode combat : le combat ne commence pas, « Début du combat » n’est pas là',JSON.stringify(r0));
   // Un clic sur l'adversaire : l'aventurier marche jusqu'à son contact, puis frappe seul, sans dépenser de PA.
@@ -313,7 +313,7 @@ try{
    dit((r.une===undefined||r.une===2)&&(r.deux===undefined||r.deux===3.5)&&(r.reglee===undefined||r.reglee===1.5),'la cadence vient de l’arme : 2 s, 3,5 s à deux mains, ou celle réglée',JSON.stringify(r))}
   await p.evaluate(()=>{dynMarches.forEach(m=>clearTimeout(m.t));dynMarches.clear();const m=currentMap();delete m.dynamique;if(mapDraft)delete mapDraft.dynamique;
    actors.splice(0,actors.length,...window.__avantDyn);delete window.__avantDyn;selected=actors.findIndex(a=>a.hero);marked=new Set();actors.forEach(a=>{if(!a.hero)a.vu=false});render()});
-  dit(await p.evaluate(()=>!document.body.classList.contains('carte-iso')&&!/rotate/.test(document.getElementById('map-view').style.transform)),'la case décochée, la carte redevient vue du dessus')}
+  dit(await p.evaluate(()=>!document.body.classList.contains('carte-dynamique')&&![...document.querySelectorAll('#map-view .token')].some(t=>t.style.zIndex)),'la case décochée, la carte redevient ordinaire')}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
