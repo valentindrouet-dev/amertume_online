@@ -395,6 +395,10 @@ Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu,
 
 **Talents libres** (`.vignette-talents-libres`, vignette d'aventurier, chez le MJ) : case à cocher et son mot, `system-ui` 600 12 px, encre `--muted`, sous le choix du joueur.
 
+**Carte dynamique** (v1.417, `.map-dynamique`, barre de l'éditeur de cartes) : case à cocher `field-check`, juste après « Pas de Brisures ». Sur la Table, une carte dynamique se voit en isométrique (`body.carte-iso`, `carte-dynamique.js`) : l'image tourne de 45° et s'aplatit de moitié ; les jetons, leurs jauges de PV et les mots qui montent restent debout, face à l'écran, le plus bas à l'écran passant devant. Un clic sur le sol pose le signal habituel (`pingCarte`) là où l'aventurier va. « Début du combat » ne s'y montre pas. Aucune couleur nouvelle, aucun texte.
+
+**Cadence d'une arme** (v1.417, fiche d'un objet de l'Armurerie, armes seulement) : champ nombre « Cadence (s) », après « Mains » ; vide, il montre la cadence par défaut en gris (2, ou 3.5 à deux mains).
+
 **Pas de Brisures** (`.map-sans-brisures`, barre de l'éditeur de cartes) : case à cocher `field-check`, comme « PvP », juste après elle.
 
 **Stats de Combat en deux colonnes (v1.378)** (`.stats-mise`) : à gauche (`.stats-principal`) les trois scores — sous les dégâts d'un camp, « (n directs + n d'états) » en `system-ui` 600 12 px `--muted` (`.stats-score-detail`) — puis les tableaux des camps ; à droite (`.stats-cote`, liseré gauche `--line-strong`) le titre « Distinctions » en Killam 16 px capitales `#7a5a1a` entre deux filets, les titres à Brisure en cartes dorées (la gemme et son « +1 » calés à droite), puis les autres titres en lignes : token 32 px, nom, valeur à droite, filet `--line-strong` dessous. Sous 1100 px, une seule colonne.

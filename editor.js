@@ -8495,6 +8495,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});
  if($('item-bonus'))a.bonus=lireBonusItem();
  for(const k of ['qty','price','hands','def','lumiere'])if(f[k])a[k]=num(f[k].value,0,k==='def'?DEF_MAX:k==='lumiere'?40:999999);
+ if(f.cadence){const c=Number(String(f.cadence.value).replace(',','.'));if(Number.isFinite(c)&&c>0)a.cadence=Math.round(Math.min(10,Math.max(.5,c))*10)/10;else delete a.cadence}
  if(c==='herbe'&&f['drop_plantes']){const d=normaliseDrops(Object.fromEntries(famillesToutes().map(([k])=>[k,f['drop_'+k]?f['drop_'+k].value:0])));if(Object.keys(d).length)a.drops=d;else delete a.drops}
  if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement=Math.max(.5,Math.min(40,Number(f.bonusMouvement.value)||1));else delete a.bonusMouvement}
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
@@ -8543,6 +8544,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme&&!a.lancer?sel('Mains','hands',weaponHands(a),[[1,'1 main'],[2,'2 mains']]):'')
+  // v1.417 — La cadence d'une arme sur une Carte Dynamique : un coup toutes les x secondes ; vide, 2 s (3,5 s à deux mains).
+  +(arme?field('Cadence (s)','cadence',Number(a.cadence)>0?a.cadence:'','number','min="0.5" max="10" step="0.1" placeholder="'+(weaponHands(a)===2?'3.5':'2')+'"'):'')
   +(arme?sel('Type d’arme','typeArme',typeArmeDe(a),[...(a.ranged?[]:[['','—']]),...TYPES_ARME.filter(t=>t[2]===(a.ranged?'ranged':'melee')).map(([k,n])=>[k,n])]):'')
   +(arme&&a.ranged&&!a.lancer?'<label class="field-check"><input name="armeFeu" type="checkbox" '+(a.armeFeu?'checked':'')+'>Arme à feu</label>':'')
   +(arme||armure?sel('Genre','accord',accordDe(a),ACCORDS):'')
