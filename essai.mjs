@@ -218,9 +218,9 @@ try{
    dit(r.propre.join()==='pvLow,distance'&&r.acteur.join()==='pvLow,distance','ces réglages se gardent au Bestiaire et suivent l’adversaire posé',JSON.stringify(r))}
   // La scène : un seul adversaire révélé, loin des aventuriers.
   const scene=()=>p.evaluate(()=>{const h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),e=actors.filter(a=>!a.hero&&!a.pnj&&alive(a));
-    e.forEach((a,k)=>{a.horsCarte=k>0;a.vu=k===0;a.hidden=false;a.checks=[0,0,0]});e[0].horsCarte=false;e[0].x=Math.min(92,h[0].x+30);e[0].y=h[0].y;
+    actors.forEach(a=>{if(!a.hero&&a!==e[0])a.horsCarte=true});e[0].vu=true;e[0].hidden=false;e[0].checks=[0,0,0];e[0].horsCarte=false;e[0].x=Math.min(92,h[0].x+30);e[0].y=h[0].y;
     h.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour});selected=actors.indexOf(h[0]);marked=new Set([selected]);render();return {heros:h.length,adv:e.length}});
-  const vu=()=>p.evaluate(()=>{const e=actors.find(a=>!a.hero&&!a.pnj&&!a.horsCarte);return {tour:round,x:Math.round(e.x*10),y:Math.round(e.y*10),adv:(e.checks||[]).join(''),heros:actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)).map(a=>pointsRestants(a,'action')).join(''),tourne:triaTourne(),on:iaTour}});
+  const vu=()=>p.evaluate(()=>{const e=actors.find(a=>!a.hero&&!a.pnj&&!a.horsCarte&&alive(a))||{x:0,y:0};return {tour:round,x:Math.round(e.x*10),y:Math.round(e.y*10),adv:(e.checks||[]).join(''),heros:actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)).map(a=>pointsRestants(a,'action')).join(''),tourne:triaTourne(),on:iaTour}});
   const epuise=()=>p.evaluate(()=>{actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)).forEach(a=>epuisePoints(a,'action'));render()});
   // Éteinte : le tour par tour de toujours — rien ne joue seul, le tour ne passe pas.
   await p.evaluate(()=>{basculerMode('exploration');document.getElementById('start-combat').click()});const g=await scene();await epuise();
@@ -229,12 +229,14 @@ try{
    dit(b[0]&&b[1]&&!b[2]&&b[3],'le bouton 🤖 est dans la barre du MJ ; plus de recharge à l’horloge, le déplacement a retrouvé sa distance',JSON.stringify(b))}
   // Allumée, mais combat parti tout seul : elle attend le MJ.
   await p.evaluate(()=>{basculerMode('exploration');basculerMode('combat')});await scene();await p.click('#ia-adversaires');await epuise();
-  {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),bouton=await p.evaluate(()=>!document.getElementById('debuter-combat').hidden);
-   dit(a1.on&&!a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour&&bouton,'option allumée, combat parti tout seul : rien ne joue, « Débuter le combat » attend le MJ',JSON.stringify([a0,a1,bouton]))}
+  {const a0=await vu();await p.waitForTimeout(2200);const a1=await vu(),bouton=await p.evaluate(()=>!document.getElementById('debuter-combat').hidden),bulle=await p.evaluate(()=>BOUTONS_CARTE['ia-adversaires']()[1]);
+   dit(a1.on&&!a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour&&bouton,'option allumée, combat parti tout seul : rien ne joue, « Débuter le combat » attend le MJ',JSON.stringify([a0,a1,bouton]));
+   dit(/parti tout seul/.test(bulle)&&/Débuter le combat/.test(bulle),'la bulle du bouton 🤖 dit ce que l’IA attend',bulle)}
   // Combat lancé à la main : tant qu'un aventurier garde son PA, les adversaires attendent ; le dernier PA dépensé, ils jouent, puis le tour suivant part seul.
   await p.evaluate(()=>{basculerMode('exploration');document.getElementById('start-combat').click()});await scene();
   {const a0=await vu();await p.waitForTimeout(2000);const a1=await vu();
    dit(a1.tourne&&a0.x===a1.x&&a1.tour===a0.tour,'combat lancé à la main, les aventuriers ont leurs PA : les adversaires attendent',JSON.stringify([a0,a1]));
+   {const bulle=await p.evaluate(()=>{const h=actors.find(a=>a.hero&&!a.horsCarte&&alive(a));return [BOUTONS_CARTE['ia-adversaires']()[1],h.name]});dit(/Elle attend que/.test(bulle[0])&&bulle[0].includes(bulle[1])&&/Tour suivant/.test(bulle[0]),'la bulle nomme les aventuriers qui ont encore leur PA',bulle[0])}
    await epuise();let a2=a1,bouge=false;for(let n=0;n<50&&a2.tour===a0.tour;n++){await p.waitForTimeout(300);a2=await vu();if(a2.x!==a0.x||a2.y!==a0.y||a2.adv!=='000')bouge=true}
    dit(bouge,'le dernier PA des aventuriers dépensé, l’adversaire joue seul : il avance vers sa cible',JSON.stringify(a2));
    dit(a2.tour===a0.tour+1&&!/0/.test(a2.heros),'puis le tour suivant part de lui-même : les aventuriers retrouvent leurs PA',JSON.stringify(a2))}
@@ -247,7 +249,7 @@ try{
     const b=document.getElementById('ia-aventuriers'),h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),out={visible:!b.hidden};
     selected=actors.indexOf(h[0]);marked=new Set([selected]);render();out.sans=triaAventuriers().length;b.click();out.avec=triaAventuriers().map(a=>a.id);out.enMain=!out.avec.includes(h[0].id)&&out.avec.length===h.length-1;
     selected=null;marked=new Set();render();out.tous=triaAventuriers().length===h.length;
-    const a=h[1],adv=actors.find(o=>!o.hero&&!o.pnj&&!o.horsCarte);adv.vu=true;adv.x=a.x;adv.y=a.y-5;settleActor(adv);a.checks=[0,0,0];render();
+    const a=h[1],adv=actors.find(o=>!o.hero&&!o.pnj&&!o.horsCarte&&alive(o));adv.vu=true;adv.x=a.x;adv.y=a.y-5;settleActor(adv);a.checks=[0,0,0];render();
     const j=triaCible(a);out.cible=j!==null&&actors[j]===adv;out.fait=await triaFrappe(a,j);out.pa=pointsRestants(a,'action');
     b.click();out.off=triaAventuriers().length===0;document.getElementById('ia-adversaires').click();out.cache=b.hidden;
     try{localStorage.removeItem('amertume-ia-adversaires');localStorage.removeItem('amertume-ia-aventuriers')}catch(e){}return out});

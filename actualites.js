@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.414","d":"2026-11-24","t":"IA : la bulle du bouton dit ce qu'elle attend"},
 {"v":"1.413","d":"2026-11-24","t":"IA au tour par tour : les adversaires jouent seuls après les aventuriers"},
 {"v":"1.412","d":"2026-11-24","t":"Temps réel : les aventuriers peuvent être menés par l'IA"},
 {"v":"1.411","d":"2026-11-24","t":"IA : départ au « Début du combat » lancé à la main"},

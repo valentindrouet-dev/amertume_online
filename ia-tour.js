@@ -20,15 +20,18 @@ const triaLu=k=>{try{return localStorage.getItem(k)==='1'}catch(e){return false}
 /* « iaTour » : l'option. « triaHeros » : les aventuriers aussi (le bouton 👥, visible quand l'option est allumée) — l'IA mène
    alors tous les aventuriers debout SAUF celui que le MJ a sélectionné (« triaMain » : sa sélection à lui, pas celle que
    l'IA prend le temps d'un geste). « triaFait » : le tour dont les adversaires ont joué. */
+// v1.414 : qui avait allumé ⏱ (le temps réel, retiré) retrouve 🤖 allumé, une fois.
+try{if(localStorage.getItem(TRIA_CLE)===null&&localStorage.getItem('amertume-temps-reel')==='1')localStorage.setItem(TRIA_CLE,'1');localStorage.removeItem('amertume-temps-reel')}catch(e){}
 let iaTour=triaLu(TRIA_CLE),triaHeros=triaLu(TRIA_CLE_HEROS),triaMain=null,triaCombat=null,triaOccupe=false,triaRang=0,triaFait='';
 const triaAttente=new Map(),triaBoude=new Map(),triaTourTalent=new Map(),triaFinis=new Set();
 const triaPause=ms=>new Promise(r=>setTimeout(r,ms));
 const triaCleTour=()=>numeroCombat+'.'+round;
+const triaSurTable=()=>typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
 // Les gestes que l'IA a faits ce tour : un tour où personne n'a rien fait ne s'enchaîne pas tout seul.
 let triaGestes={cle:'',n:0};const triaCompte=()=>{const c=triaCleTour();if(triaGestes.cle!==c)triaGestes={cle:c,n:0};triaGestes.n++};
 // Le MJ, sur la Table, l'option allumée, pour un combat qu'il a lancé à la main.
 function triaTourne(){return iaTour&&enCombat()&&view==='mj'&&!(typeof enLigne!=='undefined'&&enLigne&&typeof estMJ==='function'&&!estMJ())
- &&triaCombat!==null&&triaCombat===numeroCombat&&!(typeof loading!=='undefined'&&loading)&&![...document.body.classList].some(c=>c.startsWith('page-'))}
+ &&triaCombat!==null&&triaCombat===numeroCombat&&!(typeof loading!=='undefined'&&loading)&&triaSurTable()}
 // Une fenêtre ouverte devant la table la met en pause ; un panneau simplement posé à côté, non.
 function triaFenetre(){try{return !!document.querySelector('dialog:modal')}catch(e){return !!document.querySelector('dialog[open]')}}
 function triaLibre(){return !window.socleEnMain&&!tirEnVol&&!placementEnCours&&!fermeFormesMur&&!triaFenetre()}
@@ -166,11 +169,24 @@ setInterval(()=>{triaPasse().catch(e=>{triaOccupe=false;if(typeof signaleErreur=
 {const nx=document.getElementById('next');if(nx){const avant=nx.onclick;
   nx.onclick=function(e){if(triaTourne()&&!triaOccupe&&triaFait!==triaCleTour()&&triaAdversaires().length){triaTourAdversaires();return}return avant?avant.call(this,e):undefined}}}
 
+/* Où en est l'IA, en une phrase : ce qu'elle fait, ou ce qu'elle attend. C'est la bulle du bouton 🤖 qui le dit. */
+function triaOuEnEstElle(){const noms=l=>l.map(a=>a.name).join(', ');
+ if(!enCombat())return 'Elle jouera au prochain combat lancé à la main.';
+ if(typeof enLigne!=='undefined'&&enLigne&&typeof estMJ==='function'&&!estMJ())return 'Elle ne joue que chez le MJ connecté à la table.';
+ if(triaCombat!==numeroCombat)return 'Ce combat est parti tout seul : elle attend ton clic sur « Débuter le combat ».';
+ if(!triaAdversaires().length)return 'Aucun adversaire révélé debout : elle n’a personne à jouer.';
+ if(triaOccupe)return 'Les adversaires jouent.';
+ if(triaFait===triaCleTour())return 'Les adversaires ont joué ce tour ; « Tour suivant » est à toi.';
+ const h=actors.filter(a=>triaDebout(a)&&a.hero===true),reste=h.filter(o=>pointsRestants(o,'action')>0&&!triaFinis.has(triaCleTour()+'|'+o.id));
+ if(!h.length)return 'Aucun aventurier debout sur la carte.';
+ if(reste.length)return 'Elle attend que '+noms(reste)+' dépense'+(reste.length>1?'nt':'')+' '+(reste.length>1?'leurs':'son')+' PA — ou ton clic sur « Tour suivant ».';
+ return triaLibre()?'Les aventuriers ont fini : les adversaires vont jouer.':'Elle attend qu’un geste en cours ou une fenêtre ouverte se termine.'}
+
 /* ---------- Les boutons du MJ : 🤖 l'option, et 👥 les aventuriers aussi (affiché quand l'option est allumée) ---------- */
 const triaBouton=typeof icone==='function'&&typeof limiteBtn!=='undefined'?icone('ia-adversaires','🤖','Adversaires menés par l’IA'):null;
 const triaBoutonHeros=triaBouton?icone('ia-aventuriers','👥','Aventuriers menés par l’IA'):null;
 if(triaBouton){limiteBtn.after(triaBouton);triaBouton.after(triaBoutonHeros);texteBouton(triaBouton);texteBouton(triaBoutonHeros);triaBoutonHeros.hidden=true;
- BOUTONS_CARTE['ia-adversaires']=()=>['Adversaires menés par l’IA',iaTour?'Quand les aventuriers n’ont plus de PA, les adversaires jouent seuls, puis le tour suivant part de lui-même ; un clic te les rend.':'Dans un combat lancé à la main : quand les aventuriers n’ont plus de PA, les adversaires jouent seuls, puis le tour suivant part de lui-même.'];
+ BOUTONS_CARTE['ia-adversaires']=()=>['Adversaires menés par l’IA',iaTour?triaOuEnEstElle()+' Un clic éteint l’IA.':'Dans un combat lancé à la main : quand les aventuriers n’ont plus de PA, les adversaires jouent seuls, puis le tour suivant part de lui-même.'];
  BOUTONS_CARTE['ia-aventuriers']=()=>['Aventuriers menés par l’IA',triaHeros?'L’IA mène les aventuriers, sauf celui que tu as sélectionné ; un clic te les rend tous.':'L’IA mène aussi les aventuriers, sauf celui que tu as sélectionné.'];
  triaBouton.onclick=()=>{iaTour=!iaTour;triaEcrit(TRIA_CLE,iaTour);if(typeof refreshGmBar==='function')refreshGmBar();render()};
  triaBoutonHeros.onclick=()=>{triaHeros=!triaHeros;triaEcrit(TRIA_CLE_HEROS,triaHeros);triaAttente.clear();triaFinis.clear();render()}}
@@ -192,6 +208,6 @@ if(triaBouton){limiteBtn.after(triaBouton);triaBouton.after(triaBoutonHeros);tex
   if(b&&view==='mj'&&enCombat()&&iaTour&&triaCombat!==numeroCombat)b.hidden=false;return o}}
 /* Pourquoi l'IA tourne ou non, condition par condition : etatIA() dans la console du navigateur. Rien à l'écran. */
 window.etatIA=()=>({tourne:triaTourne(),option:iaTour,enCombat:enCombat(),vueMJ:view==='mj',mjDeLaTable:!(typeof enLigne!=='undefined'&&enLigne&&typeof estMJ==='function'&&!estMJ()),
- combatLanceALaMain:triaCombat!==null&&triaCombat===numeroCombat,surLaTable:![...document.body.classList].some(c=>c.startsWith('page-')),libre:triaLibre(),fenetreOuverte:triaFenetre(),
+ combatLanceALaMain:triaCombat!==null&&triaCombat===numeroCombat,surLaTable:triaSurTable(),libre:triaLibre(),fenetreOuverte:triaFenetre(),
  tour:triaCleTour(),adversairesOntJoue:triaFait===triaCleTour(),aventuriersFinis:triaHerosFinis(),enCours:triaOccupe,
  adversaires:triaAdversaires().map(a=>a.name),aventuriersIA:triaHeros,enMain:(actors.find(a=>a.id===triaMain)||{}).name||null,aventuriers:triaAventuriers().map(a=>a.name)});
