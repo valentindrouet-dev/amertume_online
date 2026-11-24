@@ -206,6 +206,42 @@ try{
   dit(r.plusDeDetection&&r.sansAuto,'plus de détection ; sans mur détecté, pas de bouton',JSON.stringify(r));
   dit(r.separes&&r.montre&&r.restentAuto===0&&r.restent===2&&r.annule===1,'un mur détecté d’avant s’efface d’un coup, sans toucher aux murs tracés, et l’effacement s’annule')}
 
+ /* ---------- v1.409 — Le temps réel, à l'essai : éteint, rien ne change ; allumé, un PA dépensé revient seul ---------- */
+ etape='Temps réel';console.log(etape);
+ {const pose=()=>p.evaluate(()=>{showPage('table');basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();
+    const h=actors.find(a=>a.hero&&!a.horsCarte&&alive(a));h.checks=[0,0,0];delete h.recharges;h.points={...(h.points||{}),action:1};selected=actors.indexOf(h);marked=new Set([selected]);render();return enCombat()});
+  const vu=()=>p.evaluate(()=>{const h=actors[selected],b=document.querySelector('#attack-choices button.btn-action');
+    return {reste:pointsRestants(h,'action'),memo:(h.checks||[])[0],rech:(h.recharges||[]).filter(f=>f>Date.now()).length,voile:!!(b&&b.querySelector('.tr-voile')),gris:!!(b&&b.classList.contains('inerte')),attend:!!b&&/Action déjà dépensée/.test(b.getAttribute('aria-label')||''),
+     bille:!!document.querySelector('.actor.selected .pastilles .pt.action.tr-pt'),on:document.getElementById('temps-reel').classList.contains('on')}});
+  dit(await pose()&&await p.evaluate(()=>tempsReel===false&&!!document.getElementById('temps-reel')&&!document.getElementById('temps-reel').hidden),'le bouton ⏱ est dans la barre du MJ, éteint par défaut');
+  // Éteint : le tour par tour de toujours.
+  await p.evaluate(()=>{trSecondes=1;depensePoint(actors[selected],'action');render()});await p.waitForTimeout(1300);
+  {const r=await vu();dit(r.reste===0&&r.rech===0&&!r.voile&&!r.bille&&r.gris,'éteint : un PA dépensé le reste jusqu’au tour suivant',JSON.stringify(r))}
+  // Allumé.
+  await pose();await p.click('#temps-reel');await p.evaluate(()=>{trSecondes=1;depensePoint(actors[selected],'action');render()});await p.waitForTimeout(200);
+  {const r=await vu();dit(r.on&&r.reste===0&&r.rech===1&&r.voile&&r.bille&&r.gris,'allumé : le PA dépensé part en recharge, son rond et sa pastille se grisent',JSON.stringify(r))}
+  await p.waitForTimeout(1200);
+  {const r=await vu();dit(r.reste===1&&r.memo===1&&!r.voile&&!r.bille&&!r.attend,'le PA revient seul à son heure ; le tour garde la mémoire qu’il a servi',JSON.stringify(r))}
+  // Deux PA : chacun sa recharge.
+  {const r=await p.evaluate(async()=>{const h=actors[selected],att=ms=>new Promise(ok=>setTimeout(ok,ms));h.points.action=2;h.checks=[0,0,0];delete h.recharges;render();
+    depensePoint(h,'action');await att(500);depensePoint(h,'action');const a=pointsRestants(h,'action');await att(620);const b=pointsRestants(h,'action');await att(520);const c=pointsRestants(h,'action');
+    // Un remboursement rend le PA aussitôt ; « Tour suivant » (checks remis à zéro) les rend tous.
+    depensePoint(h,'action');rendPoint(h,'action');const d=[pointsRestants(h,'action'),(h.recharges||[]).length];
+    epuisePoints(h,'action');const e=pointsRestants(h,'action');h.checks=[0,0,0];const f=pointsRestants(h,'action');
+    h.points.action=1;delete h.recharges;render();return {a,b,c,d,e,f}});
+   dit(r.a===0&&r.b===1&&r.c===2,'deux PA dépensés à une demi-seconde d’écart reviennent l’un après l’autre',JSON.stringify(r));
+   dit(r.d[0]===2&&r.d[1]===0&&r.e===0&&r.f===2,'un PA remboursé revient aussitôt ; le tour suivant les rend tous',JSON.stringify(r))}
+  // L'option et les recharges partent à la table ; un joueur prend l'option du MJ.
+  {const r=await p.evaluate(()=>{const h=actors[selected],av=[admin,enLigne,dernierDoc];let o,joueur;trSecondes=6;depensePoint(h,'action');
+    try{admin=true;o=etatVivant();admin=false;enLigne=true;dernierDoc={fogReset:{tr:4}};trLisTable();joueur=[tempsReel,trSecondes];dernierDoc={fogReset:{}};trLisTable();joueur.push(tempsReel)}
+    finally{[admin,enLigne,dernierDoc]=av;tempsReel=true;trSecondes=1}
+    const part=o&&o.actors&&o.actors[h.id];h.checks=[0,0,0];delete h.recharges;return {tr:o&&o.fogReset&&o.fogReset.tr,rech:part&&Array.isArray(part.recharges)&&part.recharges.length,joueur}});
+   dit(r.tr===6&&r.rech===1&&r.joueur[0]===true&&r.joueur[1]===4&&r.joueur[2]===false,'l’option et les recharges voyagent avec la table ; un joueur suit l’option du MJ',JSON.stringify(r))}
+  // Éteint de nouveau : retour au tour par tour, rien ne traîne.
+  await pose();await p.click('#temps-reel');await p.evaluate(()=>{depensePoint(actors[selected],'action');render()});await p.waitForTimeout(1300);
+  {const r=await vu();dit(!r.on&&r.reste===0&&!r.voile&&!r.bille,'éteint de nouveau : le combat redevient au tour par tour',JSON.stringify(r))}
+  await p.evaluate(()=>{const h=actors[selected];h.checks=[0,0,0];delete h.recharges;trSecondes=6;try{localStorage.removeItem('amertume-temps-reel')}catch(e){}basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(200)}
+
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
  const onglets=await p.evaluate(async()=>{const vus=[];for(const [k] of ONGLETS){showPage(k);await new Promise(r=>setTimeout(r,180));vus.push(k)}showPage('table');return vus});

@@ -342,6 +342,7 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 - L'arrivée d'une animation se marque par un **éclat** bref (agrandissement et halo de la teinte).
 - Si l'appareil demande de réduire les animations (`prefers-reduced-motion`), seul l'éclat reste.
 - **Foudre (v1.399)** (`.vfx-foudre`, `.vfx-foudre-impact`, images de `img/vfx/`) : quand le porteur de la Foudre se déplace, un arc jaune part de son socle vers le touché le plus proche, puis rebondit de touché en touché ; il tremble (trois dessins alternés) et s'efface en 400 ms, chaque rebond 95 ms après le précédent. Chaque touché reçoit un éclat en étoile, large de 1,2 socle. Aucun texte, aucune ligne au journal. Un joueur ne voit pas l'arc d'un combattant qu'il ne voit pas.
+- **Recharge en temps réel (v1.409, à l'essai)** (`.tr-voile`, `.pt.action.tr-pt` ; règle, bouton et style tiennent dans `tempsreel.js`) : option du MJ, bouton ⏱ « Temps réel » de la barre de la carte, à droite de « Mouvement limité », allumé comme les autres (`.on`) et avec la même bulle. En combat, un PA dépensé part en recharge : sa pastille dans la liste des combattants et le rond de chaque action qui l'attend passent au gris des ronds inertes (`--gris-action`) et se recolorent en tournant dans le sens d'une montre, sur toute la durée de la recharge (6 s). Aucune couleur nouvelle, aucun texte, aucune ligne au journal. Avec `prefers-reduced-motion`, le rond reste gris jusqu'au retour du PA.
 
 ---
 
