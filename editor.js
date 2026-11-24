@@ -1424,6 +1424,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="divider"></div><h3 class="reglage-titre">Apparence</h3>'
  +'<div class="reglage"><div><strong>Mode nuit</strong><p class="muted">Fond sombre, mêmes couleurs de jeu.</p></div>'
  +'<button id="theme-switch" class="primary"></button></div>'
+ +'<div class="reglage"><div><strong>Journal en transparence</strong></div><button id="journal-translucide-switch"></button></div>'
  +'<div id="bloc-perf" class="reglage" hidden><div><strong>Indice de performance</strong><p class="muted">En bas à gauche, pour le MJ seul : images par seconde et plus longue image.</p></div><button id="perf-switch"></button></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Raccourcis de la carte</h3>'
  +'<p class="muted">La touche à maintenir en cliquant sur un combattant. Deux gestes ne peuvent pas partager la même touche.</p>'
@@ -7731,6 +7732,12 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
    raccourcis.versions=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « '+(pris==='vue'?'Vue MJ / Joueur':'Retirer les ciblages')+' » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
   ligne.append(gauche,c);boite.append(ligne)}}
 $('theme-switch').onclick=toggleTheme;
+/* v1.416 — Le journal de combat en transparence : fond sombre translucide, texte clair, la carte se voit derrière. Réglage de l'appareil. */
+const JOURNAL_TRANSLUCIDE_CLE='amertume-journal-translucide';
+const journalTranslucide=()=>{try{return localStorage.getItem(JOURNAL_TRANSLUCIDE_CLE)==='1'}catch(e){return false}};
+function poseJournalTranslucide(){const on=journalTranslucide();document.body.classList.toggle('journal-translucide',on);const b=$('journal-translucide-switch');if(b)b.textContent=on?'Désactiver':'Activer'}
+poseJournalTranslucide();
+$('journal-translucide-switch').onclick=()=>{try{localStorage.setItem(JOURNAL_TRANSLUCIDE_CLE,journalTranslucide()?'0':'1')}catch(e){}poseJournalTranslucide()};
 $('perf-switch').onclick=()=>{try{localStorage.setItem(INDICE_PERF_CLE,indicePerfVoulu()?'0':'1')}catch(e){}poseIndicePerf();renderSettings()};
 $('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();renderSettings();
  noterReglage('Touches d’origine rétablies et enregistrées.')};
@@ -8916,6 +8923,7 @@ const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-r
     des panneaux, fiches et lieux repliés, carte éditée, tri des aventuriers, plis de la forge, thème, vue, onglet ouvert, table en ligne. */
  'amertume-zooms','amertume-tailles','amertume-fenetres','amertume-colonnes','amertume-heros-replies','amertume-lieux-replies','amertume-carte-editee',
  'amertume-tri-heros','amertume-forge-plis','amertume-theme','amertume-vue','amertume-page','amertume-table','amertume-indice-perf'];
+REGLAGES_APPAREIL.push('amertume-journal-translucide');
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},
@@ -10403,20 +10411,49 @@ $('recherche-globale-champ').onkeydown=e=>{if(e.key==='ArrowDown'||e.key==='Arro
  else if(e.key==='Enter'){e.preventDefault();ouvreTrouve(rechercheChoix)}};
 addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey||e.shiftKey||String(e.key).toLowerCase()!=='k')return;if(view!=='mj')return;e.preventDefault();ouvreRecherche()});
 
-const FILTRES_JOURNAL=[['tout','📜','Tout'],['combat','⚔','Combat'],['exploration','🧭','Exploration'],['discussion','💬','Discussion']];
+/* v1.416 — Les quatre filtres (Tout, Combat, Exploration, Discussion) font place à un seul bouton, « Filtres », qui ouvre une liste à
+   cocher : chaque catégorie se montre ou se cache, plusieurs à la fois. Son icône se choisit toujours dans la fenêtre des icônes. */
+const FILTRES_JOURNAL=[['tout','📜','Filtres']];
+const CATEGORIES_JOURNAL=[['attaques','Attaques et dégâts'],['soins','Soins'],['etats','États'],['talents','Talents'],['tests','Tests de compétence'],
+ ['deplacements','Déplacements et opportunités'],['exploration','Exploration'],['objets','Butin et objets'],['discussion','Discussion'],['annonces','Tours et annonces']];
+// La catégorie d'une ligne, lue sur ce qu'elle est (sa classe, son ton) et ce qu'elle dit.
+function categorieJournal(li){const c=li.classList,t=li.textContent||'';
+ if(c.contains('j-turn'))return 'annonces';if(c.contains('j-chat'))return 'discussion';
+ if(/opportunit|repouss/i.test(t))return 'deplacements';
+ if(c.contains('j-attaque')||c.contains('ton-attaque')||c.contains('ton-degats'))return 'attaques';
+ if(c.contains('ton-soin'))return 'soins';if(c.contains('ton-etat'))return 'etats';if(c.contains('ton-competence'))return 'tests';
+ if(c.contains('ton-butin'))return 'objets';
+ if(c.contains('ton-talent'))return / emploie /.test(t)?(/\+\d+ PV/.test(t)?'soins':'objets'):'talents';
+ if(c.contains('ton-carte')||c.contains('ton-reveal'))return 'exploration';
+ return 'annonces'}
 // v1.403 : les deux boutons du MJ, en icônes eux aussi, sur la même ligne que les filtres.
 const BOUTONS_JOURNAL=[['session','🆕','Nouvelle session','journal-session'],['vider','🧹','Vider','journal-vider']];let majIconesFiltres=null;
-/* v1.400, v1.401 — Le journal se filtre : Tout, Combat, Exploration, Discussion — une icône chacun, son nom dans sa bulle. Le
-   filtre ne cache que l'affichage : rien n'est retiré du journal, ni ici ni chez les autres. Il est retenu sur l'appareil. */
+/* v1.400, v1.416 — Le journal se filtre : le bouton « Filtres » ouvre la liste des catégories, à cocher. Le filtre ne cache que
+   l'affichage : rien n'est retiré du journal, ni ici ni chez les autres. Les catégories cachées sont retenues sur l'appareil. */
 {const j=$('journal'),titre=j&&j.parentNode.querySelector('.journal-title');
- if(j&&titre){const CLE='amertume-journal-filtre',FILTRES=FILTRES_JOURNAL;
+ if(j&&titre){const CLE='amertume-journal-masques',FILTRES=FILTRES_JOURNAL;try{localStorage.removeItem('amertume-journal-filtre')}catch(e){}
+  const panneau=j.closest('section');if(panneau)panneau.classList.add('journal-panel');
   const boite=document.createElement('div');boite.className='journal-filtres';boite.id='journal-filtres';
-  const pose=f=>{if(!FILTRES.some(([k])=>k===f))f='tout';if(f==='tout')delete j.dataset.filtre;else j.dataset.filtre=f;
-   boite.querySelectorAll('button').forEach(b=>{const on=b.dataset.filtre===f;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
-   try{localStorage.setItem(CLE,f)}catch(e){}j.scrollTop=j.scrollHeight};
+  const liste=document.createElement('div');liste.className='journal-filtres-liste';liste.id='journal-filtres-liste';liste.hidden=true;liste.setAttribute('role','group');liste.setAttribute('aria-label','Filtres');
+  liste.innerHTML='<p class="journal-filtres-titre">Filtres</p>'+CATEGORIES_JOURNAL.map(([k,n])=>'<label><input type="checkbox" data-cat="'+k+'">'+esc(n)+'</label>').join('');
+  let masques=[];try{const v=JSON.parse(localStorage.getItem(CLE)||'[]');if(Array.isArray(v))masques=v.filter(k=>CATEGORIES_JOURNAL.some(([x])=>x===k))}catch(e){}
+  const bouton=()=>boite.querySelector('button[data-filtre="tout"]');
+  // Chaque ligne reçoit sa catégorie à son arrivée — écrite ici, reçue de la table ou rejouée au chargement ; et, au plus tard, quand le filtre change.
+  const range=li=>{if(li&&li.nodeType===1&&li.tagName==='LI'&&!li.dataset.cat)li.dataset.cat=categorieJournal(li)};
+  const pose=()=>{[...j.children].forEach(range);if(masques.length)j.dataset.masque=masques.join(' ');else delete j.dataset.masque;
+   liste.querySelectorAll('input[data-cat]').forEach(x=>{x.checked=!masques.includes(x.dataset.cat)});
+   const b=bouton();if(b){const on=!liste.hidden||masques.length>0;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-expanded',String(!liste.hidden))}
+   try{if(masques.length)localStorage.setItem(CLE,JSON.stringify(masques));else localStorage.removeItem(CLE)}catch(e){}j.scrollTop=j.scrollHeight};
+  liste.addEventListener('change',e=>{const x=e.target.closest('input[data-cat]');if(!x)return;const k=x.dataset.cat;masques=masques.filter(m=>m!==k);if(!x.checked)masques.push(k);pose()});
+  const ferme=()=>{if(liste.hidden)return;liste.hidden=true;pose()};
+  // Ouverte sous la ligne des boutons ; plus haute que la place qui reste à l'écran, elle défile.
+  const ouvre=()=>{liste.hidden=false;liste.style.top=(boite.offsetTop+boite.offsetHeight+4)+'px';liste.style.maxHeight=Math.max(160,innerHeight-liste.getBoundingClientRect().top-12)+'px';pose()};
+  document.addEventListener('pointerdown',e=>{if(!liste.hidden&&!liste.contains(e.target)&&!(bouton()&&bouton().contains(e.target)))ferme()},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!liste.hidden)ferme()});
   FILTRES.forEach(([k,icone,nom])=>{const b=document.createElement('button');b.type='button';b.className='journal-vider journal-filtre';b.dataset.filtre=k;b.setAttribute('aria-label',nom);
-   b.onclick=()=>pose(k);if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));boite.append(b)});
-  titre.after(boite);
+   b.onclick=()=>{liste.hidden?ouvre():ferme()};if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom}));boite.append(b)});
+  [...j.children].forEach(range);new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(range))).observe(j,{childList:true});
+  titre.after(boite);boite.after(liste);
   /* v1.403 — « Nouvelle session » et « Vider » quittent le titre pour le bout de cette ligne, en icônes : tout tient sur une ligne.
      Mêmes boutons, mêmes clics ; leur nom passe dans leur bulle. */
   BOUTONS_JOURNAL.forEach(([k,,nom,id],i)=>{const b=$(id);if(!b)return;b.removeAttribute('title');b.setAttribute('aria-label',nom);b.dataset.bouton=k;b.classList.add('journal-icone');if(!i)b.classList.add('premier');boite.append(b);
@@ -10429,7 +10466,7 @@ const BOUTONS_JOURNAL=[['session','🆕','Nouvelle session','journal-session'],[
     else b.textContent=([...FILTRES,...BOUTONS_JOURNAL].find(([x])=>x===k)||[])[1]||''})};
   majIconesFiltres();
   {const r0=render;render=function(...x){const o=r0.apply(this,x);try{majIconesFiltres()}catch(e){}return o}}
-  let voulu='tout';try{voulu=localStorage.getItem(CLE)||'tout'}catch(e){}pose(voulu);
+  pose();
   if(typeof REGLAGES_APPAREIL!=='undefined')REGLAGES_APPAREIL.push(CLE)}}
 
 /* v1.386 — L'inventaire à portée de main, sur la table : dans la barre des Actions, à droite, à part, le bouton Inventaire — la même

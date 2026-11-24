@@ -105,17 +105,28 @@ try{
  /* ---------- Le journal se filtre, les touches 1 à 9 jouent la barre, Maj compare une pièce à celle qu'on porte ---------- */
  etape='Journal, touches, comparaison';console.log(etape);
  {const r=await p.evaluate(async()=>{logChat({name:'Jasnah',hero:true},'On y va ?');log('Éla fouille la salle.',{ton:'carte'});log('Kaël · Feu : 3 PV perdus.',{ton:'degats'});
-   const vus=f=>{document.querySelector('#journal-filtres [data-filtre="'+f+'"]').click();return [...document.querySelectorAll('#journal>li')].filter(l=>l.offsetParent).map(l=>l.textContent)};
-   const tout=vus('tout').length,combat=vus('combat'),explo=vus('exploration'),disc=vus('discussion');vus('tout');
-   return {tout,combat,explo,disc,total:document.querySelectorAll('#journal>li').length,champ:!!document.getElementById('journal-recherche'),puces:[...document.querySelectorAll('#journal-filtres button')].map(b=>b.getAttribute('aria-label')).join(',')}});
-  dit(r.combat.some(t=>t.includes('Feu'))&&!r.combat.some(t=>t.includes('fouille')||t.includes('On y va')),'« Combat » ne montre que le combat');
-  dit(r.explo.length>=1&&r.explo.every(t=>!t.includes('Feu')&&!t.includes('On y va')),'« Exploration » ne montre que l’exploration');
-  dit(r.disc.length>=1&&r.disc.every(t=>t.includes('On y va')),'« Discussion » ne montre que les paroles');
-  dit(!r.champ&&r.puces.startsWith('Tout,Combat,Exploration,Discussion'),'quatre puces à icône, chacune son nom, et pas de champ de recherche',r.puces);
+   // v1.416 — Le bouton « Filtres » ouvre la liste à cocher ; chaque catégorie décochée cache ses lignes, sans rien retirer.
+   const vus=caches=>{const l=document.getElementById('journal-filtres-liste');if(l.hidden)document.querySelector('#journal-filtres [data-filtre="tout"]').click();
+    l.querySelectorAll('input[data-cat]').forEach(x=>{const veut=!caches.includes(x.dataset.cat);if(x.checked!==veut)x.click()});
+    return [...document.querySelectorAll('#journal>li')].filter(l=>l.offsetParent).map(l=>l.textContent)};
+   const tous=CATEGORIES_JOURNAL.map(([k])=>k),sauf=k=>tous.filter(x=>x!==k);
+   const tout=vus([]).length,combat=vus(sauf('attaques')),explo=vus(sauf('exploration')),disc=vus(sauf('discussion'));vus([]);
+   const ouverte=!document.getElementById('journal-filtres-liste').hidden;document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   return {tout,combat,explo,disc,ouverte,fermee:document.getElementById('journal-filtres-liste').hidden,cases:document.querySelectorAll('#journal-filtres-liste input[data-cat]').length,
+    total:document.querySelectorAll('#journal>li').length,champ:!!document.getElementById('journal-recherche'),puces:[...document.querySelectorAll('#journal-filtres button')].map(b=>b.getAttribute('aria-label')).join(',')}});
+  dit(r.combat.some(t=>t.includes('Feu'))&&!r.combat.some(t=>t.includes('fouille')||t.includes('On y va')),'seule « Attaques et dégâts » cochée : le combat seul',JSON.stringify(r.combat));
+  dit(r.explo.length>=1&&r.explo.every(t=>!t.includes('Feu')&&!t.includes('On y va')),'seule « Exploration » cochée : l’exploration seule');
+  dit(r.disc.length>=1&&r.disc.every(t=>t.includes('On y va')),'seule « Discussion » cochée : les paroles seules');
+  dit(!r.champ&&r.puces.startsWith('Filtres')&&r.cases===10&&r.ouverte&&r.fermee,'un bouton « Filtres » ouvre dix catégories à cocher ; un clic dehors la ferme',JSON.stringify({puces:r.puces,cases:r.cases,ouverte:r.ouverte,fermee:r.fermee}));
   {const l=await p.evaluate(()=>{const bs=[...document.querySelectorAll('#journal-filtres button')].filter(b=>!b.hidden),tops=new Set(bs.map(b=>Math.round(b.getBoundingClientRect().top)));
     return {n:bs.length,lignes:tops.size,noms:bs.map(b=>b.getAttribute('aria-label')).join(','),texte:bs.map(b=>b.textContent).join('')}});
-   dit(l.n===6&&l.lignes===1&&l.noms.endsWith('Nouvelle session,Vider')&&!/[A-Za-z]/.test(l.texte),'les six boutons tiennent sur une ligne, Nouvelle session et Vider en icônes',JSON.stringify(l))}
-  dit(r.tout>=3&&r.total>=r.tout,'« Tout » remontre le journal entier, rien n’en est retiré')}
+   dit(l.n===3&&l.lignes===1&&l.noms==='Filtres,Nouvelle session,Vider'&&!/[A-Za-z]/.test(l.texte),'Filtres, Nouvelle session et Vider tiennent sur une ligne, en icônes',JSON.stringify(l))}
+  dit(r.tout>=3&&r.total>=r.tout,'tout coché, le journal entier revient : rien n’en est retiré')}
+  // v1.416 — Le journal en transparence : un réglage de l'appareil, dans Paramètres.
+  {const t=await p.evaluate(()=>{showPage('settings');const b=document.getElementById('journal-translucide-switch'),av=[b.textContent,document.body.classList.contains('journal-translucide')];b.click();
+    const ap=[b.textContent,document.body.classList.contains('journal-translucide'),localStorage.getItem('amertume-journal-translucide')];showPage('table');
+    const fond=getComputedStyle(document.querySelector('.journal-panel')).backgroundColor;b.click();return {av,ap,fond,apres:document.body.classList.contains('journal-translucide')}});
+   dit(t.av[0]==='Activer'&&!t.av[1]&&t.ap[0]==='Désactiver'&&t.ap[1]&&t.ap[2]==='1'&&/rgba\(12, 10, 8, 0\.6/.test(t.fond)&&!t.apres,'Paramètres : le journal en transparence s’active et se désactive',JSON.stringify(t))}
  {await p.evaluate(()=>{basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();selected=actors.findIndex(a=>a.hero);marked=new Set([selected]);
    // Un adversaire au contact : l'attaque du premier rond a une cible, le rond n'est pas grisé.
    {const h=actors[selected],adv=actors.find(a=>!a.hero&&a.hp>0);window.__place=[adv.x,adv.y,adv.vu];
@@ -134,8 +145,8 @@ try{
   const rebatie=await p.evaluate(()=>new Promise(ok=>{renderAttackChoices();setTimeout(()=>ok(rondsDeLaBarre().map(b=>b.dataset.touche||'-').join('')),30)}));
   dit(/^1/.test(rebatie)&&!rebatie.includes('-'),'rebâtie hors du rendu, la ligne du haut garde ses chiffres',rebatie);
   // L'icône d'un filtre se choisit parmi celles du site ; sans choix, l'emoji.
-  {const r=await p.evaluate(()=>{catalog.logosFiltres={combat:'weapon_cotte.png'};render();const b=document.querySelector('#journal-filtres [data-filtre="combat"]'),t=document.querySelector('#journal-filtres [data-filtre="tout"]');
-    const avec=!!b.querySelector('img'),emoji=t.textContent;catalog.logosFiltres={};render();return {avec,emoji,sans:!b.querySelector('img')&&b.textContent==='⚔'}});
+  {const r=await p.evaluate(()=>{catalog.logosFiltres={tout:'weapon_cotte.png'};render();const b=document.querySelector('#journal-filtres [data-filtre="tout"]');
+    const avec=!!b.querySelector('img');catalog.logosFiltres={};render();return {avec,emoji:b.textContent,sans:!b.querySelector('img')&&b.textContent==='📜'}});
    dit(r.avec&&r.emoji==='📜'&&r.sans,'l’icône choisie remplace l’emoji d’un filtre, et l’emoji revient sans choix',JSON.stringify(r))}
   dit(/^1\d*\|0$/.test(barre),'seuls les ronds de la ligne du haut portent leur chiffre',barre);
   dit(rang>=0&&clics===String(rang+1),'la touche d’un rond du haut le joue, et rien ne part quand on écrit',(clics||'aucun clic')+' '+JSON.stringify({...avantTouche,rang}));

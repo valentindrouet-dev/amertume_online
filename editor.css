@@ -5002,3 +5002,28 @@ button.btn-inventaire{--fond:#8a6440;color:#fff}
 #aventure-fenetre{width:min(640px,94vw)}#aventure-corps{max-height:min(60dvh,520px);overflow:auto}
 .aventure-groupe{margin:0 0 12px}.aventure-noms{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 0;font-size:14px}
 .aventure-noms .aventure-marque{font-style:italic;color:var(--muted)}.aventure-aussi{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:14px}.aventure-aussi input{width:auto;margin:0}
+
+/* v1.416 — Le filtre du journal : le bouton « Filtres » ouvre, sous la ligne des boutons, la liste des catégories à cocher.
+   Une catégorie décochée cache ses lignes (data-masque), rien n'est retiré du journal. */
+.journal-panel{position:relative}
+.journal-filtres-liste{position:absolute;right:14px;z-index:30;min-width:240px;overflow:auto;padding:9px 14px 10px;background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;box-shadow:0 8px 24px #0005}
+.journal-filtres-liste[hidden]{display:none}
+.journal-filtres-titre{display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 11px/1 system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.journal-filtres-titre::before,.journal-filtres-titre::after{content:"";flex:1;height:1px;background:var(--line)}
+.journal-filtres-liste label{display:flex;align-items:center;gap:9px;padding:3px 0;font-size:13.5px;color:var(--ink);cursor:pointer;user-select:none}
+.journal-filtres-liste input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent)}
+#journal[data-masque~="attaques"]>li[data-cat="attaques"],#journal[data-masque~="soins"]>li[data-cat="soins"],#journal[data-masque~="etats"]>li[data-cat="etats"],
+#journal[data-masque~="talents"]>li[data-cat="talents"],#journal[data-masque~="tests"]>li[data-cat="tests"],#journal[data-masque~="deplacements"]>li[data-cat="deplacements"],
+#journal[data-masque~="exploration"]>li[data-cat="exploration"],#journal[data-masque~="objets"]>li[data-cat="objets"],#journal[data-masque~="discussion"]>li[data-cat="discussion"],
+#journal[data-masque~="annonces"]>li[data-cat="annonces"]{display:none}
+/* v1.416 — Le journal en transparence (Paramètres, réglage de l'appareil) : fond sombre translucide, la carte se voit derrière ; texte
+   clair, les teintes du mode nuit. Les lignes perdent leur cartouche ; les noms et les nombres gardent leur couleur, éclaircie. */
+body.journal-translucide .journal-panel{--ink:#edf0e9;--muted:#a4b1b5;--line:#ffffff24;--line-strong:#ffffff40;--panel:#0c0a08e6;--field:#00000059;--btn:#ffffff14;--hover:#ffffff24;--chip:#ffffff0f;--accent:#e2ae72;
+ background:#0c0a08a6;border-color:#ffffff1f;color:var(--ink);box-shadow:none}
+body.journal-translucide #journal .j-entry.ton,body.journal-translucide #journal .j-chat{background:transparent;border-color:transparent;padding:1px 0;margin:1px 0}
+body.journal-translucide #journal>li{text-shadow:0 1px 2px #000c}
+body.journal-translucide #journal .j-name,body.journal-translucide #journal .j-objet-nom{filter:brightness(1.8) saturate(1.15)}
+body.journal-translucide #journal .j-degats,body.journal-translucide #journal .j-num.j-perte,body.journal-translucide #journal .j-num.j-ko,body.journal-translucide #journal .j-comp .j-reussite.j-ko{color:#f0866e}
+body.journal-translucide #journal .j-num.j-tresor{color:#e0c060}body.journal-translucide #journal .j-num.j-pv{color:#8ac96e}
+body.journal-translucide #journal .j-num.j-ok,body.journal-translucide #journal .j-comp .j-reussite.j-ok{color:#7fd38c}
+body.journal-translucide .journal-panel .journal-chat input{background:var(--field);color:var(--ink);border-color:var(--line)}
