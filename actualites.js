@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.415","d":"2026-11-24","t":"Journal : un objet employé coup sur coup se cumule sur une ligne"},
 {"v":"1.414","d":"2026-11-24","t":"IA : la bulle du bouton dit ce qu'elle attend"},
 {"v":"1.413","d":"2026-11-24","t":"IA au tour par tour : les adversaires jouent seuls après les aventuriers"},
 {"v":"1.412","d":"2026-11-24","t":"Temps réel : les aventuriers peuvent être menés par l'IA"},

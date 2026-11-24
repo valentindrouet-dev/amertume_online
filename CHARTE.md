@@ -357,6 +357,8 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 
 Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu, français du site) se relisent à la main avant chaque publication.
 
+**Objet employé coup sur coup au journal** (v1.415) : la ligne juste au-dessus — même combattant, même objet, même gain (PV, Armure), même tour — se remplace par le cumul : « Seth emploie 3 Rations : +11 PV (2 + 3 + 6). » — le nombre, le nom de l'objet au pluriel, le total, puis chaque gain entre parenthèses.
+
 **Repos court au journal** : « Remus effectue un **Repos Court** (vert `#2f8a63`) : **Soin 7 PV**. », puis, s'il en avait, « Il perd tous ses **états négatifs** (rouge `#b8352f`). ». Rien d'autre.
 
 **Terrain nommé dans une bulle de pièce** (`.mot-terrain`) : le nom d'un type de terrain dangereux — « Ronces » — s'écrit en gras, de la couleur du terrain (celle de la carte ouverte d'abord, sinon de la première carte qui le définit).

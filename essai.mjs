@@ -258,6 +258,16 @@ try{
   await p.evaluate(async()=>{for(let n=0;n<60&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));
    basculerMode('exploration');actors.splice(0,actors.length,...window.__avantIA);delete window.__avantIA;selected=actors.findIndex(a=>a.hero);marked=new Set();actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(300)}
 
+ /* ---------- v1.415 — Un même objet employé coup sur coup se cumule sur une ligne ---------- */
+ etape='Emplois cumulés';console.log(etape);
+ {const r=await p.evaluate(()=>{const dern=()=>{const l=[...document.querySelectorAll('#journal li')].filter(x=>!x.hidden);return l[l.length-1].textContent},out={};
+   ['2','3','6'].forEach(v=>log('Seth emploie Ration : +'+v+' PV ('+v+').',{ton:'talent'}));out.trois=dern();
+   log('Seth emploie Ration : +6 PV (6).',{ton:'talent'});out.memeJet=dern();
+   log('Kaël emploie Ration : +2 PV (2).',{ton:'talent'});out.autre=dern();
+   out.compte=[...document.querySelectorAll('#journal li')].filter(x=>/Ration/.test(x.textContent)).length;return out});
+  dit(r.trois==='Seth emploie 3 Rations : +11 PV (2 + 3 + 6).','trois Rations coup sur coup : une ligne, le total et chaque jet',r.trois);
+  dit(r.memeJet==='Seth emploie 4 Rations : +17 PV (2 + 3 + 6 + 6).'&&r.autre==='Kaël emploie Ration : +2 PV (2).'&&r.compte===2,'un même jet se compte aussi ; un autre aventurier ouvre sa propre ligne',JSON.stringify(r))}
+
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
  const onglets=await p.evaluate(async()=>{const vus=[];for(const [k] of ONGLETS){showPage(k);await new Promise(r=>setTimeout(r,180));vus.push(k)}showPage('table');return vus});
