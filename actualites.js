@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.410","d":"2026-11-24","t":"Temps réel : PM, déplacement libre et IA simple des adversaires"},
 {"v":"1.409","d":"2026-11-24","t":"Combat en temps réel à l'essai (option du MJ)"},
 {"v":"1.408","d":"2026-11-11","t":"Murs automatiques retirés"},
 {"v":"1.407","d":"2026-11-10","t":"Murs automatiques : on montre un mur d'un clic"},

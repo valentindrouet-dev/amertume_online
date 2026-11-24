@@ -397,7 +397,7 @@ function cleanMonster(t){const dés={};
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
-  menace:texte(t&&t.menace,30)||'closest',esquive:esquiveDe(t),rapide:!!(t&&t.rapide),...(t&&t.nyctalope===false?{nyctalope:false}:{}),
+  menace:texte(t&&t.menace,30)||'closest',...(t&&(t.priorite==='contact'||t.priorite==='distance')?{priorite:t.priorite}:{}),esquive:esquiveDe(t),rapide:!!(t&&t.rapide),...(t&&t.nyctalope===false?{nyctalope:false}:{}),
   ...(t&&t.mouvement!=null&&t.mouvement!==''&&Number.isFinite(Number(t.mouvement))&&Number(t.mouvement)!==DISTANCE_MOUVEMENT?{mouvement:Math.max(0,Math.min(99,Math.round(Number(t.mouvement)*2)/2))}:{}),
   ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement}),...(t.unique===true?{unique:true}:{})}:{}),...(normaliseBourse(t&&t.bourse).length?{bourse:normaliseBourse(t.bourse)}:{}),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et

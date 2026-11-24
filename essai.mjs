@@ -208,20 +208,22 @@ try{
 
  /* ---------- v1.409 — Le temps réel, à l'essai : éteint, rien ne change ; allumé, un PA dépensé revient seul ---------- */
  etape='Temps réel';console.log(etape);
- {const pose=()=>p.evaluate(()=>{showPage('table');basculerMode('combat');const b=document.getElementById('debuter-combat');if(b&&!b.hidden)b.click();
+ {const pose=()=>p.evaluate(()=>{showPage('table');basculerMode('combat');tokensLocked=false;verrouDebutCombat=false;if(typeof triaCombat!=='undefined')triaCombat=null;
     const h=actors.find(a=>a.hero&&!a.horsCarte&&alive(a));h.checks=[0,0,0];delete h.recharges;h.points={...(h.points||{}),action:1};selected=actors.indexOf(h);marked=new Set([selected]);render();return enCombat()});
   const vu=()=>p.evaluate(()=>{const h=actors[selected],b=document.querySelector('#attack-choices button.btn-action');
     return {reste:pointsRestants(h,'action'),memo:(h.checks||[])[0],rech:(h.recharges||[]).filter(f=>f>Date.now()).length,voile:!!(b&&b.querySelector('.tr-voile')),gris:!!(b&&b.classList.contains('inerte')),attend:!!b&&/Action déjà dépensée/.test(b.getAttribute('aria-label')||''),
      bille:!!document.querySelector('.actor.selected .pastilles .pt.action.tr-pt'),on:document.getElementById('temps-reel').classList.contains('on')}});
   dit(await pose()&&await p.evaluate(()=>tempsReel===false&&!!document.getElementById('temps-reel')&&!document.getElementById('temps-reel').hidden),'le bouton ⏱ est dans la barre du MJ, éteint par défaut');
   // Éteint : le tour par tour de toujours.
-  await p.evaluate(()=>{trSecondes=1;depensePoint(actors[selected],'action');render()});await p.waitForTimeout(1300);
-  {const r=await vu();dit(r.reste===0&&r.rech===0&&!r.voile&&!r.bille&&r.gris,'éteint : un PA dépensé le reste jusqu’au tour suivant',JSON.stringify(r))}
+  {const r0=await p.evaluate(()=>{const h=actors[selected];trSecondes=1;depensePoint(h,'action');render();return [pointsRestants(h,'action'),(h.recharges||[]).length]});await p.waitForTimeout(300);
+   const r=await vu();dit(r0[0]===0&&r0[1]===0&&r.rech===0&&!r.voile&&!r.bille,'éteint : un PA dépensé le reste, rien ne part en recharge',JSON.stringify([r0,r]))}
   // Allumé.
   await pose();await p.click('#temps-reel');await p.evaluate(()=>{trSecondes=1;depensePoint(actors[selected],'action');render()});await p.waitForTimeout(200);
   {const r=await vu();dit(r.on&&r.reste===0&&r.rech===1&&r.voile&&r.bille&&r.gris,'allumé : le PA dépensé part en recharge, son rond et sa pastille se grisent',JSON.stringify(r))}
   await p.waitForTimeout(1200);
-  {const r=await vu();dit(r.reste===1&&r.memo===1&&!r.voile&&!r.bille&&!r.attend,'le PA revient seul à son heure ; le tour garde la mémoire qu’il a servi',JSON.stringify(r))}
+  {const r=await vu();dit(r.reste===1&&!r.voile&&!r.bille&&!r.attend,'le PA revient seul à son heure',JSON.stringify(r))}
+  {const r=await p.evaluate(()=>{const h=actors[selected];h.checks=[0,0,0];delete h.recharges;depensePoint(h,'action');h.recharges=[Date.now()-5];const x=[pointsRestants(h,'action'),h.checks[0]];h.checks=[0,0,0];delete h.recharges;return x});
+   dit(r[0]===1&&r[1]===1,'un PA revenu reste compté comme dépensé ce tour : le tour garde sa mémoire',JSON.stringify(r))}
   // Deux PA : chacun sa recharge.
   {const r=await p.evaluate(async()=>{const h=actors[selected],att=ms=>new Promise(ok=>setTimeout(ok,ms));h.points.action=2;h.checks=[0,0,0];delete h.recharges;render();
     depensePoint(h,'action');await att(500);depensePoint(h,'action');const a=pointsRestants(h,'action');await att(620);const b=pointsRestants(h,'action');await att(520);const c=pointsRestants(h,'action');
@@ -238,9 +240,50 @@ try{
     const part=o&&o.actors&&o.actors[h.id];h.checks=[0,0,0];delete h.recharges;return {tr:o&&o.fogReset&&o.fogReset.tr,rech:part&&Array.isArray(part.recharges)&&part.recharges.length,joueur}});
    dit(r.tr===6&&r.rech===1&&r.joueur[0]===true&&r.joueur[1]===4&&r.joueur[2]===false,'l’option et les recharges voyagent avec la table ; un joueur suit l’option du MJ',JSON.stringify(r))}
   // Éteint de nouveau : retour au tour par tour, rien ne traîne.
-  await pose();await p.click('#temps-reel');await p.evaluate(()=>{depensePoint(actors[selected],'action');render()});await p.waitForTimeout(1300);
-  {const r=await vu();dit(!r.on&&r.reste===0&&!r.voile&&!r.bille,'éteint de nouveau : le combat redevient au tour par tour',JSON.stringify(r))}
+  await pose();await p.click('#temps-reel');
+  {const r0=await p.evaluate(()=>{const h=actors[selected];depensePoint(h,'action');render();return [pointsRestants(h,'action'),(h.recharges||[]).length]});await p.waitForTimeout(300);
+   const r=await vu();dit(!r.on&&r0[0]===0&&r0[1]===0&&r.rech===0&&!r.voile&&!r.bille,'éteint de nouveau : le combat redevient au tour par tour',JSON.stringify([r0,r]))}
   await p.evaluate(()=>{const h=actors[selected];h.checks=[0,0,0];delete h.recharges;trSecondes=6;try{localStorage.removeItem('amertume-temps-reel')}catch(e){}basculerMode('exploration');actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(200)}
+
+ /* ---------- v1.410 — Temps réel : le déplacement n'a plus de distance, il lui faut un PM disponible ; l'IA des adversaires ---------- */
+ etape='Temps réel : mouvement et IA';console.log(etape);
+ {const garde=await p.evaluate(()=>{window.__avantIA=structuredClone(actors);showPage('table');basculerMode('combat');const b=document.getElementById('debuter-combat');
+    const h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),e=actors.filter(a=>!a.hero&&!a.pnj&&alive(a)&&!a.horsCarte);
+    h.forEach(a=>{a.checks=[0,0,0];delete a.recharges;delete a.rechargesM});e.forEach((a,k)=>{a.vu=true;a.hidden=false;a.checks=[0,0,0];a.x=Math.min(95,h[0].x+45);a.y=Math.max(5,Math.min(95,h[0].y-10+k*10))});
+    selected=actors.indexOf(h[0]);marked=new Set([selected]);render();return {heros:h.length,adv:e.length,bouton:!!b&&!b.hidden}});
+  // Le déplacement.
+  {const r=await p.evaluate(async()=>{const h=actors[selected],classique=regleMouvement(h);document.getElementById('temps-reel').click();trSecondes=1;
+    const libre=regleMouvement(h);epuisePoints(h,'mouvement');const vide=regleMouvement(h),rech=(h.rechargesM||[]).length;await new Promise(ok=>setTimeout(ok,1200));const revenu=regleMouvement(h);
+    return {classique:classique.max>=0,libre:!libre.fini&&!(libre.max>=0),vide:vide.fini,rech,revenu:!revenu.fini,on:tempsReel}});
+   dit(r.on&&r.classique&&r.libre,'en temps réel le déplacement n’a plus de distance comptée ; au tour par tour, si',JSON.stringify(r));
+   dit(r.vide&&r.rech>=1&&r.revenu,'sans PM disponible le socle ne bouge pas ; le PM revient seul et le libère',JSON.stringify(r))}
+  // La fiche : Focus et Priorité d'action, avec leurs valeurs de base.
+  {const r=await p.evaluate(async()=>{const k=catalog.monsters.findIndex(m=>!m.pnj),m=catalog.monsters[k];openActor(null,false,k);await new Promise(ok=>setTimeout(ok,250));
+    const d=document.getElementById('actor-editor'),f=d.querySelector('form'),champs=!!(f&&f.menace&&f.priorite),base=champs?[f.menace.value,f.priorite.value]:null;d.close();
+    const c=cleanMonster({...m,priorite:'distance',menace:'pvLow'}),a=fromMonster({...m,priorite:'distance',menace:'pvLow'});
+    return {champs,base,propre:[c.menace,c.priorite],acteur:[a.menace,a.priorite],defaut:prioriteDe(fromMonster(m))}});
+   dit(r.champs&&r.base[0]==='closest'&&(r.base[1]==='contact'||r.base[1]==='distance')&&r.defaut===r.base[1],'la fiche d’un adversaire propose Focus et Priorité d’action, déjà réglés par défaut',JSON.stringify(r));
+   dit(r.propre.join()==='pvLow,distance'&&r.acteur.join()==='pvLow,distance','ces réglages se gardent au Bestiaire et suivent l’adversaire posé',JSON.stringify(r))}
+  // Les garde-fous de l'IA.
+  const pos=()=>p.evaluate(()=>JSON.stringify(actors.filter(a=>!a.hero&&!a.pnj).map(a=>[Math.round(a.x*10),Math.round(a.y*10),(a.checks||[])[0]])));
+  {const a0=await pos();await p.waitForTimeout(1600);const a1=await pos(),r=await p.evaluate(()=>({tourne:triaTourne(),bouton:!document.getElementById('debuter-combat').hidden}));
+   dit(garde.adv>0&&a0===a1&&!r.tourne&&r.bouton,'temps réel allumé, sans « Débuter le combat » : aucun adversaire ne bouge, le bouton attend',JSON.stringify({garde,r}))}
+  await p.click('#debuter-combat');
+  {const a0=await pos();let a1=a0;for(let n=0;n<16&&a1===a0;n++){await p.waitForTimeout(300);a1=await pos()}
+   const r=await p.evaluate(()=>({tourne:triaTourne(),sel:actors[selected]&&actors[selected].hero===true}));
+   dit(r.tourne&&a1!==a0,'« Débuter le combat » cliqué : les adversaires se mettent en marche vers leur cible',JSON.stringify(r));
+   dit(r.sel,'le MJ retrouve sa sélection après le geste d’un adversaire')}
+  // Un coup de l'IA, au contact : il part par la table et coûte son PA.
+  {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));triaCombat=null;
+    const h=actors.find(a=>a.hero&&!a.horsCarte&&alive(a)),a=actors.find(o=>!o.hero&&!o.pnj&&alive(o)&&!o.horsCarte);a.x=h.x;a.y=h.y-5;a.checks=[0,0,0];delete a.recharges;a.menace='closest';settleActor(a);render();
+    const j=triaCible(a),avant=pointsRestants(a,'action'),fait=await triaFrappe(a,j);return {cible:actors[j]&&actors[j].hero===true,avant,fait,apres:pointsRestants(a,'action'),rech:(a.recharges||[]).length}});
+   dit(r.cible&&r.fait&&r.avant===1&&r.apres===0&&r.rech===1,'au contact, l’adversaire frappe sa cible : le coup part et son PA entre en recharge',JSON.stringify(r))}
+  // Éteindre le temps réel arrête l'IA.
+  await p.evaluate(()=>{triaCombat=numeroCombat});await p.click('#temps-reel');
+  {const a0=await pos();await p.waitForTimeout(1500);const a1=await pos(),r=await p.evaluate(()=>({tourne:triaTourne(),on:tempsReel}));
+   dit(!r.on&&!r.tourne&&a0===a1,'temps réel éteint : l’IA s’arrête, plus rien ne bouge seul',JSON.stringify(r))}
+  await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));trSecondes=6;try{localStorage.removeItem('amertume-temps-reel')}catch(e){}
+   basculerMode('exploration');actors.splice(0,actors.length,...window.__avantIA);delete window.__avantIA;selected=actors.findIndex(a=>a.hero);marked=new Set();actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(300)}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
