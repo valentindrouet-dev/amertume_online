@@ -1,8 +1,9 @@
 /* ---------- v1.410 — L'IA simple des adversaires, en temps réel seulement ----------
    Trois garde-fous, tous ici :
    - elle ne tourne qu'en temps réel (trActif, tempsreel.js) : au tour par tour, rien ne bouge seul ;
-   - elle ne démarre que si le MJ a cliqué « Débuter le combat » pour CE combat — le bouton reste donc
-     affiché, en temps réel, tant qu'il ne l'a pas fait ;
+   - elle ne démarre que si le MJ a lancé CE combat à la main : « ⚔ Début du combat » (v1.411), ou, pour un
+     combat parti tout seul, « Débuter le combat » — qui reste alors affiché, en temps réel, tant qu'il
+     ne l'a pas cliqué ;
    - elle ne tourne que chez le MJ, sur la Table, sans fenêtre ouverte ni socle en main.
    Les adversaires jouent sous les règles de tous : un PA par coup ou par talent, qui se recharge ; un
    PM disponible pour bouger ; mêmes refus, mêmes portées, mêmes dégâts d'opportunité qu'à la main —
@@ -21,7 +22,9 @@ const triaPause=ms=>new Promise(r=>setTimeout(r,ms));
 // Le MJ, sur la Table, en temps réel, pour un combat qu'il a débuté à la main.
 function triaTourne(){return typeof trActif==='function'&&trActif()&&view==='mj'&&!(typeof enLigne!=='undefined'&&enLigne&&typeof estMJ==='function'&&!estMJ())
  &&triaCombat!==null&&triaCombat===numeroCombat&&!(typeof loading!=='undefined'&&loading)&&![...document.body.classList].some(c=>c.startsWith('page-'))}
-function triaLibre(){return !window.socleEnMain&&!tirEnVol&&!placementEnCours&&!fermeFormesMur&&!document.querySelector('dialog[open]')}
+// Une fenêtre ouverte devant la table la met en pause ; un panneau simplement posé à côté, non.
+function triaFenetre(){try{return !!document.querySelector('dialog:modal')}catch(e){return !!document.querySelector('dialog[open]')}}
+function triaLibre(){return !window.socleEnMain&&!tirEnVol&&!placementEnCours&&!fermeFormesMur&&!triaFenetre()}
 // Ceux qu'elle mène : les adversaires révélés, debout, sur la carte. Un PNJ allié ou neutre n'en est pas.
 function triaAdversaires(){return actors.filter(a=>a&&!a.hero&&!a.orbeStatique&&a.vu&&!a.horsCarte&&alive(a)&&campDe(a)==='adverse'&&!hasState(a,'Sommeil'))}
 function triaProies(a){return actors.filter(o=>o&&o!==a&&!o.orbeStatique&&!o.horsCarte&&alive(o)&&campDe(o)==='troupe'&&!hasState(o,'Invisible'))}
@@ -131,10 +134,17 @@ async function triaPasse(){if(triaOccupe||!triaTourne()||!triaLibre())return;con
  finally{triaOccupe=false}}
 setInterval(()=>{triaPasse().catch(e=>{triaOccupe=false;if(typeof signaleErreur==='function')signaleErreur(e,'IA')})},TRIA_PAS);
 
-/* « Débuter le combat », cliqué par le MJ : c'est le départ de l'IA pour ce combat-ci. En temps réel, le bouton reste
-   donc affiché tant qu'il n'a pas été cliqué, même si le combat s'est entamé de lui-même. */
-{const b=document.getElementById('debuter-combat');
- if(b)b.addEventListener('click',()=>{if(view==='mj'&&enCombat()){triaCombat=numeroCombat;triaBoude.clear();triaAttente.clear();render()}});
+/* Le départ de l'IA, pour ce combat-ci : le MJ lance le combat à la main (« ⚔ Début du combat »), ou, si le combat est
+   parti tout seul — la troupe a vu un adversaire, un coup est parti —, il clique « Débuter le combat ». En temps réel, ce
+   second bouton reste donc affiché tant que l'IA n'est pas partie. */
+{const b=document.getElementById('debuter-combat'),lance=document.getElementById('start-combat');
+ const depart=()=>{if(view==='mj'&&enCombat()){triaCombat=numeroCombat;triaBoude.clear();triaAttente.clear();render()}};
+ // Posés après les gestes de la table : au clic, le combat a déjà commencé et porte son numéro.
+ if(b)b.addEventListener('click',depart);if(lance)lance.addEventListener('click',depart);
  const rendu=render;render=function(...x){const o=rendu.apply(this,x);
   if(!enCombat())triaCombat=null;
   if(b&&view==='mj'&&enCombat()&&typeof tempsReel!=='undefined'&&tempsReel&&triaCombat!==numeroCombat)b.hidden=false;return o}}
+/* Pourquoi l'IA tourne ou non, condition par condition : etatIA() dans la console du navigateur. Rien à l'écran. */
+window.etatIA=()=>({tourne:triaTourne(),tempsReel:typeof tempsReel!=='undefined'&&tempsReel,enCombat:enCombat(),vueMJ:view==='mj',mjDeLaTable:!(typeof enLigne!=='undefined'&&enLigne&&typeof estMJ==='function'&&!estMJ()),
+ combatLanceALaMain:triaCombat!==null&&triaCombat===numeroCombat,surLaTable:![...document.body.classList].some(c=>c.startsWith('page-')),libre:triaLibre(),fenetreOuverte:triaFenetre(),
+ adversaires:triaAdversaires().map(a=>a.name),cibles:triaAdversaires().map(a=>{const j=triaCible(a);return j===null?null:actors[j].name})});

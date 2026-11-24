@@ -282,6 +282,11 @@ try{
   await p.evaluate(()=>{triaCombat=numeroCombat});await p.click('#temps-reel');
   {const a0=await pos();await p.waitForTimeout(1500);const a1=await pos(),r=await p.evaluate(()=>({tourne:triaTourne(),on:tempsReel}));
    dit(!r.on&&!r.tourne&&a0===a1,'temps réel éteint : l’IA s’arrête, plus rien ne bouge seul',JSON.stringify(r))}
+  // v1.411 — Le combat lancé à la main (« ⚔ Début du combat ») lance l'IA ; reparti tout seul, il l'attend de nouveau.
+  {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));
+    basculerMode('exploration');document.getElementById('temps-reel').click();const avant=triaTourne();document.getElementById('start-combat').click();const main=[enCombat(),triaTourne(),triaCombat===numeroCombat];
+    basculerMode('exploration');basculerMode('combat');const seul=[enCombat(),triaTourne()];document.getElementById('temps-reel').click();return {avant,main,seul,on:tempsReel}});
+   dit(!r.avant&&r.main.every(Boolean)&&r.seul[0]&&!r.seul[1]&&!r.on,'« Début du combat » lancé à la main lance l’IA ; un combat reparti tout seul l’attend',JSON.stringify(r))}
   await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));trSecondes=6;try{localStorage.removeItem('amertume-temps-reel')}catch(e){}
    basculerMode('exploration');actors.splice(0,actors.length,...window.__avantIA);delete window.__avantIA;selected=actors.findIndex(a=>a.hero);marked=new Set();actors.forEach(a=>{if(!a.hero)a.vu=false});render()});await p.waitForTimeout(300)}
 
