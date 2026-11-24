@@ -282,6 +282,20 @@ try{
   await p.evaluate(()=>{triaCombat=numeroCombat});await p.click('#temps-reel');
   {const a0=await pos();await p.waitForTimeout(1500);const a1=await pos(),r=await p.evaluate(()=>({tourne:triaTourne(),on:tempsReel}));
    dit(!r.on&&!r.tourne&&a0===a1,'temps réel éteint : l’IA s’arrête, plus rien ne bouge seul',JSON.stringify(r))}
+  // v1.412 — Les aventuriers menés par l'IA : une option du temps réel ; celui que le MJ a sélectionné reste dans sa main.
+  {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));triaCombat=null;
+    const b=document.getElementById('ia-aventuriers'),h=actors.filter(a=>a.hero&&!a.horsCarte&&alive(a)),out={eteint:!!b&&b.hidden};
+    document.getElementById('temps-reel').click();out.visible=!b.hidden;selected=actors.indexOf(h[0]);marked=new Set([selected]);render();out.sans=triaAventuriers().length;
+    b.click();out.on=b.classList.contains('on');out.avec=triaAventuriers().map(a=>a.id);out.enMain=!out.avec.includes(h[0].id)&&out.avec.length===h.length-1;
+    selected=actors.indexOf(h[1]);render();out.repris=!triaAventuriers().some(a=>a.id===h[1].id)&&triaAventuriers().some(a=>a.id===h[0].id);
+    selected=null;marked=new Set();render();out.tous=triaAventuriers().length===h.length;
+    // Un aventurier mené par l'IA frappe l'adversaire révélé à son contact, par la table, pour son PA.
+    const a=h[1],adv=actors.find(o=>!o.hero&&!o.pnj&&alive(o)&&!o.horsCarte);adv.vu=true;adv.x=a.x;adv.y=a.y-5;settleActor(adv);a.checks=[0,0,0];delete a.recharges;render();
+    const j=triaCible(a);out.cible=j!==null&&actors[j]===adv;out.fait=await triaFrappe(a,j);out.pa=pointsRestants(a,'action');
+    b.click();out.off=!triaHeros&&triaAventuriers().length===0;document.getElementById('temps-reel').click();out.cache=b.hidden;try{localStorage.removeItem('amertume-ia-aventuriers')}catch(e){}return out});
+   dit(r.eteint&&r.visible&&r.sans===0&&r.on&&r.cache,'le bouton 🤖 n’existe qu’en temps réel ; éteint, l’IA ne mène aucun aventurier',JSON.stringify(r));
+   dit(r.enMain&&r.repris&&r.tous&&r.off,'allumé, l’IA mène les aventuriers sauf celui que le MJ a sélectionné ; aucun sélectionné, tous',JSON.stringify(r));
+   dit(r.cible&&r.fait&&r.pa===0,'un aventurier mené par l’IA frappe l’adversaire révélé à son contact',JSON.stringify(r))}
   // v1.411 — Le combat lancé à la main (« ⚔ Début du combat ») lance l'IA ; reparti tout seul, il l'attend de nouveau.
   {const r=await p.evaluate(async()=>{for(let n=0;n<40&&triaOccupe;n++)await new Promise(ok=>setTimeout(ok,100));
     basculerMode('exploration');document.getElementById('temps-reel').click();const avant=triaTourne();document.getElementById('start-combat').click();const main=[enCombat(),triaTourne(),triaCombat===numeroCombat];

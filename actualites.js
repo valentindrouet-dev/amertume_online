@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.412","d":"2026-11-24","t":"Temps réel : les aventuriers peuvent être menés par l'IA"},
 {"v":"1.411","d":"2026-11-24","t":"IA : départ au « Début du combat » lancé à la main"},
 {"v":"1.410","d":"2026-11-24","t":"Temps réel : PM, déplacement libre et IA simple des adversaires"},
 {"v":"1.409","d":"2026-11-24","t":"Combat en temps réel à l'essai (option du MJ)"},
