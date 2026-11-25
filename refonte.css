@@ -92,24 +92,11 @@ body.ui-refonte main.layout .turn-actions button,body.ui-refonte main.layout #en
 body.ui-refonte main.layout .turn-actions button:hover,body.ui-refonte main.layout #end-combat:hover{filter:brightness(1.05)}
 body.ui-refonte main.layout #round{color:var(--rf-encre);font-family:'Killam',Georgia,serif}
 
-/* ---------- Combattants : lignes plates, le camp en filet à gauche, la sélection en bronze ---------- */
-body.ui-refonte main.layout #actors .actor{border-radius:10px;border:1px solid transparent;border-image:var(--k-carre);background:none;margin:3px 0;
- box-shadow:inset 3px 0 0 var(--rf-vert);transition:background-color .15s,border-color .15s}
-body.ui-refonte main.layout #actors .actor.enemy{box-shadow:inset 3px 0 0 var(--rf-rouge)}
-body.ui-refonte main.layout #actors .actor:hover{filter:brightness(1.04)}
-body.ui-refonte main.layout #actors .actor.selected{border-image:var(--k-bouton-on)}
-body.ui-refonte main.layout #actors .actor.veiled,body.ui-refonte main.layout #actors .actor.dead{opacity:.72}
+/* ---------- Combattants : de simples jetons, ceux de la carte (editor.css) ; l'habillage n'y ajoute rien ---------- */
 body.ui-refonte main.layout .groupe-combattants{border-top:1px solid var(--rf-filet);color:var(--rf-bronze);letter-spacing:1.6px;font-weight:700}
 
 /* ---------- Barres de vie : un support net, fin, bronze ; le remplissage reste le sien ---------- */
 body.ui-refonte main.layout .lifebar{border-radius:var(--rf-rayon);border:1px solid var(--rf-charbon);box-shadow:inset 0 2px 4px #00000080,0 0 0 1px #AA814640}
-
-/* ---------- Fiche du personnage actif ---------- */
-body.ui-refonte main.layout .sheet.a-logo .sheet-head h1{white-space:normal;overflow:visible;line-height:1.1;flex:1 1 auto;font-size:25px}
-body.ui-refonte main.layout .sheet-head{padding-bottom:8px;border-bottom:1px solid var(--rf-filet);margin-bottom:6px}
-body.ui-refonte main.layout .sheet-class{border-radius:var(--rf-rayon)}
-body.ui-refonte main.layout #stats{justify-content:space-around;padding:4px 0}
-body.ui-refonte main.layout #skills{padding-bottom:8px;border-bottom:1px solid var(--rf-filet)}
 
 /* ---------- Points de vie : rouges et verts désaturés, Mort et Soin pleins ---------- */
 body.ui-refonte main.layout .hp-buttons button{border:1px solid transparent;border-image:var(--k-bouton);background:none;box-shadow:none;transition:filter .12s}
@@ -120,8 +107,6 @@ body.ui-refonte main.layout .hp-buttons button.soin{border-image:var(--k-bouton-
 body.ui-refonte main.layout .hp-buttons button:hover{filter:brightness(1.08)}
 body.ui-refonte main.layout .hp-buttons button:active{filter:brightness(.92)}
 
-/* ---------- Piste de dés : un fond sombre, un relief intérieur, un cadre fin ---------- */
-body.ui-refonte main.layout #dice-tray{border-radius:10px;border:1px solid transparent;border-image:var(--rf-cadre-sombre);background:none;box-shadow:none}
 
 /* ---------- Outils de la carte : une bande sombre, des supports sobres, l'outil actif en bronze ---------- */
 body.ui-refonte main.layout .map-panel>.mapbar{border:11px solid transparent;border-image:var(--rf-cadre-sombre);border-radius:10px;background:none;padding:2px 8px;box-shadow:0 6px 18px #19191766;color:var(--rf-parchemin)}
@@ -294,9 +279,6 @@ body.ui-refonte #heroes-page #hero-grid .fiche-icone{border:1px solid transparen
 body.ui-refonte #heroes-page #hero-grid .fiche-icone:hover{filter:brightness(1.06) drop-shadow(0 2px 3px #29251f40)}
 body.ui-refonte #heroes-page #hero-grid .fiche-icone.absente{filter:grayscale(.9);opacity:.5}
 body.ui-refonte #heroes-page #hero-grid label.vignette-talents-libres{font:600 14px 'Killam',Georgia,serif;color:var(--rf-encre)}
-/* v1.425 — Combattants en tokens : plus de filet de camp à gauche (l'anneau le dit) ; la sélection sur le bouton actif du kit. */
-body.ui-refonte main.layout #actors .actor,body.ui-refonte main.layout #actors .actor.enemy{box-shadow:none}
-body.ui-refonte main.layout #actors .actor.selected{box-shadow:0 0 0 2px var(--rf-bronze)}
 /* v1.426 — Accueil : les blocs au cadre bronze de la page Aventuriers, les tuiles et les cartes de la fiche, l'illustration des actualités cerclée de bronze. */
 body.ui-refonte #accueil-page .accueil-bloc{border:14px solid transparent;border-image:var(--rf-cadre);border-radius:12px;background:none;box-shadow:0 4px 14px #29251f38}
 body.ui-refonte #accueil-page .accueil-tuile{border:1px solid transparent;border-image:var(--k-carte);background:none;box-shadow:0 2px 4px #29251f26}

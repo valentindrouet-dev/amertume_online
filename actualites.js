@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.429","d":"2026-11-25","t":"Table allégée : jetons seuls, sans piste de dés ni fiche"},
 {"v":"1.428","d":"2026-11-25","t":"Barre d'action au gabarit"},
 {"v":"1.427","d":"2026-11-25","t":"Un seul kit de composants pour toutes les boîtes"},
 {"v":"1.426","d":"2026-11-25","t":"Accueil restructuré"},
