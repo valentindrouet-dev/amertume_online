@@ -190,3 +190,26 @@ body.ui-refonte #arbres.fiche-aventurier .vie-lignes>.vie-ligne:nth-child(even){
 body.ui-refonte #arbres.fiche-aventurier .vie-lignes>.vie-ligne b{font-variant-numeric:tabular-nums;text-align:right}
 /* Les flèches de côté gardent leur place sans être rognées. */
 body.ui-refonte #arbres.fiche-aventurier .arbres-fleche{border-color:var(--f-bronze);background:var(--f-ivoire);border-radius:4px;box-shadow:0 2px 6px #29251f40}
+/* v1.423 — Les supports dessinés des planches d'interface (img/ui/fiche-*.webp), en neuf zones. Le bord dessiné déborde sur la marge
+   intérieure (border-image-width plus large que la bordure) : aucune boîte ne change de taille, rien ne bouge. */
+body.ui-refonte #arbres.fiche-aventurier :is(.hero-card.fiche-onglet :is(.cadre-chiffres,.cadre-comps,.talent-grille.a-cases),.inv-gauche,.inv-droite,.arbre-col-groupes,.arbres-detail,.especes-place,.spherier-cadre,.vie-lignes,.bourse-corps,.arbres-sans-metier){
+ border:1px solid transparent;border-image:url(img/ui/fiche-panneau.webp) 18/9px stretch;background:#E3C69C padding-box;box-shadow:none}
+/* Le centre du panneau n'est pas étiré (il faisait des traînées sur les grands panneaux) : sa couleur moyenne, unie. */
+body.ui-refonte #arbres.fiche-aventurier .vie-lignes{padding:5px}
+body.ui-refonte #arbres.fiche-aventurier .fiche-onglet .vignette{border:1px solid transparent;border-image:url(img/ui/fiche-carte.webp) 12 fill/6px stretch;background:none;box-shadow:none}
+/* Onglets : la languette ivoire dessinée ; l'onglet ouvert la teinte de sa section, posée en multiplication sur la même languette. */
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet{position:relative;isolation:isolate;border:1px solid transparent;border-image:url(img/ui/fiche-onglet.webp) 14 16 6 16 fill/7px 8px 3px 8px stretch;background:none;box-shadow:none}
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet:hover{background:none;filter:brightness(1.04)}
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet.actif{background:none;border-color:transparent;box-shadow:none}
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet.actif::before{content:'';position:absolute;inset:-1px;z-index:-1;background:var(--teinte,var(--f-vert));mix-blend-mode:multiply;
+ clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%,0 6px)}
+/* Emplacements : vide en pointillé dessiné ; un objet posé sur le support doré, sa rareté garde sa couleur de fond. */
+body.ui-refonte #arbres.fiche-aventurier .place>.vide{border-color:transparent;border-image:url(img/ui/fiche-vide.webp) 16 fill/8px stretch;background:none}
+body.ui-refonte #arbres.fiche-aventurier .place:hover>.vide{background:none;filter:brightness(1.05)}
+body.ui-refonte #arbres.fiche-aventurier .place.survol>.vide{border-image:none;background:#6083542e;border:2px solid var(--f-vert)}
+body.ui-refonte #arbres.fiche-aventurier :is(.sac-carte,.place)>.gear-carre{border-color:transparent;border-image:url(img/ui/fiche-support.webp) 12/6px stretch;background-clip:padding-box;box-shadow:none}
+/* Titres : le filet doré à losange de part et d'autre. */
+body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre,.inv-titre,.bourse-titre)::before,
+body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre,.inv-titre,.bourse-titre)::after{background:url(img/ui/fiche-filet.webp) right center/auto 12px no-repeat}
+body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre,.inv-titre,.bourse-titre)::after{transform:scaleX(-1)}
+body.ui-refonte #arbres.fiche-aventurier :is(.arbre-roue,.spherier){background:transparent}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.423","d":"2026-11-25","t":"Supports dessinés de la fiche Aventurier"},
 {"v":"1.422","d":"2026-11-25","t":"Habillage de la fiche Aventurier"},
 {"v":"1.421","d":"2026-11-25","t":"Habillage, phase 2 : tout le site"},
 {"v":"1.420","d":"2026-11-25","t":"Nouvel habillage de la Table (désactivable)"},
