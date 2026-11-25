@@ -301,6 +301,21 @@ try{
  {const r=await p.evaluate(()=>{showPage('table');const m=document.querySelector('.map-panel>.mapbar'),o=m.querySelector('button.icon-btn'),t=document.getElementById('zoom-reset');
    return {barre:getComputedStyle(m).borderImageSource.includes('kit-mj-barre'),rond:getComputedStyle(o).backgroundImage.includes('kit-mj-rond'),pilule:getComputedStyle(t).borderImageSource.includes('kit-mj-pilule'),icone:o.textContent.trim().length>0}});
   dit(r.barre&&r.rond&&r.pilule&&r.icone,'barre du MJ : la barre brune, ses ronds et ses pilules, les icônes gardées',JSON.stringify(r))}
+ // v1.434 : la barre d'un adversaire, les vignettes du journal et leur côté, le titre retiré de la barre de carte, la hauteur du journal.
+ {const r=await p.evaluate(()=>{showPage('table');const h=actors.find(x=>x.hero),e=actors.find(x=>!x.hero&&alive(x)),B=document.querySelector('.map-panel>.barre-actions'),v={};
+   pick(actors.indexOf(e));render();tailleRondsBarre(B);v.adverse=B.classList.contains('adverse')&&!B.querySelector('.gros-boutons')&&!B.querySelector('.emplacement');v.lAdv=Math.round(B.getBoundingClientRect().width);
+   pick(actors.indexOf(h));render();tailleRondsBarre(B);v.heros=!B.classList.contains('adverse')&&!!B.querySelector('.gros-boutons');v.lHeros=Math.round(B.getBoundingClientRect().width);
+   const r1=[...B.querySelectorAll('#attack-choices>button:not([data-genre=bonus]),.emplacement.r1')].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect()),r2=[...B.querySelectorAll('.emplacement.r2,#attack-row button.btn-action:not(#inventaire-table),#attack-choices>button[data-genre=bonus]')].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect());
+   const bord=l=>[Math.round(Math.min(...l.map(q=>q.left))),Math.round(Math.max(...l.map(q=>q.right)))];v.r1=bord(r1);v.r2=bord(r2);v.bas=Math.round((B.getBoundingClientRect().bottom-Math.max(...r2.map(q=>q.bottom)))/(B.getBoundingClientRect().height/192));
+   log(h.name+' fouille.',{ton:'carte',toujours:true});const lg=document.getElementById('journal').lastElementChild,cg=getComputedStyle(lg);log(nomNum(e)+' grogne.',{ton:'etat',toujours:true});const ld=document.getElementById('journal').lastElementChild,cd=getComputedStyle(ld);
+   v.gauche=cg.borderImageSource.includes('kit-j-simple')&&parseFloat(cg.marginLeft)<parseFloat(cg.marginRight)&&getComputedStyle(lg,'::before').backgroundImage.includes('kit-j-simple-g');
+   v.droite=cd.borderImageSource.includes('kit-j-mauve')&&parseFloat(cd.marginLeft)>parseFloat(cd.marginRight)&&getComputedStyle(ld,'::before').backgroundImage.includes('kit-j-mauve-d');lg.remove();ld.remove();
+   v.titre=getComputedStyle(document.getElementById('carte-titre')).fontSize==='0px';
+   const J=document.querySelector('.journal-panel'),t0=lisTailles();gardeTailles({...t0,j:260});appliqueTailles();v.haut=Math.round(J.getBoundingClientRect().height);gardeTailles(t0);appliqueTailles();v.rendu=Math.round(J.getBoundingClientRect().height);return v});
+  dit(r.adverse&&r.heros&&r.lAdv<r.lHeros,'barre d’action d’un adversaire : à la largeur de ce qu’il a, sans places libres ni grands boutons',JSON.stringify(r));
+  dit(Math.abs(r.r1[0]-r.r2[0])<=1&&Math.abs(r.r1[1]-r.r2[1])<=1&&r.bas>=9,'barre d’action : les deux rangées commencent et finissent au même endroit, de la marge sous la seconde',JSON.stringify(r));
+  dit(r.gauche&&r.droite,'journal : la troupe en vignette à flèche gauche, un adversaire à flèche droite',JSON.stringify(r));
+  dit(r.titre&&r.haut===260&&r.rendu!==260,'barre de carte sans le nom du lieu ; hauteur du journal réglable',JSON.stringify(r))}
  // v1.427 : une seule famille de boîtes — toute image de l'habillage vient du kit (ou est le casque), et chaque fichier cité existe.
  {const r=await p.evaluate(async()=>{const css=await (await fetch('./refonte.css')).text(),urls=[...new Set([...css.matchAll(/url\(([^)]+)\)/g)].map(m=>m[1]))];
    const hors=urls.filter(u=>!/img\/ui\/(kit-[a-z-]+|casque)\.webp$/.test(u)),manque=[];for(const u of urls){const q=await fetch('./'+u,{method:'HEAD'});if(!q.ok)manque.push(u)}

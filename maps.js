@@ -3485,6 +3485,8 @@ const TAILLES_CLE='amertume-tailles';
 function lisTailles(){try{const t=JSON.parse(localStorage.getItem(TAILLES_CLE)||'{}');return t&&typeof t==='object'?t:{}}catch(e){return {}}}
 function gardeTailles(t){try{localStorage.setItem(TAILLES_CLE,JSON.stringify(t))}catch(e){}}
 function appliqueTailles(){const L=document.querySelector('main.layout');if(!L)return;const t=lisTailles();L.style.gridTemplateColumns='';
+ // v1.434 : la hauteur du journal, choisie à la poignée ; sans elle, il remplit sa colonne.
+ {const J=L.querySelector('.journal-panel'),h=Math.round(Number(t.j)),ok=h>=150&&innerWidth>900;if(J){J.style.flex=ok?'0 0 auto':'';if(ok)J.style.setProperty('--journal-h',h+'px');else J.style.removeProperty('--journal-h')}}
  if(innerWidth<=1150||!(t.g||t.d))return;const [g,,d]=getComputedStyle(L).gridTemplateColumns.split(/\s+/).map(parseFloat);
  L.style.gridTemplateColumns=Math.round(t.g||g)+'px minmax(0,1fr) '+Math.round(t.d||d)+'px'}
 /* Le panneau de la carte touche le bas de l'écran, quelle que soit la forme de l'image : la carte garde ses proportions, et le
@@ -3498,9 +3500,10 @@ let renduTailles=0;const rendTailles=()=>{if(renduTailles)return;renduTailles=re
 function poigneeTaille(parent,cle,sens){const p=document.createElement('div');p.className='poignee-taille poignee-'+cle;p.setAttribute('aria-hidden','true');
  p.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();p.setPointerCapture(e.pointerId);
   const L=document.querySelector('main.layout'),cols=getComputedStyle(L).gridTemplateColumns.split(/\s+/).map(parseFloat);
-  const depart=cle==='h'?$('map').getBoundingClientRect().height:cle==='g'?cols[0]:cols[2],x0=e.clientX,y0=e.clientY;
+  const depart=cle==='h'?$('map').getBoundingClientRect().height:cle==='j'?parent.getBoundingClientRect().height:cle==='g'?cols[0]:cols[2],x0=e.clientX,y0=e.clientY;
   const bouge=ev=>{const t=lisTailles();
    if(cle==='h')t.h=Math.round(Math.max(200,Math.min(2400,depart+ev.clientY-y0)));
+   else if(cle==='j')t.j=Math.round(Math.max(150,Math.min(2400,depart+ev.clientY-y0)));
    else t[cle]=Math.round(Math.max(170,Math.min(640,depart+(sens*(ev.clientX-x0)))));
    gardeTailles(t);appliqueTailles();rendTailles()};
   const fin=()=>{p.removeEventListener('pointermove',bouge);p.removeEventListener('pointerup',fin);p.removeEventListener('pointercancel',fin);rendTailles()};
@@ -3509,7 +3512,8 @@ function poigneeTaille(parent,cle,sens){const p=document.createElement('div');p.
  // Dans une colonne, la poignée passe en tête : le dernier panneau reste le dernier, et le journal garde sa hauteur calée sur la carte.
  if(cle==='h')parent.append(p);else parent.prepend(p)}
 {const g=document.querySelector('main.layout>.stack.left'),d=document.querySelector('main.layout>.stack.right'),c=document.querySelector('.map-panel');
- if(g)poigneeTaille(g,'g',1);if(d)poigneeTaille(d,'d',-1);if(c)poigneeTaille(c,'h',1)}
+ if(g)poigneeTaille(g,'g',1);if(d)poigneeTaille(d,'d',-1);if(c)poigneeTaille(c,'h',1);
+ {const j=document.querySelector('main.layout .journal-panel');if(j)poigneeTaille(j,'j',1)}}
 $('redim-panneaux').onclick=()=>{const on=document.body.classList.toggle('redim');$('redim-panneaux').classList.toggle('on',on);$('redim-panneaux').setAttribute('aria-pressed',on?'true':'false')};
 addEventListener('resize',appliqueTailles);appliqueTailles();
 /* ---------- Le zoom de chacun, par carte ----------
@@ -4313,9 +4317,9 @@ function zoneLibreCarte(){return cartePleine()?zoneCarte:null}
 function mesureZoneLibre(p){const pr=p.getBoundingClientRect(),g=colonneTable('left'),d=colonneTable('right'),bar=p.querySelector(':scope>.mapbar'),act=p.querySelector(':scope>.barre-actions');
  let l=g?g.getBoundingClientRect().right-pr.left+12:12,r=d?d.getBoundingClientRect().left-pr.left-12:pr.width-12;if(r-l<240){l=12;r=pr.width-12}
  let t=bar&&bar.offsetParent?bar.getBoundingClientRect().bottom-pr.top+12:12,b=pr.height-Math.max(150,act&&act.offsetHeight?act.offsetHeight+26:0);if(b-t<200){t=12;b=pr.height-12}
- /* v1.432 : la barre d'action a sa place à elle, au bas de l'écran, sur toute la largeur : --ech, l'échelle à laquelle ses 790 px y tiennent (1 au plus) ;
+ /* v1.432 : la barre d'action a sa place à elle, au bas de l'écran, sur toute la largeur : --ech, son échelle — 1 dès que ses 790 px tiennent, davantage sur un grand écran (60 % de la largeur, 27 % de la hauteur, 1,5 au plus) ;
     --bas-g et --bas-d, ce dont chaque colonne s'arrête plus haut quand la barre passe sous elle (rien si elle ne l'atteint pas). */
- {const L=p.closest('main.layout')||p,ech=Math.min(1,Math.round((pr.width-24)/790*1000)/1000),bw=790*ech,bx=(pr.width-bw)/2;
+ {const L=p.closest('main.layout')||p,ech=Math.round(Math.min((pr.width-24)/790,Math.max(1,Math.min(.6*pr.width/790,.27*pr.height/192)),1.5)*1000)/1000,bw=790*ech,bx=(pr.width-bw)/2;
   L.style.setProperty('--ech',String(ech));
   L.style.setProperty('--bas-g',g&&g.getBoundingClientRect().right-pr.left>bx+4?Math.round(192*ech+10)+'px':'0px');
   L.style.setProperty('--bas-d',d&&d.getBoundingClientRect().left-pr.left<bx+bw-4?Math.round(151*ech+10)+'px':'0px')}

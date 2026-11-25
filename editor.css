@@ -5133,3 +5133,6 @@ body.journal-translucide .journal-panel .journal-chat input{background:var(--fie
 /* v1.431 — Une place vide dans une pastille de points : le point dépensé, en bille sombre. Les trois grands boutons ne se montrent qu'avec l'habillage. */
 .portrait-actif .pa-pilule .pt.vide{border-radius:50%;background:color-mix(in srgb,var(--ink) 55%,transparent)}
 .barre-actions>:is(.gros-boutons,.emplacement){display:none}
+/* v1.434 — La hauteur du journal se règle à la poignée (mode « ⇔ Redimensionner les panneaux »), au bas de son panneau ; double clic : il remplit de nouveau sa colonne. */
+body.redim .poignee-j{left:25%;right:25%;bottom:2px;height:12px;cursor:row-resize}
+body.carte-pleine main.layout>.stack>.journal-panel{max-height:100%;height:var(--journal-h,auto)}
