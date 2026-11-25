@@ -295,6 +295,9 @@ try{
  {const r=await p.evaluate(()=>{const h=actors.find(x=>x.hero);if(!h)return null;openArbres(h);const D=document.getElementById('arbres'),fond=()=>getComputedStyle(D).backgroundColor;
    const v={fiche:D.classList.contains('fiche-aventurier'),on:fond()};document.getElementById('habillage-switch').click();v.off=fond();document.getElementById('habillage-switch').click();D.close();return v});
   dit(!!r&&r.fiche&&r.on==='rgb(245, 240, 229)'&&r.off!==r.on,'phase 3 : la fiche Aventurier en ivoire uni ; le réglage la rend comme avant',JSON.stringify(r))}
+ {const r=await p.evaluate(()=>{showPage('heroes');const P=document.querySelector('#heroes-page>.panel'),c=document.querySelector('#hero-grid .hero-vignette'),lit=()=>[getComputedStyle(P).borderImageSource.includes('page-cadre'),!!c&&getComputedStyle(c).borderImageSource.includes('page-cadre')];
+   const on=lit();document.getElementById('habillage-switch').click();const off=lit();document.getElementById('habillage-switch').click();showPage('table');return {on,off}});
+  dit(r.on.every(Boolean)&&!r.off.some(Boolean),'page Aventuriers : cadre bronze et cartes de la maquette ; le réglage les enlève',JSON.stringify(r))}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);

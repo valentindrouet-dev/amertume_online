@@ -213,3 +213,51 @@ body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre,.inv
 body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre,.inv-titre,.bourse-titre)::after{background:url(img/ui/fiche-filet.webp) right center/auto 12px no-repeat}
 body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre,.inv-titre,.bourse-titre)::after{transform:scaleX(-1)}
 body.ui-refonte #arbres.fiche-aventurier :is(.arbre-roue,.spherier){background:transparent}
+
+/* ---------- v1.424 — Page Aventuriers : la maquette validée, avec les pièces de sa planche (img/ui/). Contenu et ordre inchangés. ---------- */
+/* Cadre de page bronze à coins biseautés, fond de parchemin en grain fin (la texture en mosaïque, jamais étirée). */
+body.ui-refonte #heroes-page>.panel{border:14px solid transparent;border-image:url(img/ui/page-cadre.webp) 28/14px stretch;
+ background:url(img/ui/parchemin.webp) center/cover no-repeat padding-box,#E7D4B6;box-shadow:0 4px 14px #29251f38;padding:10px 18px 22px}
+/* Titre : casque, Killam, filet bronze à losange. */
+body.ui-refonte #heroes-page .cat-head h2{flex:1 1 260px;min-width:0;display:flex;align-items:center;gap:12px;font:700 30px/1.1 'Killam',Georgia,serif;color:#3a2e22}
+body.ui-refonte #heroes-page .cat-head h2::before{content:'';flex:none;width:36px;height:40px;background:url(img/ui/casque.webp) center/contain no-repeat}
+body.ui-refonte #heroes-page .cat-head h2::after{content:'';flex:0 1 150px;height:12px;background:url(img/ui/fiche-filet.webp) right center/auto 12px no-repeat}
+/* Barre de filtres : boutons de parchemin biseautés ; « + Nouvel aventurier » en bronze. */
+body.ui-refonte #heroes-page .cat-actions>button{min-height:38px;padding:0 12px;border:1px solid transparent;border-image:url(img/ui/bouton-parchemin.webp) 16 fill/8px stretch;background:none;box-shadow:none;border-radius:0;
+ font:600 14px 'Killam',Georgia,serif;color:var(--rf-encre)}
+body.ui-refonte #heroes-page .cat-actions>button:hover{filter:brightness(1.05)}
+body.ui-refonte #heroes-page .cat-actions>button.on{color:#3a2e22}
+body.ui-refonte #heroes-page .cat-actions>button.primary{border-image:url(img/ui/bouton-bronze.webp) 20 fill/10px stretch;color:#FBF3E2;text-shadow:0 1px 1px #0006;font-weight:700;padding:0 20px}
+body.ui-refonte #heroes-page .cat-actions>button.primary:hover{filter:brightness(1.1) drop-shadow(0 0 6px #C79A3B99)}
+/* Listes déroulantes (tri, assignation) : le champ de parchemin à flèche dessinée. */
+/* La flèche est dans l'image : le bord droit garde ses proportions (hauteur fixe, largeur à l'échelle). */
+body.ui-refonte #heroes-page :is(#hero-tri,select.vignette-joueur){appearance:none;-webkit-appearance:none;box-sizing:border-box;height:30px;padding:0 30px 0 10px;border:1px solid transparent;
+ border-image:url(img/ui/liste.webp) 6 46 6 14 fill/3px 28px 3px 7px stretch;background:none;border-radius:0;box-shadow:none;font:600 14px 'Killam',Georgia,serif;color:var(--rf-encre)}
+body.ui-refonte #heroes-page #hero-tri{height:38px;padding-right:40px;border-image-width:3px 38px 3px 7px}
+/* Séparateurs Actifs / Inactifs : capitales serif, losange, long filet bronze. */
+body.ui-refonte #heroes-page #hero-grid .heros-groupe-titre{gap:12px;margin:10px 0 0;font:700 19px/1 'Killam',Georgia,serif;letter-spacing:3px;color:#3a2e22}
+body.ui-refonte #heroes-page #hero-grid .heros-groupe-titre::before{content:'';flex:none;width:9px;height:9px;transform:rotate(45deg);background:linear-gradient(135deg,#E2C07A,#8E6A36);box-shadow:0 0 0 1px #6f5226}
+body.ui-refonte #heroes-page #hero-grid .heros-groupe-titre::after{height:12px;background:url(img/ui/filet-losange.webp) center/100% 12px no-repeat}
+/* Cartes : parchemin à bord bronze biseauté, liseré du haut à la couleur de la classe, ombre douce. */
+body.ui-refonte #heroes-page #hero-grid .hero-vignette{border:1px solid transparent;border-image:url(img/ui/page-cadre.webp) 28 fill/12px stretch;border-radius:0;background:none;box-shadow:0 3px 6px #29251f33}
+body.ui-refonte #heroes-page #hero-grid .hero-vignette::before{content:'';position:absolute;top:3px;left:9px;right:9px;height:5px;border-radius:3px 3px 0 0;
+ background:linear-gradient(var(--teinte),color-mix(in srgb,var(--teinte) 70%,#000));box-shadow:0 1px 0 #ffffff59 inset;pointer-events:none}
+body.ui-refonte #heroes-page #hero-grid .hero-vignette:hover{box-shadow:0 5px 12px #29251f47;filter:brightness(1.02)}
+body.ui-refonte #heroes-page #hero-grid .hero-vignette.a-moi{box-shadow:0 3px 6px #29251f33,0 0 0 2px var(--green)}
+body.ui-refonte #heroes-page #hero-grid .hero-vignette.cible-avant{box-shadow:-4px 0 0 var(--accent)}
+body.ui-refonte #heroes-page #hero-grid .hero-vignette.cible-apres{box-shadow:4px 0 0 var(--accent)}
+body.ui-refonte #heroes-page #hero-grid .hero-vignette.mort{filter:grayscale(1)}
+/* Portrait : anneau net à la couleur de la classe, reflet métallique ; l'inactif reste grisé. */
+body.ui-refonte #heroes-page #hero-grid .accueil-avatar{border:4px solid transparent;background:linear-gradient(color-mix(in srgb,var(--teinte) 18%,#F5EBD8),color-mix(in srgb,var(--teinte) 18%,#F5EBD8)) padding-box,
+ border-box linear-gradient(160deg,color-mix(in srgb,var(--teinte) 45%,#fff),var(--teinte) 45%,color-mix(in srgb,var(--teinte) 60%,#000));
+ box-shadow:0 0 0 1px color-mix(in srgb,var(--teinte) 55%,#000),inset 0 0 0 1px #0000002e,0 3px 6px #29251f40}
+/* Cases d'icônes : la fente de parchemin à relief, la même pour les six. */
+body.ui-refonte #heroes-page #hero-grid .fiche-icone{border:1px solid transparent;border-image:url(img/ui/fente.webp) 18 fill/8px stretch;background:none;border-radius:0;box-shadow:none}
+body.ui-refonte #heroes-page #hero-grid .fiche-icone:hover{filter:brightness(1.06) drop-shadow(0 2px 3px #29251f40)}
+body.ui-refonte #heroes-page #hero-grid .fiche-icone.absente{filter:grayscale(.9);opacity:.5}
+/* Cases à cocher (sélection de carte, Talents libres) : bronze cochée, claire décochée. */
+body.ui-refonte #heroes-page #hero-grid :is(.hero-aventure,.vignette-talents-libres input){appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;border:0;border-radius:3px;
+ background:url(img/ui/case.webp) center/100% 100% no-repeat;cursor:pointer}
+body.ui-refonte #heroes-page #hero-grid :is(.hero-aventure,.vignette-talents-libres input):checked{background-image:url(img/ui/case-cochee.webp)}
+body.ui-refonte #heroes-page #hero-grid :is(.hero-aventure,.vignette-talents-libres input):focus-visible{outline:2px solid var(--rf-bleu);outline-offset:2px}
+body.ui-refonte #heroes-page #hero-grid label.vignette-talents-libres{font:600 14px 'Killam',Georgia,serif;color:var(--rf-encre)}
