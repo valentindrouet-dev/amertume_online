@@ -131,13 +131,11 @@ body.ui-refonte main.layout .map-panel>.mapbar button.on{box-shadow:0 0 0 2px #E
 body.ui-refonte .portrait-actif .pa-pv{border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:4px 5px}
 body.ui-refonte .portrait-actif .pa-pv .lifebar{height:26px;border-radius:999px}
 body.ui-refonte .portrait-actif .pa-pv .lifebar-text{font:700 15px/1 system-ui}
-body.ui-refonte .portrait-actif .pa-pilule{isolation:isolate;gap:9px;border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:7px 11px}
 /* La bille du jeu reste la sienne ; le rond du gabarit est glissé dessous. */
-body.ui-refonte .portrait-actif .pa-pilule .pt{position:relative;width:13px;height:13px}
-body.ui-refonte .portrait-actif .pa-pilule .pt.vide{background:#5b5348}
-body.ui-refonte .portrait-actif .pa-pilule .pt::before{content:'';position:absolute;inset:-4px;z-index:-1;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
-body.ui-refonte .portrait-actif .pa-etats{flex:0 1 auto;min-width:0;overflow:hidden}
-body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px;padding:4px;box-sizing:border-box;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
+body.ui-refonte .barre-onglets .pa-pilule{isolation:isolate;gap:9px;padding:0 4px}
+body.ui-refonte .barre-onglets .pa-pilule .pt{position:relative;width:13px;height:13px}
+body.ui-refonte .barre-onglets .pa-pilule .pt.vide{background:#5b5348}
+body.ui-refonte .barre-onglets .pa-pilule .pt::before{content:'';position:absolute;inset:-4px;z-index:-1;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
 @media(min-width:901px){
  /* La barre a le bas de l'écran pour elle : centrée sur toute la largeur, à l'échelle 1 dès qu'elle y tient. Une colonne qu'elle atteindrait s'arrête au-dessus. */
  body.ui-refonte.carte-pleine main.layout>.stack.left{box-sizing:border-box;padding-bottom:var(--bas-g,0px)}
@@ -158,12 +156,25 @@ body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px
   background:linear-gradient(#E9D7BC,#E9D7BC) 170px 46px/calc(100% - 200px) 140px no-repeat}
  /* v1.435 — Un adversaire standard : la même barre, en gris (kit-barre-action-gris, kit-jauge-gris, kit-rond-gris). */
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions.adverse.type-standard::before{border-image-source:url(img/ui/kit-barre-action-gris.webp);border-image-slice:150 85 150 280 fill;background-image:linear-gradient(#DADADA,#DADADA)}
- body.ui-refonte .barre-actions.type-standard .portrait-actif :is(.pa-pv,.pa-pilule){border-image-source:url(img/ui/kit-jauge-gris.webp);border-image-slice:26 fill}
- body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-pilule .pt::before,body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-etats .etat{background-image:url(img/ui/kit-rond-gris.webp)}
+ body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-pv{border-image-source:url(img/ui/kit-jauge-gris.webp);border-image-slice:26 fill}
  body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-token.enemy{background:color-mix(in srgb,var(--rf-rouge) 16%,#E2E2E2)}
  /* En mode ⇔, son coin : sur le bout droit de la barre. */
  body.ui-refonte.redim main.layout .map-panel>.attack-card.barre-actions{cursor:grab}
  body.ui-refonte.redim main.layout .map-panel>.attack-card.barre-actions>.poignee-coin{right:26px;bottom:8px;width:22px;height:22px;z-index:3}
+ /* v1.436 — Les onglets (img/ui/kit-barre-onglet.webp, bas ouvert) : posés sur le bord haut de la barre, à droite du médaillon, glissés sous son cadre. Un onglet par
+    chose à lire : points d'Action, points de Mouvement, états, cases de déplacement, ressource de classe ; un onglet sans rien ne se montre pas. */
+ body.ui-refonte main.layout .barre-actions>.barre-onglets{position:absolute;z-index:-1;left:190px;bottom:148px;width:max-content;justify-content:flex-start;align-items:flex-end;gap:3px}
+ body.ui-refonte main.layout .barre-onglets>.onglet{box-sizing:border-box;height:36px;padding:5px 12px 8px;gap:8px;border:1px solid transparent;border-image:url(img/ui/kit-barre-onglet.webp) 30 30 2 30 fill/15px 15px 1px 15px stretch}
+ body.ui-refonte main.layout .barre-onglets .targets{display:flex;gap:6px;position:static;transform:none;width:auto;margin:0;color:inherit}
+ body.ui-refonte main.layout .barre-onglets .targets .cibles-groupe{display:flex;gap:4px;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+ body.ui-refonte main.layout .barre-onglets .targets .etat-tete{width:24px;height:24px}
+ body.ui-refonte main.layout .barre-onglets .targets .etat-tete img{width:100%;height:100%;object-fit:contain}
+ body.ui-refonte main.layout .barre-onglets :is(#barre-mouvement,#barre-mvt-bonus){position:static;transform:none;max-width:none;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+ body.ui-refonte main.layout .barre-onglets .cellule-plasma{display:flex;gap:5px;position:static;padding:0;border:0;background:none;box-shadow:none}
+ body.ui-refonte main.layout .barre-onglets .cellule-plasma .de-plasma{width:20px;height:20px;border-radius:5px}
+ body.ui-refonte main.layout .barre-onglets .cellule-plasma .de-plasma::after{inset:6px}
+ body.ui-refonte .barre-actions.type-standard .barre-onglets>.onglet{filter:grayscale(1)}
+ body.ui-refonte .barre-actions.type-standard .barre-onglets .pa-pilule .pt::before{background-image:url(img/ui/kit-rond-gris.webp)}
  /* Elle se cache toujours quand elle n'a rien à offrir, ou quand ce sont les actions d'un autre. */
  body.ui-refonte.actions-autrui main.layout .map-panel>.attack-card.barre-actions,
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions:not(:has(button:not([hidden]))){display:none}
@@ -203,7 +214,6 @@ body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px
  body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond .compte-rond{bottom:-2px;min-width:0;padding:0 3px;font-size:9px;border-width:1px}
  body.ui-refonte main.layout section.attack-card.barre-actions .choix-attaques button.btn-action[data-touche]:not(.pris)::after{left:-2px;top:-2px;min-width:13px;height:13px;font-size:9px}
  /* Les cibles, au-dessus de la barre, gardent leur taille quand la barre est réduite. */
- body.ui-refonte main.layout .map-panel>.attack-card.barre-actions>.targets{transform:translateX(-50%) scale(calc(1 / var(--ech,1)));transform-origin:50% 100%}
  /* Les lignes d'information se posent au-dessus du corps de la barre, à droite du médaillon : la hauteur de la barre ne change jamais. */
  body.ui-refonte main.layout .barre-actions>.attack-info{position:absolute;left:184px;right:40px;top:14px;margin:0;text-align:left;color:#f0d9b5;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  body.ui-refonte .portrait-actif .pa-token{z-index:-1;left:-161.5px;top:-8px;right:auto;bottom:auto;transform:none;width:126px;height:126px;border:0;border-radius:50%;overflow:hidden;box-shadow:none;

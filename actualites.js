@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.436","d":"2026-11-25","t":"Onglets au-dessus de la barre d'action : PA, PM, états, déplacement, ressource"},
 {"v":"1.435","d":"2026-11-25","t":"Boîtes et barre d'action libres, barre grise des adversaires, jetons dans le journal"},
 {"v":"1.434","d":"2026-11-25","t":"Journal en vignettes, barre d'action agrandie, barre ennemie réduite"},
 {"v":"1.433","d":"2026-11-25","t":"Barre du MJ : nouvelle barre, ronds et pilules"},

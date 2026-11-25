@@ -5052,10 +5052,6 @@ body.journal-translucide .journal-panel .journal-chat input{background:var(--fie
 .portrait-actif .pa-pv{flex:1;min-width:0}
 .portrait-actif .pa-pv .lifebar{margin:0;height:22px}
 .portrait-actif .pa-pv .lifebar-text{font:700 13px/1 system-ui}
-.portrait-actif .pa-etats:empty{display:none}
-.portrait-actif .pa-etats .etats{position:static;display:flex;gap:4px;transform:none}
-.portrait-actif .pa-etats .etat{position:relative;display:grid;place-items:center;width:28px;height:28px}
-.portrait-actif .pa-etats .etat :is(img,svg){width:100%;height:100%;object-fit:contain}
 .portrait-actif .pa-token{position:absolute;right:calc(100% + 10px);bottom:0;width:108px;height:108px;display:grid;place-items:center;overflow:hidden;border-radius:50%;
  border:5px solid var(--teinte,var(--green));background:var(--panel);box-shadow:0 0 0 2px var(--line-strong),0 4px 14px color-mix(in srgb,var(--ink) 50%,transparent);
  font:700 50px/1 'Killam',Georgia,serif;color:var(--teinte,var(--green));pointer-events:none}
@@ -5126,12 +5122,11 @@ body.journal-translucide .journal-panel .journal-chat input{background:var(--fie
 #accueil-page .accueil-tuile svg{width:30px;height:30px;color:var(--accent)}
 @media (max-width:1100px){#accueil-page .accueil-v2 .accueil-bas,#accueil-page .accueil-actus-corps{grid-template-columns:1fr}}
 /* v1.428 — Dans le bandeau de la barre d'action : les points d'Action et de Mouvement restants, en pastilles, entre les PV et les états. */
-.portrait-actif .pa-points{display:flex;flex:none;gap:6px}
-.portrait-actif .pa-pilule{position:static;display:flex;align-items:center;gap:4px;pointer-events:auto}
-.portrait-actif .pa-pilule:empty{display:none}
-.portrait-actif .pa-pilule .pt{width:11px;height:11px;box-shadow:none}
+.barre-onglets .pa-pilule{position:static;display:flex;align-items:center;gap:4px;pointer-events:auto}
+.barre-onglets .pa-pilule:empty{display:none}
+.barre-onglets .pa-pilule .pt{width:11px;height:11px;box-shadow:none}
 /* v1.431 — Une place vide dans une pastille de points : le point dépensé, en bille sombre. Les trois grands boutons ne se montrent qu'avec l'habillage. */
-.portrait-actif .pa-pilule .pt.vide{border-radius:50%;background:color-mix(in srgb,var(--ink) 55%,transparent)}
+.barre-onglets .pa-pilule .pt.vide{border-radius:50%;background:color-mix(in srgb,var(--ink) 55%,transparent)}
 .barre-actions>:is(.gros-boutons,.emplacement){display:none}
 /* v1.434 — La hauteur du journal se règle à la poignée (mode « ⇔ Redimensionner les panneaux »), au bas de son panneau ; double clic : il remplit de nouveau sa colonne. */
 body.redim .poignee-j{left:25%;right:25%;bottom:2px;height:12px;cursor:row-resize}
@@ -5150,3 +5145,7 @@ body.carte-pleine main.layout>.stack>.panel.flottante:not(.panneau-journal){over
 .journal-taille{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
 .journal-taille button{flex:1;margin:0}
 body:not(.ui-refonte) .barre-actions>.poignee-coin{display:none}
+/* v1.436 — Les onglets de la barre d'action. Sans l'habillage : une simple ligne, les points d'Action et de Mouvement, en tête de la barre sombre. */
+.barre-actions>.barre-onglets{display:flex;justify-content:center;align-items:center;gap:10px;width:100%}
+.barre-onglets>.onglet{display:none;align-items:center;gap:6px}
+.barre-onglets>.onglet:has(.pa-pilule>.pt,.etat-tete,.cellule-plasma:not([hidden]),#barre-mouvement:not([hidden]),#barre-mvt-bonus:not([hidden])){display:flex}

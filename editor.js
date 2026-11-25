@@ -7789,7 +7789,7 @@ const habillageVoulu=()=>{try{return localStorage.getItem(HABILLAGE_CLE)!=='0'}c
 function poseHabillage(){const on=habillageVoulu(),avant=document.body.classList.contains('ui-refonte'),pris=on&&!document.body.classList.contains('sombre');
  document.body.classList.toggle('ui-refonte',pris);const b=$('habillage-switch');if(b)b.textContent=on?'Désactiver':'Activer';
  // La hauteur de l'en-tête change : la Table se recale.
- if(pris!==avant&&typeof placeTablePleine==='function')requestAnimationFrame(()=>{placeTablePleine();if(typeof applyMapZoom==='function')applyMapZoom()})}
+ if(pris!==avant&&typeof placeTablePleine==='function')requestAnimationFrame(()=>{placeTablePleine();if(typeof applyMapZoom==='function')applyMapZoom();if(typeof render==='function')render();if(typeof placeMvtCle!=='undefined'){placeMvtCle='';if(typeof placeBarreMouvement==='function')placeBarreMouvement()}})}
 poseHabillage();
 {const t=applyTheme;applyTheme=function(...x){const o=t.apply(this,x);poseHabillage();return o}}
 $('habillage-switch').onclick=()=>{try{localStorage.setItem(HABILLAGE_CLE,habillageVoulu()?'0':'1')}catch(e){}poseHabillage()};
