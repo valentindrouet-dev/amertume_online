@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.428","d":"2026-11-25","t":"Barre d'action au gabarit"},
 {"v":"1.427","d":"2026-11-25","t":"Un seul kit de composants pour toutes les boîtes"},
 {"v":"1.426","d":"2026-11-25","t":"Accueil restructuré"},
 {"v":"1.425","d":"2026-11-25","t":"Combattants en tokens et gros token de la barre d'action"},

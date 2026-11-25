@@ -131,10 +131,35 @@ body.ui-refonte main.layout .map-panel>.mapbar button{min-height:30px;min-width:
 body.ui-refonte main.layout .map-panel>.mapbar button:hover{filter:brightness(1.25)}
 body.ui-refonte main.layout .map-panel>.mapbar button.on{border-image:var(--k-bouton-or);color:#FFF8EA}
 
-/* ---------- Barre d'action : le cadre sombre commun (cadre-sombre.webp, en neuf zones) ---------- */
-body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{border:11px solid transparent;border-image:var(--rf-cadre-sombre);
- border-radius:10px;background:none;box-shadow:0 10px 26px #00000080;padding:6px 14px}
-body.ui-refonte main.layout .barre-actions .barre-sep{background:#AA814673}
+/* ---------- v1.428 — Barre d'action au gabarit : le cadre à bouts ouvragés, le médaillon du combattant à gauche ; en tête sa jauge de PV,
+   ses points d'Action et de Mouvement en pastilles, ses états ; dessous ses attaques et talents sur des cases, puis les actions communes. ---------- */
+body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{display:grid;grid-template-columns:auto auto;grid-template-areas:"tete tete" "talents communs";justify-content:start;align-items:center;gap:8px 12px;
+ border:14px solid transparent;border-image:url(img/ui/kit-barre.webp) 36 46 fill/18px 23px stretch;border-radius:0;background:none;box-shadow:none;padding:2px 10px 4px;filter:drop-shadow(0 8px 12px #00000080);color:var(--rf-encre)}
+body.ui-refonte main.layout .barre-actions>.portrait-actif{grid-area:tete;min-width:300px}
+body.ui-refonte main.layout .barre-actions>#attack-choices{grid-area:talents;justify-self:start}
+body.ui-refonte main.layout .barre-actions>#attack-row{grid-area:communs;justify-self:start}
+body.ui-refonte main.layout .barre-actions>.attack-info{grid-column:1/-1;color:var(--rf-encre)}
+body.ui-refonte main.layout .barre-actions .barre-sep{background:var(--k-filet)}
+/* La jauge : la barre de PV dans son logement. Les pastilles : chaque point sur un rond du gabarit. Les états de même. */
+body.ui-refonte .portrait-actif .pa-pv{border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:4px 5px}
+body.ui-refonte .portrait-actif .pa-pv .lifebar{height:18px;border-radius:999px}
+body.ui-refonte .portrait-actif .pa-pilule{isolation:isolate;gap:9px;border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:7px 11px}
+/* La bille du jeu reste la sienne ; le rond du gabarit est glissé dessous. */
+body.ui-refonte .portrait-actif .pa-pilule .pt{position:relative;width:13px;height:13px}
+body.ui-refonte .portrait-actif .pa-pilule .pt::before{content:'';position:absolute;inset:-4px;z-index:-1;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
+body.ui-refonte .portrait-actif .pa-etats .etat{width:30px;height:30px;padding:4px;box-sizing:border-box;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
+/* Attaques et talents : une case du gabarit sous chaque rond, sept par rangée au plus. Les actions communes sur un même support. */
+body.ui-refonte main.layout .barre-actions>#attack-choices{flex-wrap:wrap;justify-content:flex-start;gap:8px;padding:4px;max-width:504px;background:url(img/ui/kit-slot.webp) left top/72px 72px}
+body.ui-refonte main.layout .barre-actions>#attack-choices>button{margin:0}
+body.ui-refonte main.layout .barre-actions>#attack-row{justify-content:flex-start;gap:8px;padding:6px 10px;border:1px solid transparent;border-image:url(img/ui/kit-slot.webp) 30 fill/14px stretch}
+/* Le médaillon : le portrait dans son anneau ouvragé, cerclé de la couleur de la classe, à cheval sur le bout gauche de la barre. */
+@media(min-width:701px){
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{padding-left:68px;min-height:150px}
+ body.ui-refonte .portrait-actif .pa-token{left:-84px;right:auto;top:50%;bottom:auto;transform:translateY(-50%);width:152px;height:159px;border:0;border-radius:0;overflow:visible;
+  background:url(img/ui/kit-medaillon.webp) center/100% 100% no-repeat;box-shadow:none;font-size:54px}
+ body.ui-refonte .portrait-actif .pa-token img{position:absolute;left:17%;top:18%;width:66%;height:auto;aspect-ratio:1;border-radius:50%;object-fit:cover;box-shadow:0 0 0 3px var(--teinte,var(--rf-vert))}
+ body.ui-refonte .portrait-actif .pa-token.enemy img{box-shadow:0 0 0 3px var(--rf-rouge)}
+}
 
 /* ---------- Journal : une surface de lecture claire et presque unie dans le cadre, des lignes éditoriales, le ton en filet à gauche ---------- */
 body.ui-refonte main.layout #journal{border:1px solid transparent;border-image:var(--k-champ);border-radius:10px;background:none;box-shadow:none}
@@ -269,10 +294,9 @@ body.ui-refonte #heroes-page #hero-grid .fiche-icone{border:1px solid transparen
 body.ui-refonte #heroes-page #hero-grid .fiche-icone:hover{filter:brightness(1.06) drop-shadow(0 2px 3px #29251f40)}
 body.ui-refonte #heroes-page #hero-grid .fiche-icone.absente{filter:grayscale(.9);opacity:.5}
 body.ui-refonte #heroes-page #hero-grid label.vignette-talents-libres{font:600 14px 'Killam',Georgia,serif;color:var(--rf-encre)}
-/* v1.425 — Combattants en tokens : plus de filet de camp à gauche (l'anneau le dit) ; la sélection en liseré bronze. Le gros token cerclé de bronze. */
+/* v1.425 — Combattants en tokens : plus de filet de camp à gauche (l'anneau le dit) ; la sélection sur le bouton actif du kit. */
 body.ui-refonte main.layout #actors .actor,body.ui-refonte main.layout #actors .actor.enemy{box-shadow:none}
 body.ui-refonte main.layout #actors .actor.selected{box-shadow:0 0 0 2px var(--rf-bronze)}
-body.ui-refonte .portrait-actif .pa-token{box-shadow:0 0 0 2px #191917,0 0 0 4px var(--rf-bronze),0 6px 16px #000000a6}
 /* v1.426 — Accueil : les blocs au cadre bronze de la page Aventuriers, les tuiles et les cartes de la fiche, l'illustration des actualités cerclée de bronze. */
 body.ui-refonte #accueil-page .accueil-bloc{border:14px solid transparent;border-image:var(--rf-cadre);border-radius:12px;background:none;box-shadow:0 4px 14px #29251f38}
 body.ui-refonte #accueil-page .accueil-tuile{border:1px solid transparent;border-image:var(--k-carte);background:none;box-shadow:0 2px 4px #29251f26}

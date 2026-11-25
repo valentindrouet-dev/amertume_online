@@ -305,7 +305,9 @@ try{
   dit(r.n>10&&!r.hors.length&&!r.manque.length&&r.img,'kit unique : toutes les boîtes de l’habillage sortent du kit, cases comprises',JSON.stringify(r))}
  {const r=await p.evaluate(()=>{showPage('table');const h=actors.find(x=>x.hero),k=actors.indexOf(h),avant=h.hp;h.hp=Math.max(1,Math.round(h.max/2));pick(k);render();
    const ligne=document.querySelector('#actors .actor[data-index="'+k+'"]'),pa=document.querySelector('.map-panel>.barre-actions>.portrait-actif');
-   const v={pv:ligne&&Math.round(+ligne.style.getPropertyValue('--pv')),attendu:Math.round(ratio(h)),token:!!(pa&&pa.querySelector('.pa-token')),barre:!!(pa&&pa.querySelector('.lifebar'))};h.hp=avant;render();return v});
+   const v={pv:ligne&&Math.round(+ligne.style.getPropertyValue('--pv')),attendu:Math.round(ratio(h)),token:!!(pa&&pa.querySelector('.pa-token')),barre:!!(pa&&pa.querySelector('.lifebar')),
+    pilules:pa?pa.querySelectorAll('.pa-pilule').length:0,billes:pa?pa.querySelectorAll('.pa-pilule .pt').length:-1,attendues:(pastillesPoints(h).match(/class="pt /g)||[]).length,gabarit:getComputedStyle(pa.parentElement).borderImageSource.includes('kit-barre')};h.hp=avant;render();return v});
+  dit(r.pilules===2&&r.billes===r.attendues&&r.gabarit,'barre d’action au gabarit : cadre du kit, PA et PM en pastilles',JSON.stringify(r));
   dit(r.pv===r.attendu&&r.token&&r.barre,'combattants en tokens : l’anneau suit les PV ; le sélectionné en gros token près de la barre d’action',JSON.stringify(r))}
  {const r=await p.evaluate(()=>{showPage('accueil');const B=document.getElementById('accueil-actifs'),n=()=>B.querySelectorAll('.accueil-heros').length,v={tous:n()};
    document.querySelector('#accueil-page [data-vue="liste"]').click();v.liste=B.classList.contains('en-liste');document.querySelector('#accueil-page [data-vue="grille"]').click();

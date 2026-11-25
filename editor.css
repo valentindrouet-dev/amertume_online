@@ -5122,3 +5122,8 @@ body.journal-translucide .journal-panel .journal-chat input{background:var(--fie
 #accueil-page .accueil-tuile:hover{background:var(--hover)}
 #accueil-page .accueil-tuile svg{width:30px;height:30px;color:var(--accent)}
 @media (max-width:1100px){#accueil-page .accueil-v2 .accueil-bas,#accueil-page .accueil-actus-corps{grid-template-columns:1fr}}
+/* v1.428 — Dans le bandeau de la barre d'action : les points d'Action et de Mouvement restants, en pastilles, entre les PV et les états. */
+.portrait-actif .pa-points{display:flex;flex:none;gap:6px}
+.portrait-actif .pa-pilule{position:static;display:flex;align-items:center;gap:4px;pointer-events:auto}
+.portrait-actif .pa-pilule:empty{display:none}
+.portrait-actif .pa-pilule .pt{width:11px;height:11px;box-shadow:none}
