@@ -282,12 +282,16 @@ try{
  /* ---------- v1.420 — Le nouvel habillage : allumé par défaut, un réglage le retire, le mode nuit garde son interface ---------- */
  etape='Habillage';console.log(etape);
  {const r=await p.evaluate(()=>{showPage('table');const lit=()=>({on:document.body.classList.contains('ui-refonte'),haut:Math.round(document.querySelector('header').getBoundingClientRect().height),
-    cadre:getComputedStyle(document.querySelector('main.layout>.stack.left>.panel')).borderImageSource.includes('cadre-parchemin'),bouton:document.getElementById('habillage-switch').textContent});
+    cadre:getComputedStyle(document.querySelector('main.layout>.stack.left>.panel')).borderImageSource.includes('cadre-clair'),bouton:document.getElementById('habillage-switch').textContent});
    const a=lit();document.getElementById('habillage-switch').click();const b=lit();document.getElementById('habillage-switch').click();const c=lit();
    document.body.classList.add('sombre');poseHabillage();const nuit=document.body.classList.contains('ui-refonte');document.body.classList.remove('sombre');poseHabillage();return {a,b,c,nuit}});
   dit(r.a.on&&r.a.cadre&&r.a.bouton==='Désactiver','le nouvel habillage est là par défaut',JSON.stringify(r.a));
   dit(!r.b.on&&!r.b.cadre&&r.b.bouton==='Activer'&&r.b.haut>r.a.haut,'« Désactiver » rend l’interface d’avant',JSON.stringify(r.b));
   dit(r.c.on&&!r.nuit,'« Activer » le remet ; le mode nuit garde son interface',JSON.stringify({c:r.c,nuit:r.nuit}))}
+ {const r=await p.evaluate(()=>{const v=[];showPage('armory');v.push(getComputedStyle(document.querySelector('#armory-page>.panel')).borderImageSource.includes('cadre-clair'));
+   openItem(0);v.push(getComputedStyle(document.getElementById('item-editor')).borderImageSource.includes('cadre-clair'));document.getElementById('item-editor').close();
+   showPage('table');document.getElementById('habillage-switch').click();v.push(getComputedStyle(document.querySelector('#armory-page>.panel')).borderImageSource==='none');document.getElementById('habillage-switch').click();return v});
+  dit(r.every(Boolean),'phase 2 : les pages et les fenêtres prennent le cadre commun ; le réglage l’enlève partout',JSON.stringify(r))}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);

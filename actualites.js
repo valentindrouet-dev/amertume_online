@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.421","d":"2026-11-25","t":"Habillage, phase 2 : tout le site"},
 {"v":"1.420","d":"2026-11-25","t":"Nouvel habillage de la Table (désactivable)"},
 {"v":"1.419","d":"2026-11-24","t":"Cartes Dynamiques et temps réel retirés, l'IA reste"},
 {"v":"1.418","d":"2026-11-24","t":"Cartes Dynamiques : la carte s'affiche telle quelle"},

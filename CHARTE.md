@@ -347,19 +347,22 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 
 ---
 
-## 12 bis. Habillage de la Table (v1.420)
+## 12 bis. Habillage (v1.420 la Table, v1.421 tout le site)
 
-Le nouvel habillage tient dans `refonte.css`, entièrement sous `body.ui-refonte`. Il est allumé par défaut ; Paramètres › Apparence › « Nouvel habillage » (Activer / Désactiver, réglage de l'appareil) rend l'interface d'avant. En mode nuit, l'interface reste celle du mode nuit. Il ne touche qu'aux supports : illustrations, icônes, jetons, portraits, dés, carte et logo restent tels quels.
+Le nouvel habillage tient dans `refonte.css`, entièrement sous `body.ui-refonte`. Il est allumé par défaut ; Paramètres › Apparence › « Nouvel habillage » (Activer / Désactiver, réglage de l'appareil) rend l'interface d'avant, partout. En mode nuit, l'interface reste celle du mode nuit. Il ne touche qu'aux supports : illustrations, icônes, jetons, portraits, dés, carte et logo restent tels quels.
 
-- **Palette** : parchemin `#EDE5D2`, ivoire `#F7F2E7`, charbon `#191917`, brun sombre `#302820`, bronze `#AA8146`, encre `#29251F`, encre secondaire `#82796B`, rouge `#A24032`, vert `#608354`, bleu acier `#466B8C`. Filet : bronze à 35 % (`#AA814659`). Rayon : 3 px. Sur la Table, les variables du site (`--panel`, `--ink`, `--accent`, `--line`…) prennent cette palette.
+- **Palette** : parchemin `#EDE5D2`, ivoire `#F7F2E7`, charbon `#191917`, brun sombre `#302820`, bronze `#AA8146`, encre `#29251F`, encre secondaire `#82796B`, rouge `#A24032`, vert `#608354`, bleu acier `#466B8C`. Filet : bronze à 35 % (`#AA814659`). Rayon : 3 px (4 px pour les modules).
+- **Variables du site (v1.421)** : sur tout le site, elles prennent la palette — fond `#E6DCC6`, panneau `#F7F2E7`, panneau 2 `#EDE5D2`, champ `#FBF8F1` (plus de blanc), bouton `#EFE7D5`, survol `#E5D8BC`, piste `#D9CCB1`, sélection `#E9DFC7`, puce `#3028200f`, filet `#CDB993`, filet fort `#AA8146`, encre secondaire `#6F675A` (un peu plus foncée, pour se lire), accent `#8E6A36` (bronze foncé, lisible en texte), sur accent `#F7F2E7`, désactivé `#D6CDBB` / `#8B8371`, fond choisi `#EFE6CF`, gris des ronds inertes `#CFC5B2`.
+- **Trois niveaux de surfaces (v1.421)** :
+  - *Niveau 1* — les grands conteneurs (panneaux des pages, colonnes de la Table, blocs de l'Accueil et des Règles, fenêtres) : le cadre `img/ui/cadre-clair.webp` en neuf zones, 11 px, coins à encoche ; son centre, une vignette sans motif, s'étire. La fenêtre des Stats de combat garde son propre cadre doré.
+  - *Niveau 2* — les modules (sections repliables, barres d'outils, réglages, cartes de héros, cartes de version…) : un filet `--line`, une surface sobre, 4 px d'arrondi.
+  - *Niveau 3* — boutons, champs, cases : 3 px d'arrondi ; contour `--line-strong` pour les boutons du site, `--line` pour les champs ; focus clavier en bleu acier ; bouton principal en dégradé bronze `#b88d50`→`#8f6a35`, bord `#6f5226` ; désactivé à demi-teinte. Ces règles n'ont pas plus de poids que celles d'origine : un bouton qui a son propre style le garde.
 - **Navigation** : le logo sur le parchemin, Vue / Partager / Table en ligne à droite sur la même ligne ; dessous, les onglets sur une bande brun-charbon bordée de bronze ; l'onglet actif souligné de bronze ; un onglet ouvert aux joueurs garde sa marque, un filet bleu acier.
-- **Panneaux latéraux** : le cadre `img/ui/cadre-parchemin.webp` en neuf zones (6 px), titres en Killam brun sombre soulignés d'un filet bronze.
-- **Outils de la carte** : bande brun-charbon bordée de bronze ; supports sobres ; l'outil actif en bronze.
-- **Barre d'action** : socle `img/ui/socle-sombre.webp` en neuf zones, coins réduits (12 px).
-- **Combattants** : lignes plates, le camp en filet à gauche (vert la troupe, rouge les adversaires), la sélection en bronze.
-- **Journal** : plus de cartouches ; le ton en filet à gauche, un filet bronze léger entre les lignes, les messages du système en italique encre secondaire.
-- **Points de vie** : −1/−5/−10 en rouge désaturé, +1/+5/+10 en vert désaturé, Mort et Soin pleins.
-- **Piste de dés** : fond brun-charbon, relief intérieur, cadre bronze fin.
+- **Outils de la carte et barre d'action** : le cadre sombre `img/ui/cadre-sombre.webp` en neuf zones (11 px) ; boutons d'outils d'au moins 30 px, filet bronze ; l'outil actif en dégradé bronze.
+- **Combattants** : lignes à filet léger `#CDB99399` sur ivoire translucide, le camp en filet à gauche (vert la troupe, rouge les adversaires), la sélection en bronze.
+- **Journal** : à l'intérieur du cadre, une surface de lecture claire et presque unie `#FBF8F1` ; texte en sans-serif 13,5 px ; le ton en filet à gauche, un filet bronze léger entre les lignes, les messages du système en italique encre secondaire ; les boutons d'en-tête et le champ de saisie au style des boutons et champs du site.
+- **Points de vie** : −1/−5/−10 sur `#F3E2D9`, bord et texte rouges ; +1/+5/+10 sur `#E4EBDC`, bord vert, texte `#4a6640` ; Mort et Soin pleins.
+- **Piste de dés** : fond brun-charbon, bord bronze, liseré parchemin `#EDE5D2` puis bronze à 50 % autour, relief intérieur.
 
 ## 13. Contrôles automatiques
 

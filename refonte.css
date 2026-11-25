@@ -1,12 +1,45 @@
-/* ===== v1.420 — Habillage de la Table (CHARTE.md, « Habillage ») =====
+/* ===== v1.420, v1.421 — Habillage de l'application (CHARTE.md, « Habillage ») — phase 1 : la Table ; phase 2 : tout le site =====
    Tout est sous body.ui-refonte : Paramètres › Apparence › « Nouvel habillage » l'enlève d'un clic et rend l'interface d'avant.
    Seuls les supports changent — fonds, cadres, boutons, barres, typographie. Illustrations, icônes, jetons, portraits, dés,
    carte et logo restent tels quels. Le mode nuit garde son interface : la classe n'est posée qu'en mode clair (editor.js). */
 body.ui-refonte{--rf-parchemin:#EDE5D2;--rf-ivoire:#F7F2E7;--rf-charbon:#191917;--rf-brun:#302820;--rf-bronze:#AA8146;
  --rf-encre:#29251F;--rf-encre-2:#82796B;--rf-rouge:#A24032;--rf-vert:#608354;--rf-bleu:#466B8C;
  --rf-filet:#AA814659;--rf-rayon:3px;--rf-ombre:0 2px 8px #1919172e;--rf-relief:inset 0 1px 0 #ffffff59}
-/* La Table prend la palette : ce sont les variables du site, redéfinies sur sa seule mise en page. */
-body.ui-refonte main.layout{--panel:#F7F2E7;--panel-2:#EDE5D2;--ink:#29251F;--muted:#82796B;--accent:#AA8146;--line:#AA814659;--red-mat:#A24032;--green:#608354}
+/* Tout le site prend la palette : ce sont ses propres variables, redéfinies. Les champs et les boutons quittent le blanc pour l'ivoire ;
+   les contours, plus marqués, ne disparaissent plus ; l'encre secondaire et le bronze des titres foncent un peu, pour se lire. */
+body.ui-refonte{--bg:#E6DCC6;--panel:#F7F2E7;--panel-2:#EDE5D2;--field:#FBF8F1;--btn:#EFE7D5;--hover:#E5D8BC;--track:#D9CCB1;--sel:#E9DFC7;--chip:#3028200f;
+ --line:#CDB993;--line-strong:#AA8146;--muted:#6F675A;--ink:#29251F;--accent:#8E6A36;--on-accent:#F7F2E7;--green:#608354;--red-mat:#A24032;
+ --disabled:#D6CDBB;--disabled-ink:#8B8371;--sel-fond:#EFE6CF;--gris-action:#CFC5B2;
+ --rf-cadre:url(img/ui/cadre-clair.webp) 22 fill/11px stretch;--rf-cadre-sombre:url(img/ui/cadre-sombre.webp) 22 fill/11px stretch;
+ scrollbar-color:#AA8146a6 transparent}
+
+/* ---------- Niveau 3 : boutons, champs, cases — simples, nets, toujours délimités ----------
+   Sans spécificité de plus que les règles d'origine (:where) : une classe du site garde toujours la main sur son bouton. */
+:where(body.ui-refonte) button{border-radius:var(--rf-rayon);transition:background-color .12s,border-color .12s,box-shadow .12s}
+:where(body.ui-refonte) button:not([class]),:where(body.ui-refonte) button:where(.primary,.danger,.full,.ico,.journal-vider){border-color:var(--line-strong)}
+:where(body.ui-refonte) button:not([class]):hover,:where(body.ui-refonte) button:where(.full,.ico):hover{border-color:var(--rf-brun);background-color:var(--hover)}
+:where(body.ui-refonte) button:not([class]),:where(body.ui-refonte) button:where(.full){box-shadow:var(--rf-relief),0 1px 1px #3028201a}
+:where(body.ui-refonte) button:not([class]):active,:where(body.ui-refonte) button:where(.full):active{box-shadow:inset 0 1px 3px #30282040}
+:where(body.ui-refonte) button.primary{background:linear-gradient(#b88d50,#8f6a35);border-color:#6f5226;color:var(--rf-ivoire);text-shadow:0 1px 0 #00000040;box-shadow:var(--rf-relief),0 1px 2px #30282033}
+:where(body.ui-refonte) button.primary:hover{background:linear-gradient(#c49a5c,#9a743c)}
+:where(body.ui-refonte) button:disabled{opacity:.5;filter:saturate(.3)}
+:where(body.ui-refonte) :is(button,a,input,select,textarea,summary):focus-visible{outline:2px solid var(--rf-bleu);outline-offset:2px}
+:where(body.ui-refonte) select,:where(body.ui-refonte) textarea,:where(body.ui-refonte) input:where(:not([type=checkbox],[type=radio],[type=range],[type=color],[type=file])){border-color:var(--line);border-radius:var(--rf-rayon);background-color:var(--field)}
+:where(body.ui-refonte) :is(select,textarea,input):focus{border-color:var(--accent);box-shadow:0 0 0 2px #AA814640}
+:where(body.ui-refonte) input:where([type=checkbox],[type=radio],[type=range]){accent-color:var(--accent)}
+
+/* ---------- Niveau 1 : les grands conteneurs — le cadre de parchemin bordé de bronze (cadre-clair.webp, en neuf zones) ----------
+   Le cadre garde son épaisseur, quelle que soit la taille ; son centre, une vignette sans motif, s'étire sans se déformer. */
+body.ui-refonte :is(body>main>.panel,body>main>aside.panel,body>main>section.panel,#accueil-page .accueil-bloc,#regles-page .rg-sommaire,#regles-page .rg-section),
+body.ui-refonte dialog:not(#stats-combat){border:11px solid transparent;border-image:var(--rf-cadre);border-radius:0;background:var(--panel) padding-box;box-shadow:none}
+body.ui-refonte dialog{box-shadow:0 18px 50px #191917a6}
+body.ui-refonte dialog::backdrop{background:#191917a6}
+/* ---------- Niveau 2 : les modules — un filet fin, une surface sobre, des angles à peine arrondis ---------- */
+body.ui-refonte :is(details.bloc-replie,.tool-bar,.reglage,.hero-card,.cibles-groupe,.dom-carte,.dom-bloc,#picker-body,.arbres-detail,.maj-carte,.planche-panneau){border-radius:4px}
+/* Les dernières surfaces blanches écrites en dur passent à l'ivoire de la palette. */
+body.ui-refonte :is(#accueil-page .accueil-v2,#hero-grid) .accueil-heros{background-color:var(--panel);border-radius:6px}
+body.ui-refonte :is(.planche-panneau,.planche-panneau .planche-bloc>summary,.zone-nom-champ){background-color:var(--panel)}
+body.ui-refonte .arbres-v2 .arbres-detail{background-color:var(--panel-2)}
 
 /* ---------- Navigation : le logo sur le parchemin, les onglets sur une bande sombre, une seule hauteur ---------- */
 body.ui-refonte>header{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 18px;padding:8px 20px 0;
@@ -25,10 +58,9 @@ body.ui-refonte>header .view-controls select,body.ui-refonte>header .view-contro
 body.ui-refonte>header .view-controls button:hover{border-color:var(--rf-bronze)}
 body.ui-refonte>header .view-controls label{color:var(--rf-encre-2);font-size:13px}
 
-/* ---------- Panneaux latéraux : un seul cadre, le parchemin bordé de bronze (cadre-parchemin.webp, en neuf zones) ---------- */
+/* ---------- Panneaux latéraux : le cadre commun (niveau 1) ---------- */
 body.ui-refonte main.layout>.stack.left>.panel,body.ui-refonte main.layout>.stack.right>.panel{
- border:6px solid transparent;border-image:url(img/ui/cadre-parchemin.webp) 14 fill/6px stretch;border-radius:0;background:transparent;
- padding:8px 13px 13px;box-shadow:var(--rf-ombre)}
+ border:11px solid transparent;border-image:var(--rf-cadre);border-radius:0;background:transparent;padding:4px 8px 8px;box-shadow:none}
 body.ui-refonte main.layout .panel>h2,body.ui-refonte main.layout .panel .eyebrow,body.ui-refonte main.layout .journal-title{
  font:700 13px/1.2 'Killam',Georgia,serif;letter-spacing:1.6px;color:var(--rf-brun);text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--rf-filet);margin-bottom:8px}
 body.ui-refonte main.layout .turn-head{border-bottom:1px solid var(--rf-filet);padding-bottom:6px;margin-bottom:8px}
@@ -44,7 +76,7 @@ body.ui-refonte main.layout .turn-actions button:hover,body.ui-refonte main.layo
 body.ui-refonte main.layout #round{color:var(--rf-encre);font-family:'Killam',Georgia,serif}
 
 /* ---------- Combattants : lignes plates, le camp en filet à gauche, la sélection en bronze ---------- */
-body.ui-refonte main.layout #actors .actor{border-radius:var(--rf-rayon);border:1px solid transparent;background:#F7F2E7b3;margin:3px 0;
+body.ui-refonte main.layout #actors .actor{border-radius:var(--rf-rayon);border:1px solid #CDB99399;background:#F7F2E773;margin:3px 0;
  box-shadow:inset 3px 0 0 var(--rf-vert);transition:background-color .15s,border-color .15s}
 body.ui-refonte main.layout #actors .actor.enemy{box-shadow:inset 3px 0 0 var(--rf-rouge)}
 body.ui-refonte main.layout #actors .actor:hover{border-color:var(--rf-filet);background:var(--rf-ivoire)}
@@ -64,30 +96,33 @@ body.ui-refonte main.layout #skills{padding-bottom:8px;border-bottom:1px solid v
 
 /* ---------- Points de vie : rouges et verts désaturés, Mort et Soin pleins ---------- */
 body.ui-refonte main.layout .hp-buttons button{border-radius:var(--rf-rayon);box-shadow:var(--rf-relief);transition:filter .12s}
-body.ui-refonte main.layout .hp-buttons button.moins{background:#A2403214;border-color:#A2403280;color:var(--rf-rouge)}
-body.ui-refonte main.layout .hp-buttons button.plus{background:#60835414;border-color:#60835480;color:var(--rf-vert)}
+body.ui-refonte main.layout .hp-buttons button.moins{background:#F3E2D9;border-color:var(--rf-rouge);color:var(--rf-rouge);font-weight:700}
+body.ui-refonte main.layout .hp-buttons button.plus{background:#E4EBDC;border-color:var(--rf-vert);color:#4a6640;font-weight:700}
 body.ui-refonte main.layout .hp-buttons button.mort{background:var(--rf-rouge);border-color:#7d2f25;color:var(--rf-ivoire)}
 body.ui-refonte main.layout .hp-buttons button.soin{background:var(--rf-vert);border-color:#4a6640;color:var(--rf-ivoire)}
 body.ui-refonte main.layout .hp-buttons button:hover{filter:brightness(1.08)}
 body.ui-refonte main.layout .hp-buttons button:active{filter:brightness(.92)}
 
 /* ---------- Piste de dés : un fond sombre, un relief intérieur, un cadre fin ---------- */
-body.ui-refonte main.layout #dice-tray{border-radius:var(--rf-rayon);border:1px solid #AA814666;background:radial-gradient(ellipse at 50% 30%,var(--rf-brun),var(--rf-charbon));box-shadow:inset 0 2px 10px #000000a6}
+body.ui-refonte main.layout #dice-tray{border-radius:var(--rf-rayon);border:1px solid var(--rf-bronze);background:radial-gradient(ellipse at 50% 30%,#3d3329,var(--rf-charbon));
+ box-shadow:0 0 0 3px #EDE5D2,0 0 0 4px #AA814680,inset 0 2px 12px #000000b3}
 
 /* ---------- Outils de la carte : une bande sombre, des supports sobres, l'outil actif en bronze ---------- */
-body.ui-refonte main.layout .map-panel>.mapbar{background:linear-gradient(var(--rf-brun),var(--rf-charbon));border:1px solid var(--rf-bronze);border-radius:var(--rf-rayon);box-shadow:0 6px 18px #19191766;color:var(--rf-parchemin)}
+body.ui-refonte main.layout .map-panel>.mapbar{border:11px solid transparent;border-image:var(--rf-cadre-sombre);border-radius:0;background:transparent;padding:2px 8px;box-shadow:0 6px 18px #19191766;color:var(--rf-parchemin)}
 body.ui-refonte main.layout .map-panel>.mapbar #carte-titre{color:var(--rf-ivoire)}
 body.ui-refonte main.layout .map-panel>.mapbar .xp-carte,body.ui-refonte main.layout .map-panel>.mapbar .zoom-bar{color:#EDE5D2b3}
-body.ui-refonte main.layout .map-panel>.mapbar button{background:#ffffff0d;border:1px solid #AA814659;border-radius:var(--rf-rayon);color:var(--rf-parchemin);box-shadow:none;transition:background-color .15s,border-color .15s}
+body.ui-refonte main.layout .map-panel>.mapbar button{min-height:30px;min-width:32px;background:#ffffff12;border:1px solid #AA81468c;border-radius:var(--rf-rayon);color:var(--rf-parchemin);box-shadow:inset 0 1px 0 #ffffff14;transition:background-color .15s,border-color .15s}
 body.ui-refonte main.layout .map-panel>.mapbar button:hover{background:#ffffff1f;border-color:var(--rf-bronze)}
-body.ui-refonte main.layout .map-panel>.mapbar button.on{background:#AA81468c;border-color:#d1a96a;color:var(--rf-ivoire)}
+body.ui-refonte main.layout .map-panel>.mapbar button.on{background:linear-gradient(#b88d50,#8f6a35);border-color:#e0bb7c;color:var(--rf-ivoire);box-shadow:0 0 0 1px #19191799,inset 0 1px 0 #ffffff40}
 
-/* ---------- Barre d'action : un socle sombre bordé de bronze fin (socle-sombre.webp, en neuf zones, coins réduits) ---------- */
-body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{border:12px solid transparent;border-image:url(img/ui/socle-sombre.webp) 40 fill/12px stretch;
- border-radius:0;background:transparent;box-shadow:0 10px 26px #00000099;padding:4px 12px}
+/* ---------- Barre d'action : le cadre sombre commun (cadre-sombre.webp, en neuf zones) ---------- */
+body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{border:11px solid transparent;border-image:var(--rf-cadre-sombre);
+ border-radius:0;background:transparent;box-shadow:0 10px 26px #00000080;padding:6px 14px}
 body.ui-refonte main.layout .barre-actions .barre-sep{background:#AA814673}
 
-/* ---------- Journal : des lignes éditoriales, le ton en filet à gauche, les valeurs en avant ---------- */
+/* ---------- Journal : une surface de lecture claire et presque unie dans le cadre, des lignes éditoriales, le ton en filet à gauche ---------- */
+body.ui-refonte main.layout #journal{background:#FBF8F1;border:1px solid var(--line);border-radius:var(--rf-rayon);box-shadow:inset 0 1px 3px #3028201a}
+body.ui-refonte main.layout #journal>li{font:13.5px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--rf-encre)}
 body.ui-refonte main.layout #journal li.j-entry.ton,body.ui-refonte main.layout #journal li.j-chat{background:transparent;border:0;border-left:2px solid var(--ton,var(--rf-filet));
  border-bottom:1px solid #AA81461f;border-radius:0;padding:3px 8px;margin:0}
 body.ui-refonte main.layout #journal li.j-chat{border-left-color:var(--rf-bleu)}
@@ -95,9 +130,10 @@ body.ui-refonte main.layout #journal li.j-entry:not(.ton):not(.j-chat):not(.j-tu
 body.ui-refonte main.layout #journal .j-num,body.ui-refonte main.layout #journal .j-degats{font-weight:800}
 body.ui-refonte main.layout #journal .j-turn{color:var(--rf-bronze);font:700 11px 'Killam',Georgia,serif;letter-spacing:2px;margin:8px 0 4px}
 body.ui-refonte main.layout #journal .j-turn::before,body.ui-refonte main.layout #journal .j-turn::after{background:var(--rf-filet)}
-body.ui-refonte main.layout .journal-filtres button{border-radius:var(--rf-rayon);border-color:var(--rf-filet);background:var(--rf-ivoire)}
-body.ui-refonte main.layout .journal-chat input{border-radius:var(--rf-rayon);border-color:var(--rf-filet);background:var(--rf-ivoire);box-shadow:inset 0 1px 3px #1919171f}
-body.ui-refonte main.layout .journal-chat button{border-radius:var(--rf-rayon);border-color:var(--rf-filet)}
+body.ui-refonte main.layout .journal-filtres button{border-radius:var(--rf-rayon);border:1px solid var(--line-strong);background:var(--btn);box-shadow:var(--rf-relief)}
+body.ui-refonte main.layout .journal-filtres button:hover,body.ui-refonte main.layout .journal-filtres button.on{background:var(--hover);border-color:var(--rf-brun)}
+body.ui-refonte main.layout .journal-chat input{border-radius:var(--rf-rayon);border-color:var(--line-strong);background:var(--field);box-shadow:inset 0 1px 3px #1919171f}
+body.ui-refonte main.layout .journal-chat button{border-radius:var(--rf-rayon);border-color:var(--line-strong);background:var(--btn)}
 @media(prefers-reduced-motion:reduce){body.ui-refonte *{transition:none!important}}
 /* Le journal en transparence (Paramètres) l'emporte sur le cadre de parchemin : son fond sombre translucide, la carte derrière. */
 body.ui-refonte.journal-translucide main.layout>.stack>.panel.journal-panel{border:1px solid #ffffff1f;border-image:none;background:#0c0a08a6;box-shadow:none}
