@@ -5027,3 +5027,35 @@ body.journal-translucide #journal .j-degats,body.journal-translucide #journal .j
 body.journal-translucide #journal .j-num.j-tresor{color:#e0c060}body.journal-translucide #journal .j-num.j-pv{color:#8ac96e}
 body.journal-translucide #journal .j-num.j-ok,body.journal-translucide #journal .j-comp .j-reussite.j-ok{color:#7fd38c}
 body.journal-translucide .journal-panel .journal-chat input{background:var(--field);color:var(--ink);border-color:var(--line)}
+/* v1.425 — Combattants en tokens : trois par ligne, Aventuriers puis Adversaires. L'anneau du portrait se vide avec les PV
+   (vert la troupe, rouge les adversaires) ; le nom et les PV au survol ; la DEF et le numéro en petit sur le bord, les pastilles en haut. */
+#actors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 4px;align-content:start}
+#actors>:is(.groupe-combattants,details.groupe-replie){grid-column:1/-1}
+#actors details.groupe-replie[open]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 4px}
+#actors details.groupe-replie>summary{grid-column:1/-1}
+#actors .actor{--anneau:var(--green);display:grid;place-items:center;min-width:0;margin:0;padding:7px 2px 5px;border-radius:10px}
+#actors .actor.enemy{--anneau:var(--red-mat)}
+#actors .actor .vignette{display:block;transform:none;padding:4px;border-radius:50%;line-height:0;
+ background:conic-gradient(var(--anneau) calc(var(--pv,0) * 1%),color-mix(in srgb,var(--ink) 22%,transparent) 0)}
+#actors .actor .vignette .avatar{transform:none;width:48px;height:48px;overflow:hidden;background:var(--panel);font-size:22px;line-height:1}
+#actors .actor .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+#actors .actor .actor-body{height:0;flex:none}
+#actors .actor :is(.actor-nom strong,.lifebar,.voile-note){display:none}
+#actors .actor .num{position:absolute;left:3px;bottom:3px}
+#actors .actor .vie-ligne .ecu{position:absolute;right:1px;bottom:1px;transform:scale(.85);transform-origin:right bottom}
+#actors .actor .pastilles{right:4px;top:4px}
+/* Le combattant sélectionné en gros token à gauche de la barre d'action ; sa barre de PV et ses états au-dessus des actions. */
+.map-panel>.barre-actions>.portrait-actif{display:flex;align-items:center;gap:10px;width:100%;min-width:260px}
+.portrait-actif .pa-pv{flex:1;min-width:0}
+.portrait-actif .pa-pv .lifebar{margin:0;height:22px}
+.portrait-actif .pa-pv .lifebar-text{font:700 13px/1 system-ui}
+.portrait-actif .pa-etats:empty{display:none}
+.portrait-actif .pa-etats .etats{position:static;display:flex;gap:4px;transform:none}
+.portrait-actif .pa-etats .etat{position:relative;display:grid;place-items:center;width:28px;height:28px}
+.portrait-actif .pa-etats .etat :is(img,svg){width:100%;height:100%;object-fit:contain}
+.portrait-actif .pa-token{position:absolute;right:calc(100% + 10px);bottom:0;width:108px;height:108px;display:grid;place-items:center;overflow:hidden;border-radius:50%;
+ border:5px solid var(--teinte,var(--green));background:var(--panel);box-shadow:0 0 0 2px var(--line-strong),0 4px 14px color-mix(in srgb,var(--ink) 50%,transparent);
+ font:700 50px/1 'Killam',Georgia,serif;color:var(--teinte,var(--green));pointer-events:none}
+.portrait-actif .pa-token.enemy{border-color:var(--red-mat);color:var(--red-mat)}
+.portrait-actif .pa-token img{width:100%;height:100%;object-fit:cover}
+@media(max-width:700px){.portrait-actif .pa-token{position:static;width:56px;height:56px;font-size:26px;border-width:3px}}

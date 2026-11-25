@@ -261,3 +261,7 @@ body.ui-refonte #heroes-page #hero-grid :is(.hero-aventure,.vignette-talents-lib
 body.ui-refonte #heroes-page #hero-grid :is(.hero-aventure,.vignette-talents-libres input):checked{background-image:url(img/ui/case-cochee.webp)}
 body.ui-refonte #heroes-page #hero-grid :is(.hero-aventure,.vignette-talents-libres input):focus-visible{outline:2px solid var(--rf-bleu);outline-offset:2px}
 body.ui-refonte #heroes-page #hero-grid label.vignette-talents-libres{font:600 14px 'Killam',Georgia,serif;color:var(--rf-encre)}
+/* v1.425 — Combattants en tokens : plus de filet de camp à gauche (l'anneau le dit) ; la sélection en liseré bronze. Le gros token cerclé de bronze. */
+body.ui-refonte main.layout #actors .actor,body.ui-refonte main.layout #actors .actor.enemy{box-shadow:none}
+body.ui-refonte main.layout #actors .actor.selected{box-shadow:0 0 0 2px var(--rf-bronze)}
+body.ui-refonte .portrait-actif .pa-token{box-shadow:0 0 0 2px #191917,0 0 0 4px var(--rf-bronze),0 6px 16px #000000a6}

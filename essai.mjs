@@ -298,6 +298,10 @@ try{
  {const r=await p.evaluate(()=>{showPage('heroes');const P=document.querySelector('#heroes-page>.panel'),c=document.querySelector('#hero-grid .hero-vignette'),lit=()=>[getComputedStyle(P).borderImageSource.includes('page-cadre'),!!c&&getComputedStyle(c).borderImageSource.includes('page-cadre')];
    const on=lit();document.getElementById('habillage-switch').click();const off=lit();document.getElementById('habillage-switch').click();showPage('table');return {on,off}});
   dit(r.on.every(Boolean)&&!r.off.some(Boolean),'page Aventuriers : cadre bronze et cartes de la maquette ; le réglage les enlève',JSON.stringify(r))}
+ {const r=await p.evaluate(()=>{showPage('table');const h=actors.find(x=>x.hero),k=actors.indexOf(h),avant=h.hp;h.hp=Math.max(1,Math.round(h.max/2));pick(k);render();
+   const ligne=document.querySelector('#actors .actor[data-index="'+k+'"]'),pa=document.querySelector('.map-panel>.barre-actions>.portrait-actif');
+   const v={pv:ligne&&Math.round(+ligne.style.getPropertyValue('--pv')),attendu:Math.round(ratio(h)),token:!!(pa&&pa.querySelector('.pa-token')),barre:!!(pa&&pa.querySelector('.lifebar'))};h.hp=avant;render();return v});
+  dit(r.pv===r.attendu&&r.token&&r.barre,'combattants en tokens : l’anneau suit les PV ; le sélectionné en gros token près de la barre d’action',JSON.stringify(r))}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
