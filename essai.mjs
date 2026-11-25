@@ -316,6 +316,21 @@ try{
   dit(Math.abs(r.r1[0]-r.r2[0])<=1&&Math.abs(r.r1[1]-r.r2[1])<=1&&r.bas>=9,'barre d’action : les deux rangées commencent et finissent au même endroit, de la marge sous la seconde',JSON.stringify(r));
   dit(r.gauche&&r.droite,'journal : la troupe en vignette à flèche gauche, un adversaire à flèche droite',JSON.stringify(r));
   dit(r.titre&&r.haut===260&&r.rendu!==260,'barre de carte sans le nom du lieu ; hauteur du journal réglable',JSON.stringify(r))}
+ // v1.435 : barre grise d'un adversaire standard, jetons et taille du texte du journal, boîtes et barre d'action redimensionnables et déplaçables.
+ {const r=await p.evaluate(()=>{showPage('table');const h=actors.find(x=>x.hero),e=actors.find(x=>!x.hero&&alive(x)&&(x.type||'standard')==='standard'),B=document.querySelector('.map-panel>.barre-actions'),L=document.querySelector('main.layout'),v={};
+   if(e){pick(actors.indexOf(e));render();v.gris=B.classList.contains('type-standard')&&getComputedStyle(B,'::before').borderImageSource.includes('kit-barre-action-gris')}else v.gris=true;
+   pick(actors.indexOf(h));render();v.beige=!B.classList.contains('type-standard');
+   log(h.name+' fouille.',{ton:'carte',toujours:true});const li=document.getElementById('journal').lastElementChild,n=li.querySelector('.j-name');
+   v.jeton=!!n&&n.dataset.qui===String(h.id)&&n.title.includes(h.name)&&n.getBoundingClientRect().width<40&&n.textContent===nomNum(h);
+   const z0=getComputedStyle(li).zoom,bt=document.querySelectorAll('.journal-taille button');bt[1].click();v.grand=parseFloat(getComputedStyle(li).zoom)>parseFloat(z0);bt[0].click();v.rendu=getComputedStyle(li).zoom===z0;li.remove();
+   const P=document.getElementById('pv-panel')||document.querySelector('main.layout>.stack.left>.panel'),k=P.dataset.fenetre,f0=lisFenetres();v.coin=!!P.querySelector(':scope>.poignee-coin')&&!!B.querySelector(':scope>.poignee-coin');
+   gardeFenetres({...f0,[k]:{x:300,y:200,w:333,h:222}});placeTablePleine();const q=P.getBoundingClientRect(),lr=L.getBoundingClientRect();v.boite=P.classList.contains('flottante')&&Math.round(q.width)===333&&Math.round(q.height)===222&&Math.round(q.left-lr.left)===300;
+   gardeFenetres(f0);placeTablePleine();v.rangee=!P.classList.contains('flottante');
+   const t0=lisTailles(),b0=B.getBoundingClientRect();gardeTailles({...t0,bx:-80,by:-120,be:.8});mesureZoneLibre(B.parentElement);const b1=B.getBoundingClientRect();
+   v.barre=Math.abs(b1.width-790*.8)<2&&b1.bottom<b0.bottom-100;gardeTailles(t0);mesureZoneLibre(B.parentElement);const b2=B.getBoundingClientRect();v.remise=Math.abs(b2.left-b0.left)<2&&Math.abs(b2.width-b0.width)<2;return v});
+  dit(r.gris&&r.beige,'barre d’action d’un adversaire standard : le modèle gris',JSON.stringify(r));
+  dit(r.jeton&&r.grand&&r.rendu,'journal : le combattant en jeton, son nom au survol ; la taille du texte se règle',JSON.stringify(r));
+  dit(r.coin&&r.boite&&r.rangee&&r.barre&&r.remise,'mode ⇔ : boîtes et barre d’action redimensionnables et déplaçables, places gardées',JSON.stringify(r))}
  // v1.427 : une seule famille de boîtes — toute image de l'habillage vient du kit (ou est le casque), et chaque fichier cité existe.
  {const r=await p.evaluate(async()=>{const css=await (await fetch('./refonte.css')).text(),urls=[...new Set([...css.matchAll(/url\(([^)]+)\)/g)].map(m=>m[1]))];
    const hors=urls.filter(u=>!/img\/ui\/(kit-[a-z-]+|casque)\.webp$/.test(u)),manque=[];for(const u of urls){const q=await fetch('./'+u,{method:'HEAD'});if(!q.ok)manque.push(u)}

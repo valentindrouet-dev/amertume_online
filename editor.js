@@ -8979,7 +8979,7 @@ const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-r
     des panneaux, fiches et lieux repliés, carte éditée, tri des aventuriers, plis de la forge, thème, vue, onglet ouvert, table en ligne. */
  'amertume-zooms','amertume-tailles','amertume-fenetres','amertume-colonnes','amertume-heros-replies','amertume-lieux-replies','amertume-carte-editee',
  'amertume-tri-heros','amertume-forge-plis','amertume-theme','amertume-vue','amertume-page','amertume-table','amertume-indice-perf'];
-REGLAGES_APPAREIL.push('amertume-journal-translucide','amertume-habillage');
+REGLAGES_APPAREIL.push('amertume-journal-translucide','amertume-habillage','amertume-journal-taille');
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},
@@ -10492,6 +10492,11 @@ const BOUTONS_JOURNAL=[['session','🆕','Nouvelle session','journal-session'],[
   const boite=document.createElement('div');boite.className='journal-filtres';boite.id='journal-filtres';
   const liste=document.createElement('div');liste.className='journal-filtres-liste';liste.id='journal-filtres-liste';liste.hidden=true;liste.setAttribute('role','group');liste.setAttribute('aria-label','Filtres');
   liste.innerHTML='<p class="journal-filtres-titre">Filtres</p>'+CATEGORIES_JOURNAL.map(([k,n])=>'<label><input type="checkbox" data-cat="'+k+'">'+esc(n)+'</label>').join('');
+  // v1.435 : sous les filtres, deux boutons règlent la taille du texte du journal, et de ses vignettes avec lui ; réglage de l'appareil.
+  {const CT='amertume-journal-taille',lit=()=>{let v=1;try{v=parseFloat(localStorage.getItem(CT))}catch(e){}return v>=.7&&v<=1.6?v:1},applique=()=>j.style.setProperty('--j-taille',String(lit()));
+   const t=document.createElement('div');t.className='journal-taille';
+   [['A−',-.1,'Réduire le texte'],['A+',.1,'Agrandir le texte']].forEach(([txt,d,nom])=>{const b=document.createElement('button');b.type='button';b.textContent=txt;b.setAttribute('aria-label',nom);
+    b.onclick=()=>{try{localStorage.setItem(CT,String(Math.round(Math.max(.7,Math.min(1.6,lit()+d))*10)/10))}catch(e){}applique();j.scrollTop=j.scrollHeight};t.append(b)});liste.append(t);applique()}
   let masques=[];try{const v=JSON.parse(localStorage.getItem(CLE)||'[]');if(Array.isArray(v))masques=v.filter(k=>CATEGORIES_JOURNAL.some(([x])=>x===k))}catch(e){}
   const bouton=()=>boite.querySelector('button[data-filtre="tout"]');
   // Chaque ligne reçoit sa catégorie à son arrivée — écrite ici, reçue de la table ou rejouée au chargement ; et, au plus tard, quand le filtre change.

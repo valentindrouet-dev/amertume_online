@@ -147,7 +147,7 @@ body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px
  body.ui-refonte.carte-pleine main.layout>.stack.left>.panel:has(#actors)>*{flex:none}
  body.ui-refonte.carte-pleine main.layout>.stack.left>.panel:has(#actors) #actors{flex:0 1 auto;min-height:0;overflow-y:auto;padding:2px}
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{box-sizing:border-box;display:flex;flex-flow:row wrap;align-content:flex-start;align-items:flex-start;justify-content:space-between;gap:3.5px 4px;
-  left:calc((100% - 790px) / 2);right:auto;margin:0;width:790px;min-width:0;max-width:none;height:192px;transform:scale(var(--ech,1));transform-origin:50% 100%;
+  left:calc((100% - 790px) / 2);right:auto;margin:0;width:790px;min-width:0;max-width:none;height:192px;translate:var(--barre-dx,0px) var(--barre-dy,0px);transform:scale(var(--ech,1));transform-origin:50% 100%;
   padding:104px 246px 0 184px;border:0;border-image:none;border-radius:0;background:none;
   box-shadow:none;filter:drop-shadow(0 8px 12px #00000080);color:var(--rf-encre);overflow:visible}
  /* Le dessin de la barre est posé par-dessus le portrait (qui passe dessous, z-index -1) et sous tout le reste : le portrait remplit le médaillon. */
@@ -156,6 +156,14 @@ body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions.adverse{width:calc(218px + var(--l,230px));left:calc((100% - 218px - var(--l,230px)) / 2);padding-right:34px;justify-content:flex-start;gap:3.5px 10px}
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions.adverse::before{border:0 solid transparent;border-image:url(img/ui/kit-barre-action.webp) 229 131 229 429 fill/96px 55px 96px 180px stretch;
   background:linear-gradient(#E9D7BC,#E9D7BC) 170px 46px/calc(100% - 200px) 140px no-repeat}
+ /* v1.435 — Un adversaire standard : la même barre, en gris (kit-barre-action-gris, kit-jauge-gris, kit-rond-gris). */
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions.adverse.type-standard::before{border-image-source:url(img/ui/kit-barre-action-gris.webp);border-image-slice:150 85 150 280 fill;background-image:linear-gradient(#DADADA,#DADADA)}
+ body.ui-refonte .barre-actions.type-standard .portrait-actif :is(.pa-pv,.pa-pilule){border-image-source:url(img/ui/kit-jauge-gris.webp);border-image-slice:26 fill}
+ body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-pilule .pt::before,body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-etats .etat{background-image:url(img/ui/kit-rond-gris.webp)}
+ body.ui-refonte .barre-actions.type-standard .portrait-actif .pa-token.enemy{background:color-mix(in srgb,var(--rf-rouge) 16%,#E2E2E2)}
+ /* En mode ⇔, son coin : sur le bout droit de la barre. */
+ body.ui-refonte.redim main.layout .map-panel>.attack-card.barre-actions{cursor:grab}
+ body.ui-refonte.redim main.layout .map-panel>.attack-card.barre-actions>.poignee-coin{right:26px;bottom:8px;width:22px;height:22px;z-index:3}
  /* Elle se cache toujours quand elle n'a rien à offrir, ou quand ce sont les actions d'un autre. */
  body.ui-refonte.actions-autrui main.layout .map-panel>.attack-card.barre-actions,
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions:not(:has(button:not([hidden]))){display:none}
@@ -170,12 +178,12 @@ body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px
  body.ui-refonte main.layout .barre-actions #attack-choices>button:not([data-genre=bonus]),body.ui-refonte main.layout .barre-actions>.emplacement.r1{order:1}
  body.ui-refonte main.layout .barre-actions .barre-sep{display:none}
  /* Une place libre : le support beige, estompé. */
- body.ui-refonte main.layout .barre-actions>.emplacement{display:block;flex:none;width:var(--b2,27px);height:var(--b2,27px);background:url(img/ui/kit-btn-autre.webp) center/100% 100% no-repeat;opacity:.5}
- body.ui-refonte main.layout .barre-actions>.emplacement.r1{width:var(--b1,42px);height:var(--b1,42px)}
+ body.ui-refonte main.layout .barre-actions>.emplacement{display:block;flex:none;width:var(--b2,31px);height:var(--b2,31px);background:url(img/ui/kit-btn-autre.webp) center/100% 100% no-repeat;opacity:.5}
+ body.ui-refonte main.layout .barre-actions>.emplacement.r1{width:var(--b1,38px);height:var(--b1,38px)}
  /* Un bouton : son support carré, tel que dessiné (l'arrondi du bouton reste en deçà du sien, pour ne pas le rogner), l'icône au centre. */
- body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond{--t:var(--b2,27px);flex:none;width:var(--t);height:var(--t);margin:0;padding:0;border:0;border-radius:11%;
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond{--t:var(--b2,31px);flex:none;width:var(--t);height:var(--t);margin:0;padding:0;border:0;border-radius:11%;
   background:url(img/ui/kit-btn-autre.webp) center/100% 100% no-repeat;box-shadow:none;font-size:calc(var(--t)*.46);color:#3a2e22}
- body.ui-refonte main.layout .map-panel .barre-actions #attack-choices>button.btn-action.rond.rond:not([data-genre=bonus]){--t:var(--b1,42px)}
+ body.ui-refonte main.layout .map-panel .barre-actions #attack-choices>button.btn-action.rond.rond:not([data-genre=bonus]){--t:var(--b1,38px)}
  body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=action]{background-image:url(img/ui/kit-btn-action.webp)}
  body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=maitrise]{background-image:url(img/ui/kit-btn-maitrise.webp)}
  body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=mouvement]{background-image:url(img/ui/kit-btn-mouvement.webp)}
@@ -219,18 +227,18 @@ body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px
    losange rouge, butin, compétence et analyse en or, le reste en simple. Le cadre s'étire en neuf zones ; la flèche, posée au milieu du bord, ne se déforme pas. ---------- */
 body.ui-refonte main.layout #journal{border:1px solid transparent;border-image:var(--k-champ);border-radius:10px;background:none;box-shadow:none}
 body.ui-refonte main.layout #journal>li.j-entry{--v:url(img/ui/kit-j-simple.webp);--v-g:url(img/ui/kit-j-simple-g.webp);--v-d:url(img/ui/kit-j-simple-d.webp);
- position:relative;flex:none;box-sizing:border-box;min-height:40px;margin:5px 14px;padding:8px 14px;border:1px solid transparent;border-image:url(img/ui/kit-j-annonce.webp) 60 fill/20px stretch;border-radius:0;background:none;
+ position:relative;flex:none;box-sizing:border-box;min-height:40px;margin:2px 14px;padding:8px 14px;border:1px solid transparent;border-image:url(img/ui/kit-j-annonce.webp) 60 fill/20px stretch;border-radius:0;background:none;
  font:13.5px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--rf-encre)}
 body.ui-refonte main.layout #journal>li.j-entry:is(.ton-soin){--v:url(img/ui/kit-j-vert.webp);--v-g:url(img/ui/kit-j-vert-g.webp);--v-d:url(img/ui/kit-j-vert-d.webp)}
 body.ui-refonte main.layout #journal>li.j-entry:is(.ton-talent,.ton-etat){--v:url(img/ui/kit-j-mauve.webp);--v-g:url(img/ui/kit-j-mauve-g.webp);--v-d:url(img/ui/kit-j-mauve-d.webp)}
 body.ui-refonte main.layout #journal>li.j-entry:is(.ton-attaque,.ton-degats){--v:url(img/ui/kit-j-gris.webp);--v-g:url(img/ui/kit-j-gris-g.webp);--v-d:url(img/ui/kit-j-gris-d.webp)}
 body.ui-refonte main.layout #journal>li.j-entry:is(.ton-butin,.ton-competence,.ton-reveal){--v:url(img/ui/kit-j-or.webp);--v-g:url(img/ui/kit-j-or-g.webp);--v-d:url(img/ui/kit-j-or-d.webp)}
 /* À gauche : une parole de joueur, ou une ligne qui commence par le nom de quelqu'un de la troupe. */
-body.ui-refonte main.layout #journal>li.j-entry:is(.j-chat,:has(>.j-name:first-child)){margin:5px 26px 5px 16px;padding:8px 14px 8px 46px;border-image:var(--v) 40 fill/16px stretch}
+body.ui-refonte main.layout #journal>li.j-entry:is(.j-chat,:has(>.j-name:first-child)){margin:2px 26px 2px 16px;padding:8px 14px 8px 46px;border-image:var(--v) 40 fill/16px stretch}
 body.ui-refonte main.layout #journal>li.j-entry:is(.j-chat,:has(>.j-name:first-child))::before{content:'';position:absolute;left:-14.6px;top:50%;width:60px;height:38.4px;margin-top:-19.2px;background:var(--v-g) 0 0/100% 100% no-repeat;pointer-events:none;
  -webkit-mask-image:linear-gradient(90deg,#000 62%,transparent);mask-image:linear-gradient(90deg,#000 62%,transparent)}
 /* À droite : une ligne qui commence par le nom d'un adversaire. */
-body.ui-refonte main.layout #journal>li.j-entry:has(>.j-name:first-child[data-camp=adverse]){margin:5px 16px 5px 26px;padding:8px 46px 8px 14px}
+body.ui-refonte main.layout #journal>li.j-entry:has(>.j-name:first-child[data-camp=adverse]){margin:2px 16px 2px 26px;padding:8px 46px 8px 14px}
 body.ui-refonte main.layout #journal>li.j-entry:has(>.j-name:first-child[data-camp=adverse])::before{left:auto;right:-14.6px;background-image:var(--v-d);-webkit-mask-image:linear-gradient(270deg,#000 62%,transparent);mask-image:linear-gradient(270deg,#000 62%,transparent)}
 body.ui-refonte main.layout #journal>li.j-chat{align-items:center}
 body.ui-refonte main.layout #journal>li.j-chat .j-avatar{display:none}

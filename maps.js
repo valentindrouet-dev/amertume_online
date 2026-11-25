@@ -4319,10 +4319,13 @@ function mesureZoneLibre(p){const pr=p.getBoundingClientRect(),g=colonneTable('l
  let t=bar&&bar.offsetParent?bar.getBoundingClientRect().bottom-pr.top+12:12,b=pr.height-Math.max(150,act&&act.offsetHeight?act.offsetHeight+26:0);if(b-t<200){t=12;b=pr.height-12}
  /* v1.432 : la barre d'action a sa place à elle, au bas de l'écran, sur toute la largeur : --ech, son échelle — 1 dès que ses 790 px tiennent, davantage sur un grand écran (60 % de la largeur, 27 % de la hauteur, 1,5 au plus) ;
     --bas-g et --bas-d, ce dont chaque colonne s'arrête plus haut quand la barre passe sous elle (rien si elle ne l'atteint pas). */
- {const L=p.closest('main.layout')||p,ech=Math.round(Math.min((pr.width-24)/790,Math.max(1,Math.min(.6*pr.width/790,.27*pr.height/192)),1.5)*1000)/1000,bw=790*ech,bx=(pr.width-bw)/2;
-  L.style.setProperty('--ech',String(ech));
-  L.style.setProperty('--bas-g',g&&g.getBoundingClientRect().right-pr.left>bx+4?Math.round(192*ech+10)+'px':'0px');
-  L.style.setProperty('--bas-d',d&&d.getBoundingClientRect().left-pr.left<bx+bw-4?Math.round(151*ech+10)+'px':'0px')}
+ /* v1.435 : sa taille (be) et sa place (bx, by : l'écart à sa place d'origine) peuvent être celles que le MJ lui a données en mode ⇔. Une colonne ne s'arrête
+    plus haut que si la barre est au bas de l'écran et passe sous elle. */
+ {const L=p.closest('main.layout')||p,T=lisTailles(),be=Number(T.be),auto=Math.min((pr.width-24)/790,Math.max(1,Math.min(.6*pr.width/790,.27*pr.height/192)),1.5);
+  const ech=Math.round((be>=.4&&be<=2.5?be:auto)*1000)/1000,dx=Math.round(Number(T.bx)||0),dy=Math.round(Number(T.by)||0),bw=790*ech,bx=(pr.width-bw)/2+dx,haut=pr.height-14-192*ech+dy,enBas=haut>pr.height*.45;
+  L.style.setProperty('--ech',String(ech));L.style.setProperty('--barre-dx',dx+'px');L.style.setProperty('--barre-dy',dy+'px');
+  const bas=q=>Math.max(0,Math.round(pr.height-12-haut-q+8))+'px',sous=c=>{if(!c||!enBas)return false;const q=c.getBoundingClientRect();return q.right-pr.left>bx+4&&q.left-pr.left<bx+bw-4};
+  L.style.setProperty('--bas-g',sous(g)?bas(0):'0px');L.style.setProperty('--bas-d',sous(d)?bas(41*ech):'0px')}
  return {l,t,r,b}}
 {const ar=applyMapRatio;applyMapRatio=function(){const el=$('map'),avant=el?[el.style.width,el.style.height,el.style.marginLeft,el.style.marginTop].join():'';
  const change=ar.apply(this,arguments),p=el&&el.closest('.map-panel');
@@ -4349,6 +4352,7 @@ function prendFenetres(){const L=document.querySelector('main.layout');if(!L)ret
  fenetresTable().forEach(([k,p])=>{if(p.querySelector(':scope>.prise-fenetre'))return;p.dataset.fenetre=k;if(k==='journal')p.classList.add('panneau-journal');
   const prise=document.createElement('div');prise.className='prise-fenetre';prise.setAttribute('aria-hidden','true');p.prepend(prise);
   const estPrise=e=>{if(!cartePleine()||e.target.closest('button,input,select,textarea,a,label,summary,[draggable="true"]'))return false;
+   if(document.body.classList.contains('redim'))return true;   // v1.435 : en mode ⇔, on prend la boîte par n'importe où
    const h=e.target.closest('.prise-fenetre,h2,.eyebrow');return !!h&&(h.parentElement===p||h.parentElement.parentElement===p)};
   p.addEventListener('pointerdown',e=>{if(!cartePleine())return;
    const devant=()=>{p.style.zIndex=String(++fenetreDevant);const c=p.parentElement;L.querySelectorAll(':scope>.stack.left,:scope>.stack.right').forEach(s=>s.style.zIndex=s===c?'6':'')};
@@ -4360,7 +4364,11 @@ function prendFenetres(){const L=document.querySelector('main.layout');if(!L)ret
      place.style.height=Math.round(pr.height)+'px';if(estRangee(p))p.before(place);
      const r=L.getBoundingClientRect();poseFenetre(p,{x:pr.left-r.left,y:pr.top-r.top,w:pr.width,h:k==='journal'?pr.height:0},L);p.classList.add('tenue');devant()}
     if(prevu)return;prevu=requestAnimationFrame(()=>{prevu=0;const r=L.getBoundingClientRect(),c=p.parentElement.getBoundingClientRect();
-     const x=Math.max(0,Math.min(r.width-60,pr.left-r.left+dernier.clientX-x0)),y=Math.max(0,Math.min(r.height-40,pr.top-r.top+dernier.clientY-y0));
+     let x=Math.max(0,Math.min(r.width-60,pr.left-r.left+dernier.clientX-x0)),y=Math.max(0,Math.min(r.height-40,pr.top-r.top+dernier.clientY-y0));
+     // v1.435 : l'aimant — à 10 px d'un bord de la Table ou d'une autre boîte, elle s'y colle (au même écart de 12 px que dans une colonne), ou s'aligne sur elle.
+     {const w=p.offsetWidth,h=p.offsetHeight,E=12,autres=fenetresTable().map(([,o])=>o).filter(o=>o!==p&&o.offsetParent).map(o=>{const q=o.getBoundingClientRect();return {l:q.left-r.left,t:q.top-r.top,r:q.right-r.left,b:q.bottom-r.top}});
+      const pres=(v,l)=>{let m=11,c=v;l.forEach(q=>{const d=Math.abs(q-v);if(d<m){m=d;c=q}});return c};
+      x=pres(x,[E,r.width-E-w,...autres.flatMap(o=>[o.l,o.r-w,o.r+E,o.l-E-w])]);y=pres(y,[E,r.height-E-h,...autres.flatMap(o=>[o.b+E,o.t-E-h,o.t,o.b-h])])}
      p.style.left=Math.round(r.left+x-c.left)+'px';p.style.top=Math.round(r.top+y-c.top)+'px';
      // La colonne sous le pointeur : la place s'ouvre avant le premier panneau rangé dont le milieu est plus bas que lui.
      const col=['left','right'].map(colonneTable).find(s=>{if(!s)return false;const q=s.getBoundingClientRect();return dernier.clientX>=q.left-24&&dernier.clientX<=q.right+24});
@@ -4371,11 +4379,39 @@ function prendFenetres(){const L=document.querySelector('main.layout');if(!L)ret
    const fin=()=>{removeEventListener('pointermove',bouge);removeEventListener('pointerup',fin);removeEventListener('pointercancel',fin);
     if(prevu){cancelAnimationFrame(prevu);prevu=0}if(!parti)return;p.classList.remove('tenue');const t=lisFenetres();
     if(place.parentElement){place.replaceWith(p);rendFenetre(p);delete t[k]}
-    else{const r=L.getBoundingClientRect(),q=p.getBoundingClientRect();t[k]={x:Math.round(q.left-r.left),y:Math.round(q.top-r.top),w:Math.round(q.width),...(k==='journal'?{h:Math.round(q.height)}:{})}}
+    else{const r=L.getBoundingClientRect(),q=p.getBoundingClientRect();t[k]={x:Math.round(q.left-r.left),y:Math.round(q.top-r.top),w:Math.round(q.width),...(k==='journal'||(t[k]&&t[k].h)?{h:Math.round(q.height)}:{})}}
     gardeFenetres(t);gardeColonnes(ordreColonnes());calerColonnes()};
    addEventListener('pointermove',bouge);addEventListener('pointerup',fin);addEventListener('pointercancel',fin)});
-  p.addEventListener('dblclick',e=>{if(!estPrise(e)||!p.classList.contains('flottante'))return;const t=lisFenetres();delete t[k];gardeFenetres(t);rendFenetre(p)})})}
+  p.addEventListener('dblclick',e=>{if(e.target.closest('.poignee-coin')||!estPrise(e)||!p.classList.contains('flottante'))return;const t=lisFenetres();delete t[k];gardeFenetres(t);rendFenetre(p)});
+  /* v1.435 — En mode ⇔, le coin inférieur droit d'une boîte la redimensionne : rangée dans une colonne, elle s'en détache là où elle est ; sa largeur
+     et sa hauteur sont gardées avec sa place. Double clic sur le coin : elle retrouve sa hauteur d'elle-même. */
+  const coin=document.createElement('div');coin.className='poignee-taille poignee-coin';coin.setAttribute('aria-hidden','true');p.append(coin);
+  coin.addEventListener('pointerdown',e=>{if(e.button!==0||!cartePleine())return;e.preventDefault();e.stopPropagation();
+   const r=L.getBoundingClientRect(),q=p.getBoundingClientRect(),x0=e.clientX,y0=e.clientY;try{coin.setPointerCapture(e.pointerId)}catch(err){}
+   if(estRangee(p)){poseFenetre(p,{x:q.left-r.left,y:q.top-r.top,w:q.width,h:q.height},L);calerColonnes()}
+   const bouge=ev=>{p.style.width=Math.round(Math.max(150,Math.min(r.right-q.left-4,q.width+ev.clientX-x0)))+'px';p.style.height=Math.round(Math.max(70,Math.min(r.bottom-q.top-4,q.height+ev.clientY-y0)))+'px'};
+   const fin=()=>{coin.removeEventListener('pointermove',bouge);coin.removeEventListener('pointerup',fin);coin.removeEventListener('pointercancel',fin);
+    const t=lisFenetres(),z=p.getBoundingClientRect();t[k]={x:Math.round(z.left-r.left),y:Math.round(z.top-r.top),w:Math.round(z.width),h:Math.round(z.height)};gardeFenetres(t);gardeColonnes(ordreColonnes());calerColonnes();rendTailles()};
+   coin.addEventListener('pointermove',bouge);coin.addEventListener('pointerup',fin);coin.addEventListener('pointercancel',fin)});
+  coin.addEventListener('dblclick',e=>{e.stopPropagation();const t=lisFenetres();if(t[k]){delete t[k].h;gardeFenetres(t)}placeTablePleine()})})}
 prendFenetres();placeTablePleine();
+/* v1.435 — En mode ⇔, la barre d'action se déplace (on la tire, où qu'on la prenne) et se redimensionne par son coin inférieur droit ; sa place et sa taille
+   sont gardées sur l'appareil avec celles des panneaux. Double clic sur le coin : elle revient au bas de l'écran, à sa taille d'elle-même. */
+{const B=document.querySelector('.map-panel>.barre-actions');if(B){const coin=document.createElement('div');coin.className='poignee-taille poignee-coin';coin.setAttribute('aria-hidden','true');B.append(coin);
+  let glisse=false;const pose=()=>{mesureZoneLibre(B.parentElement)};
+  B.addEventListener('pointerdown',e=>{if(e.button!==0||!document.body.classList.contains('redim')||!cartePleine())return;
+   const surCoin=e.target===coin,T0=lisTailles(),r=B.getBoundingClientRect(),P=B.parentElement.getBoundingClientRect(),x0=e.clientX,y0=e.clientY;
+   const ech0=parseFloat(getComputedStyle(B).getPropertyValue('--ech'))||1,dx0=Number(T0.bx)||0,dy0=Number(T0.by)||0;let parti=false;
+   const bouge=ev=>{if(!parti){if(Math.hypot(ev.clientX-x0,ev.clientY-y0)<4)return;parti=true;glisse=true;try{B.setPointerCapture(e.pointerId)}catch(err){}}
+    const t=lisTailles();
+    if(surCoin)t.be=Math.round(Math.max(.4,Math.min(2.5,ech0*(r.width/2+ev.clientX-x0)/(r.width/2)))*1000)/1000;
+    else{t.bx=Math.round(Math.max(-P.width/2,Math.min(P.width/2,dx0+ev.clientX-x0)));t.by=Math.round(Math.max(-(P.height-140),Math.min(60,dy0+ev.clientY-y0)))}
+    gardeTailles(t);pose()};
+   const fin=()=>{removeEventListener('pointermove',bouge);removeEventListener('pointerup',fin);removeEventListener('pointercancel',fin);if(parti){rendTailles();setTimeout(()=>{glisse=false},0)}};
+   addEventListener('pointermove',bouge);addEventListener('pointerup',fin);addEventListener('pointercancel',fin)});
+  // Le clic qui finit un déplacement n'est pas un clic sur un bouton de la barre.
+  B.addEventListener('click',e=>{if(glisse){glisse=false;e.stopPropagation();e.preventDefault()}},true);
+  coin.addEventListener('dblclick',e=>{e.stopPropagation();const t=lisTailles();delete t.bx;delete t.by;delete t.be;gardeTailles(t);pose();rendTailles()})}}
 addEventListener('resize',placeTablePleine);
 if(typeof ResizeObserver==='function'){const h=document.querySelector('header');if(h)new ResizeObserver(()=>placeTablePleine()).observe(h)}
 /* v1.134 — Tab ⇥, la touche au-dessus du verrouillage des majuscules, cache l'interface de la Table en plein écran : les panneaux
