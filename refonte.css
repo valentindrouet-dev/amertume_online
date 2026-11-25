@@ -138,3 +138,55 @@ body.ui-refonte main.layout .journal-chat button{border-radius:var(--rf-rayon);b
 /* Le journal en transparence (Paramètres) l'emporte sur le cadre de parchemin : son fond sombre translucide, la carte derrière. */
 body.ui-refonte.journal-translucide main.layout>.stack>.panel.journal-panel{border:1px solid #ffffff1f;border-image:none;background:#0c0a08a6;box-shadow:none}
 body.ui-refonte.journal-translucide main.layout #journal li.j-entry:not(.ton):not(.j-chat):not(.j-turn){color:#a4b1b5}
+
+/* ---------- v1.422 — Phase 3 : la fiche Aventurier (#arbres), ses six onglets. Même habillage, palette resserrée :
+   ivoire F5F0E5, parchemin E9DEC8, sable D8CBB2, bronze A58A5D, brun 514333, charbon 29251F, vert 608354, or C79A3B.
+   Trois surfaces : l'intérieur ivoire uni (le cadre garde son bord, plus de parchemin étiré), les panneaux parchemin, les cartes ivoire. ---------- */
+body.ui-refonte #arbres.fiche-aventurier{--f-ivoire:#F5F0E5;--f-parchemin:#E9DEC8;--f-sable:#D8CBB2;--f-bronze:#A58A5D;--f-brun:#514333;--f-charbon:#29251F;--f-vert:#608354;--f-or:#C79A3B;
+ --panel:var(--f-ivoire);--panel-2:var(--f-parchemin);--line:var(--f-sable);--line-strong:var(--f-bronze);--ink:var(--f-charbon);--hover:#EFE6D3;
+ border-image:url(img/ui/cadre-clair.webp) 22/11px stretch;background:var(--f-ivoire) padding-box}
+/* En-tête : un filet le sépare des onglets ; les petits outils (modifier, dupliquer, supprimer, fermer) d'une même famille. */
+body.ui-refonte #arbres.fiche-aventurier .dialog-head{padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--f-sable)}
+body.ui-refonte #arbres.fiche-aventurier .dialog-head :is(.arbres-ident-outils .ico,>button:last-child){min-width:28px;height:28px;padding:0 6px;border:1px solid var(--f-sable);background:var(--f-ivoire);color:var(--f-brun);box-shadow:var(--rf-relief)}
+body.ui-refonte #arbres.fiche-aventurier .dialog-head :is(.arbres-ident-outils .ico,>button:last-child):hover{border-color:var(--f-bronze);background:var(--hover)}
+body.ui-refonte #arbres.fiche-aventurier .dialog-head .arbres-ident-outils .ico.danger:hover{color:var(--rf-rouge);border-color:var(--rf-rouge)}
+body.ui-refonte #arbres.fiche-aventurier .dialog-head .sheet-class{max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Onglets de classeur : même hauteur, ivoire bordé au repos, la teinte de la section quand il est ouvert ; la bordure ne change pas d'épaisseur. */
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets{gap:6px;padding-bottom:0;border-bottom:1px solid var(--f-bronze)}
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet{display:flex;align-items:center;justify-content:center;box-sizing:border-box;height:40px;margin:0 0 -1px;padding:0 14px;
+ border:1px solid var(--f-sable);border-bottom-color:var(--f-bronze);border-radius:4px 4px 0 0;background:var(--f-ivoire);box-shadow:inset 0 1px 0 #ffffff80;font:600 15px/1 'Killam',Georgia,serif}
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet:hover{background:var(--hover);border-color:var(--f-bronze)}
+body.ui-refonte #arbres.fiche-aventurier .arbres-onglets .vit-onglet.actif{background:var(--teinte,var(--f-vert));border-color:color-mix(in srgb,var(--teinte,var(--f-vert)) 70%,#000);border-bottom-color:var(--teinte,var(--f-vert));color:#fff;
+ box-shadow:inset 0 1px 0 #ffffff59,0 -1px 3px #29251f33;text-shadow:0 1px 1px #0000004d}
+/* Titres : la page (Killam 24), le panneau (Killam 19), la catégorie (13, capitales espacées), tous en brun, filets fins. */
+body.ui-refonte #arbres.fiche-aventurier :is(.fiche-titre,.fiche-tete-arbre){font-size:24px;color:var(--f-brun);text-shadow:none}
+body.ui-refonte #arbres.fiche-aventurier .inv-titre{font-size:20px;color:var(--f-brun)}
+body.ui-refonte #arbres.fiche-aventurier :is(.sac-ligne-titre,.nom-place,.bourse-nom,.vie-groupe h3){font-size:12px;letter-spacing:1.4px;color:var(--f-brun)}
+body.ui-refonte #arbres.fiche-aventurier .inv-schema .nom-place{font-size:11px;letter-spacing:1px}
+body.ui-refonte #arbres.fiche-aventurier .vie-groupe h3{font-size:13px}
+/* Panneaux : parchemin, filet sable, rayon 4 — les mêmes dans tous les onglets. */
+body.ui-refonte #arbres.fiche-aventurier .hero-card.fiche-onglet{background:transparent;border:0;box-shadow:none;padding:4px 0 0}
+body.ui-refonte #arbres.fiche-aventurier :is(.hero-card.fiche-onglet :is(.cadre-chiffres,.cadre-comps,.talent-grille.a-cases),.inv-gauche,.inv-droite,.arbre-col-groupes,.arbres-detail,.especes-place,.spherier-cadre,.vie-lignes){
+ background:var(--f-parchemin);border:1px solid var(--f-sable);border-radius:4px;box-shadow:inset 0 1px 0 #ffffff66}
+/* Cartes (caractéristiques et compétences, un seul composant) : ivoire, filet sable, le nom en brun. */
+body.ui-refonte #arbres.fiche-aventurier .fiche-onglet .vignette{border:1px solid var(--f-sable);border-radius:4px;background:var(--f-ivoire);box-shadow:0 1px 0 #29251f14}
+body.ui-refonte #arbres.fiche-aventurier .fiche-onglet .vignette-texte>:is(.vignette-desc,.vignette-puces){border-top-color:var(--f-sable)}
+body.ui-refonte #arbres.fiche-aventurier .fiche-onglet :is(.vignette-desc,.vignette-puces){font-size:12px;line-height:1.4}
+/* Inventaire : emplacements vides en pointillé bronze, plein au survol ; la cible d'un glisser-déposer en vert ; les supports d'objets d'une même famille. */
+body.ui-refonte #arbres.fiche-aventurier .place>.vide{border-color:var(--f-bronze);border-radius:4px;background:#F5F0E599}
+body.ui-refonte #arbres.fiche-aventurier .place:hover>.vide{background:var(--f-ivoire);border-style:solid}
+body.ui-refonte #arbres.fiche-aventurier .place.survol>.vide{background:#6083542e;border:2px solid var(--f-vert)}
+body.ui-refonte #arbres.fiche-aventurier :is(.sac-carte,.place)>.gear-carre{border-radius:4px;box-shadow:0 1px 0 #29251f1f}
+body.ui-refonte #arbres.fiche-aventurier .sac-carte>.gear-carre:hover{outline:1px solid var(--f-bronze);outline-offset:1px}
+body.ui-refonte #arbres.fiche-aventurier .sac-ligne+.sac-ligne{border-top-color:var(--f-sable)}
+body.ui-refonte #arbres.fiche-aventurier .bourse-corps{background:var(--f-ivoire);border:1px solid var(--f-sable);border-radius:4px}
+body.ui-refonte #arbres.fiche-aventurier .bourse-ajout{border-color:var(--f-bronze);background:var(--f-ivoire)}
+body.ui-refonte #arbres.fiche-aventurier .inv-plus{border-radius:var(--rf-rayon)}
+/* Métier : l'état vide en carte. */
+body.ui-refonte #arbres.fiche-aventurier .arbres-sans-metier{padding:28px 32px;border:1px dashed var(--f-bronze);border-radius:6px;background:var(--f-parchemin);color:var(--f-brun);line-height:1.45}
+/* Statistiques : lignes alternées ivoire et sable clair, filets fins, chiffres alignés à droite. */
+body.ui-refonte #arbres.fiche-aventurier .vie-lignes>.vie-ligne{background:var(--f-ivoire);border-top-color:#D8CBB299}
+body.ui-refonte #arbres.fiche-aventurier .vie-lignes>.vie-ligne:nth-child(even){background:#EFE7D7}
+body.ui-refonte #arbres.fiche-aventurier .vie-lignes>.vie-ligne b{font-variant-numeric:tabular-nums;text-align:right}
+/* Les flèches de côté gardent leur place sans être rognées. */
+body.ui-refonte #arbres.fiche-aventurier .arbres-fleche{border-color:var(--f-bronze);background:var(--f-ivoire);border-radius:4px;box-shadow:0 2px 6px #29251f40}

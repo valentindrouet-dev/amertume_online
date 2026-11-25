@@ -292,6 +292,9 @@ try{
    openItem(0);v.push(getComputedStyle(document.getElementById('item-editor')).borderImageSource.includes('cadre-clair'));document.getElementById('item-editor').close();
    showPage('table');document.getElementById('habillage-switch').click();v.push(getComputedStyle(document.querySelector('#armory-page>.panel')).borderImageSource==='none');document.getElementById('habillage-switch').click();return v});
   dit(r.every(Boolean),'phase 2 : les pages et les fenêtres prennent le cadre commun ; le réglage l’enlève partout',JSON.stringify(r))}
+ {const r=await p.evaluate(()=>{const h=actors.find(x=>x.hero);if(!h)return null;openArbres(h);const D=document.getElementById('arbres'),fond=()=>getComputedStyle(D).backgroundColor;
+   const v={fiche:D.classList.contains('fiche-aventurier'),on:fond()};document.getElementById('habillage-switch').click();v.off=fond();document.getElementById('habillage-switch').click();D.close();return v});
+  dit(!!r&&r.fiche&&r.on==='rgb(245, 240, 229)'&&r.off!==r.on,'phase 3 : la fiche Aventurier en ivoire uni ; le réglage la rend comme avant',JSON.stringify(r))}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);

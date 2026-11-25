@@ -347,7 +347,7 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 
 ---
 
-## 12 bis. Habillage (v1.420 la Table, v1.421 tout le site)
+## 12 bis. Habillage (v1.420 la Table, v1.421 tout le site, v1.422 la fiche Aventurier)
 
 Le nouvel habillage tient dans `refonte.css`, entièrement sous `body.ui-refonte`. Il est allumé par défaut ; Paramètres › Apparence › « Nouvel habillage » (Activer / Désactiver, réglage de l'appareil) rend l'interface d'avant, partout. En mode nuit, l'interface reste celle du mode nuit. Il ne touche qu'aux supports : illustrations, icônes, jetons, portraits, dés, carte et logo restent tels quels.
 
@@ -363,6 +363,7 @@ Le nouvel habillage tient dans `refonte.css`, entièrement sous `body.ui-refonte
 - **Journal** : à l'intérieur du cadre, une surface de lecture claire et presque unie `#FBF8F1` ; texte en sans-serif 13,5 px ; le ton en filet à gauche, un filet bronze léger entre les lignes, les messages du système en italique encre secondaire ; les boutons d'en-tête et le champ de saisie au style des boutons et champs du site.
 - **Points de vie** : −1/−5/−10 sur `#F3E2D9`, bord et texte rouges ; +1/+5/+10 sur `#E4EBDC`, bord vert, texte `#4a6640` ; Mort et Soin pleins.
 - **Piste de dés** : fond brun-charbon, bord bronze, liseré parchemin `#EDE5D2` puis bronze à 50 % autour, relief intérieur.
+- **Fiche Aventurier (v1.422)** : la fenêtre `#arbres.fiche-aventurier` garde le bord du cadre clair mais plus son parchemin étiré : intérieur ivoire `#F5F0E5` uni. Palette resserrée (variables `--f-*`) : ivoire `#F5F0E5`, parchemin `#E9DEC8`, sable `#D8CBB2`, bronze `#A58A5D`, brun `#514333`, charbon `#29251F`, vert `#608354`, or `#C79A3B`. Trois surfaces : intérieur ivoire, panneaux parchemin à filet sable (4 px), cartes ivoire à filet sable (caractéristiques et compétences sur la même carte ; Talents, Espèce et Création en encarts frères). Onglets de classeur de 40 px, ivoire bordé au repos, la teinte de la section ouverte, bordure d'épaisseur constante. Titres en brun : page Killam 24, panneau 20, catégorie 12–13 en capitales espacées (emplacements 11). Emplacements vides en pointillé bronze, pleins au survol, la cible d'un dépôt en vert. Statistiques en lignes alternées ivoire / sable clair `#EFE7D7`. Métier sans métier : une carte en pointillé bronze. Les ronds des arbres, les icônes, portraits, dés, la silhouette et les teintes de classe ne changent pas.
 
 ## 13. Contrôles automatiques
 
