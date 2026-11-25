@@ -11,11 +11,11 @@ body.ui-refonte{--bg:#EADFC8;--panel:#F6E7D4;--panel-2:#F0DFC4;--field:#F9F0E3;-
  --line:#D9BF96;--line-strong:#B8935A;--muted:#6F675A;--ink:#29251F;--accent:#8E6A36;--on-accent:#F7F2E7;--green:#608354;--red-mat:#A24032;
  --disabled:#D6CDBB;--disabled-ink:#8B8371;--sel-fond:#EFE6CF;--gris-action:#CFC5B2;
  /* v1.427 — Le kit unique (img/ui/kit-*.webp) : toutes les boîtes du site en sortent, en neuf zones, à demi-échelle. */
- --rf-cadre:url(img/ui/kit-panneau.webp) 30 fill/15px stretch;--rf-cadre-sombre:url(img/ui/kit-sombre.webp) 20 fill/10px stretch;
+ --rf-cadre:url(img/ui/kit-panneau.webp) 30 fill/15px stretch;
  --k-carte:url(img/ui/kit-carte.webp) 20 fill/10px stretch;--k-cadre:url(img/ui/kit-carte-contour.webp) 20/10px stretch;--k-vide:url(img/ui/kit-contour.webp) 22/11px stretch;
  --k-champ:url(img/ui/kit-champ.webp) 20 fill/10px stretch;--k-carre:url(img/ui/kit-carre.webp) 20 fill/10px stretch;--k-pilule:url(img/ui/kit-pilule.webp) 23 fill/10px stretch;
  --k-bouton:url(img/ui/kit-bouton.webp) 22 fill/11px stretch;--k-bouton-on:url(img/ui/kit-bouton-on.webp) 22 fill/11px stretch;--k-bouton-or:url(img/ui/kit-bouton-or.webp) 22 fill/11px stretch;
- --k-bouton-rouge:url(img/ui/kit-bouton-rouge.webp) 22 fill/11px stretch;--k-bouton-vert:url(img/ui/kit-bouton-vert.webp) 22 fill/11px stretch;--k-bouton-sombre:url(img/ui/kit-bouton-sombre.webp) 22 fill/11px stretch;
+ --k-bouton-rouge:url(img/ui/kit-bouton-rouge.webp) 22 fill/11px stretch;--k-bouton-vert:url(img/ui/kit-bouton-vert.webp) 22 fill/11px stretch;
  --k-filet:#B8935A;
  scrollbar-color:#AA8146a6 transparent}
 
@@ -109,12 +109,15 @@ body.ui-refonte main.layout .hp-buttons button:active{filter:brightness(.92)}
 
 
 /* ---------- Outils de la carte : une bande sombre, des supports sobres, l'outil actif en bronze ---------- */
-body.ui-refonte main.layout .map-panel>.mapbar{border:11px solid transparent;border-image:var(--rf-cadre-sombre);border-radius:10px;background:none;padding:2px 8px;box-shadow:0 6px 18px #19191766;color:var(--rf-parchemin)}
+body.ui-refonte main.layout .map-panel>.mapbar{border:11px solid transparent;border-image:url(img/ui/kit-mj-barre.webp) 30 fill/15px stretch;border-radius:0;background:none;padding:2px 8px;box-shadow:none;filter:drop-shadow(0 6px 10px #19191780);color:var(--rf-parchemin)}
 body.ui-refonte main.layout .map-panel>.mapbar #carte-titre{color:var(--rf-ivoire)}
 body.ui-refonte main.layout .map-panel>.mapbar .xp-carte,body.ui-refonte main.layout .map-panel>.mapbar .zoom-bar{color:#EDE5D2b3}
-body.ui-refonte main.layout .map-panel>.mapbar button{min-height:30px;min-width:32px;background:none;border:1px solid transparent;border-image:var(--k-bouton-sombre);color:var(--rf-parchemin);box-shadow:none;transition:filter .15s}
-body.ui-refonte main.layout .map-panel>.mapbar button:hover{filter:brightness(1.25)}
-body.ui-refonte main.layout .map-panel>.mapbar button.on{border-image:var(--k-bouton-or);color:#FFF8EA}
+/* v1.433 — Ses boutons : le rond (kit-mj-rond) pour les outils et le zoom, la pilule (kit-mj-pilule, bouts gardés) pour les boutons à texte. Les icônes ne changent pas. */
+body.ui-refonte main.layout .map-panel>.mapbar button{box-sizing:border-box;height:30px;min-height:0;min-width:0;padding:0 13px;border:1px solid transparent;border-image:url(img/ui/kit-mj-pilule.webp) 30 fill/15px stretch;border-radius:15px;
+ background:none;box-shadow:none;color:var(--rf-parchemin);transition:filter .15s}
+body.ui-refonte main.layout .map-panel>.mapbar button:is(.icon-btn,#zoom-out,#zoom-in){display:inline-grid;place-items:center;width:30px;padding:0;border:0;border-image:none;border-radius:50%;background:url(img/ui/kit-mj-rond.webp) center/100% 100% no-repeat}
+body.ui-refonte main.layout .map-panel>.mapbar button:hover{filter:brightness(1.35)}
+body.ui-refonte main.layout .map-panel>.mapbar button.on{box-shadow:0 0 0 2px #E0B36A,0 0 9px 1px #E0B36Ab3}
 
 /* ---------- v1.431, v1.432 — Barre d'action : la barre dessinée, à son ratio (img/ui/kit-barre-action.webp, 790 × 192 px à l'échelle 1), jamais étirée.
    Elle a le bas de l'écran pour elle ; plus étroit que 790 px, elle est réduite d'un bloc (--ech, posée par maps.js). Le portrait remplit le médaillon. Au-dessus

@@ -391,11 +391,11 @@ Depuis la v1.427, **toutes les boîtes de l'habillage sortent d'un seul kit**, d
 | `--k-pilule` | `kit-pilule` | pastilles : classe, niveau, compte, version |
 | `--k-bouton`, `--k-bouton-on` | `kit-bouton`, `kit-bouton-on` | boutons ; l'état actif |
 | `--k-bouton-or`, `-rouge`, `-vert` | teintes du bouton | bouton principal (texte `#FFF8EA`), Mort, Soin |
-| `--rf-cadre-sombre`, `--k-bouton-sombre` | `kit-sombre`, `kit-bouton-sombre` | outils de la carte, barre d'action, piste de dés |
+| — | `kit-mj-barre`, `kit-mj-rond`, `kit-mj-pilule` | barre du MJ (outils de la carte) : la barre brune en neuf zones (30 → 15 px) ; un rond de 30 px sous chaque outil et sous − / + ; une pilule de 30 px de haut (bouts gardés) sous Ajuster, Centrer, Zone. Icônes inchangées, texte parchemin. Outil actif : anneau `#E0B36A` de 2 px et halo `#E0B36Ab3`. Survol : éclaircissement. |
 | — | `kit-onglet` | onglets de la fiche ; l'onglet ouvert pose la teinte de sa section en multiplication |
 | — | `kit-case`, `kit-case-on`, `kit-radio`, `kit-radio-on`, `kit-fleche`, `kit-losange` | cases à cocher et boutons radio de tout le site, flèche des listes, losange des filets (filet `#B8935A`) |
 
-Les variantes teintées (or `#d9a55a`, rouge `#d9705c`, vert `#8fb37a` en multiplication ; sombre `#2b241d` bordé de bronze `#c29a5c`) sont générées depuis les pièces du kit, jamais dessinées à part. Les champs de saisie et les boutons sans classe reprennent en CSS les couleurs du kit : fond `#F9F0E3` / `#F1DDBE`, bord `#B8935A`, rayon 8 px. Palette du site alignée sur le kit : fond `#EADFC8`, panneau `#F6E7D4`, panneau 2 `#F0DFC4`, survol `#EBD3AD`, piste `#DCC9A6`, sélection `#EBD9B8`, ligne `#D9BF96`. L'essai vérifie que `refonte.css` ne cite que le kit (et le casque du titre Aventuriers).
+Les variantes teintées (or `#d9a55a`, rouge `#d9705c`, vert `#8fb37a` en multiplication) sont générées depuis les pièces du kit, jamais dessinées à part. Les champs de saisie et les boutons sans classe reprennent en CSS les couleurs du kit : fond `#F9F0E3` / `#F1DDBE`, bord `#B8935A`, rayon 8 px. Palette du site alignée sur le kit : fond `#EADFC8`, panneau `#F6E7D4`, panneau 2 `#F0DFC4`, survol `#EBD3AD`, piste `#DCC9A6`, sélection `#EBD9B8`, ligne `#D9BF96`. L'essai vérifie que `refonte.css` ne cite que le kit (et le casque du titre Aventuriers).
 
 ## 13. Contrôles automatiques
 

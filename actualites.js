@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.433","d":"2026-11-25","t":"Barre du MJ : nouvelle barre, ronds et pilules"},
 {"v":"1.432","d":"2026-11-25","t":"Barre d'action agrandie, places libres, boutons espacés"},
 {"v":"1.431","d":"2026-11-25","t":"Barre d'action : boutons carrés par genre, grands boutons, portrait plein"},
 {"v":"1.430","d":"2026-11-25","t":"Barre d'action : la barre dessinée, telle quelle"},

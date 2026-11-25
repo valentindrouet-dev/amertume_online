@@ -298,6 +298,9 @@ try{
  {const r=await p.evaluate(()=>{showPage('heroes');const P=document.querySelector('#heroes-page>.panel'),c=document.querySelector('#hero-grid .hero-vignette'),lit=()=>[getComputedStyle(P).borderImageSource.includes('kit-panneau'),!!c&&getComputedStyle(c).borderImageSource.includes('kit-carte')];
    const on=lit();document.getElementById('habillage-switch').click();const off=lit();document.getElementById('habillage-switch').click();showPage('table');return {on,off}});
   dit(r.on.every(Boolean)&&!r.off.some(Boolean),'page Aventuriers : cadre bronze et cartes de la maquette ; le réglage les enlève',JSON.stringify(r))}
+ {const r=await p.evaluate(()=>{showPage('table');const m=document.querySelector('.map-panel>.mapbar'),o=m.querySelector('button.icon-btn'),t=document.getElementById('zoom-reset');
+   return {barre:getComputedStyle(m).borderImageSource.includes('kit-mj-barre'),rond:getComputedStyle(o).backgroundImage.includes('kit-mj-rond'),pilule:getComputedStyle(t).borderImageSource.includes('kit-mj-pilule'),icone:o.textContent.trim().length>0}});
+  dit(r.barre&&r.rond&&r.pilule&&r.icone,'barre du MJ : la barre brune, ses ronds et ses pilules, les icônes gardées',JSON.stringify(r))}
  // v1.427 : une seule famille de boîtes — toute image de l'habillage vient du kit (ou est le casque), et chaque fichier cité existe.
  {const r=await p.evaluate(async()=>{const css=await (await fetch('./refonte.css')).text(),urls=[...new Set([...css.matchAll(/url\(([^)]+)\)/g)].map(m=>m[1]))];
    const hors=urls.filter(u=>!/img\/ui\/(kit-[a-z-]+|casque)\.webp$/.test(u)),manque=[];for(const u of urls){const q=await fetch('./'+u,{method:'HEAD'});if(!q.ok)manque.push(u)}
