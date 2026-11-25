@@ -1194,7 +1194,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Les objets ne s'y montrent plus : on les emploie d'un clic dans l'inventaire de la fiche.
  boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;revient();
  liste.forEach((at,i)=>{const b=document.createElement('button');
-  b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');
+  b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');b.dataset.genre='action';
   // Au milieu du rond, le logo de la seule arme de la main droite : la première ; deux armes n'en montrent qu'un.
   const logos=document.createElement('span');logos.className='logos';
   // Sans arme en main, l'Attaque d'un aventurier prend l'icône que le MJ a choisie pour elle.
@@ -1229,6 +1229,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Les talents à leur suite : ceux d'action, puis les réactions.
  talents.forEach(t=>{if(t==='|'){if(boite.lastElementChild&&!boite.lastElementChild.classList.contains('barre-sep'))boite.append(Object.assign(document.createElement('span'),{className:'barre-sep'}));return}
   const b=document.createElement('button');b.className=t.classe+' choix-attaque rond'+(bonusActions.has(t)?' t-bonus':'');b.dataset.talent=t.talent&&t.talent.id||'';
+  // v1.431 : le genre du bouton — son support dans la barre d'action (Action, Maîtrise, Mouvement, Réaction, Bonus, Passif).
+  b.dataset.genre=bonusActions.has(t)?'bonus':({act:'action',abon:'bonus',mvt:'mouvement',reac:'reaction',pass:'passif',mait:'maitrise'})[t.talent.type]||'action';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=(t.logo?logoTalent({logo:t.logo},'bouton'):null)||logoArmeEquipee(a);
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}

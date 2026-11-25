@@ -5130,3 +5130,6 @@ body.journal-translucide .journal-panel .journal-chat input{background:var(--fie
 .portrait-actif .pa-pilule{position:static;display:flex;align-items:center;gap:4px;pointer-events:auto}
 .portrait-actif .pa-pilule:empty{display:none}
 .portrait-actif .pa-pilule .pt{width:11px;height:11px;box-shadow:none}
+/* v1.431 — Une place vide dans une pastille de points : le point dépensé, en bille sombre. Les trois grands boutons ne se montrent qu'avec l'habillage. */
+.portrait-actif .pa-pilule .pt.vide{border-radius:50%;background:color-mix(in srgb,var(--ink) 55%,transparent)}
+.barre-actions>.gros-boutons{display:none}

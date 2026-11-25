@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.431","d":"2026-11-25","t":"Barre d'action : boutons carrés par genre, grands boutons, portrait plein"},
 {"v":"1.430","d":"2026-11-25","t":"Barre d'action : la barre dessinée, telle quelle"},
 {"v":"1.429","d":"2026-11-25","t":"Table allégée : jetons seuls, sans piste de dés ni fiche"},
 {"v":"1.428","d":"2026-11-25","t":"Barre d'action au gabarit"},

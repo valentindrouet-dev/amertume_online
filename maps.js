@@ -4313,8 +4313,8 @@ function zoneLibreCarte(){return cartePleine()?zoneCarte:null}
 function mesureZoneLibre(p){const pr=p.getBoundingClientRect(),g=colonneTable('left'),d=colonneTable('right'),bar=p.querySelector(':scope>.mapbar'),act=p.querySelector(':scope>.barre-actions');
  let l=g?g.getBoundingClientRect().right-pr.left+12:12,r=d?d.getBoundingClientRect().left-pr.left-12:pr.width-12;if(r-l<240){l=12;r=pr.width-12}
  let t=bar&&bar.offsetParent?bar.getBoundingClientRect().bottom-pr.top+12:12,b=pr.height-Math.max(150,act&&act.offsetHeight?act.offsetHeight+26:0);if(b-t<200){t=12;b=pr.height-12}
- // v1.430 : la zone libre entre les colonnes, pour ce qui se centre dessus (la barre d'action).
- p.style.setProperty('--zone-g',Math.round(l-12)+'px');p.style.setProperty('--zone-d',Math.round(pr.width-r-12)+'px');p.style.setProperty('--zone-l',Math.round(r-l+24)+'px');if(act&&typeof tailleRondsBarre==='function')tailleRondsBarre(act);
+ // v1.430 : la zone libre entre les colonnes, pour ce qui se centre dessus (la barre d'action) ; v1.431 : --ech, l'échelle à laquelle ses 790 px y tiennent.
+ p.style.setProperty('--zone-g',Math.round(l-12)+'px');p.style.setProperty('--zone-d',Math.round(pr.width-r-12)+'px');p.style.setProperty('--zone-l',Math.round(r-l+24)+'px');p.style.setProperty('--ech',String(Math.min(1,Math.round((r-l+24)/790*1000)/1000)));
  return {l,t,r,b}}
 {const ar=applyMapRatio;applyMapRatio=function(){const el=$('map'),avant=el?[el.style.width,el.style.height,el.style.marginLeft,el.style.marginTop].join():'';
  const change=ar.apply(this,arguments),p=el&&el.closest('.map-panel');

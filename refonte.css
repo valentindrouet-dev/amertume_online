@@ -116,42 +116,72 @@ body.ui-refonte main.layout .map-panel>.mapbar button{min-height:30px;min-width:
 body.ui-refonte main.layout .map-panel>.mapbar button:hover{filter:brightness(1.25)}
 body.ui-refonte main.layout .map-panel>.mapbar button.on{border-image:var(--k-bouton-or);color:#FFF8EA}
 
-/* ---------- v1.430 — Barre d'action : la barre dessinée, telle quelle (img/ui/kit-barre-action.webp, à demi-échelle : 192 px de haut).
-   Elle ne s'étire qu'en largeur, par sa partie droite du milieu : le médaillon (180 px à gauche) et le bout à pointe (55 px à droite) gardent
-   leur dessin ; elle est centrée par ses marges, sur des pixels entiers (ses raccords ne se voient pas), entre les deux colonnes (--zone-g, --zone-d,
-   posées par maps.js). Rangée du haut (54 px) : PV, points d'Action et de Mouvement, états ; partie basse (91 px) : attaques, talents, actions communes. Le portrait du combattant sélectionné remplit le trou du médaillon (centre 85,5 × 96 px, rayon 59 px). ---------- */
-body.ui-refonte main.layout .barre-actions .barre-sep{background:var(--k-filet)}
+/* ---------- v1.431 — Barre d'action : la barre dessinée, à son ratio (img/ui/kit-barre-action.webp, 790 × 192 px à l'échelle 1), jamais étirée.
+   Trop large pour la place entre les colonnes, elle est réduite d'un bloc (--ech, posée par maps.js). Le portrait remplit le médaillon. Au-dessus
+   du trait : PV, points d'Action et de Mouvement, états. Dessous, à droite, trois grands boutons ; à gauche, deux rangées de boutons carrés, l'icône seule au centre de son support : la première — actions, mouvements,
+   réactions — en grand ; la seconde — actions bonus, maîtrises, autres actions — en plus petit. Le support dit le genre :
+   kit-btn-action (bleu), -maitrise (or), -mouvement (brun), -reaction (violet), -bonus (turquoise), -passif (gris), -autre (beige). ---------- */
 body.ui-refonte .portrait-actif .pa-pv{border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:4px 5px}
-body.ui-refonte .portrait-actif .pa-pv .lifebar{height:18px;border-radius:999px}
+body.ui-refonte .portrait-actif .pa-pv .lifebar{height:26px;border-radius:999px}
+body.ui-refonte .portrait-actif .pa-pv .lifebar-text{font:700 15px/1 system-ui}
 body.ui-refonte .portrait-actif .pa-pilule{isolation:isolate;gap:9px;border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:7px 11px}
 /* La bille du jeu reste la sienne ; le rond du gabarit est glissé dessous. */
 body.ui-refonte .portrait-actif .pa-pilule .pt{position:relative;width:13px;height:13px}
+body.ui-refonte .portrait-actif .pa-pilule .pt.vide{background:#5b5348}
 body.ui-refonte .portrait-actif .pa-pilule .pt::before{content:'';position:absolute;inset:-4px;z-index:-1;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
 body.ui-refonte .portrait-actif .pa-etats{flex:0 1 auto;min-width:0;overflow:hidden}
 body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px;padding:4px;box-sizing:border-box;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
 @media(min-width:701px){
- /* La barre : sa rangée du haut est posée sur celle du dessin ; dessous, attaques, talents et actions communes se suivent et passent à la
-    ligne. --b, la taille d'un rond, est calculée par tailleRondsBarre (index.html) d'après le nombre de ronds et la largeur libre entre les
-    colonnes (--zone-l) : une rangée jusqu'à 64 px, sinon deux rangées de 40 px au plus. */
- body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{
-  box-sizing:border-box;display:flex;flex-flow:row wrap;align-content:center;align-items:center;justify-content:flex-start;gap:5px 6px;
-  left:var(--zone-g,0px);right:var(--zone-d,0px);margin:0 auto;transform:none;width:max-content;max-width:var(--zone-l,calc(100vw - 24px));min-width:min(520px,var(--zone-l,100vw));height:192px;
-  padding:97px 34px 4px 180px;border:0 solid transparent;border-image:url(img/ui/kit-barre-action.webp) 192 110 192 360/96px 55px 96px 180px stretch;border-radius:0;
-  background:radial-gradient(circle at 85.5px 96px,#EBDBC2 0 58px,transparent 59px) no-repeat;box-shadow:none;filter:drop-shadow(0 8px 12px #00000080);color:var(--rf-encre);overflow:visible}
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{box-sizing:border-box;display:flex;flex-flow:row wrap;align-content:flex-start;align-items:center;justify-content:flex-start;gap:2.5px 5px;
+  left:calc(var(--zone-g,0px) + (var(--zone-l,100%) - 790px) / 2);right:auto;margin:0;width:790px;min-width:0;max-width:none;height:192px;transform:scale(var(--ech,1));transform-origin:50% 100%;
+  padding:98px 238px 0 180px;border:0;border-image:none;border-radius:0;background:none;
+  box-shadow:none;filter:drop-shadow(0 8px 12px #00000080);color:var(--rf-encre);overflow:visible}
+ /* Le dessin de la barre est posé par-dessus le portrait (qui passe dessous, z-index -1) et sous tout le reste : le portrait remplit le médaillon. */
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions::before{content:'';position:absolute;inset:0;background:url(img/ui/kit-barre-action.webp) 0 0/100% 100% no-repeat;pointer-events:none}
  /* Elle se cache toujours quand elle n'a rien à offrir, ou quand ce sont les actions d'un autre. */
  body.ui-refonte.actions-autrui main.layout .map-panel>.attack-card.barre-actions,
  body.ui-refonte main.layout .map-panel>.attack-card.barre-actions:not(:has(button:not([hidden]))){display:none}
  body.ui-refonte main.layout .barre-actions>.portrait-actif{position:absolute;left:180px;right:34px;top:41px;height:54px;width:auto;min-width:0;gap:8px}
  body.ui-refonte .portrait-actif .pa-pv{min-width:90px}
- body.ui-refonte main.layout .barre-actions:not(.vide)>#attack-choices:not([hidden]),body.ui-refonte main.layout .barre-actions>#attack-row:not([hidden]),body.ui-refonte main.layout .barre-actions #etat-actions{display:contents}
- body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond{flex:none;width:var(--b,44px);height:var(--b,44px);margin:0;font-size:calc(var(--b,44px)*.42)}
- body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond .logo-equip{width:calc(var(--b,44px)*.66);height:calc(var(--b,44px)*.66)}
- body.ui-refonte main.layout .barre-actions .barre-sep{align-self:center;height:calc(var(--b,44px)*.7);margin:0 2px}
+ /* Les deux rangées : les boutons des deux groupes deviennent ceux de la barre ; un retour à la ligne (::after) sépare la première de la seconde. */
+ body.ui-refonte main.layout .barre-actions:not(.vide)>#attack-choices:not([hidden]),body.ui-refonte main.layout .barre-actions>#attack-row:not([hidden]),
+ body.ui-refonte main.layout .barre-actions :is(#etat-actions,#actions-contexte:not(:empty)){display:contents}
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions::after{content:'';flex:0 0 100%;height:0;order:2}
+ body.ui-refonte main.layout .barre-actions :is(#attack-choices,#attack-row,#etat-actions,#actions-contexte)>*{order:3}
+ body.ui-refonte main.layout .barre-actions #attack-choices>button:not([data-genre=bonus]){order:1}
+ body.ui-refonte main.layout .barre-actions .barre-sep{display:none}
+ /* Un bouton : son support carré, l'icône au centre. */
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond{--t:var(--b2,34px);flex:none;width:var(--t);height:var(--t);margin:0;padding:0;border:0;border-radius:22%;
+  background:url(img/ui/kit-btn-autre.webp) center/100% 100% no-repeat;box-shadow:none;font-size:calc(var(--t)*.46);color:#3a2e22}
+ body.ui-refonte main.layout .map-panel .barre-actions #attack-choices>button.btn-action.rond.rond:not([data-genre=bonus]){--t:var(--b1,48px)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=action]{background-image:url(img/ui/kit-btn-action.webp)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=maitrise]{background-image:url(img/ui/kit-btn-maitrise.webp)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=mouvement]{background-image:url(img/ui/kit-btn-mouvement.webp)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=reaction]{background-image:url(img/ui/kit-btn-reaction.webp)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=bonus]{background-image:url(img/ui/kit-btn-bonus.webp)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond[data-genre=passif]{background-image:url(img/ui/kit-btn-passif.webp)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond :is(.logo-equip,img:not(.pt)){width:calc(var(--t)*.68);height:calc(var(--t)*.68);object-fit:contain}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond .glyphe{font-size:calc(var(--t)*.46)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond:hover:not(:disabled,.inerte){filter:brightness(1.08)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond.on{box-shadow:0 0 0 2px #FFF8EA,0 0 8px 2px #C79A3B}
+ /* Les cibles, au-dessus de la barre, gardent leur taille quand la barre est réduite. */
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions>.targets{transform:translateX(-50%) scale(calc(1 / var(--ech,1)));transform-origin:50% 100%}
  /* Les lignes d'information se posent au-dessus du corps de la barre, à droite du médaillon : la hauteur de la barre ne change jamais. */
  body.ui-refonte main.layout .barre-actions>.attack-info{position:absolute;left:180px;right:40px;top:14px;margin:0;text-align:left;color:#f0d9b5;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  /* Le portrait dans le trou du médaillon, cerclé de la couleur de la classe. */
- body.ui-refonte .portrait-actif .pa-token{left:-155px;top:-5px;right:auto;bottom:auto;transform:none;width:121px;height:121px;border:3px solid var(--teinte,var(--rf-vert));border-radius:50%;overflow:hidden;box-shadow:none;font-size:52px}
- body.ui-refonte .portrait-actif .pa-token.enemy{border-color:var(--rf-rouge)}
+ body.ui-refonte .portrait-actif .pa-token{z-index:-1;left:-157.5px;top:-8px;right:auto;bottom:auto;transform:none;width:126px;height:126px;border:0;border-radius:50%;overflow:hidden;box-shadow:none;
+  background:color-mix(in srgb,var(--teinte,var(--rf-vert)) 24%,#F3E7D3);font-size:54px}
+ body.ui-refonte .portrait-actif .pa-token.enemy{background:color-mix(in srgb,var(--rf-rouge) 24%,#F3E7D3)}
+ /* Au bout de la barre, sous le trait : trois grands boutons de 60 px sur le support beige — Inventaire, Talents, et un libre. */
+ body.ui-refonte main.layout .barre-actions>.gros-boutons{display:flex;gap:6px;position:absolute;left:564px;top:112px}
+ body.ui-refonte main.layout .barre-actions>.gros-boutons>*{display:grid;place-items:center;box-sizing:border-box;width:60px;height:60px;margin:0;padding:0;border:0;border-radius:22%;
+  background:url(img/ui/kit-btn-autre.webp) center/100% 100% no-repeat;box-shadow:none;color:#3a2e22;transform:none}
+ body.ui-refonte main.layout .barre-actions>.gros-boutons>.gros-vide{opacity:.6}
+ body.ui-refonte main.layout .barre-actions>.gros-boutons>button:hover{filter:brightness(1.08)}
+ body.ui-refonte main.layout .barre-actions>.gros-boutons svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+ body.ui-refonte main.layout .barre-actions>.gros-boutons img{width:42px;height:42px;object-fit:contain}
+ body.ui-refonte main.layout .map-panel .barre-actions button#inventaire-table.btn-action.rond.rond{--t:60px;position:absolute;left:564px;top:112px;z-index:1}
+ body.ui-refonte main.layout .map-panel .barre-actions button#inventaire-table svg{width:34px;height:34px}
 }
 
 /* ---------- Journal : une surface de lecture claire et presque unie dans le cadre, des lignes éditoriales, le ton en filet à gauche ---------- */
