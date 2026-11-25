@@ -282,22 +282,27 @@ try{
  /* ---------- v1.420 — Le nouvel habillage : allumé par défaut, un réglage le retire, le mode nuit garde son interface ---------- */
  etape='Habillage';console.log(etape);
  {const r=await p.evaluate(()=>{showPage('table');const lit=()=>({on:document.body.classList.contains('ui-refonte'),haut:Math.round(document.querySelector('header').getBoundingClientRect().height),
-    cadre:getComputedStyle(document.querySelector('main.layout>.stack.left>.panel')).borderImageSource.includes('cadre-clair'),bouton:document.getElementById('habillage-switch').textContent});
+    cadre:getComputedStyle(document.querySelector('main.layout>.stack.left>.panel')).borderImageSource.includes('kit-panneau'),bouton:document.getElementById('habillage-switch').textContent});
    const a=lit();document.getElementById('habillage-switch').click();const b=lit();document.getElementById('habillage-switch').click();const c=lit();
    document.body.classList.add('sombre');poseHabillage();const nuit=document.body.classList.contains('ui-refonte');document.body.classList.remove('sombre');poseHabillage();return {a,b,c,nuit}});
   dit(r.a.on&&r.a.cadre&&r.a.bouton==='Désactiver','le nouvel habillage est là par défaut',JSON.stringify(r.a));
   dit(!r.b.on&&!r.b.cadre&&r.b.bouton==='Activer'&&r.b.haut>r.a.haut,'« Désactiver » rend l’interface d’avant',JSON.stringify(r.b));
   dit(r.c.on&&!r.nuit,'« Activer » le remet ; le mode nuit garde son interface',JSON.stringify({c:r.c,nuit:r.nuit}))}
- {const r=await p.evaluate(()=>{const v=[];showPage('armory');v.push(getComputedStyle(document.querySelector('#armory-page>.panel')).borderImageSource.includes('cadre-clair'));
-   openItem(0);v.push(getComputedStyle(document.getElementById('item-editor')).borderImageSource.includes('cadre-clair'));document.getElementById('item-editor').close();
+ {const r=await p.evaluate(()=>{const v=[];showPage('armory');v.push(getComputedStyle(document.querySelector('#armory-page>.panel')).borderImageSource.includes('kit-panneau'));
+   openItem(0);v.push(getComputedStyle(document.getElementById('item-editor')).borderImageSource.includes('kit-panneau'));document.getElementById('item-editor').close();
    showPage('table');document.getElementById('habillage-switch').click();v.push(getComputedStyle(document.querySelector('#armory-page>.panel')).borderImageSource==='none');document.getElementById('habillage-switch').click();return v});
   dit(r.every(Boolean),'phase 2 : les pages et les fenêtres prennent le cadre commun ; le réglage l’enlève partout',JSON.stringify(r))}
- {const r=await p.evaluate(()=>{const h=actors.find(x=>x.hero);if(!h)return null;openArbres(h);const D=document.getElementById('arbres'),fond=()=>getComputedStyle(D).backgroundColor;
+ {const r=await p.evaluate(()=>{const h=actors.find(x=>x.hero);if(!h)return null;openArbres(h);const D=document.getElementById('arbres'),fond=()=>getComputedStyle(D).borderImageSource.includes('kit-panneau');
    const v={fiche:D.classList.contains('fiche-aventurier'),on:fond()};document.getElementById('habillage-switch').click();v.off=fond();document.getElementById('habillage-switch').click();D.close();return v});
-  dit(!!r&&r.fiche&&r.on==='rgb(245, 240, 229)'&&r.off!==r.on,'phase 3 : la fiche Aventurier en ivoire uni ; le réglage la rend comme avant',JSON.stringify(r))}
- {const r=await p.evaluate(()=>{showPage('heroes');const P=document.querySelector('#heroes-page>.panel'),c=document.querySelector('#hero-grid .hero-vignette'),lit=()=>[getComputedStyle(P).borderImageSource.includes('page-cadre'),!!c&&getComputedStyle(c).borderImageSource.includes('page-cadre')];
+  dit(!!r&&r.fiche&&r.on===true&&r.off===false,'la fiche Aventurier au cadre du kit ; le réglage la rend comme avant',JSON.stringify(r))}
+ {const r=await p.evaluate(()=>{showPage('heroes');const P=document.querySelector('#heroes-page>.panel'),c=document.querySelector('#hero-grid .hero-vignette'),lit=()=>[getComputedStyle(P).borderImageSource.includes('kit-panneau'),!!c&&getComputedStyle(c).borderImageSource.includes('kit-carte')];
    const on=lit();document.getElementById('habillage-switch').click();const off=lit();document.getElementById('habillage-switch').click();showPage('table');return {on,off}});
   dit(r.on.every(Boolean)&&!r.off.some(Boolean),'page Aventuriers : cadre bronze et cartes de la maquette ; le réglage les enlève',JSON.stringify(r))}
+ // v1.427 : une seule famille de boîtes — toute image de l'habillage vient du kit (ou est le casque), et chaque fichier cité existe.
+ {const r=await p.evaluate(async()=>{const css=await (await fetch('./refonte.css')).text(),urls=[...new Set([...css.matchAll(/url\(([^)]+)\)/g)].map(m=>m[1]))];
+   const hors=urls.filter(u=>!/img\/ui\/(kit-[a-z-]+|casque)\.webp$/.test(u)),manque=[];for(const u of urls){const q=await fetch('./'+u,{method:'HEAD'});if(!q.ok)manque.push(u)}
+   const c=document.createElement('input');c.type='checkbox';document.body.append(c);const img=getComputedStyle(c).backgroundImage.includes('kit-case');c.remove();return {n:urls.length,hors,manque,img}});
+  dit(r.n>10&&!r.hors.length&&!r.manque.length&&r.img,'kit unique : toutes les boîtes de l’habillage sortent du kit, cases comprises',JSON.stringify(r))}
  {const r=await p.evaluate(()=>{showPage('table');const h=actors.find(x=>x.hero),k=actors.indexOf(h),avant=h.hp;h.hp=Math.max(1,Math.round(h.max/2));pick(k);render();
    const ligne=document.querySelector('#actors .actor[data-index="'+k+'"]'),pa=document.querySelector('.map-panel>.barre-actions>.portrait-actif');
    const v={pv:ligne&&Math.round(+ligne.style.getPropertyValue('--pv')),attendu:Math.round(ratio(h)),token:!!(pa&&pa.querySelector('.pa-token')),barre:!!(pa&&pa.querySelector('.lifebar'))};h.hp=avant;render();return v});

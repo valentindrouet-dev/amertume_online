@@ -370,6 +370,27 @@ Le nouvel habillage tient dans `refonte.css`, entièrement sous `body.ui-refonte
 - **Supports dessinés de la fiche (v1.423)** : découpés un à un dans les planches d'interface, dans `img/ui/` : `fiche-panneau.webp` (panneaux, bord doré en neuf zones 18 → 9 px, centre uni `#E3C69C`, pas étiré), `fiche-carte.webp` (cartes de caractéristiques et compétences, 12 → 6 px), `fiche-onglet.webp` (languette ivoire ; l'onglet ouvert y pose la teinte de sa section en multiplication), `fiche-vide.webp` (emplacement vide en pointillé), `fiche-support.webp` (cadre doré d'un objet, sa rareté garde son fond), `fiche-filet.webp` (filet à losange des titres). Le bord dessiné déborde sur la marge intérieure : aucune boîte ne change de taille.
 - **Page Aventuriers (v1.424)** : d'après la maquette validée, avec les pièces de sa planche dans `img/ui/` — `page-cadre.webp` (cadre bronze à coins biseautés de la page et des cartes, neuf zones), `parchemin.webp` (fond de page, couvrant, jamais en mosaïque), `casque.webp` (devant le titre, Killam 30 brun, filet à losange), `bouton-parchemin.webp` et `bouton-bronze.webp` (filtres ; « + Nouvel aventurier » en bronze, texte clair), `liste.webp` (tri et assignation, flèche dessinée, bord droit à l'échelle de la hauteur), `filet-losange.webp` (séparateurs ACTIFS / INACTIFS en capitales serif, losange à gauche), `fente.webp` (les six cases d'icônes, neutres), `case.webp` / `case-cochee.webp` (sélection de carte, Talents libres). Liseré du haut de carte à la couleur de la classe ; anneau du portrait à la couleur de la classe avec reflet ; ombre douce `0 3px 6px #29251f33`. Contenu, ordre et comportements inchangés.
 
+### Kit unique des boîtes (v1.427)
+
+Depuis la v1.427, **toutes les boîtes de l'habillage sortent d'un seul kit**, découpé dans les planches de composants et rangé dans `img/ui/kit-*.webp`. Les pièces des versions précédentes (cadre-clair, cadre-sombre, page-cadre, fiche-*, fente, parchemin, bouton-parchemin…) sont supprimées ; ne pas en réintroduire. Les pièces se posent en neuf zones, à demi-échelle, par les variables de `refonte.css` :
+
+| Variable | Pièce | Emploi |
+|---|---|---|
+| `--rf-cadre` | `kit-panneau` (30 → 15 px) | grands conteneurs : panneaux des pages, colonnes de la Table, blocs de l'Accueil, fenêtres, fiche Aventurier |
+| `--k-carte` | `kit-carte` (20 → 10 px) | cartes et panneaux intérieurs : cartes d'aventurier, tuiles, panneaux de la fiche |
+| `--k-cadre` | `kit-carte-contour` | le même bord, centre vide : modules qui gardent leur propre fond (réglages, sections repliables, supports d'objets à la couleur de leur rareté) |
+| `--k-vide` | `kit-contour` | emplacements vides |
+| `--k-champ` | `kit-champ` | surfaces de lecture et cartes claires : journal, cartes de caractéristiques |
+| `--k-carre` | `kit-carre` | cases d'icônes, cellules des combattants |
+| `--k-pilule` | `kit-pilule` | pastilles : classe, niveau, compte, version |
+| `--k-bouton`, `--k-bouton-on` | `kit-bouton`, `kit-bouton-on` | boutons ; l'état actif |
+| `--k-bouton-or`, `-rouge`, `-vert` | teintes du bouton | bouton principal (texte `#FFF8EA`), Mort, Soin |
+| `--rf-cadre-sombre`, `--k-bouton-sombre` | `kit-sombre`, `kit-bouton-sombre` | outils de la carte, barre d'action, piste de dés |
+| — | `kit-onglet` | onglets de la fiche ; l'onglet ouvert pose la teinte de sa section en multiplication |
+| — | `kit-case`, `kit-case-on`, `kit-radio`, `kit-radio-on`, `kit-fleche`, `kit-losange` | cases à cocher et boutons radio de tout le site, flèche des listes, losange des filets (filet `#B8935A`) |
+
+Les variantes teintées (or `#d9a55a`, rouge `#d9705c`, vert `#8fb37a` en multiplication ; sombre `#2b241d` bordé de bronze `#c29a5c`) sont générées depuis les pièces du kit, jamais dessinées à part. Les champs de saisie et les boutons sans classe reprennent en CSS les couleurs du kit : fond `#F9F0E3` / `#F1DDBE`, bord `#B8935A`, rayon 8 px. Palette du site alignée sur le kit : fond `#EADFC8`, panneau `#F6E7D4`, panneau 2 `#F0DFC4`, survol `#EBD3AD`, piste `#DCC9A6`, sélection `#EBD9B8`, ligne `#D9BF96`. L'essai vérifie que `refonte.css` ne cite que le kit (et le casque du titre Aventuriers).
+
 ## 13. Contrôles automatiques
 
 `checks.cjs` vérifie à chaque publication, et la publication échoue en cas d'écart :
