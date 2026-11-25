@@ -116,34 +116,42 @@ body.ui-refonte main.layout .map-panel>.mapbar button{min-height:30px;min-width:
 body.ui-refonte main.layout .map-panel>.mapbar button:hover{filter:brightness(1.25)}
 body.ui-refonte main.layout .map-panel>.mapbar button.on{border-image:var(--k-bouton-or);color:#FFF8EA}
 
-/* ---------- v1.428 — Barre d'action au gabarit : le cadre à bouts ouvragés, le médaillon du combattant à gauche ; en tête sa jauge de PV,
-   ses points d'Action et de Mouvement en pastilles, ses états ; dessous ses attaques et talents sur des cases, puis les actions communes. ---------- */
-body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{display:grid;grid-template-columns:auto auto;grid-template-areas:"tete tete" "talents communs";justify-content:start;align-items:center;gap:8px 12px;
- border:14px solid transparent;border-image:url(img/ui/kit-barre.webp) 36 46 fill/18px 23px stretch;border-radius:0;background:none;box-shadow:none;padding:2px 10px 4px;filter:drop-shadow(0 8px 12px #00000080);color:var(--rf-encre)}
-body.ui-refonte main.layout .barre-actions>.portrait-actif{grid-area:tete;min-width:300px}
-body.ui-refonte main.layout .barre-actions>#attack-choices{grid-area:talents;justify-self:start}
-body.ui-refonte main.layout .barre-actions>#attack-row{grid-area:communs;justify-self:start}
-body.ui-refonte main.layout .barre-actions>.attack-info{grid-column:1/-1;color:var(--rf-encre)}
+/* ---------- v1.430 — Barre d'action : la barre dessinée, telle quelle (img/ui/kit-barre-action.webp, à demi-échelle : 192 px de haut).
+   Elle ne s'étire qu'en largeur, par sa partie droite du milieu : le médaillon (180 px à gauche) et le bout à pointe (55 px à droite) gardent
+   leur dessin ; elle est centrée par ses marges, sur des pixels entiers (ses raccords ne se voient pas), entre les deux colonnes (--zone-g, --zone-d,
+   posées par maps.js). Rangée du haut (54 px) : PV, points d'Action et de Mouvement, états ; partie basse (91 px) : attaques, talents, actions communes. Le portrait du combattant sélectionné remplit le trou du médaillon (centre 85,5 × 96 px, rayon 59 px). ---------- */
 body.ui-refonte main.layout .barre-actions .barre-sep{background:var(--k-filet)}
-/* La jauge : la barre de PV dans son logement. Les pastilles : chaque point sur un rond du gabarit. Les états de même. */
 body.ui-refonte .portrait-actif .pa-pv{border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:4px 5px}
 body.ui-refonte .portrait-actif .pa-pv .lifebar{height:18px;border-radius:999px}
 body.ui-refonte .portrait-actif .pa-pilule{isolation:isolate;gap:9px;border:1px solid transparent;border-image:url(img/ui/kit-jauge.webp) 28 fill/14px stretch;padding:7px 11px}
 /* La bille du jeu reste la sienne ; le rond du gabarit est glissé dessous. */
 body.ui-refonte .portrait-actif .pa-pilule .pt{position:relative;width:13px;height:13px}
 body.ui-refonte .portrait-actif .pa-pilule .pt::before{content:'';position:absolute;inset:-4px;z-index:-1;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
-body.ui-refonte .portrait-actif .pa-etats .etat{width:30px;height:30px;padding:4px;box-sizing:border-box;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
-/* Attaques et talents : une case du gabarit sous chaque rond, sept par rangée au plus. Les actions communes sur un même support. */
-body.ui-refonte main.layout .barre-actions>#attack-choices{flex-wrap:wrap;justify-content:flex-start;gap:8px;padding:4px;max-width:504px;background:url(img/ui/kit-slot.webp) left top/72px 72px}
-body.ui-refonte main.layout .barre-actions>#attack-choices>button{margin:0}
-body.ui-refonte main.layout .barre-actions>#attack-row{justify-content:flex-start;gap:8px;padding:6px 10px;border:1px solid transparent;border-image:url(img/ui/kit-slot.webp) 30 fill/14px stretch}
-/* Le médaillon : le portrait dans son anneau ouvragé, cerclé de la couleur de la classe, à cheval sur le bout gauche de la barre. */
+body.ui-refonte .portrait-actif .pa-etats{flex:0 1 auto;min-width:0;overflow:hidden}
+body.ui-refonte .portrait-actif .pa-etats .etat{flex:none;width:30px;height:30px;padding:4px;box-sizing:border-box;background:url(img/ui/kit-rond.webp) center/100% 100% no-repeat}
 @media(min-width:701px){
- body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{padding-left:68px;min-height:150px}
- body.ui-refonte .portrait-actif .pa-token{left:-84px;right:auto;top:50%;bottom:auto;transform:translateY(-50%);width:152px;height:159px;border:0;border-radius:0;overflow:visible;
-  background:url(img/ui/kit-medaillon.webp) center/100% 100% no-repeat;box-shadow:none;font-size:54px}
- body.ui-refonte .portrait-actif .pa-token img{position:absolute;left:17%;top:18%;width:66%;height:auto;aspect-ratio:1;border-radius:50%;object-fit:cover;box-shadow:0 0 0 3px var(--teinte,var(--rf-vert))}
- body.ui-refonte .portrait-actif .pa-token.enemy img{box-shadow:0 0 0 3px var(--rf-rouge)}
+ /* La barre : sa rangée du haut est posée sur celle du dessin ; dessous, attaques, talents et actions communes se suivent et passent à la
+    ligne. --b, la taille d'un rond, est calculée par tailleRondsBarre (index.html) d'après le nombre de ronds et la largeur libre entre les
+    colonnes (--zone-l) : une rangée jusqu'à 64 px, sinon deux rangées de 40 px au plus. */
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions{
+  box-sizing:border-box;display:flex;flex-flow:row wrap;align-content:center;align-items:center;justify-content:flex-start;gap:5px 6px;
+  left:var(--zone-g,0px);right:var(--zone-d,0px);margin:0 auto;transform:none;width:max-content;max-width:var(--zone-l,calc(100vw - 24px));min-width:min(520px,var(--zone-l,100vw));height:192px;
+  padding:97px 34px 4px 180px;border:0 solid transparent;border-image:url(img/ui/kit-barre-action.webp) 192 110 192 360/96px 55px 96px 180px stretch;border-radius:0;
+  background:radial-gradient(circle at 85.5px 96px,#EBDBC2 0 58px,transparent 59px) no-repeat;box-shadow:none;filter:drop-shadow(0 8px 12px #00000080);color:var(--rf-encre);overflow:visible}
+ /* Elle se cache toujours quand elle n'a rien à offrir, ou quand ce sont les actions d'un autre. */
+ body.ui-refonte.actions-autrui main.layout .map-panel>.attack-card.barre-actions,
+ body.ui-refonte main.layout .map-panel>.attack-card.barre-actions:not(:has(button:not([hidden]))){display:none}
+ body.ui-refonte main.layout .barre-actions>.portrait-actif{position:absolute;left:180px;right:34px;top:41px;height:54px;width:auto;min-width:0;gap:8px}
+ body.ui-refonte .portrait-actif .pa-pv{min-width:90px}
+ body.ui-refonte main.layout .barre-actions:not(.vide)>#attack-choices:not([hidden]),body.ui-refonte main.layout .barre-actions>#attack-row:not([hidden]),body.ui-refonte main.layout .barre-actions #etat-actions{display:contents}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond{flex:none;width:var(--b,44px);height:var(--b,44px);margin:0;font-size:calc(var(--b,44px)*.42)}
+ body.ui-refonte main.layout .map-panel .barre-actions button.btn-action.rond.rond .logo-equip{width:calc(var(--b,44px)*.66);height:calc(var(--b,44px)*.66)}
+ body.ui-refonte main.layout .barre-actions .barre-sep{align-self:center;height:calc(var(--b,44px)*.7);margin:0 2px}
+ /* Les lignes d'information se posent au-dessus du corps de la barre, à droite du médaillon : la hauteur de la barre ne change jamais. */
+ body.ui-refonte main.layout .barre-actions>.attack-info{position:absolute;left:180px;right:40px;top:14px;margin:0;text-align:left;color:#f0d9b5;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ /* Le portrait dans le trou du médaillon, cerclé de la couleur de la classe. */
+ body.ui-refonte .portrait-actif .pa-token{left:-155px;top:-5px;right:auto;bottom:auto;transform:none;width:121px;height:121px;border:3px solid var(--teinte,var(--rf-vert));border-radius:50%;overflow:hidden;box-shadow:none;font-size:52px}
+ body.ui-refonte .portrait-actif .pa-token.enemy{border-color:var(--rf-rouge)}
 }
 
 /* ---------- Journal : une surface de lecture claire et presque unie dans le cadre, des lignes éditoriales, le ton en filet à gauche ---------- */
