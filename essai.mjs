@@ -279,6 +279,16 @@ try{
   dit(r.trois==='Seth emploie 3 Rations : +11 PV (2 + 3 + 6).','trois Rations coup sur coup : une ligne, le total et chaque jet',r.trois);
   dit(r.memeJet==='Seth emploie 4 Rations : +17 PV (2 + 3 + 6 + 6).'&&r.autre==='Kaël emploie Ration : +2 PV (2).'&&r.compte===2,'un même jet se compte aussi ; un autre aventurier ouvre sa propre ligne',JSON.stringify(r))}
 
+ /* ---------- v1.420 — Le nouvel habillage : allumé par défaut, un réglage le retire, le mode nuit garde son interface ---------- */
+ etape='Habillage';console.log(etape);
+ {const r=await p.evaluate(()=>{showPage('table');const lit=()=>({on:document.body.classList.contains('ui-refonte'),haut:Math.round(document.querySelector('header').getBoundingClientRect().height),
+    cadre:getComputedStyle(document.querySelector('main.layout>.stack.left>.panel')).borderImageSource.includes('cadre-parchemin'),bouton:document.getElementById('habillage-switch').textContent});
+   const a=lit();document.getElementById('habillage-switch').click();const b=lit();document.getElementById('habillage-switch').click();const c=lit();
+   document.body.classList.add('sombre');poseHabillage();const nuit=document.body.classList.contains('ui-refonte');document.body.classList.remove('sombre');poseHabillage();return {a,b,c,nuit}});
+  dit(r.a.on&&r.a.cadre&&r.a.bouton==='Désactiver','le nouvel habillage est là par défaut',JSON.stringify(r.a));
+  dit(!r.b.on&&!r.b.cadre&&r.b.bouton==='Activer'&&r.b.haut>r.a.haut,'« Désactiver » rend l’interface d’avant',JSON.stringify(r.b));
+  dit(r.c.on&&!r.nuit,'« Activer » le remet ; le mode nuit garde son interface',JSON.stringify({c:r.c,nuit:r.nuit}))}
+
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);
  const onglets=await p.evaluate(async()=>{const vus=[];for(const [k] of ONGLETS){showPage(k);await new Promise(r=>setTimeout(r,180));vus.push(k)}showPage('table');return vus});

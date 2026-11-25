@@ -1424,6 +1424,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="divider"></div><h3 class="reglage-titre">Apparence</h3>'
  +'<div class="reglage"><div><strong>Mode nuit</strong><p class="muted">Fond sombre, mêmes couleurs de jeu.</p></div>'
  +'<button id="theme-switch" class="primary"></button></div>'
+ +'<div class="reglage"><div><strong>Nouvel habillage</strong></div><button id="habillage-switch"></button></div>'
  +'<div class="reglage"><div><strong>Journal en transparence</strong></div><button id="journal-translucide-switch"></button></div>'
  +'<div id="bloc-perf" class="reglage" hidden><div><strong>Indice de performance</strong><p class="muted">En bas à gauche, pour le MJ seul : images par seconde et plus longue image.</p></div><button id="perf-switch"></button></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Raccourcis de la carte</h3>'
@@ -7737,6 +7738,17 @@ const JOURNAL_TRANSLUCIDE_CLE='amertume-journal-translucide';
 const journalTranslucide=()=>{try{return localStorage.getItem(JOURNAL_TRANSLUCIDE_CLE)==='1'}catch(e){return false}};
 function poseJournalTranslucide(){const on=journalTranslucide();document.body.classList.toggle('journal-translucide',on);const b=$('journal-translucide-switch');if(b)b.textContent=on?'Désactiver':'Activer'}
 poseJournalTranslucide();
+/* v1.420 — Le nouvel habillage de la Table (refonte.css) : allumé par défaut ; « Désactiver » rend l'interface d'avant. Réglage de
+   l'appareil. Le mode nuit garde son interface : l'habillage ne vaut qu'en mode clair. */
+const HABILLAGE_CLE='amertume-habillage';
+const habillageVoulu=()=>{try{return localStorage.getItem(HABILLAGE_CLE)!=='0'}catch(e){return true}};
+function poseHabillage(){const on=habillageVoulu(),avant=document.body.classList.contains('ui-refonte'),pris=on&&!document.body.classList.contains('sombre');
+ document.body.classList.toggle('ui-refonte',pris);const b=$('habillage-switch');if(b)b.textContent=on?'Désactiver':'Activer';
+ // La hauteur de l'en-tête change : la Table se recale.
+ if(pris!==avant&&typeof placeTablePleine==='function')requestAnimationFrame(()=>{placeTablePleine();if(typeof applyMapZoom==='function')applyMapZoom()})}
+poseHabillage();
+{const t=applyTheme;applyTheme=function(...x){const o=t.apply(this,x);poseHabillage();return o}}
+$('habillage-switch').onclick=()=>{try{localStorage.setItem(HABILLAGE_CLE,habillageVoulu()?'0':'1')}catch(e){}poseHabillage()};
 $('journal-translucide-switch').onclick=()=>{try{localStorage.setItem(JOURNAL_TRANSLUCIDE_CLE,journalTranslucide()?'0':'1')}catch(e){}poseJournalTranslucide()};
 $('perf-switch').onclick=()=>{try{localStorage.setItem(INDICE_PERF_CLE,indicePerfVoulu()?'0':'1')}catch(e){}poseIndicePerf();renderSettings()};
 $('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();renderSettings();
@@ -8923,7 +8935,7 @@ const REGLAGES_APPAREIL=['amertume-aimant','amertume-famille-outils','amertume-r
     des panneaux, fiches et lieux repliés, carte éditée, tri des aventuriers, plis de la forge, thème, vue, onglet ouvert, table en ligne. */
  'amertume-zooms','amertume-tailles','amertume-fenetres','amertume-colonnes','amertume-heros-replies','amertume-lieux-replies','amertume-carte-editee',
  'amertume-tri-heros','amertume-forge-plis','amertume-theme','amertume-vue','amertume-page','amertume-table','amertume-indice-perf'];
-REGLAGES_APPAREIL.push('amertume-journal-translucide');
+REGLAGES_APPAREIL.push('amertume-journal-translucide','amertume-habillage');
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},

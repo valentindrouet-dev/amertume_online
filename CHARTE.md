@@ -347,6 +347,20 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 
 ---
 
+## 12 bis. Habillage de la Table (v1.420)
+
+Le nouvel habillage tient dans `refonte.css`, entièrement sous `body.ui-refonte`. Il est allumé par défaut ; Paramètres › Apparence › « Nouvel habillage » (Activer / Désactiver, réglage de l'appareil) rend l'interface d'avant. En mode nuit, l'interface reste celle du mode nuit. Il ne touche qu'aux supports : illustrations, icônes, jetons, portraits, dés, carte et logo restent tels quels.
+
+- **Palette** : parchemin `#EDE5D2`, ivoire `#F7F2E7`, charbon `#191917`, brun sombre `#302820`, bronze `#AA8146`, encre `#29251F`, encre secondaire `#82796B`, rouge `#A24032`, vert `#608354`, bleu acier `#466B8C`. Filet : bronze à 35 % (`#AA814659`). Rayon : 3 px. Sur la Table, les variables du site (`--panel`, `--ink`, `--accent`, `--line`…) prennent cette palette.
+- **Navigation** : le logo sur le parchemin, Vue / Partager / Table en ligne à droite sur la même ligne ; dessous, les onglets sur une bande brun-charbon bordée de bronze ; l'onglet actif souligné de bronze ; un onglet ouvert aux joueurs garde sa marque, un filet bleu acier.
+- **Panneaux latéraux** : le cadre `img/ui/cadre-parchemin.webp` en neuf zones (6 px), titres en Killam brun sombre soulignés d'un filet bronze.
+- **Outils de la carte** : bande brun-charbon bordée de bronze ; supports sobres ; l'outil actif en bronze.
+- **Barre d'action** : socle `img/ui/socle-sombre.webp` en neuf zones, coins réduits (12 px).
+- **Combattants** : lignes plates, le camp en filet à gauche (vert la troupe, rouge les adversaires), la sélection en bronze.
+- **Journal** : plus de cartouches ; le ton en filet à gauche, un filet bronze léger entre les lignes, les messages du système en italique encre secondaire.
+- **Points de vie** : −1/−5/−10 en rouge désaturé, +1/+5/+10 en vert désaturé, Mort et Soin pleins.
+- **Piste de dés** : fond brun-charbon, relief intérieur, cadre bronze fin.
+
 ## 13. Contrôles automatiques
 
 `checks.cjs` vérifie à chaque publication, et la publication échoue en cas d'écart :
