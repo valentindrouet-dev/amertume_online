@@ -4313,8 +4313,12 @@ function zoneLibreCarte(){return cartePleine()?zoneCarte:null}
 function mesureZoneLibre(p){const pr=p.getBoundingClientRect(),g=colonneTable('left'),d=colonneTable('right'),bar=p.querySelector(':scope>.mapbar'),act=p.querySelector(':scope>.barre-actions');
  let l=g?g.getBoundingClientRect().right-pr.left+12:12,r=d?d.getBoundingClientRect().left-pr.left-12:pr.width-12;if(r-l<240){l=12;r=pr.width-12}
  let t=bar&&bar.offsetParent?bar.getBoundingClientRect().bottom-pr.top+12:12,b=pr.height-Math.max(150,act&&act.offsetHeight?act.offsetHeight+26:0);if(b-t<200){t=12;b=pr.height-12}
- // v1.430 : la zone libre entre les colonnes, pour ce qui se centre dessus (la barre d'action) ; v1.431 : --ech, l'échelle à laquelle ses 790 px y tiennent.
- p.style.setProperty('--zone-g',Math.round(l-12)+'px');p.style.setProperty('--zone-d',Math.round(pr.width-r-12)+'px');p.style.setProperty('--zone-l',Math.round(r-l+24)+'px');p.style.setProperty('--ech',String(Math.min(1,Math.round((r-l+24)/790*1000)/1000)));
+ /* v1.432 : la barre d'action a sa place à elle, au bas de l'écran, sur toute la largeur : --ech, l'échelle à laquelle ses 790 px y tiennent (1 au plus) ;
+    --bas-g et --bas-d, ce dont chaque colonne s'arrête plus haut quand la barre passe sous elle (rien si elle ne l'atteint pas). */
+ {const L=p.closest('main.layout')||p,ech=Math.min(1,Math.round((pr.width-24)/790*1000)/1000),bw=790*ech,bx=(pr.width-bw)/2;
+  L.style.setProperty('--ech',String(ech));
+  L.style.setProperty('--bas-g',g&&g.getBoundingClientRect().right-pr.left>bx+4?Math.round(192*ech+10)+'px':'0px');
+  L.style.setProperty('--bas-d',d&&d.getBoundingClientRect().left-pr.left<bx+bw-4?Math.round(151*ech+10)+'px':'0px')}
  return {l,t,r,b}}
 {const ar=applyMapRatio;applyMapRatio=function(){const el=$('map'),avant=el?[el.style.width,el.style.height,el.style.marginLeft,el.style.marginTop].join():'';
  const change=ar.apply(this,arguments),p=el&&el.closest('.map-panel');
