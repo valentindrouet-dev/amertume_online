@@ -302,6 +302,13 @@ try{
    const ligne=document.querySelector('#actors .actor[data-index="'+k+'"]'),pa=document.querySelector('.map-panel>.barre-actions>.portrait-actif');
    const v={pv:ligne&&Math.round(+ligne.style.getPropertyValue('--pv')),attendu:Math.round(ratio(h)),token:!!(pa&&pa.querySelector('.pa-token')),barre:!!(pa&&pa.querySelector('.lifebar'))};h.hp=avant;render();return v});
   dit(r.pv===r.attendu&&r.token&&r.barre,'combattants en tokens : l’anneau suit les PV ; le sélectionné en gros token près de la barre d’action',JSON.stringify(r))}
+ {const r=await p.evaluate(()=>{showPage('accueil');const B=document.getElementById('accueil-actifs'),n=()=>B.querySelectorAll('.accueil-heros').length,v={tous:n()};
+   document.querySelector('#accueil-page [data-vue="liste"]').click();v.liste=B.classList.contains('en-liste');document.querySelector('#accueil-page [data-vue="grille"]').click();
+   const h=actors.find(x=>x.hero),c=document.getElementById('accueil-cherche');c.value=h.name.slice(0,3);c.dispatchEvent(new Event('input'));v.cherche=n();c.value='zzzz';c.dispatchEvent(new Event('input'));v.aucun=n();c.value='';c.dispatchEvent(new Event('input'));
+   v.joueurs=!!document.getElementById('accueil-joueurs');v.tuiles=document.querySelectorAll('.accueil-tuile').length;
+   const b=B.querySelectorAll('.accueil-heros .accueil-actions .fiche-icone')[1];if(b)b.click();v.fiche=arbresDialog.open&&arbresOnglet;if(arbresDialog.open)arbresDialog.close();
+   document.querySelectorAll('.accueil-tuile')[2].click();v.page=document.body.classList.contains('page-maps');showPage('table');return v});
+  dit(r.tous>0&&r.liste&&r.cherche>=1&&r.cherche<=r.tous&&r.aucun===0&&!r.joueurs&&r.tuiles===6&&r.fiche==='inventaire'&&r.page,'Accueil à la maquette : grille / liste, recherche, bouton Inventaire de la carte, accès rapides',JSON.stringify(r))}
 
  /* ---------- 4. Chaque onglet s'ouvre ---------- */
  etape='Onglets';console.log(etape);

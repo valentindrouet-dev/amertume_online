@@ -265,3 +265,11 @@ body.ui-refonte #heroes-page #hero-grid label.vignette-talents-libres{font:600 1
 body.ui-refonte main.layout #actors .actor,body.ui-refonte main.layout #actors .actor.enemy{box-shadow:none}
 body.ui-refonte main.layout #actors .actor.selected{box-shadow:0 0 0 2px var(--rf-bronze)}
 body.ui-refonte .portrait-actif .pa-token{box-shadow:0 0 0 2px #191917,0 0 0 4px var(--rf-bronze),0 6px 16px #000000a6}
+/* v1.426 — Accueil : les blocs au cadre bronze de la page Aventuriers, les tuiles et les cartes de la fiche, l'illustration des actualités cerclée de bronze. */
+body.ui-refonte #accueil-page .accueil-bloc{border:14px solid transparent;border-image:url(img/ui/page-cadre.webp) 28/14px stretch;background:url(img/ui/parchemin.webp) center/cover no-repeat padding-box,#E7D4B6;box-shadow:0 4px 14px #29251f38}
+body.ui-refonte #accueil-page .accueil-tuile{border:1px solid transparent;border-image:url(img/ui/fiche-carte.webp) 12 fill/6px stretch;background:none;box-shadow:0 2px 4px #29251f26}
+body.ui-refonte #accueil-page .accueil-tuile:hover{filter:brightness(1.04)}
+body.ui-refonte #accueil-page .accueil-actions .fiche-icone{border:1px solid transparent;border-image:url(img/ui/fente.webp) 18 fill/7px stretch;background:none;border-radius:0}
+body.ui-refonte #accueil-page #accueil-actifs.en-grille .accueil-heros{background:var(--rf-ivoire);box-shadow:0 3px 6px #29251f33}
+body.ui-refonte #accueil-page .accueil-actus-image{border:2px solid var(--rf-bronze)}
+body.ui-refonte #accueil-page .accueil-actus-image button{border:1px solid transparent;border-image:url(img/ui/bouton-parchemin.webp) 16 fill/8px stretch;background:none;border-radius:0;font:600 15px 'Killam',Georgia,serif}

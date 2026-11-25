@@ -3657,7 +3657,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
    dans l'en-tête à côté de la table. */
 {const vv=fs.readFileSync('live.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(vv.includes("const PRESENCE_MS=30000,PRESENCE_MAX=75000;")&&vv.includes("$('live-quit').onclick=async()=>{const joueur=!estMJ();await quitterSiege();debrancherTable();")&&vv.includes("function renderJoueursConnectes(){")&&vv.includes("liveButton.after(joueursButton);")
-  &&vv.includes("clearInterval(presenceTimer);presenceTimer=setInterval(")&&ed.includes('<div id="accueil-joueurs" class="joueurs-connectes"></div>'),'joueurs connectés');}
+  &&vv.includes("clearInterval(presenceTimer);presenceTimer=setInterval("),'joueurs connectés');}
 /* v0.714 — Les comptes des joueurs : Amertüme (pseudo et mot de passe) ou Google ; chaque aventurier a son joueur ; un joueur ne
    voit et ne tient que les siens, et sa table reste vide sans aventurier à lui sur la carte ; le MJ confie les siens. */
 {const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
@@ -3691,7 +3691,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.709 — La liste des combattants ne garde que les aventuriers chargés sur la carte ; l'Accueil montre tous les
    aventuriers et leur emplacement ; un aventurier créé est sur la route. */
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
- assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));")&&ed.includes("t.append(n,d,ou);")&&ed.includes("<h3>Vos aventuriers ")&&dm.includes("if(lieu==='route')return 'Sur la route';")
+ assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero&&voitAventurier(a)&&")&&ed.includes("t.append(n,d,pp,ou);")&&ed.includes("<h3>Vos aventuriers ")&&dm.includes("if(lieu==='route')return 'Sur la route';")
   &&dm.includes("l==='absent'||l==='route')return;"),'route et Accueil');}
 /* v0.708 — L'équipement de départ : un lot d'armes, une armure, dix rations, trouvés au catalogue par leur nom ; l'objet
    inhabituel tiré à la création seulement, selon la classe. La bulle d'une compétence dit son usage ; plus de Gnome. */
@@ -5876,7 +5876,9 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
   &&src.includes("c.classList.add('rendable');")&&src.includes("panneau.className='detail-defile'")&&src.includes("g.className='detail-bonus-grille'"),'l’arbre v2, v0.812');}
 /* v0.811 — L'Accueil refait : titre, ville en filigrane, cartes d'aventuriers, actualités à puces, joueurs et hauts faits dessous. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes('<section class="accueil accueil-v2">')&&src.includes('id="accueil-creer"')&&src.includes('<div id="accueil-joueurs" class="joueurs-connectes"></div>')&&src.includes("function iconeLieuAccueil(lieu,nom)"),'l’Accueil refait');}
+ assert.ok(src.includes('<section class="accueil accueil-v2">')&&src.includes('id="accueil-creer"')&&src.includes("function iconeLieuAccueil(lieu,nom)"),'l’Accueil refait');}
+/* v1.426 — L'Accueil à la maquette : plus de blocs Joueurs connectés ni Hauts faits (les joueurs se lisent par le bouton de l'en-tête). */
+{const src=fs.readFileSync('editor.js','utf8');assert.ok(!src.includes('id="accueil-joueurs"')&&src.includes('id="accueil-tuiles"')&&src.includes('function renderTuiles()'),'Accueil v1.426');}
 /* v0.810 — Plus de petits ronds dans l'arbre v2 : améliorations et bonus vivent dans le panneau, s'y achètent, s'y ajoutent et s'y
    réordonnent ; ils restent au catalogue avec leur chemin. La vue joueur de l'éditeur suit celle d'un aventurier. */
 {const src=fs.readFileSync('editor.js','utf8');

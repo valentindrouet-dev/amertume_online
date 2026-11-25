@@ -1500,10 +1500,17 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
    hauts faits. */
 const accueilPage=document.createElement('main');accueilPage.id='accueil-page';
 accueilPage.innerHTML='<section class="accueil accueil-v2"><header class="accueil-tete"><div class="accueil-titres"><h2>Accueil</h2><p class="accueil-sous">Retrouvez vos aventuriers et les nouvelles de votre campagne.</p></div><div class="accueil-ville" aria-hidden="true"><img src="./img/decor/accueil-paysage.webp" alt="" decoding="async" width="1200" height="451" onerror="this.parentNode.hidden=true"></div><div class="accueil-creer"><button id="accueil-creer" type="button" class="primary">+ Créer un aventurier</button></div></header>'
- +'<div class="accueil-haut"><section class="accueil-bloc accueil-actifs"><h3>Vos aventuriers <span class="accueil-compte" id="accueil-compte"></span></h3><div id="accueil-actifs"></div></section>'
- +'<section class="accueil-bloc accueil-actus"><h3>Dernières actualités <span class="accueil-version" id="accueil-version"></span></h3><div id="accueil-actus"></div></section></div>'
- +'<div class="accueil-bas"><section class="accueil-bloc accueil-joueurs"><span class="accueil-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.4 2.7-5.6 6-5.6s6 2.2 6 5.6"/><circle cx="16.8" cy="9" r="2.6"/><path d="M16 13.6c2.9 0 5 1.9 5 4.9"/></svg></span><div><h3>Joueurs connectés</h3><div id="accueil-joueurs" class="joueurs-connectes"></div></div></section>'
- +'<section class="accueil-bloc accueil-faits"><span class="accueil-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11"/><path d="M12 14v3M8.5 20h7M9.5 17h5v3h-5Z"/></svg></span><div><h3>Derniers hauts faits</h3><div id="accueil-faits"></div></div></section></div>'
+ // v1.426 : la maquette de l'Accueil — les aventuriers en bandeau pleine largeur (grille ou liste, tri, lieu, recherche), puis Actualités et Accès rapides.
+ +'<div class="accueil-haut"><section class="accueil-bloc accueil-actifs"><div class="accueil-actifs-tete"><h3>Vos aventuriers <span class="accueil-compte" id="accueil-compte"></span></h3>'
+ +'<div class="accueil-outils"><span class="accueil-vues" role="group" aria-label="Affichage"><button type="button" data-vue="grille" aria-label="Grille"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>'
+ +'<button type="button" data-vue="liste" aria-label="Liste"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></span>'
+ +'<select id="accueil-tri" aria-label="Tri"><option value="nom">Tri : Nom</option><option value="classe">Tri : Classe</option><option value="niveau">Tri : Niveau</option><option value="lieu">Tri : Lieu</option></select>'
+ +'<select id="accueil-lieu" aria-label="Lieu"><option value="">Tous les états</option><option value="domaine">Au domaine</option><option value="route">Sur la route</option><option value="aventure">En aventure</option></select>'
+ +'<label class="accueil-cherche"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><input id="accueil-cherche" type="search" placeholder="Rechercher un aventurier…" aria-label="Rechercher un aventurier"></label></div></div>'
+ +'<div id="accueil-actifs"></div></section></div>'
+ +'<div class="accueil-bas"><section class="accueil-bloc accueil-actus"><h3><span class="accueil-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>Dernières actualités <span class="accueil-version" id="accueil-version"></span></h3>'
+ +'<div class="accueil-actus-corps"><div class="accueil-actus-image"><img src="./img/decor/accueil-paysage.webp" alt="" decoding="async"><button type="button" id="accueil-details">Lire les détails →</button></div><div id="accueil-actus"></div></div></section>'
+ +'<section class="accueil-bloc accueil-rapides"><h3><span class="accueil-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 4 16 16M20 4 4 20M4 4h4M4 4v4M20 4h-4M20 4v4"/></svg></span>Accès rapides</h3><div class="accueil-tuiles" id="accueil-tuiles"></div></section></div>'
  +'<p class="accueil-pied" id="accueil-pied"></p></section>';
 document.querySelector('main.layout').after(accueilPage,heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
@@ -5038,11 +5045,13 @@ function deplaceForge(a,id){if(!a||!a.hero||typeof actors==='undefined')return;l
 function oublieForge(a,id){if(a&&Array.isArray(a.forges)&&!(a.inventaire||[]).includes(id))a.forges=a.forges.filter(f=>f.id!==id)}
 /* Les dernières actualités : le résumé des dix dernières publications, s'il est à jour ; sinon leurs titres, les plus récents. */
 function renderActualites(){const boite=$('accueil-actus');if(!boite)return;boite.replaceChildren();
- const A=typeof ACTUALITES!=='undefined'?ACTUALITES:{versions:[]},v=(A.versions||[]).slice(0,10);
- const lignes=A.resume&&v.length&&A.resume.jusqua===v[0].v?A.resume.lignes:v.slice(0,6).map(x=>x.t);
+ const A=typeof ACTUALITES!=='undefined'?ACTUALITES:{versions:[]},v=(A.versions||[]).slice(0,5);
  {const e=$('accueil-version');if(e)e.textContent=v.length?'v'+v[0].v:''}
- if(v.length){const p=document.createElement('p');p.className='accueil-versions muted';p.textContent='Depuis la v'+v[v.length-1].v;boite.append(p)}
- const ul=document.createElement('ul');ul.className='accueil-liste';(lignes||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});boite.append(ul)}
+ // v1.426 : chaque publication avec sa date — « Aujourd'hui », « Hier », sinon le jour et le mois.
+ const jour=d=>{const t=new Date(),k=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'),h=new Date(t);h.setDate(t.getDate()-1);
+  return d===k(t)?'Aujourd’hui':d===k(h)?'Hier':d?new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):''};
+ const ul=document.createElement('ul');ul.className='accueil-liste';v.forEach(x=>{const li=document.createElement('li'),t=document.createElement('span'),d=document.createElement('small');
+  t.textContent=x.t;d.textContent=jour(x.d);li.append(t,d);ul.append(li)});boite.append(ul)}
 // Les aventuriers présents au domaine : ni partis en aventure, ni absents.
 function aventuriersActifs(){const lieu=a=>typeof lieuDe==='function'?lieuDe(a):(a.lieuDomaine||'');return actors.filter(a=>a&&a.hero&&!['aventure','absent','route'].includes(lieu(a)))}
 // L'icône du lieu d'un aventurier : une chope à la taverne, des montagnes sur la route ou en aventure, une maison ailleurs au domaine.
@@ -5050,24 +5059,57 @@ function iconeLieuAccueil(lieu,nom){const ns='http://www.w3.org/2000/svg',svg=do
  svg.innerHTML=lieu==='route'||lieu==='aventure'?'<path d="M2 20 9 8l4 6 2.5-3.5L22 20Z"/><path d="m7.5 10.5 1.5 1.5 1.5-1.5"/>'
   :/taverne|auberge/i.test(nom||'')?'<path d="M5 7h10v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"/><path d="M15 10h2.5a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H15"/><path d="M5 7c0-2 1.5-3 3-3 .8-1.2 3.4-1.2 4.2 0 1.6 0 2.8 1 2.8 3"/><path d="M8.5 11v7M11.5 11v7"/>'
   :'<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>';return svg}
-function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));
+// v1.426 : l'affichage, le tri, le lieu et la recherche des aventuriers de l'Accueil ; l'affichage et le tri restent sur l'appareil.
+const ACCUEIL_CLE='amertume-accueil';let accueilChoix={vue:'grille',tri:'nom',lieu:'',cherche:''};
+try{Object.assign(accueilChoix,JSON.parse(localStorage.getItem(ACCUEIL_CLE)||'{}'),{lieu:'',cherche:''})}catch(e){}
+const normeAccueil=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const niveauAccueil=a=>{const m=/niveau\s*(\d+)/i.exec(String(a.role||''));return m?+m[1]:(+a.level||1)};
+const lieuAccueil=l=>l==='route'||l==='aventure'?l:l==='absent'?'absent':'domaine';
+function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();
+ const garde=()=>{try{localStorage.setItem(ACCUEIL_CLE,JSON.stringify({vue:accueilChoix.vue,tri:accueilChoix.tri}))}catch(e){}renderActifs()};
+ document.querySelectorAll('#accueil-page .accueil-vues button').forEach(b=>{const on=b.dataset.vue===accueilChoix.vue;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));b.onclick=()=>{accueilChoix.vue=b.dataset.vue;garde()}});
+ {const t=$('accueil-tri');if(t){t.value=accueilChoix.tri;t.onchange=()=>{accueilChoix.tri=t.value;garde()}}}
+ {const l=$('accueil-lieu');if(l){l.value=accueilChoix.lieu;l.onchange=()=>{accueilChoix.lieu=l.value;renderActifs()}}}
+ {const c=$('accueil-cherche');if(c&&c.value!==accueilChoix.cherche)c.value=accueilChoix.cherche;if(c)c.oninput=()=>{accueilChoix.cherche=c.value;renderActifs()}}
+ boite.className=accueilChoix.vue==='liste'?'en-liste':'en-grille';
+ const lieuDeA=a=>typeof lieuDe==='function'?lieuDe(a):'',q=normeAccueil(accueilChoix.cherche.trim());
+ const classeDeA=a=>String((a.role||'').split('·')[0]).trim();
+ const l=actors.filter(a=>a&&a.hero&&voitAventurier(a)&&(!accueilChoix.lieu||lieuAccueil(lieuDeA(a))===accueilChoix.lieu)&&(!q||normeAccueil(a.name).includes(q)));
+ const parNom=(x,y)=>String(x.name||'').localeCompare(String(y.name||''),'fr');
+ l.sort(accueilChoix.tri==='classe'?(x,y)=>classeDeA(x).localeCompare(classeDeA(y),'fr')||parNom(x,y):accueilChoix.tri==='niveau'?(x,y)=>niveauAccueil(y)-niveauAccueil(x)||parNom(x,y)
+  :accueilChoix.tri==='lieu'&&typeof nomLieu==='function'?(x,y)=>nomLieu(lieuDeA(x)).localeCompare(nomLieu(lieuDeA(y)),'fr')||parNom(x,y):parNom);
  {const n=$('accueil-compte');if(n){n.textContent=l.length?String(l.length):'';n.hidden=!l.length}}
  if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier.';boite.append(p);return}
- /* Une carte par aventurier : son portrait cerclé de la couleur de sa classe, son nom à cette couleur, sa classe et son niveau, où
-    il se trouve ; un clic ouvre sa fiche, dans l'onglet Aventuriers. */
- l.forEach(a=>{const c=document.createElement('button');c.type='button';c.className='accueil-heros';const classe=classeDe(catalog.classes,a.role);
-  if(classe&&classe.tint)c.style.setProperty('--teinte',classe.tint);
+ /* Une carte par aventurier : son portrait au cadre de la couleur de sa classe, son nom à cette couleur, sa classe et son niveau, où il se trouve,
+    et trois boutons qui ouvrent sa fiche sur Caractéristiques, Inventaire, Talents. Un clic sur la carte le montre dans l'onglet Aventuriers. */
+ l.forEach(a=>{const c=document.createElement('div');c.className='accueil-heros';c.tabIndex=0;c.setAttribute('role','button');const classe=classeDe(catalog.classes,a.role);
+  {const tt=(classe&&classe.tint)||(typeof actorTint==='function'&&actorTint(a));if(tt)c.style.setProperty('--teinte',tt)}
   const av=document.createElement('span');av.className='accueil-avatar';
   if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
   const t=document.createElement('span');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
   const d=document.createElement('small');d.className='accueil-classe';d.textContent=String(a.role||'');
-  const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
+  const pp=document.createElement('span');pp.className='accueil-pastilles';const pc=document.createElement('span');pc.className='accueil-pastille-classe';pc.textContent=classeDeA(a)||'Aventurier';
+  const pn=document.createElement('span');pn.className='accueil-niv';pn.textContent='Niv. '+niveauAccueil(a);pp.append(pc,pn);
+  const lieu=lieuDeA(a),nomL=typeof nomLieu==='function'?nomLieu(lieu):'';
   const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
-  t.append(n,d,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';
-  c.append(av,t,fl);c.setAttribute('aria-label',a.name);
-  c.onclick=()=>{if(typeof showPage!=='function')return;showPage('heroes');requestAnimationFrame(()=>{const f=document.querySelector('#hero-grid>[data-heros="'+a.id+'"]');if(f)f.scrollIntoView({block:'center',behavior:'smooth'})})};
+  t.append(n,d,pp,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';
+  const ic=iconesFiche(a),act=document.createElement('span');act.className='accueil-actions';act.append(...[...ic.children].slice(0,3));
+  c.append(av,t,act,fl);c.setAttribute('aria-label',a.name);
+  const ouvre=()=>{if(typeof showPage!=='function')return;showPage('heroes');requestAnimationFrame(()=>{const f=document.querySelector('#hero-grid>[data-heros="'+a.id+'"]');if(f)f.scrollIntoView({block:'center',behavior:'smooth'})})};
+  c.onclick=ouvre;c.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===c){e.preventDefault();ouvre()}};
   boite.append(c)})}
-function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)b.hidden=!peutCreerAventurier()}{const v=document.querySelector('.brand .ver'),p=$('accueil-pied');if(p)p.textContent=v?v.textContent:''}renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
+// Les accès rapides : un onglet par tuile, seulement ceux que la vue ouvre.
+const ACCES_RAPIDES=[['heroes','Mes aventuriers','<circle cx="12" cy="8" r="3.2"/><path d="M6 19c0-3.4 2.7-5.6 6-5.6s6 2.2 6 5.6"/><circle cx="5.5" cy="10" r="2.3"/><circle cx="18.5" cy="10" r="2.3"/>'],
+ ['table','Table de jeu','<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9Z"/><path d="M12 12 20 7.5M12 12 4 7.5M12 12v9"/><circle cx="12" cy="7.5" r=".9"/><circle cx="8" cy="13" r=".9"/><circle cx="16" cy="13" r=".9"/>'],
+ ['maps','Cartes','<path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2Z"/><path d="M9 4v14M15 6v14"/>'],
+ ['domaine','Domaine','<path d="M4 20V9l3 2V7l3 2V5l2-2 2 2v4l3-2v4l3-2v11Z"/><path d="M10 20v-4h4v4"/>'],
+ ['bestiary','Bestiaire','<circle cx="7" cy="9" r="1.8"/><circle cx="11" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="18" cy="10" r="1.8"/><path d="M12 11c3 0 5 3.5 5 6 0 1.5-1.2 2.5-2.6 2.2-1-.2-1.6-.7-2.4-.7s-1.4.5-2.4.7C8.2 19.5 7 18.5 7 17c0-2.5 2-6 5-6Z"/>'],
+ ['regles','Règles','<path d="M4 5c3-1.5 6-1 8 1 2-2 5-2.5 8-1v14c-3-1.5-6-1-8 1-2-2-5-2.5-8-1Z"/><path d="M12 6v14"/>']];
+function renderTuiles(){const b=$('accueil-tuiles');if(!b)return;const vus=view==='mj'?null:ongletsJoueurs();
+ b.replaceChildren(...ACCES_RAPIDES.filter(([k])=>!vus||vus.includes(k)).map(([k,nom,svg])=>{const t=document.createElement('button');t.type='button';t.className='accueil-tuile';
+  t.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+svg+'</svg>';const n=document.createElement('span');n.textContent=nom;t.append(n);t.onclick=()=>showPage(k);return t}));
+ const d=$('accueil-details');if(d)d.onclick=()=>showPage('maj')}
+function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)b.hidden=!peutCreerAventurier()}{const v=document.querySelector('.brand .ver'),p=$('accueil-pied');if(p)p.textContent=v?v.textContent:''}renderActualites();renderActifs();renderTuiles()}
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */

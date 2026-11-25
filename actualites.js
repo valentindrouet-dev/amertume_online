@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"1.426","d":"2026-11-25","t":"Accueil restructuré"},
 {"v":"1.425","d":"2026-11-25","t":"Combattants en tokens et gros token de la barre d'action"},
 {"v":"1.424","d":"2026-11-25","t":"Page Aventuriers à la nouvelle maquette"},
 {"v":"1.423","d":"2026-11-25","t":"Supports dessinés de la fiche Aventurier"},
